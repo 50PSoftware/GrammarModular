@@ -41,12 +41,19 @@ namespace Grammar.Czech.Services
                 throw new InvalidOperationException($"{word.Lemma} se nevyskytuje v jednotném čísle.");
             }
 
+            if (word.Case == Case.Nominative && word.Number == Number.Singular)
+            {
+                return new WordForm(word.Lemma);
+            }
+
             var isBaseWordPattern = word.Lemma == word.Pattern;
 
             var numberKey = word.Number == Number.Singular ? "singular" : "plural";
             var caseKey = ((int)word.Case).ToString();
 
-            if (dataProvider.GetIrregulars().TryGetValue(word.Lemma.ToLower(), out var irregular))
+            NounPattern? irregular = null;
+
+            if (dataProvider.GetIrregulars().TryGetValue(word.Lemma.ToLower(), out irregular))
             {
                 if (irregular.Overrides != null &&
                     irregular.Overrides.TryGetValue(numberKey, out var cases) &&
@@ -79,6 +86,11 @@ namespace Grammar.Czech.Services
             if (!string.IsNullOrEmpty(wordStructure.DerivationSuffix))
             {
                 stem = phonologyService.ApplyEpenthesis(epenthesisRuleEvaluator.ShouldApplyEpenthesis(stem, wordStructure.DerivationSuffix, word), stem, wordStructure.DerivationSuffix);
+            }
+
+            if(!string.IsNullOrEmpty(irregular?.Stem))
+            {
+                stem = irregular.Stem;
             }
 
             if (!string.IsNullOrEmpty(pattern.Stem) && isBaseWordPattern)

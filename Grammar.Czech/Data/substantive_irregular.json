@@ -35,5 +35,18 @@
   "otec": {
     "hasMobileVowel": true,
     "inheritsFrom": "muž"
-  }
+  },
+  "dům":  { "inheritsFrom": "hrad", "stem": "dom" },
+  "důl":  { "inheritsFrom": "hrad", "stem": "dol" },
+  "dvůr": { "inheritsFrom": "les", "stem": "dvor" },
+  "vůz":  { "inheritsFrom": "hrad", "stem": "voz" },
+  "vůl":  { "inheritsFrom": "pán", "stem": "vol" },
+  "hnůj": { "inheritsFrom": "stroj", "stem": "hnoj" },
+  "lůj":  { "inheritsFrom": "stroj", "stem": "loj" },
+  "sůl":  { "inheritsFrom": "kost", "stem": "sol" },
+  "hůl":  { "inheritsFrom": "píseň", "stem": "hol" },
+  "kůň":  { "inheritsFrom": "muž",  "stem": "kon" },
+  "nůž":  { "inheritsFrom": "stroj",  "stem": "noz" },
+  "stůl": { "inheritsFrom": "hrad", "stem": "stol" },
+  "Bůh":  { "inheritsFrom": "pán",  "stem": "Boh" }
 }

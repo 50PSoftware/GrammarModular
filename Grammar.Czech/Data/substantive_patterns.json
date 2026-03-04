@@ -140,6 +140,19 @@
       }
     }
   },
+  "les": {
+    "gender": "masculineInanimate",
+    "inheritsFrom": "hrad",
+    "endings": {
+      "singular": {
+        "2": "-a",
+        "6": "-e"
+      },
+      "plural":{
+        "6": "-ích"
+      }
+    }
+  },
   "stroj": {
     "gender": "masculineInanimate",
     "stem": "stroj",

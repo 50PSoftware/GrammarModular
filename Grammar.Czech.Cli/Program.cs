@@ -90,6 +90,26 @@
                 IsAnimate = true
             };
 
+            var houseRequest = new CzechWordRequest
+            {
+                Lemma = "dům",
+                WordCategory = WordCategory.Noun,
+                Gender = Gender.Masculine,
+                Number = Number.Singular,
+                Pattern = "hrad",
+                IsAnimate = false
+            };
+
+            var forestRequest = new CzechWordRequest
+            {
+                Lemma = "les",
+                WordCategory = WordCategory.Noun,
+                Gender = Gender.Masculine,
+                Number = Number.Singular,
+                Pattern = "les",
+                IsAnimate = false
+            };
+
             PrintNounForms(composer, studentRequest);
             PrintNounForms(composer, studentkaRequest);
             PrintNounForms(composer, womanRequest);
@@ -97,6 +117,8 @@
             PrintNounForms(composer, studentikRequest);
             PrintNounForms(composer, hochRequest);
             PrintNounForms(composer, horseRequest);
+            PrintNounForms(composer, houseRequest);
+            PrintNounForms(composer, forestRequest);
 
             //var doRequest = new CzechWordRequest
             //{
