@@ -13,14 +13,14 @@ namespace Grammar.Czech.Services
             this._registry = registry;
         }
 
-        public bool ShouldApplyEpenthesis(string stem, string suffix, CzechWordRequest request)
+        public bool ShouldApplyEpenthesis(string stem, string derivationSuffix, CzechWordRequest request)
         {
-            if (string.IsNullOrEmpty(stem) || string.IsNullOrEmpty(suffix))
+            if (string.IsNullOrEmpty(stem) || string.IsNullOrEmpty(derivationSuffix))
             {
                 return false;
             }
 
-            if (!_registry.IsConsonant(suffix[0]))
+            if (!_registry.IsConsonant(derivationSuffix[0]))
             {
                 return false;
             }
@@ -30,17 +30,17 @@ namespace Grammar.Czech.Services
                 return false;
             }
 
-            return EvaluateEpenthesisRules(stem, suffix, request);
+            return EvaluateEpenthesisRules(stem, derivationSuffix, request);
         }
 
-        private bool EvaluateEpenthesisRules(string stem, string suffix, CzechWordRequest request)
+        private bool EvaluateEpenthesisRules(string stem, string derivationSuffix, CzechWordRequest request)
         {
             if (request.WordCategory == Core.Enums.WordCategory.Noun &&
                 request.Case == Core.Enums.Case.Genitive &&
                 request.Number == Core.Enums.Number.Plural &&
-                (suffix == "k" || suffix == "g"))
+                (derivationSuffix == "k" || derivationSuffix == "g"))
             {
-                if (!stem.EndsWith(suffix))
+                if (!stem.EndsWith(derivationSuffix))
                 {
                     return true;
                 }
@@ -50,7 +50,7 @@ namespace Grammar.Czech.Services
                 request.Case == Core.Enums.Case.Genitive &&
                 request.Number == Core.Enums.Number.Plural &&
                 request.Gender == Core.Enums.Gender.Neuter &&
-                suffix == "n")
+                derivationSuffix == "n")
             {
                 return true;
             }

@@ -136,11 +136,11 @@ namespace Grammar.Czech.Test
         {
             var request = new CzechWordRequest
             {
-                Lemma = "mladý",
+                Lemma = "mladičký",
                 WordCategory = WordCategory.Adjective
             };
 
-            var result = evaluator.ShouldApplyEpenthesis("mlad", "ý", request);
+            var result = evaluator.ShouldApplyEpenthesis("mladič", "k", request);
             Assert.IsFalse(result);
         }
     }
