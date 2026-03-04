@@ -41,7 +41,7 @@ namespace Grammar.Czech.Services
                 throw new InvalidOperationException($"{word.Lemma} se nevyskytuje v jednotném čísle.");
             }
 
-            if (word.Case == Case.Nominative && word.Number == Number.Singular)
+            if (word.Case == Case.Nominative && (word.Number == Number.Singular || (pattern.IsPluralOnly && word.Number == Number.Plural)))
             {
                 return new WordForm(word.Lemma);
             }
