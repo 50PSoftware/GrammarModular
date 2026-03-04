@@ -17,7 +17,7 @@ namespace Grammar.Czech.Services
             this._registry = registry;
         }
 
-        public bool ShouldShortenWovel(string stem)
+        public bool ShouldShortenVowel(string stem)
         {
             // TODO: If there is 
             var last = stem[^1..];

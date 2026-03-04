@@ -8,6 +8,6 @@ namespace Grammar.Czech.Interfaces
 {
     public interface IAlternationRuleEvaluator
     {
-        bool ShouldShortenWovel(string stem);
+        bool ShouldShortenVowel(string stem);
     }
 }
