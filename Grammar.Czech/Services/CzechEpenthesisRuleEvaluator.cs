@@ -34,18 +34,6 @@ namespace Grammar.Czech.Services
                 return false;
             }
 
-            // TODO: Solve problem without whitelisto r blacklist... Provider?
-
-            //if (epenthesisWhitelist.Contains(stem))
-            //{
-            //    return true;
-            //}
-
-            //if (epenthesisBlacklist.Contains(stem))
-            //{
-            //    return false;
-            //}
-
             return EvaluateEpenthesisRules(stem, suffix, request);
         }
 

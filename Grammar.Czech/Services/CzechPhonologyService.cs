@@ -10,22 +10,6 @@ namespace Grammar.Czech.Services
 {
     public class CzechPhonologyService : IPhonologyService<CzechWordRequest>
     {
-        // Blacklist slov, kde se epentheze NEPOUŽÍVÁ (historické výjimky)
-        private static readonly HashSet<string> epenthesisBlacklist = new()
-        {
-            "knih",  // kniha → knih (ne *knihek)
-            "noh",   // noha → noh (ne *nohek)
-            "much",  // moucha → much (ne *muchek)
-            "vrb",   // vrba → vrb (ne *vrbek)
-        };
-
-        // Kmeny, které VŽDY potřebují epenthezi
-        private static readonly HashSet<string> epenthesisWhitelist = new()
-        {
-            "ok",    // okno → oken
-            "slovíč", // slovíčko → slovíček
-        };
-
         private readonly IPhonemeRegistry _registry;
         private readonly IReadOnlyDictionary<string, string> _reverseMap;
 
