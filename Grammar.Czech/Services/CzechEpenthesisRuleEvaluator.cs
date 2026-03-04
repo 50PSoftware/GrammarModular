@@ -1,22 +1,18 @@
 ﻿using Grammar.Core.Interfaces;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
-using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Grammar.Czech.Services
 {
     public class CzechEpenthesisRuleEvaluator : IEpenthesisRuleEvaluator<CzechWordRequest>
     {
         private readonly IPhonemeRegistry _registry;
+
         public CzechEpenthesisRuleEvaluator(IPhonemeRegistry registry)
         {
             this._registry = registry;
         }
+
         public bool ShouldApplyEpenthesis(string stem, string suffix, CzechWordRequest request)
         {
             if (string.IsNullOrEmpty(stem) || string.IsNullOrEmpty(suffix))
