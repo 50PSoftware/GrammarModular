@@ -1,6 +1,7 @@
 ﻿using Grammar.Core.Enums;
 using Grammar.Core.Interfaces;
 using Grammar.Core.Models.Word;
+using Grammar.Czech.Enums.Phonology;
 using Grammar.Czech.Helpers;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
@@ -79,7 +80,7 @@ namespace Grammar.Czech.Services
         {
             if (baseStem.EndsWith("k") || baseStem.EndsWith("ch") || baseStem.EndsWith("h"))
             {
-                var softened = czechPhonologyService.ApplySoftening(baseStem, Enums.Phonology.PalatalizationContext.First);
+                var softened = czechPhonologyService.ApplySoftening(baseStem, PalatalizationContext.First);
                 return baseStem.EndsWith("k") ? softened : softened + "š";
             }
 

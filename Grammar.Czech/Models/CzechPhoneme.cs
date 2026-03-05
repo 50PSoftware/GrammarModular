@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Grammar.Czech.Models
 {
-    sealed record CzechPhoneme : Phoneme
+    public sealed record CzechPhoneme : Phoneme
     {
         public Dictionary<PalatalizationContext, string>? PalatalizationTargets { get; init; }
     }

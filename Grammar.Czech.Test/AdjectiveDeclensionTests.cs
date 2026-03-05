@@ -60,7 +60,10 @@ namespace Grammar.Czech.Test
                 {
                     new [] {"mladý", "mladší" },
                     new [] { "hezký", "hezčí" },
-                    new [] { "starý", "starší" }
+                    new [] { "starý", "starší" },
+                    new [] { "drahý", "dražší" },
+                    new [] { "tichý", "tišší" },
+                    new [] { "pěkný", "pěknější" }
                 };
 
                 return list;
@@ -114,7 +117,7 @@ namespace Grammar.Czech.Test
                 {
                     new [] { "mladý", "nejmladší" },
                     new [] { "starý", "nejstarší" },
-                    new [] { "hezký", "nejhezčí" }
+                    new [] { "hezký", "nejhezčí" },
                 };
 
                 return list;

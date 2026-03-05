@@ -30,6 +30,7 @@ namespace Grammar.Czech
             // Services
             services.AddSingleton<IPhonemeRegistry, CzechPhonemeRegistry>();
             services.AddSingleton<ICzechPhonologyService, CzechPhonologyService>();
+            services.AddSingleton<IPhonologyService<CzechWordRequest>>(sp => sp.GetRequiredService<ICzechPhonologyService>());
             services.AddSingleton<IWordStructureResolver<CzechWordRequest>, CzechWordStructureResolver>();
             services.AddSingleton<ISofteningRuleEvaluator<CzechWordRequest>, CzechSofteningRuleEvaluator>();
             services.AddSingleton<IEpenthesisRuleEvaluator<CzechWordRequest>, CzechEpenthesisRuleEvaluator>();
