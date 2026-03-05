@@ -59,6 +59,11 @@ namespace Grammar.Czech.Services
 
             if (word.Degree != null && word.Degree != Degree.Positive)
             {
+                if (_supletives.ContainsKey(word.Lemma))
+                {
+                    stem = _supletives.GetValueOrDefault(word.Lemma);
+                }
+
                 stem = BuildComparativeStem(stem);
             }
 
@@ -85,12 +90,22 @@ namespace Grammar.Czech.Services
             }
 
             var group1 = new[] { "d", "t", "n", "s", "z", "r", "l" };
-            if (group1.Any(s => baseStem.EndsWith(s)))
+            if (group1.Any(s => baseStem.EndsWith(s) && !MorphologyHelper.EndsWithTwoConsonants(baseStem)))
             {
                 return baseStem + "š";
             }
 
             return baseStem + "ejš";
         }
+
+        private static readonly Dictionary<string, string> _supletives = new()
+        {
+            { "dobrý", "lep" },
+            { "malý", "men" },
+            { "velký", "vět" },
+            { "zlý", "hor" },
+            { "špatný", "hor" },
+            { "dlouhý", "del" },
+        };
     }
 }

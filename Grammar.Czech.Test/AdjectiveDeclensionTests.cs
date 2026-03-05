@@ -63,7 +63,9 @@ namespace Grammar.Czech.Test
                     new [] { "starý", "starší" },
                     new [] { "drahý", "dražší" },
                     new [] { "tichý", "tišší" },
-                    new [] { "pěkný", "pěknější" }
+                    new [] { "pěkný", "pěknější" },
+                    new [] { "jemný", "jemnější" },
+                    new [] { "zdravý", "zdravější" }
                 };
 
                 return list;
