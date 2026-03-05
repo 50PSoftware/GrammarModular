@@ -33,7 +33,7 @@ namespace Grammar.Czech.Providers.JsonProviders
 
                     var mergedEngings = new Dictionary<string, IReadOnlyDictionary<string, string>>();
 
-                    foreach (var number in new[] { "singular", "plural"})
+                    foreach (var number in new[] { "singular", "plural" })
                     {
                         var merged = new Dictionary<string, string>(basePattern.Endings[number]);
 

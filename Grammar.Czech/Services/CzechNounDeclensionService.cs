@@ -88,7 +88,7 @@ namespace Grammar.Czech.Services
                 stem = phonologyService.ApplyEpenthesis(epenthesisRuleEvaluator.ShouldApplyEpenthesis(stem, wordStructure.DerivationSuffix, word), stem, wordStructure.DerivationSuffix);
             }
 
-            if(!string.IsNullOrEmpty(irregular?.Stem))
+            if (!string.IsNullOrEmpty(irregular?.Stem))
             {
                 stem = irregular.Stem;
             }

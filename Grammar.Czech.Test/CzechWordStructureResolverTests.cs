@@ -154,8 +154,6 @@ namespace Grammar.Czech.Test
 
         #endregion Nouns
 
-
-
         #region Verbs
 
         [TestMethod]
