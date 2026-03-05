@@ -23,7 +23,7 @@ namespace Grammar.Czech.Services
 
         public WordForm GetForm(CzechWordRequest word)
         {
-            if (word.Degree != null && word.Degree != Degree.Possitive)
+            if (word.Degree != null && word.Degree != Degree.Positive)
             {
                 word.Pattern = "jarní";
             }
@@ -57,7 +57,7 @@ namespace Grammar.Czech.Services
             var wordSructure = wordStructureResolver.AnalyzeStructure(word);
             var (prefix, stem) = (wordSructure.Prefix, wordSructure.Root + wordSructure.DerivationSuffix);
 
-            if (word.Degree != null && word.Degree != Degree.Possitive)
+            if (word.Degree != null && word.Degree != Degree.Positive)
             {
                 stem = BuildComparativeStem(stem);
             }

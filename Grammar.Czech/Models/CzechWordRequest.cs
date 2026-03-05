@@ -5,7 +5,7 @@
 
     public enum Degree
     {
-        Possitive,
+        Positive,
         Comparative,
         Superlative
     }
