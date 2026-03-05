@@ -213,7 +213,7 @@ Grammar.Czech.Test/         # MSTest unit and data-driven tests
 
 ## Known Limitations
 
-- **Iotation not implemented** — consonant+`ě` combinations after labials (`p`, `b`, `m`, `v`) are not yet handled. Affects a small subset of words (e.g. certain forms of `zem`, `krev`). Intentionally deferred.
+- **Iotation not implemented** — consonant+`ě` combinations after labials (`p`, `b`, `m`, `v`) are not yet handled. Affects a small subset of words (e.g. certain forms of `zem`). Intentionally deferred.
 - **Guess heuristics not implemented** — `GuessGenderAndPattern()` and `GuessVerbAspect()` are stubbed. Callers must supply pattern and aspect explicitly. This will be superseded by the planned valency dictionary.
 - **No numerals yet** — numeral inflection is planned but not started.
 - **No sentence generation** — the engine produces individual word forms. Full NLG (sentence construction from semantic input) is on the roadmap.
