@@ -1,9 +1,11 @@
 ﻿using Grammar.Core.Interfaces;
+using Grammar.Czech.Enums.Phonology;
+using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
 
 namespace Grammar.Czech.Services
 {
-    public class CzechPhonologyService : IPhonologyService<CzechWordRequest>
+    public class CzechPhonologyService : ICzechPhonologyService
     {
         private readonly IPhonemeRegistry _registry;
         private readonly IReadOnlyDictionary<string, string> _reverseMap;
@@ -16,23 +18,7 @@ namespace Grammar.Czech.Services
                 .ToDictionary(p => p.PalatalizeTo!, p => p.Symbol);
         }
 
-        public string ApplySoftening(string stem)
-        {
-            if (stem is null)
-                throw new ArgumentNullException(nameof(stem));
-
-            if (stem.EndsWith("ch"))
-            {
-                var palatalizedCH = _registry.Get("ch")?.PalatalizeTo ?? throw new InvalidOperationException("Phoneme 'ch' is missing in registry.");
-                return stem[..^2] + palatalizedCH;
-            }
-
-            var last = stem[^1..];
-            var phoneme = _registry.Get(last);
-            return phoneme?.PalatalizeTo is not null
-                ? stem[..^1] + phoneme.PalatalizeTo
-                : stem;
-        }
+        public string ApplySoftening(string stem) => ApplySoftening(stem, PalatalizationContext.First);
 
         public string RevertSoftening(string stem)
         {
@@ -101,6 +87,28 @@ namespace Grammar.Czech.Services
             }
 
             return stem;
+        }
+
+        public string ApplySoftening(string stem, PalatalizationContext context)
+        {
+            if (stem is null)
+            {
+                throw new ArgumentNullException(nameof(stem));
+            }
+
+            if (stem.EndsWith("ch"))
+            {
+                var czechPhoneme = _registry.Get("ch") as CzechPhoneme;
+                var target = czechPhoneme?.PalatalizationTargets?.GetValueOrDefault(context) ?? _registry.Get("ch")?.PalatalizeTo ?? throw new InvalidOperationException("Phoneme 'ch' missing palatalization target.");
+
+                return stem[..^2] + target;
+            }
+
+            var last = stem[^1..];
+            var phoneme = _registry.Get(last);
+            var czechP = phoneme as CzechPhoneme;
+            var result = czechP?.PalatalizationTargets?.GetValueOrDefault(context) ?? phoneme?.PalatalizeTo;
+            return result is not null ? stem[..^1] + result : stem;
         }
     }
 }

@@ -29,7 +29,7 @@ namespace Grammar.Czech
 
             // Services
             services.AddSingleton<IPhonemeRegistry, CzechPhonemeRegistry>();
-            services.AddSingleton<IPhonologyService<CzechWordRequest>, CzechPhonologyService>();
+            services.AddSingleton<ICzechPhonologyService, CzechPhonologyService>();
             services.AddSingleton<IWordStructureResolver<CzechWordRequest>, CzechWordStructureResolver>();
             services.AddSingleton<ISofteningRuleEvaluator<CzechWordRequest>, CzechSofteningRuleEvaluator>();
             services.AddSingleton<IEpenthesisRuleEvaluator<CzechWordRequest>, CzechEpenthesisRuleEvaluator>();

@@ -23,9 +23,9 @@ namespace Grammar.Czech.Test
         [TestMethod]
         public void ApplySoftening_ShouldSoftened()
         {
-            Assert.AreEqual("č", service.ApplySoftening("c"));
+            Assert.AreEqual("č", service.ApplySoftening("c", Enums.Phonology.PalatalizationContext.Second));
             Assert.AreEqual("š", service.ApplySoftening("ch"));
-            Assert.AreEqual("z", service.ApplySoftening("h"));
+            Assert.AreEqual("z", service.ApplySoftening("h", Enums.Phonology.PalatalizationContext.Second));
             Assert.AreEqual("ď", service.ApplySoftening("d"));
             Assert.AreEqual("ť", service.ApplySoftening("t"));
             Assert.AreEqual("ň", service.ApplySoftening("n"));
@@ -73,7 +73,7 @@ namespace Grammar.Czech.Test
         [TestMethod]
         public void ApplySoftening_ShouldHandleWordsWithSoftenedEnding()
         {
-            Assert.AreEqual("koč", service.ApplySoftening("koc"));
+            Assert.AreEqual("koč", service.ApplySoftening("koc", Enums.Phonology.PalatalizationContext.Second));
             Assert.AreEqual("koš", service.ApplySoftening("koch"));
         }
 
