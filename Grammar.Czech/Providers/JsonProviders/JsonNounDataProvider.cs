@@ -1,4 +1,5 @@
 ﻿using Grammar.Core.Helpers;
+using Grammar.Czech.Helpers;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
 using System.Reflection;
@@ -7,26 +8,21 @@ namespace Grammar.Czech.Providers.JsonProviders
 {
     public class JsonNounDataProvider : INounDataProvider
     {
-        private readonly Assembly _assembly = Assembly.GetExecutingAssembly();
-        private readonly string _patternPath;
-        private readonly string _irregularPath;
-        private readonly string _properNamesPath;
-        private Dictionary<string, NounPattern> _patterns;
-        private Dictionary<string, NounPattern> _irregulars;
-        private Dictionary<string, NounPattern> _properNames;
+        private readonly string _patternPath = "Data.Nouns.patterns";
+        private readonly string _irregularPath = "Data.Nouns.irregulars";
+        private readonly string _properNamesPath = "Data.Nouns.propers";
+        private readonly Lazy<Dictionary<string, NounPattern>> _patterns;
+        private readonly Lazy<Dictionary<string, NounPattern>> _irregulars;
+        private readonly Lazy<Dictionary<string, NounPattern>> _properNames;
 
         public JsonNounDataProvider()
         {
-            this._patternPath = "Data.Nouns.patterns";
-            this._irregularPath = "Data.Nouns.irregulars";
-            this._properNamesPath = "Data.Nouns.propers";
-        }
-
-        public Dictionary<string, NounPattern> GetPatterns()
-        {
-            if (_patterns == null)
+            var assembly = Assembly.GetExecutingAssembly();
+            _properNames = new Lazy<Dictionary<string, NounPattern>>(() => JsonLoader.LoadDictionaryFromFile<NounPattern>(assembly, _properNamesPath, JsonHelpers.SerializerOptions)!);
+            _irregulars = new Lazy<Dictionary<string, NounPattern>>(() => JsonLoader.LoadDictionaryFromFile<NounPattern>(assembly, _irregularPath, JsonHelpers.SerializerOptions)!);
+            _patterns = new Lazy<Dictionary<string, NounPattern>>(() =>
             {
-                var patterns = JsonLoader.LoadDictionaryFromFile<NounPattern>(_assembly, _patternPath, Helpers.JsonHelpers.SerializerOptions);
+                var patterns = JsonLoader.LoadDictionaryFromFile<NounPattern>(assembly, _patternPath, JsonHelpers.SerializerOptions);
 
                 foreach (var kvp in patterns.Where(pattern => !string.IsNullOrEmpty(pattern.Value.InheritsFrom)))
                 {
@@ -53,30 +49,14 @@ namespace Grammar.Czech.Providers.JsonProviders
                     patterns[kvp.Key] = child with { Endings = mergedEngings };
                 }
 
-                _patterns = patterns;
-            }
-
-            return _patterns;
+                return patterns;
+            });
         }
 
-        public Dictionary<string, NounPattern> GetIrregulars()
-        {
-            if (_irregulars == null)
-            {
-                _irregulars = JsonLoader.LoadDictionaryFromFile<NounPattern>(_assembly, _irregularPath, Helpers.JsonHelpers.SerializerOptions);
-            }
+        public Dictionary<string, NounPattern> GetPatterns() => _patterns.Value;
 
-            return _irregulars;
-        }
+        public Dictionary<string, NounPattern> GetIrregulars() => _irregulars.Value;
 
-        public Dictionary<string, NounPattern> GetPropers()
-        {
-            if (_properNames == null)
-            {
-                _properNames = JsonLoader.LoadDictionaryFromFile<NounPattern>(_assembly, _properNamesPath, Helpers.JsonHelpers.SerializerOptions);
-            }
-
-            return _properNames;
-        }
+        public Dictionary<string, NounPattern> GetPropers() => _properNames.Value;
     }
 }

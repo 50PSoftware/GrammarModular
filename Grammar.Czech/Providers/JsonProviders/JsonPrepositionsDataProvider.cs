@@ -1,4 +1,5 @@
 ﻿using Grammar.Core.Helpers;
+using Grammar.Czech.Helpers;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
 using System.Reflection;
@@ -7,22 +8,15 @@ namespace Grammar.Czech.Providers.JsonProviders
 {
     public class JsonPrepositionsDataProvider : IPrepositionDataProvider
     {
-        private readonly string _prepositionsPath;
-        private Dictionary<string, PrepositionData> _data;
+        private readonly string _prepositionsPath = "Data.prepositions";
+        private readonly Lazy<Dictionary<string, PrepositionData>> _data;
 
         public JsonPrepositionsDataProvider()
         {
-            this._prepositionsPath = "Data.prepositions";
+            var assembly = Assembly.GetExecutingAssembly();
+            _data = new Lazy<Dictionary<string, PrepositionData>>(() => JsonLoader.LoadDictionaryFromFile<PrepositionData>(assembly, _prepositionsPath, JsonHelpers.SerializerOptions)!);
         }
 
-        public Dictionary<string, PrepositionData> GetPrepositions()
-        {
-            if (_data == null)
-            {
-                _data = JsonLoader.LoadDictionaryFromFile<PrepositionData>(Assembly.GetExecutingAssembly(), _prepositionsPath, Helpers.JsonHelpers.SerializerOptions)!;
-            }
-
-            return _data;
-        }
+        public Dictionary<string, PrepositionData> GetPrepositions() => _data.Value;
     }
 }

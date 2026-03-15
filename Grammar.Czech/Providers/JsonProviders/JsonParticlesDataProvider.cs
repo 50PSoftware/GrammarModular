@@ -1,4 +1,5 @@
-﻿using Grammar.Czech.Interfaces;
+﻿using Grammar.Czech.Helpers;
+using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
 using System.Text.Json;
 
@@ -6,23 +7,14 @@ namespace Grammar.Czech.Providers.JsonProviders
 {
     public class JsonParticlesDataProvider : IParticleDataProvider
     {
-        private readonly string _particlePath;
-        private ParticlesData _data;
+        private readonly string _particlePath = "Data.particles";
+        private readonly Lazy<ParticlesData> _data;
 
         public JsonParticlesDataProvider()
         {
-            this._particlePath = "Data.particles";
+            _data = new Lazy<ParticlesData>(() => JsonSerializer.Deserialize<ParticlesData>(File.ReadAllText(_particlePath), JsonHelpers.SerializerOptions)!);
         }
 
-        public ParticlesData GetParticles()
-        {
-            if (_data == null)
-            {
-                var json = File.ReadAllText(_particlePath);
-                _data = JsonSerializer.Deserialize<ParticlesData>(json, Helpers.JsonHelpers.SerializerOptions)!;
-            }
-
-            return _data;
-        }
+        public ParticlesData GetParticles() => _data.Value;
     }
 }
