@@ -1,82 +1,168 @@
 {
-  "possessive-muj": {
-    "slots": {
-      "sg.m.anim": {
-        "Nominative": "můj",
-        "Genitive": "mého",
-        "Dative": "mému",
-        "Accusative": "mého",
-        "Locative": "mém",
-        "Instrumental": "mým"
-      },
-      "sg.m.inan": {
-        "Nominative": "můj",
-        "Genitive": "mého",
-        "Dative": "mému",
-        "Accusative": "můj",
-        "Locative": "mém",
-        "Instrumental": "mým"
-      },
-      "sg.f": {
-        "Nominative": "má",
-        "Genitive": "mé",
-        "Dative": "mé",
-        "Accusative": "mou",
-        "Locative": "mé",
-        "Instrumental": "mou"
-      },
-      "sg.n": {
-        "Nominative": "mé",
-        "Genitive": "mého",
-        "Dative": "mému",
-        "Accusative": "mé",
-        "Locative": "mém",
-        "Instrumental": "mým"
-      }
+  "ten": {
+    "Singular": {
+      "MasculineAnimate":   { "Nominative": "ten",  "Genitive": "toho", "Dative": "tomu", "Accusative": "toho", "Vocative": "ten",  "Locative": "tom",  "Instrumental": "tím" },
+      "MasculineInanimate": { "Nominative": "ten",  "Genitive": "toho", "Dative": "tomu", "Accusative": "ten",  "Vocative": "ten",  "Locative": "tom",  "Instrumental": "tím" },
+      "Feminine":           { "Nominative": "ta",   "Genitive": "té",   "Dative": "té",   "Accusative": "tu",   "Vocative": "ta",   "Locative": "té",   "Instrumental": "tou" },
+      "Neuter":             { "Nominative": "to",   "Genitive": "toho", "Dative": "tomu", "Accusative": "to",   "Vocative": "to",   "Locative": "tom",  "Instrumental": "tím" }
+    },
+    "Plural": {
+      "MasculineAnimate":   { "Nominative": "ti",   "Genitive": "těch", "Dative": "těm",  "Accusative": "ty",   "Vocative": "ti",   "Locative": "těch", "Instrumental": "těmi" },
+      "Other":              { "Nominative": "ty",   "Genitive": "těch", "Dative": "těm",  "Accusative": "ty",   "Vocative": "ty",   "Locative": "těch", "Instrumental": "těmi" }
     }
   },
-  "demonstrative-ten": {
-    "slots": {
-      "sg.m.anim": {
-        "Nominative": "ten",
-        "Genitive": "toho",
-        "Dative": "tomu",
-        "Accusative": "toho",
-        "Locative": "tom",
-        "Instrumental": "tím"
-      },
-      "sg.f": {
-        "Nominative": "ta",
-        "Genitive": "té",
-        "Dative": "té",
-        "Accusative": "tu",
-        "Locative": "té",
-        "Instrumental": "tou"
-      },
-      "sg.n": {
-        "Nominative": "to",
-        "Genitive": "toho",
-        "Dative": "tomu",
-        "Accusative": "to",
-        "Locative": "tom",
-        "Instrumental": "tím"
-      },
-      "pl.m.anim": {
-        "Nominative": "ti",
-        "Genitive": "těch",
-        "Dative": "těm",
-        "Accusative": "ty",
-        "Locative": "těch",
-        "Instrumental": "těmi"
-      },
-      "pl.other": {
-        "Nominative": "ty",
-        "Genitive": "těch",
-        "Dative": "těm",
-        "Accusative": "ty",
-        "Locative": "těch",
-        "Instrumental": "těmi"
-      }
+  "tento": {
+    "Singular": {
+      "MasculineAnimate":   { "Nominative": "tento", "Genitive": "tohoto", "Dative": "tomuto", "Accusative": "tohoto", "Vocative": "tento", "Locative": "tomto", "Instrumental": "tímto" },
+      "MasculineInanimate": { "Nominative": "tento", "Genitive": "tohoto", "Dative": "tomuto", "Accusative": "tento",  "Vocative": "tento", "Locative": "tomto", "Instrumental": "tímto" },
+      "Feminine":           { "Nominative": "tato",  "Genitive": "této",   "Dative": "této",   "Accusative": "tuto",   "Vocative": "tato",  "Locative": "této",  "Instrumental": "touto" },
+      "Neuter":             { "Nominative": "toto",  "Genitive": "tohoto", "Dative": "tomuto", "Accusative": "toto",   "Vocative": "toto",  "Locative": "tomto", "Instrumental": "tímto" }
+    },
+    "Plural": {
+      "MasculineAnimate":   { "Nominative": "tito",  "Genitive": "těchto", "Dative": "těmto", "Accusative": "tyto",  "Vocative": "tito",  "Locative": "těchto", "Instrumental": "těmito" },
+      "Other":              { "Nominative": "tyto",  "Genitive": "těchto", "Dative": "těmto", "Accusative": "tyto",  "Vocative": "tyto",  "Locative": "těchto", "Instrumental": "těmito" }
+    }
+  },
+  "tenhle": {
+    "Singular": {
+      "MasculineAnimate":   { "Nominative": "tenhle", "Genitive": "tohohle", "Dative": "tomuhle", "Accusative": "tohohle", "Vocative": "tenhle", "Locative": "tomhle", "Instrumental": "tímhle" },
+      "MasculineInanimate": { "Nominative": "tenhle", "Genitive": "tohohle", "Dative": "tomuhle", "Accusative": "tenhle",  "Vocative": "tenhle", "Locative": "tomhle", "Instrumental": "tímhle" },
+      "Feminine":           { "Nominative": "tahle",  "Genitive": "téhle",   "Dative": "téhle",   "Accusative": "tuhle",   "Vocative": "tahle",  "Locative": "téhle",  "Instrumental": "touhle" },
+      "Neuter":             { "Nominative": "tohle",  "Genitive": "tohohle", "Dative": "tomuhle", "Accusative": "tohle",   "Vocative": "tohle",  "Locative": "tomhle", "Instrumental": "tímhle" }
+    },
+    "Plural": {
+      "MasculineAnimate":   { "Nominative": "tihle",  "Genitive": "těchhle", "Dative": "těmhle", "Accusative": "tyhle",  "Vocative": "tihle",  "Locative": "těchhle", "Instrumental": "těmihle" },
+      "Other":              { "Nominative": "tyhle",  "Genitive": "těchhle", "Dative": "těmhle", "Accusative": "tyhle",  "Vocative": "tyhle",  "Locative": "těchhle", "Instrumental": "těmihle" }
+    }
+  },
+  "onen": {
+    "Singular": {
+      "MasculineAnimate":   { "Nominative": "onen",  "Genitive": "onoho", "Dative": "onomu", "Accusative": "onoho", "Vocative": "onen",  "Locative": "onom",  "Instrumental": "oním" },
+      "MasculineInanimate": { "Nominative": "onen",  "Genitive": "onoho", "Dative": "onomu", "Accusative": "onen",  "Vocative": "onen",  "Locative": "onom",  "Instrumental": "oním" },
+      "Feminine":           { "Nominative": "ona",   "Genitive": "oné",   "Dative": "oné",   "Accusative": "onu",   "Vocative": "ona",   "Locative": "oné",   "Instrumental": "onou" },
+      "Neuter":             { "Nominative": "ono",   "Genitive": "onoho", "Dative": "onomu", "Accusative": "ono",   "Vocative": "ono",   "Locative": "onom",  "Instrumental": "oním" }
+    },
+    "Plural": {
+      "MasculineAnimate":   { "Nominative": "oni",   "Genitive": "oněch", "Dative": "oněm",  "Accusative": "ony",   "Vocative": "oni",   "Locative": "oněch", "Instrumental": "oněmi" },
+      "Other":              { "Nominative": "ony",   "Genitive": "oněch", "Dative": "oněm",  "Accusative": "ony",   "Vocative": "ony",   "Locative": "oněch", "Instrumental": "oněmi" }
+    }
+  },
+  "sam": {
+    "Singular": {
+      "MasculineAnimate":   { "Nominative": "sám",   "Genitive": "samého", "Dative": "samému", "Accusative": "samého", "Vocative": "sám",   "Locative": "samém", "Instrumental": "samým" },
+      "MasculineInanimate": { "Nominative": "sám",   "Genitive": "samého", "Dative": "samému", "Accusative": "sám",    "Vocative": "sám",   "Locative": "samém", "Instrumental": "samým" },
+      "Feminine":           { "Nominative": "sama",  "Genitive": "samé",   "Dative": "samé",   "Accusative": "samu",   "Vocative": "sama",  "Locative": "samé",  "Instrumental": "samou" },
+      "Neuter":             { "Nominative": "samo",  "Genitive": "samého", "Dative": "samému", "Accusative": "samo",   "Vocative": "samo",  "Locative": "samém", "Instrumental": "samým" }
+    },
+    "Plural": {
+      "MasculineAnimate":   { "Nominative": "sami",  "Genitive": "samých", "Dative": "samým",  "Accusative": "samy",   "Vocative": "sami",  "Locative": "samých", "Instrumental": "samými" },
+      "Other":              { "Nominative": "samy",  "Genitive": "samých", "Dative": "samým",  "Accusative": "samy",   "Vocative": "samy",  "Locative": "samých", "Instrumental": "samými" }
+    }
+  },
+  "nas": {
+    "Singular": {
+      "MasculineAnimate":   { "Nominative": "náš",   "Genitive": "našeho", "Dative": "našemu", "Accusative": "našeho", "Vocative": "náš",   "Locative": "našem",  "Instrumental": "naším" },
+      "MasculineInanimate": { "Nominative": "náš",   "Genitive": "našeho", "Dative": "našemu", "Accusative": "náš",    "Vocative": "náš",   "Locative": "našem",  "Instrumental": "naším" },
+      "Feminine":           { "Nominative": "naše",  "Genitive": "naší",   "Dative": "naší",   "Accusative": "naši",   "Vocative": "naše",  "Locative": "naší",   "Instrumental": "naší" },
+      "Neuter":             { "Nominative": "naše",  "Genitive": "našeho", "Dative": "našemu", "Accusative": "naše",   "Vocative": "naše",  "Locative": "našem",  "Instrumental": "naším" }
+    },
+    "Plural": {
+      "MasculineAnimate":   { "Nominative": "naši",  "Genitive": "našich", "Dative": "našim",  "Accusative": "naše",   "Vocative": "naši",  "Locative": "našich", "Instrumental": "našimi" },
+      "Other":              { "Nominative": "naše",  "Genitive": "našich", "Dative": "našim",  "Accusative": "naše",   "Vocative": "naše",  "Locative": "našich", "Instrumental": "našimi" }
+    }
+  },
+  "vas": {
+    "Singular": {
+      "MasculineAnimate":   { "Nominative": "váš",   "Genitive": "vašeho", "Dative": "vašemu", "Accusative": "vašeho", "Vocative": "váš",   "Locative": "vašem",  "Instrumental": "vaším" },
+      "MasculineInanimate": { "Nominative": "váš",   "Genitive": "vašeho", "Dative": "vašemu", "Accusative": "váš",    "Vocative": "váš",   "Locative": "vašem",  "Instrumental": "vaším" },
+      "Feminine":           { "Nominative": "vaše",  "Genitive": "vaší",   "Dative": "vaší",   "Accusative": "vaši",   "Vocative": "vaše",  "Locative": "vaší",   "Instrumental": "vaší" },
+      "Neuter":             { "Nominative": "vaše",  "Genitive": "vašeho", "Dative": "vašemu", "Accusative": "vaše",   "Vocative": "vaše",  "Locative": "vašem",  "Instrumental": "vaším" }
+    },
+    "Plural": {
+      "MasculineAnimate":   { "Nominative": "vaši",  "Genitive": "vašich", "Dative": "vašim",  "Accusative": "vaše",   "Vocative": "vaši",  "Locative": "vašich", "Instrumental": "vašimi" },
+      "Other":              { "Nominative": "vaše",  "Genitive": "vašich", "Dative": "vašim",  "Accusative": "vaše",   "Vocative": "vaše",  "Locative": "vašich", "Instrumental": "vašimi" }
+    }
+  },
+  "muj": {
+    "Singular": {
+      "MasculineAnimate":   { "Nominative": "můj",  "Genitive": "mého",  "Dative": "mému",  "Accusative": "mého",  "Vocative": "můj",  "Locative": "mém",  "Instrumental": "mým" },
+      "MasculineInanimate": { "Nominative": "můj",  "Genitive": "mého",  "Dative": "mému",  "Accusative": "můj",   "Vocative": "můj",  "Locative": "mém",  "Instrumental": "mým" },
+      "Feminine":           { "Nominative": "má",   "Genitive": "mé",    "Dative": "mé",    "Accusative": "mou",   "Vocative": "má",   "Locative": "mé",   "Instrumental": "mou" },
+      "Neuter":             { "Nominative": "mé",   "Genitive": "mého",  "Dative": "mému",  "Accusative": "mé",    "Vocative": "mé",   "Locative": "mém",  "Instrumental": "mým" }
+    },
+    "Plural": {
+      "MasculineAnimate":   { "Nominative": "moji", "Genitive": "mých",  "Dative": "mým",   "Accusative": "moje",  "Vocative": "moji", "Locative": "mých", "Instrumental": "mými" },
+      "Other":              { "Nominative": "moje", "Genitive": "mých",  "Dative": "mým",   "Accusative": "moje",  "Vocative": "moje", "Locative": "mých", "Instrumental": "mými" }
+    }
+  },
+  "tvuj": {
+    "Singular": {
+      "MasculineAnimate":   { "Nominative": "tvůj",  "Genitive": "tvého",  "Dative": "tvému",  "Accusative": "tvého",  "Vocative": "tvůj",  "Locative": "tvém",  "Instrumental": "tvým" },
+      "MasculineInanimate": { "Nominative": "tvůj",  "Genitive": "tvého",  "Dative": "tvému",  "Accusative": "tvůj",   "Vocative": "tvůj",  "Locative": "tvém",  "Instrumental": "tvým" },
+      "Feminine":           { "Nominative": "tvá",   "Genitive": "tvé",    "Dative": "tvé",    "Accusative": "tvou",   "Vocative": "tvá",   "Locative": "tvé",   "Instrumental": "tvou" },
+      "Neuter":             { "Nominative": "tvé",   "Genitive": "tvého",  "Dative": "tvému",  "Accusative": "tvé",    "Vocative": "tvé",   "Locative": "tvém",  "Instrumental": "tvým" }
+    },
+    "Plural": {
+      "MasculineAnimate":   { "Nominative": "tvoji", "Genitive": "tvých",  "Dative": "tvým",   "Accusative": "tvoje",  "Vocative": "tvoji", "Locative": "tvých", "Instrumental": "tvými" },
+      "Other":              { "Nominative": "tvoje", "Genitive": "tvých",  "Dative": "tvým",   "Accusative": "tvoje",  "Vocative": "tvoje", "Locative": "tvých", "Instrumental": "tvými" }
+    }
+  },
+  "svuj": {
+    "Singular": {
+      "MasculineAnimate":   { "Nominative": "svůj",  "Genitive": "svého",  "Dative": "svému",  "Accusative": "svého",  "Vocative": "svůj",  "Locative": "svém",  "Instrumental": "svým" },
+      "MasculineInanimate": { "Nominative": "svůj",  "Genitive": "svého",  "Dative": "svému",  "Accusative": "svůj",   "Vocative": "svůj",  "Locative": "svém",  "Instrumental": "svým" },
+      "Feminine":           { "Nominative": "svá",   "Genitive": "své",    "Dative": "své",    "Accusative": "svou",   "Vocative": "svá",   "Locative": "své",   "Instrumental": "svou" },
+      "Neuter":             { "Nominative": "své",   "Genitive": "svého",  "Dative": "svému",  "Accusative": "své",    "Vocative": "své",   "Locative": "svém",  "Instrumental": "svým" }
+    },
+    "Plural": {
+      "MasculineAnimate":   { "Nominative": "svoji", "Genitive": "svých",  "Dative": "svým",   "Accusative": "svoje",  "Vocative": "svoji", "Locative": "svých", "Instrumental": "svými" },
+      "Other":              { "Nominative": "svoje", "Genitive": "svých",  "Dative": "svým",   "Accusative": "svoje",  "Vocative": "svoje", "Locative": "svých", "Instrumental": "svými" }
+    }
+  },
+  "jeji": {
+    "Singular": {
+      "MasculineAnimate":   { "Nominative": "její",  "Genitive": "jejího", "Dative": "jejímu", "Accusative": "jejího", "Vocative": "její",  "Locative": "jejím", "Instrumental": "jejím" },
+      "MasculineInanimate": { "Nominative": "její",  "Genitive": "jejího", "Dative": "jejímu", "Accusative": "její",   "Vocative": "její",  "Locative": "jejím", "Instrumental": "jejím" },
+      "Feminine":           { "Nominative": "její",  "Genitive": "její",   "Dative": "její",   "Accusative": "její",   "Vocative": "její",  "Locative": "její",  "Instrumental": "její" },
+      "Neuter":             { "Nominative": "její",  "Genitive": "jejího", "Dative": "jejímu", "Accusative": "její",   "Vocative": "její",  "Locative": "jejím", "Instrumental": "jejím" }
+    },
+    "Plural": {
+      "MasculineAnimate":   { "Nominative": "její",  "Genitive": "jejích", "Dative": "jejím",  "Accusative": "její",   "Vocative": "její",  "Locative": "jejích","Instrumental": "jejími" },
+      "Other":              { "Nominative": "její",  "Genitive": "jejích", "Dative": "jejím",  "Accusative": "její",   "Vocative": "její",  "Locative": "jejích","Instrumental": "jejími" }
+    }
+  },
+  "kdo": {
+    "Singular": {
+      "MasculineAnimate":   { "Nominative": "kdo",   "Genitive": "koho",  "Dative": "komu",  "Accusative": "koho",  "Vocative": "kdo",  "Locative": "kom",   "Instrumental": "kým" }
+    }
+  },
+  "co": {
+    "Singular": {
+      "Neuter":             { "Nominative": "co",    "Genitive": "čeho",  "Dative": "čemu",  "Accusative": "co",    "Vocative": "co",   "Locative": "čem",   "Instrumental": "čím" }
+    }
+  },
+  "ci": {
+    "Singular": {
+      "MasculineAnimate":   { "Nominative": "čí",   "Genitive": "čího",  "Dative": "čímu",  "Accusative": "čího",  "Vocative": "čí",   "Locative": "čím",   "Instrumental": "čím" },
+      "MasculineInanimate": { "Nominative": "čí",   "Genitive": "čího",  "Dative": "čímu",  "Accusative": "čí",    "Vocative": "čí",   "Locative": "čím",   "Instrumental": "čím" },
+      "Feminine":           { "Nominative": "čí",   "Genitive": "čí",    "Dative": "čí",    "Accusative": "čí",    "Vocative": "čí",   "Locative": "čí",    "Instrumental": "čí" },
+      "Neuter":             { "Nominative": "čí",   "Genitive": "čího",  "Dative": "čímu",  "Accusative": "čí",    "Vocative": "čí",   "Locative": "čím",   "Instrumental": "čím" }
+    },
+    "Plural": {
+      "MasculineAnimate":   { "Nominative": "čí",   "Genitive": "čích",  "Dative": "čím",   "Accusative": "čí",    "Vocative": "čí",   "Locative": "čích",  "Instrumental": "čími" },
+      "Other":              { "Nominative": "čí",   "Genitive": "čích",  "Dative": "čím",   "Accusative": "čí",    "Vocative": "čí",   "Locative": "čích",  "Instrumental": "čími" }
+    }
+  },
+  "jenz": {
+    "Singular": {
+      "MasculineAnimate":   { "Nominative": "jenž",  "Genitive": "jehož",  "Dative": "jemuž",  "Accusative": "jejž",   "Vocative": "jenž",  "Locative": "němž",  "Instrumental": "jímž" },
+      "MasculineInanimate": { "Nominative": "jenž",  "Genitive": "jehož",  "Dative": "jemuž",  "Accusative": "jenž",   "Vocative": "jenž",  "Locative": "němž",  "Instrumental": "jímž" },
+      "Feminine":           { "Nominative": "jež",   "Genitive": "jejíž",  "Dative": "jejíž",  "Accusative": "jež",    "Vocative": "jež",   "Locative": "jejíž", "Instrumental": "jíž" },
+      "Neuter":             { "Nominative": "jež",   "Genitive": "jehož",  "Dative": "jemuž",  "Accusative": "jež",    "Vocative": "jež",   "Locative": "němž",  "Instrumental": "jímž" }
+    },
+    "Plural": {
+      "MasculineAnimate":   { "Nominative": "již",   "Genitive": "jejichž","Dative": "jimž",   "Accusative": "jež",    "Vocative": "již",   "Locative": "jejichž","Instrumental": "jimiž" },
+      "Other":              { "Nominative": "jež",   "Genitive": "jejichž","Dative": "jimž",   "Accusative": "jež",    "Vocative": "jež",   "Locative": "jejichž","Instrumental": "jimiž" }
     }
   }
 }

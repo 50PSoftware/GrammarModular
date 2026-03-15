@@ -1,207 +1,264 @@
 {
   "já": {
-    "type": "Personal",
-    "person": "First",
-    "number": "Singular",
+    "type": "Personal", "inflectionClass": "Substantive",
+    "person": "First", "number": "Singular",
     "fixedForms": {
-      "nominative": { "default": "já" },
-      "genitive": {
-        "default": "mě",
-        "rare": "mne"
-      },
-      "dative": {
-        "default": "mně",
-        "clitic": "mi"
-      },
-      "accusative": {
-        "default": "mě",
-        "rare": "mne"
-      },
-      "vocative": { "default": "já" },
-      "locative": { "default": "mně" },
-      "instrumental": { "default": "mnou" }
+      "Nominative":   { "default": "já" },
+      "Genitive":     { "default": "mě", "rare": "mne" },
+      "Dative":       { "default": "mně", "clitic": "mi" },
+      "Accusative":   { "default": "mě", "rare": "mne" },
+      "Vocative":     { "default": "já" },
+      "Locative":     { "default": "mně" },
+      "Instrumental": { "default": "mnou" }
     }
   },
   "ty": {
-    "type": "Personal",
-    "person": "Second",
-    "number": "Singular",
+    "type": "Personal", "inflectionClass": "Substantive",
+    "person": "Second", "number": "Singular",
     "fixedForms": {
-      "nominative": { "default": "ty" },
-      "genitive": {
-        "default": "tebe",
-        "clitic": "tě"
-      },
-      "dative": {
-        "default": "tobě",
-        "clitic": "ti"
-      },
-      "accusative": {
-        "default": "tebe",
-        "clitic": "tě"
-      },
-      "vocative": { "default": "ty" },
-      "locative": { "default": "tobě" },
-      "instrumental": { "default": "tebou" }
+      "Nominative":   { "default": "ty" },
+      "Genitive":     { "default": "tebe", "clitic": "tě" },
+      "Dative":       { "default": "tobě", "clitic": "ti" },
+      "Accusative":   { "default": "tebe", "clitic": "tě" },
+      "Vocative":     { "default": "ty" },
+      "Locative":     { "default": "tobě" },
+      "Instrumental": { "default": "tebou" }
     }
   },
   "on": {
-    "type": "Personal",
-    "person": "Third",
-    "gender": "Masculine",
-    "number": "Singular",
+    "type": "Personal", "inflectionClass": "Substantive",
+    "person": "Third", "gender": "Masculine", "number": "Singular",
     "fixedForms": {
-      "nominative": { "default": "on" },
-      "genitive": {
-        "default": "jeho",
-        "afterPreposition": "něho"
-      },
-      "dative": {
-        "default": "jemu",
-        "clitic": "mu",
-        "afterPreposition": "němu"
-      },
-      "accusative": {
-        "default": "jeho",
-        "clitic": "ho",
-        "afterPreposition": "něj"
-      },
-      "vocative": { "default": "on" },
-      "locative": {
-        "default": "něm",
-        "afterPreposition": "něm"
-      },
-      "instrumental": {
-        "default": "jím",
-        "afterPreposition": "ním"
-      }
+      "Nominative":   { "default": "on" },
+      "Genitive":     { "default": "jeho", "afterPreposition": "něho", "clitic": "ho" },
+      "Dative":       { "default": "jemu", "afterPreposition": "němu", "clitic": "mu" },
+      "Accusative":   { "default": "jeho", "afterPreposition": "něj", "clitic": "ho" },
+      "Vocative":     { "default": "on" },
+      "Locative":     { "default": "něm" },
+      "Instrumental": { "default": "jím", "afterPreposition": "ním" }
     }
   },
   "ona": {
-    "type": "Personal",
-    "person": "Third",
-    "gender": "Feminine",
-    "number": "Singular",
+    "type": "Personal", "inflectionClass": "Substantive",
+    "person": "Third", "gender": "Feminine", "number": "Singular",
     "fixedForms": {
-      "nominative": { "default": "ona" },
-      "genitive": { "default": "ní" },
-      "dative": { "default": "ní" },
-      "accusative": { "default": "ji" },
-      "locative": { "default": "ní" },
-      "instrumental": { "default": "ní" }
+      "Nominative":   { "default": "ona" },
+      "Genitive":     { "default": "jí", "afterPreposition": "ní" },
+      "Dative":       { "default": "jí", "afterPreposition": "ní" },
+      "Accusative":   { "default": "ji", "afterPreposition": "ni", "clitic": "ji" },
+      "Vocative":     { "default": "ona" },
+      "Locative":     { "default": "ní" },
+      "Instrumental": { "default": "jí", "afterPreposition": "ní" }
     }
   },
   "ono": {
-    "type": "Personal",
-    "person": "Third",
-    "gender": "Neuter",
-    "number": "Singular",
+    "type": "Personal", "inflectionClass": "Substantive",
+    "person": "Third", "gender": "Neuter", "number": "Singular",
     "fixedForms": {
-      "nominative": { "default": "ono" },
-      "genitive": { "default": "něj" },
-      "dative": { "default": "němu" },
-      "accusative": { "default": "něj" },
-      "locative": { "default": "něm" },
-      "instrumental": { "default": "ním" }
+      "Nominative":   { "default": "ono" },
+      "Genitive":     { "default": "jeho", "afterPreposition": "něho", "clitic": "ho" },
+      "Dative":       { "default": "jemu", "afterPreposition": "němu", "clitic": "mu" },
+      "Accusative":   { "default": "je", "afterPreposition": "ně", "clitic": "ho" },
+      "Vocative":     { "default": "ono" },
+      "Locative":     { "default": "něm" },
+      "Instrumental": { "default": "jím", "afterPreposition": "ním" }
+    }
+  },
+  "my": {
+    "type": "Personal", "inflectionClass": "Substantive",
+    "person": "First", "number": "Plural",
+    "fixedForms": {
+      "Nominative":   { "default": "my" },
+      "Genitive":     { "default": "nás" },
+      "Dative":       { "default": "nám" },
+      "Accusative":   { "default": "nás" },
+      "Vocative":     { "default": "my" },
+      "Locative":     { "default": "nás" },
+      "Instrumental": { "default": "námi" }
+    }
+  },
+  "vy": {
+    "type": "Personal", "inflectionClass": "Substantive",
+    "person": "Second", "number": "Plural",
+    "fixedForms": {
+      "Nominative":   { "default": "vy" },
+      "Genitive":     { "default": "vás" },
+      "Dative":       { "default": "vám" },
+      "Accusative":   { "default": "vás" },
+      "Vocative":     { "default": "vy" },
+      "Locative":     { "default": "vás" },
+      "Instrumental": { "default": "vámi" }
     }
   },
   "oni": {
-    "type": "Personal",
-    "person": "Third",
-    "gender": "Masculine",
-    "number": "Plural",
+    "type": "Personal", "inflectionClass": "Substantive",
+    "person": "Third", "gender": "Masculine", "number": "Plural",
     "fixedForms": {
-      "nominative": { "default": "oni" },
-      "genitive": { "default": "nich" },
-      "dative": { "default": "nim" },
-      "accusative": { "default": "ně" },
-      "locative": { "default": "nich" },
-      "instrumental": { "default": "nimi" }
+      "Nominative":   { "default": "oni" },
+      "Genitive":     { "default": "jich", "afterPreposition": "nich" },
+      "Dative":       { "default": "jim", "afterPreposition": "nim" },
+      "Accusative":   { "default": "je", "afterPreposition": "ně" },
+      "Vocative":     { "default": "oni" },
+      "Locative":     { "default": "nich" },
+      "Instrumental": { "default": "jimi", "afterPreposition": "nimi" }
     }
   },
   "ony": {
-    "type": "Personal",
-    "person": "Third",
-    "gender": "Feminine",
-    "number": "Plural",
+    "type": "Personal", "inflectionClass": "Substantive",
+    "person": "Third", "gender": "Feminine", "number": "Plural",
     "fixedForms": {
-      "nominative": { "default": "ony" },
-      "genitive": { "default": "nich" },
-      "dative": { "default": "nim" },
-      "accusative": { "default": "ně" },
-      "locative": { "default": "nich" },
-      "instrumental": { "default": "nimi" }
+      "Nominative":   { "default": "ony" },
+      "Genitive":     { "default": "jich", "afterPreposition": "nich" },
+      "Dative":       { "default": "jim", "afterPreposition": "nim" },
+      "Accusative":   { "default": "je", "afterPreposition": "ně" },
+      "Vocative":     { "default": "ony" },
+      "Locative":     { "default": "nich" },
+      "Instrumental": { "default": "jimi", "afterPreposition": "nimi" }
     }
   },
   "ona_": {
-    "type": "Personal",
-    "person": "Third",
-    "gender": "Neuter",
-    "number": "Plural",
+    "type": "Personal", "inflectionClass": "Substantive",
+    "person": "Third", "gender": "Neuter", "number": "Plural",
     "fixedForms": {
-      "nominative": { "default": "ona" },
-      "genitive": { "default": "nich" },
-      "dative": { "default": "nim" },
-      "accusative": { "default": "ně" },
-      "locative": { "default": "nich" },
-      "instrumental": { "default": "nimi" }
-    }
-  },
-  "můj": {
-    "type": "Possessive",
-    "paradigmId": "possessive-muj"
-  },
-  "ten": {
-    "type": "Demonstrative",
-    "paradigmId": "demonstrative-ten"
-  },
-  "kdo": {
-    "type": "Interrogative",
-    "fixedForms": {
-      "nominative": { "default": "kdo" },
-      "genitive": { "default": "koho" },
-      "dative": { "default": "komu" },
-      "accusative": { "default": "koho" },
-      "locative": { "default": "kom" },
-      "instrumental": { "default": "kým" }
-    }
-  },
-  "nikdo": {
-    "type": "Negative",
-    "fixedForms": {
-      "nominative": { "default": "nikdo" },
-      "genitive": { "default": "nikoho" },
-      "dative": { "default": "nikomu" },
-      "accusative": { "default": "nikoho" },
-      "locative": { "default": "nikom" },
-      "instrumental": { "default": "nikým" }
-    }
-  },
-  "někdo": {
-    "type": "Indefinite",
-    "fixedForms": {
-      "nominative": { "default": "někdo" },
-      "genitive": { "default": "někoho" },
-      "dative": { "default": "někomu" },
-      "accusative": { "default": "někoho" },
-      "locative": { "default": "někom" },
-      "instrumental": { "default": "někým" }
+      "Nominative":   { "default": "ona" },
+      "Genitive":     { "default": "jich", "afterPreposition": "nich" },
+      "Dative":       { "default": "jim", "afterPreposition": "nim" },
+      "Accusative":   { "default": "je", "afterPreposition": "ně" },
+      "Vocative":     { "default": "ona" },
+      "Locative":     { "default": "nich" },
+      "Instrumental": { "default": "jimi", "afterPreposition": "nimi" }
     }
   },
   "se": {
-    "type": "reflexive",
+    "type": "Reflexive", "inflectionClass": "Substantive",
     "fixedForms": {
-      "genitive": { "default": "sebe" },
-      "dative": {
-        "default": "sobě",
-        "clitic": "si"
-      },
-      "accusative": {
-        "default": "sebe",
-        "clitic": "se"
-      },
-      "locative": { "default": "sobě" },
-      "instrumental": { "default": "sebou" }
+      "Genitive":     { "default": "sebe" },
+      "Dative":       { "default": "sobě", "clitic": "si" },
+      "Accusative":   { "default": "sebe", "clitic": "se" },
+      "Locative":     { "default": "sobě" },
+      "Instrumental": { "default": "sebou" }
     }
+  },
+  "ten": {
+    "type": "Demonstrative", "inflectionClass": "PronounHard",
+    "paradigmId": "ten"
+  },
+  "tento": {
+    "type": "Demonstrative", "inflectionClass": "PronounHard",
+    "paradigmId": "tento"
+  },
+  "tenhle": {
+    "type": "Demonstrative", "inflectionClass": "PronounHard",
+    "paradigmId": "tenhle"
+  },
+  "onen": {
+    "type": "Demonstrative", "inflectionClass": "PronounHard",
+    "paradigmId": "onen"
+  },
+  "sám": {
+    "type": "Demonstrative", "inflectionClass": "PronounHard",
+    "paradigmId": "sam"
+  },
+  "náš": {
+    "type": "Possessive", "inflectionClass": "PronounSoft",
+    "paradigmId": "nas"
+  },
+  "váš": {
+    "type": "Possessive", "inflectionClass": "PronounSoft",
+    "paradigmId": "vas"
+  },
+  "můj": {
+    "type": "Possessive", "inflectionClass": "PronounHard",
+    "paradigmId": "muj"
+  },
+  "tvůj": {
+    "type": "Possessive", "inflectionClass": "PronounHard",
+    "paradigmId": "tvuj"
+  },
+  "svůj": {
+    "type": "Possessive", "inflectionClass": "PronounHard",
+    "paradigmId": "svuj"
+  },
+  "jeho": {
+    "type": "Possessive", "inflectionClass": "Indeclinable"
+  },
+  "její": {
+    "type": "Possessive", "inflectionClass": "PronounHard",
+    "paradigmId": "jeji"
+  },
+  "jejich": {
+    "type": "Possessive", "inflectionClass": "Indeclinable"
+  },
+  "kdo": {
+    "type": "Interrogative", "inflectionClass": "PronounHard",
+    "paradigmId": "kdo"
+  },
+  "co": {
+    "type": "Interrogative", "inflectionClass": "PronounHard",
+    "paradigmId": "co"
+  },
+  "čí": {
+    "type": "Interrogative", "inflectionClass": "PronounHard",
+    "paradigmId": "ci"
+  },
+  "jaký": {
+    "type": "Interrogative", "inflectionClass": "AdjectiveHard",
+    "declensionPattern": "mlady"
+  },
+  "který": {
+    "type": "Relative", "inflectionClass": "AdjectiveHard",
+    "declensionPattern": "mlady"
+  },
+  "jenž": {
+    "type": "Relative", "inflectionClass": "PronounHard",
+    "paradigmId": "jenz"
+  },
+  "nikdo": {
+    "type": "Negative", "inflectionClass": "PronounHard",
+    "paradigmId": "kdo", "prefix": "ni"
+  },
+  "nic": {
+    "type": "Negative", "inflectionClass": "PronounHard",
+    "paradigmId": "co", "prefix": "ni"
+  },
+  "ničí": {
+    "type": "Negative", "inflectionClass": "PronounHard",
+    "paradigmId": "ci", "prefix": "ni"
+  },
+  "žádný": {
+    "type": "Negative", "inflectionClass": "AdjectiveHard",
+    "declensionPattern": "mlady"
+  },
+  "někdo": {
+    "type": "Indefinite", "inflectionClass": "PronounHard",
+    "paradigmId": "kdo", "prefix": "ně"
+  },
+  "něco": {
+    "type": "Indefinite", "inflectionClass": "PronounHard",
+    "paradigmId": "co", "prefix": "ně"
+  },
+  "něčí": {
+    "type": "Indefinite", "inflectionClass": "PronounHard",
+    "paradigmId": "ci", "prefix": "ně"
+  },
+  "nějaký": {
+    "type": "Indefinite", "inflectionClass": "AdjectiveHard",
+    "declensionPattern": "mlady"
+  },
+  "některý": {
+    "type": "Indefinite", "inflectionClass": "AdjectiveHard",
+    "declensionPattern": "mlady"
+  },
+  "každý": {
+    "type": "Indefinite", "inflectionClass": "AdjectiveHard",
+    "declensionPattern": "mlady"
+  },
+  "takový": {
+    "type": "Demonstrative", "inflectionClass": "AdjectiveHard",
+    "declensionPattern": "mlady"
+  },
+  "nijaký": {
+    "type": "Negative", "inflectionClass": "AdjectiveHard",
+    "declensionPattern": "mlady"
   }
 }

@@ -1,7 +1,6 @@
-﻿namespace Grammar.Czech.Models
+﻿using Grammar.Core.Enums;
+namespace Grammar.Czech.Models
 {
-    using Grammar.Core.Enums;
-
     public sealed record VerbPattern
     {
         public VerbAspect Aspect { get; init; }

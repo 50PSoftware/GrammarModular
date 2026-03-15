@@ -31,19 +31,37 @@ namespace Grammar.Czech.Models
 
     public sealed record PronounData
     {
-        public PronounType Type { get; init; }
         /// <summary>
-        /// Pokud je zájmeno skloňované paradigmatem (můj/ten/tento...), odkaz na vzor.
+        /// Sémantický typ zájmena (Personal, Possessive, Demonstrative...).
+        /// Říká CO zájmeno je.
         /// </summary>
-        public string? DeclensionPattern { get; init; }
+        public PronounType Type { get; init; }
+
+        /// <summary>
+        /// Morfologická třída flexe — říká JAK se zájmeno ohýbá.
+        /// Nezávislé na Type.
+        /// </summary>
+        public InflectionClass InflectionClass { get; init; }
+
         public Person? Person { get; init; }
         public Number? Number { get; init; }
         public Gender? Gender { get; init; }
 
         /// <summary>
-        /// Pro nepravidelná zájmena (já, ty, on...) nebo pro explicitní výjimky:
-        /// pád -> sada možných tvarů.
+        /// Pro InflectionClass.Substantive — suppletivní lookup tabulka.
         /// </summary>
         public Dictionary<Case, PronounCaseForms>? FixedForms { get; init; }
+
+        /// <summary>
+        /// Pro InflectionClass.PronounHard / PronounSoft — klíč do paradigms.json.
+        /// </summary>
+        public string? ParadigmId { get; init; }
+
+        /// <summary>
+        /// Pro InflectionClass.AdjectiveHard / AdjectiveSoft — klíč do adjectives/patterns.json.
+        /// </summary>
+        public string? DeclensionPattern { get; init; }
+
+        public string? Prefix { get; init; }
     }
 }

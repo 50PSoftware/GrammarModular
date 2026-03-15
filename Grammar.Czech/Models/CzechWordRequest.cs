@@ -1,8 +1,8 @@
-﻿namespace Grammar.Czech.Models
-{
-    using Grammar.Core.Enums;
-    using Grammar.Core.Interfaces;
+﻿using Grammar.Core.Enums;
+using Grammar.Core.Interfaces;
 
+namespace Grammar.Czech.Models
+{
     public enum Degree
     {
         Positive,
@@ -39,5 +39,6 @@
         public string? AdditionalData { get; set; }
         public bool IsNegative { get; set; }
         public bool? IsAnimate { get; set; }
+        public bool IsAfterPreposition { get; internal set; }
     }
 }
