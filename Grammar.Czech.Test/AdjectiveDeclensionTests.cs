@@ -16,14 +16,13 @@ namespace Grammar.Czech.Test
         [TestInitialize]
         public void Setup()
         {
-            const string dataPath = "Data";
-            var nounDataProvider = new JsonNounDataProvider(dataPath);
-            var verbDataProvider = new JsonVerbDataProvider(dataPath);
-            var prefixService = new CzechPrefixService(new JsonPrefixDataProvider(dataPath));
+            var nounDataProvider = new JsonNounDataProvider();
+            var verbDataProvider = new JsonVerbDataProvider();
+            var prefixService = new CzechPrefixService(new JsonPrefixDataProvider());
             var phonologyService = new CzechPhonologyService(new CzechPhonemeRegistry());
             var wordStructureResolver = new CzechWordStructureResolver(verbDataProvider, nounDataProvider, prefixService, phonologyService);
 
-            var adjectiveDataProvider = new JsonAdjectiveDataProvider(dataPath);
+            var adjectiveDataProvider = new JsonAdjectiveDataProvider();
             adjectiveDeclensionService = new CzechAdjectiveDeclensionService(adjectiveDataProvider, wordStructureResolver, phonologyService);
         }
 

@@ -11,12 +11,8 @@
     {
         private static void Main(string[] args)
         {
-            var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
-
-            string dataPath = configuration["DataPath"] ?? throw new InvalidOperationException("Missing DataPath in configuration!");
-
             var services = new ServiceCollection();
-            services.AddCzechGrammarServices(dataPath);
+            services.AddCzechGrammarServices();
 
             var provider = services.BuildServiceProvider(new ServiceProviderOptions() { ValidateOnBuild = true });
             var engine = provider.GetRequiredService<MorphologyEngine>();

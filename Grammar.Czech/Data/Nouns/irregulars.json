@@ -1,0 +1,91 @@
+{
+  "oko": {
+    "inheritsFrom": "město",
+    "overrides": {
+      "singular": {
+        "6": "oku"
+      },
+      "plural": {
+        "1": "oči",
+        "2": "očí",
+        "3": "očím",
+        "4": "oči",
+        "5": "oči",
+        "6": "očích",
+        "7": "očima"
+      }
+    }
+  },
+  "chlapec": {
+    "inheritsFrom": "muž",
+    "overrides": {
+      "singular": {
+        "5": "-e"
+      }
+    }
+  },
+  "pes": {
+    "hasMobileVowel": true,
+    "inheritsFrom": "pán"
+  },
+  "den": {
+    "hasMobileVowel": true,
+    "inheritsFrom": "hrad"
+  },
+  "otec": {
+    "hasMobileVowel": true,
+    "inheritsFrom": "muž"
+  },
+  "dům": {
+    "inheritsFrom": "hrad",
+    "stem": "dom"
+  },
+  "důl": {
+    "inheritsFrom": "hrad",
+    "stem": "dol"
+  },
+  "dvůr": {
+    "inheritsFrom": "les",
+    "stem": "dvor"
+  },
+  "vůz": {
+    "inheritsFrom": "hrad",
+    "stem": "voz"
+  },
+  "vůl": {
+    "inheritsFrom": "pán",
+    "stem": "vol"
+  },
+  "hnůj": {
+    "inheritsFrom": "stroj",
+    "stem": "hnoj"
+  },
+  "lůj": {
+    "inheritsFrom": "stroj",
+    "stem": "loj"
+  },
+  "sůl": {
+    "inheritsFrom": "kost",
+    "stem": "sol"
+  },
+  "hůl": {
+    "inheritsFrom": "píseň",
+    "stem": "hol"
+  },
+  "kůň": {
+    "inheritsFrom": "muž",
+    "stem": "kon"
+  },
+  "nůž": {
+    "inheritsFrom": "stroj",
+    "stem": "noz"
+  },
+  "stůl": {
+    "inheritsFrom": "hrad",
+    "stem": "stol"
+  },
+  "Bůh": {
+    "inheritsFrom": "pán",
+    "stem": "Boh"
+  }
+}

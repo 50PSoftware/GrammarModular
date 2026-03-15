@@ -19,9 +19,9 @@ namespace Grammar.Czech.Test
         [TestInitialize]
         public void Setup()
         {
-            verbDataProvider = new JsonVerbDataProvider(Path.Combine("Data"));
-            var perfixProvider = new JsonPrefixDataProvider(Path.Combine("Data"));
-            var nounDataProvider = new JsonNounDataProvider(Path.Combine("Data"));
+            verbDataProvider = new JsonVerbDataProvider();
+            var perfixProvider = new JsonPrefixDataProvider();
+            var nounDataProvider = new JsonNounDataProvider();
             prefixService = new CzechPrefixService(perfixProvider);
             var registry = new CzechPhonemeRegistry();
             phonologyService = new CzechPhonologyService(registry);

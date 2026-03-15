@@ -1,5 +1,6 @@
 ﻿using Grammar.Core.Helpers;
 using Grammar.Czech.Interfaces;
+using System.Reflection;
 
 namespace Grammar.Czech.Providers.JsonProviders
 {
@@ -8,16 +9,16 @@ namespace Grammar.Czech.Providers.JsonProviders
         private readonly string _prefixPath;
         private Dictionary<string, List<string>> _prefixes;
 
-        public JsonPrefixDataProvider(string dataPath)
+        public JsonPrefixDataProvider()
         {
-            this._prefixPath = Path.Combine(dataPath, "prefixes.json");
+            this._prefixPath = "Data.prefixes";
         }
 
         public Dictionary<string, List<string>> GetPrefixes()
         {
             if (_prefixes == null)
             {
-                _prefixes = JsonLoader.LoadDictionaryFromFile<List<string>>(_prefixPath, Helpers.JsonHelpers.SerializerOptions);
+                _prefixes = JsonLoader.LoadDictionaryFromFile<List<string>>(Assembly.GetExecutingAssembly(), _prefixPath, Helpers.JsonHelpers.SerializerOptions);
             }
 
             return _prefixes;

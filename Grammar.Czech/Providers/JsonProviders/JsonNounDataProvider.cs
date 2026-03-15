@@ -1,11 +1,13 @@
 ﻿using Grammar.Core.Helpers;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
+using System.Reflection;
 
 namespace Grammar.Czech.Providers.JsonProviders
 {
     public class JsonNounDataProvider : INounDataProvider
     {
+        private readonly Assembly _assembly = Assembly.GetExecutingAssembly();
         private readonly string _patternPath;
         private readonly string _irregularPath;
         private readonly string _properNamesPath;
@@ -13,18 +15,18 @@ namespace Grammar.Czech.Providers.JsonProviders
         private Dictionary<string, NounPattern> _irregulars;
         private Dictionary<string, NounPattern> _properNames;
 
-        public JsonNounDataProvider(string dataPath)
+        public JsonNounDataProvider()
         {
-            this._patternPath = Path.Combine(dataPath, "substantive_patterns.json");
-            this._irregularPath = Path.Combine(dataPath, "substantive_irregular.json");
-            this._properNamesPath = Path.Combine(dataPath, "substantive_proper.json");
+            this._patternPath = "Data.Nouns.patterns";
+            this._irregularPath = "Data.Nouns.irregulars";
+            this._properNamesPath = "Data.Nouns.propers";
         }
 
         public Dictionary<string, NounPattern> GetPatterns()
         {
             if (_patterns == null)
             {
-                var patterns = JsonLoader.LoadDictionaryFromFile<NounPattern>(_patternPath, Helpers.JsonHelpers.SerializerOptions);
+                var patterns = JsonLoader.LoadDictionaryFromFile<NounPattern>(_assembly, _patternPath, Helpers.JsonHelpers.SerializerOptions);
 
                 foreach (var kvp in patterns.Where(pattern => !string.IsNullOrEmpty(pattern.Value.InheritsFrom)))
                 {
@@ -61,7 +63,7 @@ namespace Grammar.Czech.Providers.JsonProviders
         {
             if (_irregulars == null)
             {
-                _irregulars = JsonLoader.LoadDictionaryFromFile<NounPattern>(_irregularPath, Helpers.JsonHelpers.SerializerOptions);
+                _irregulars = JsonLoader.LoadDictionaryFromFile<NounPattern>(_assembly, _irregularPath, Helpers.JsonHelpers.SerializerOptions);
             }
 
             return _irregulars;
@@ -71,7 +73,7 @@ namespace Grammar.Czech.Providers.JsonProviders
         {
             if (_properNames == null)
             {
-                _properNames = JsonLoader.LoadDictionaryFromFile<NounPattern>(_properNamesPath, Helpers.JsonHelpers.SerializerOptions);
+                _properNames = JsonLoader.LoadDictionaryFromFile<NounPattern>(_assembly, _properNamesPath, Helpers.JsonHelpers.SerializerOptions);
             }
 
             return _properNames;

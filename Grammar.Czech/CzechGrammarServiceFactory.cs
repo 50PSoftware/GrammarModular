@@ -5,6 +5,7 @@ using Grammar.Czech.Providers;
 using Grammar.Czech.Providers.JsonProviders;
 using Grammar.Czech.Services;
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 
 namespace Grammar.Czech
 {
@@ -16,16 +17,17 @@ namespace Grammar.Czech
         /// <param name="services">Service collection (např. z Program.cs).</param>
         /// <param name="dataPath">Cesta ke složce s daty (např. "Data/").</param>
         /// <returns>ServiceCollection s přidanými službami.</returns>
-        public static IServiceCollection AddCzechGrammarServices(this IServiceCollection services, string dataPath)
+        public static IServiceCollection AddCzechGrammarServices(this IServiceCollection services)
         {
+
             // Providers
-            services.AddSingleton<IVerbDataProvider>(new JsonVerbDataProvider(dataPath));
-            services.AddSingleton<INounDataProvider>(new JsonNounDataProvider(dataPath));
-            services.AddSingleton<IAdjectiveDataProvider>(new JsonAdjectiveDataProvider(dataPath));
-            services.AddSingleton<IPrefixDataProvider>(new JsonPrefixDataProvider(dataPath));
-            services.AddSingleton<IParticleDataProvider>(new JsonParticlesDataProvider(dataPath));
-            services.AddSingleton<IPrepositionDataProvider>(new JsonPrepositionsDataProvider(dataPath));
-            services.AddSingleton<IPronounDataProvider>(new JsonPronounDataProvider(dataPath));
+            services.AddSingleton<IVerbDataProvider>(new JsonVerbDataProvider());
+            services.AddSingleton<INounDataProvider>(new JsonNounDataProvider());
+            services.AddSingleton<IAdjectiveDataProvider>(new JsonAdjectiveDataProvider());
+            services.AddSingleton<IPrefixDataProvider>(new JsonPrefixDataProvider());
+            services.AddSingleton<IParticleDataProvider>(new JsonParticlesDataProvider());
+            services.AddSingleton<IPrepositionDataProvider>(new JsonPrepositionsDataProvider());
+            services.AddSingleton<IPronounDataProvider>(new JsonPronounDataProvider());
 
             // Services
             services.AddSingleton<IPhonemeRegistry, CzechPhonemeRegistry>();

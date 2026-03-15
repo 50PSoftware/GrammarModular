@@ -1,9 +1,28 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <OutputType>Library</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <PackageId>50PSoftware.GrammarModular.Core</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Vojtěch Pchálek</Authors>
+    <Company>50PSoftware</Company>
+    <Description>Core abstractions for Grammar Modular, language-agnostic interfaces and base types.</Description>
+    <PackageTags>czech;nlp;morphology;linguistics;core</PackageTags>
+    <RepositoryUrl>https://github.com/50PSoftware/GrammarModular</RepositoryUrl>
+
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <IsPublishable>False</IsPublishable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <IsPublishable>False</IsPublishable>
   </PropertyGroup>
 
 </Project>

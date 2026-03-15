@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Grammar.Czech\Grammar.Czech.csproj" />
+    <!--<ProjectReference Include="..\Grammar.Core\Grammar.Core.csproj" />-->
   </ItemGroup>
 
   <ItemGroup>

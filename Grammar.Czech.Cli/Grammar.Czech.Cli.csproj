@@ -23,12 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Grammar.Czech\Grammar.Czech.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="appsettings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <!--<ProjectReference Include="..\Grammar.Core\Grammar.Core.csproj" />-->
   </ItemGroup>
 
 </Project>

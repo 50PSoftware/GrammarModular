@@ -1,9 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <OutputType>Library</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <PackageId>50PSoftware.GrammarModular.Czech</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Vojtěch Pchálek</Authors>
+    <Company>50PSoftware</Company>
+    <Description>Czech morphologial generator for .NET</Description>
+    <PackageTags>czech;nlp;morphology;linguistics</PackageTags>
+    <RepositoryUrl>https://github.com/50PSoftware/GrammarModular</RepositoryUrl>
+    
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,6 +24,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Grammar.Core\Grammar.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Data\**\*.json"/>
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>

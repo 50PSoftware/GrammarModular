@@ -9,9 +9,9 @@ namespace Grammar.Czech.Providers.JsonProviders
         private readonly string _particlePath;
         private ParticlesData _data;
 
-        public JsonParticlesDataProvider(string dataPath)
+        public JsonParticlesDataProvider()
         {
-            this._particlePath = Path.Combine(dataPath, "particles.json");
+            this._particlePath = "Data.particles";
         }
 
         public ParticlesData GetParticles()

@@ -1,6 +1,7 @@
 ﻿using Grammar.Core.Helpers;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
+using System.Reflection;
 
 namespace Grammar.Czech.Providers.JsonProviders
 {
@@ -9,16 +10,16 @@ namespace Grammar.Czech.Providers.JsonProviders
         private readonly string _patternPath;
         private Dictionary<string, AdjectivePattern> _patterns;
 
-        public JsonAdjectiveDataProvider(string dataPath)
+        public JsonAdjectiveDataProvider()
         {
-            this._patternPath = Path.Combine(dataPath, "adjective_patterns.json");
+            this._patternPath = "Data.Adjectives.patterns";
         }
 
         public Dictionary<string, AdjectivePattern> GetPatterns()
         {
             if (_patterns == null)
             {
-                _patterns = JsonLoader.LoadDictionaryFromFile<AdjectivePattern>(_patternPath, Helpers.JsonHelpers.SerializerOptions);
+                _patterns = JsonLoader.LoadDictionaryFromFile<AdjectivePattern>(Assembly.GetExecutingAssembly(), _patternPath, Helpers.JsonHelpers.SerializerOptions);
             }
 
             return _patterns;

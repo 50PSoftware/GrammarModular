@@ -1,0 +1,82 @@
+{
+  "possessive-muj": {
+    "slots": {
+      "sg.m.anim": {
+        "Nominative": "můj",
+        "Genitive": "mého",
+        "Dative": "mému",
+        "Accusative": "mého",
+        "Locative": "mém",
+        "Instrumental": "mým"
+      },
+      "sg.m.inan": {
+        "Nominative": "můj",
+        "Genitive": "mého",
+        "Dative": "mému",
+        "Accusative": "můj",
+        "Locative": "mém",
+        "Instrumental": "mým"
+      },
+      "sg.f": {
+        "Nominative": "má",
+        "Genitive": "mé",
+        "Dative": "mé",
+        "Accusative": "mou",
+        "Locative": "mé",
+        "Instrumental": "mou"
+      },
+      "sg.n": {
+        "Nominative": "mé",
+        "Genitive": "mého",
+        "Dative": "mému",
+        "Accusative": "mé",
+        "Locative": "mém",
+        "Instrumental": "mým"
+      }
+    }
+  },
+  "demonstrative-ten": {
+    "slots": {
+      "sg.m.anim": {
+        "Nominative": "ten",
+        "Genitive": "toho",
+        "Dative": "tomu",
+        "Accusative": "toho",
+        "Locative": "tom",
+        "Instrumental": "tím"
+      },
+      "sg.f": {
+        "Nominative": "ta",
+        "Genitive": "té",
+        "Dative": "té",
+        "Accusative": "tu",
+        "Locative": "té",
+        "Instrumental": "tou"
+      },
+      "sg.n": {
+        "Nominative": "to",
+        "Genitive": "toho",
+        "Dative": "tomu",
+        "Accusative": "to",
+        "Locative": "tom",
+        "Instrumental": "tím"
+      },
+      "pl.m.anim": {
+        "Nominative": "ti",
+        "Genitive": "těch",
+        "Dative": "těm",
+        "Accusative": "ty",
+        "Locative": "těch",
+        "Instrumental": "těmi"
+      },
+      "pl.other": {
+        "Nominative": "ty",
+        "Genitive": "těch",
+        "Dative": "těm",
+        "Accusative": "ty",
+        "Locative": "těch",
+        "Instrumental": "těmi"
+      }
+    }
+  }
+}

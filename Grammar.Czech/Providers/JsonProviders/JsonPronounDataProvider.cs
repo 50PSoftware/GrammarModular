@@ -1,6 +1,7 @@
 ﻿using Grammar.Core.Helpers;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
+using System.Reflection;
 
 namespace Grammar.Czech.Providers.JsonProviders
 {
@@ -10,17 +11,17 @@ namespace Grammar.Czech.Providers.JsonProviders
         private readonly string _paradigmsPath;
         private Dictionary<string, PronounData>? _data;
 
-        public JsonPronounDataProvider(string dataPath)
+        public JsonPronounDataProvider()
         {
-            this._pronounPath = Path.Combine(dataPath, "pronouns.json");
-            this._paradigmsPath = Path.Combine(dataPath, "pronouns_paradigms.json");
+            this._pronounPath = "Data.Pronouns.patterns";
+            this._paradigmsPath = "Data.Pronouns.paradigms";
         }
 
         public Dictionary<string, PronounData> GetPronouns()
         {
             if (_data == null)
             {
-                _data = JsonLoader.LoadDictionaryFromFile<PronounData>(_pronounPath, Helpers.JsonHelpers.SerializerOptions)!;
+                _data = JsonLoader.LoadDictionaryFromFile<PronounData>(Assembly.GetExecutingAssembly(), _pronounPath, Helpers.JsonHelpers.SerializerOptions)!;
             }
 
             return _data;
