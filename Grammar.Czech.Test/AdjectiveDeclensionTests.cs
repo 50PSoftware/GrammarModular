@@ -28,7 +28,7 @@ namespace Grammar.Czech.Test
 
         [TestMethod]
         [AdjectiveComparativeTest]
-        public void GetForm_ComparativeNomSg_Returns(string lemma, string expectation)
+        public void GetForm_ComparativeNomSg_Returns(string lemma, string expected)
         {
             var request = new CzechWordRequest
             {
@@ -43,7 +43,65 @@ namespace Grammar.Czech.Test
             };
 
             var result = adjectiveDeclensionService.GetForm(request);
-            Assert.AreEqual(expectation, result.Form);
+            Assert.AreEqual(expected, result.Form);
+        }
+
+        [TestMethod]
+        [AdjectiveSupletiveComparativeTest]
+        public void GetForm_SupletiveComparativeNomSg_Returns(string lemma, string expected)
+        {
+            var request = new CzechWordRequest
+            {
+                Lemma = lemma,
+                WordCategory = WordCategory.Adjective,
+                Case = Case.Nominative,
+                Number = Number.Singular,
+                Gender = Gender.Masculine,
+                Pattern = "mladý",
+                Degree = Degree.Comparative,
+                IsAnimate = true
+            };
+
+            var result = adjectiveDeclensionService.GetForm(request);
+            Assert.AreEqual(expected, result.Form);
+        }
+
+        [TestMethod]
+        [AdjectiveSuperlativeTest]
+        public void GetForm_SuperlativeNomSg_Returns(string lemma, string expected)
+        {
+            var request = new CzechWordRequest
+            {
+                Lemma = lemma,
+                WordCategory = WordCategory.Adjective,
+                Case = Case.Nominative,
+                Number = Number.Singular,
+                Gender = Gender.Masculine,
+                Pattern = "mladý",
+                Degree = Degree.Superlative,
+                IsAnimate = true
+            };
+
+            var result = adjectiveDeclensionService.GetForm(request);
+            Assert.AreEqual(expected, result.Form);
+        }
+
+        private class AdjectiveSupletiveComparativeTestAttribute : AdjectiveDegreesTestAttribute
+        {
+            public override IEnumerable<object?[]> GetData(MethodInfo methodInfo)
+            {
+                var list = new List<object[]>
+                {
+                    new [] {"dobrý", "lepší"},
+                    new [] {"malý", "menší"},
+                    new [] {"velký","větší"},
+                    new [] {"zlý", "horší"},
+                    new [] {"špatný", "horší"},
+                    new [] {"dlouhý", "delší"},
+                };
+
+                return list;
+            }
         }
 
         private class AdjectiveComparativeTestAttribute : AdjectiveDegreesTestAttribute
@@ -52,14 +110,16 @@ namespace Grammar.Czech.Test
             {
                 var list = new List<object[]>()
                 {
-                    new [] {"mladý", "mladší" },
-                    new [] { "hezký", "hezčí" },
-                    new [] { "starý", "starší" },
-                    new [] { "drahý", "dražší" },
-                    new [] { "tichý", "tišší" },
-                    new [] { "pěkný", "pěknější" },
-                    new [] { "jemný", "jemnější" },
-                    new [] { "zdravý", "zdravější" }
+                    new[] { "mladý", "mladší" },
+                    new[] { "hezký", "hezčí" },
+                    new[] { "starý", "starší" },
+                    new[] { "drahý", "dražší" },
+                    new[] { "tichý", "tišší" },
+                    new[] { "pěkný", "pěknější" },
+                    new[] { "jemný", "jemnější" },
+                    new[] { "zdravý", "zdravější" },
+                    new[] { "teplý", "teplejší" },
+                    new[] { "tenký", "tenčí"},
                 };
 
                 return list;
@@ -75,38 +135,34 @@ namespace Grammar.Czech.Test
 
             public override string? GetDisplayName(MethodInfo methodInfo, object?[]? data)
             {
-                if (data is not null)
+                if (data is not null && data.Length >= 2)
                 {
-                    var sb = new StringBuilder();
-                    string insert1 = string.Empty;
-                    string insertAfterReturns = string.Empty;
-                    foreach (var d in data)
+                    string insert1 = data[0]?.ToString() ?? string.Empty;
+                    if (!string.IsNullOrEmpty(insert1))
                     {
-                        sb.AppendFormat("{0}", string.Join(d.ToString()));
-                        if (d is object[] stringArray)
-                        {
-                            insert1 = (string)stringArray[0];
-                            insertAfterReturns = (string)stringArray[1];
-                        }
+                        insert1 = char.ToUpperInvariant(insert1[0]) + insert1[1..];
+                    }
+
+                    string insertAfterReturns = data[1]?.ToString() ?? string.Empty;
+                    if (!string.IsNullOrEmpty(insertAfterReturns))
+                    {
+                        insertAfterReturns = char.ToUpperInvariant(insertAfterReturns[0]) + insertAfterReturns[1..];
                     }
 
                     var methodParts = methodInfo.Name.Split('_');
                     methodParts[1] = methodParts[1].Insert(0, insert1);
 
                     var lastIndex = methodParts.Length - 1;
-                    var lastSegmentLength = methodParts[lastIndex].Length;
-                    methodParts[lastIndex] = methodParts[lastIndex].Insert(lastSegmentLength, insertAfterReturns);
+                    methodParts[lastIndex] += insertAfterReturns;
 
-                    var methodName = string.Join('_', methodParts);
-
-                    return string.Format("{0}({1})", methodName, sb.ToString());
+                    return $"{string.Join('_', methodParts)}()";
                 }
 
                 return methodInfo.Name;
             }
         }
 
-        private class AdjectiveSuperlativeTestAttribue : AdjectiveDegreesTestAttribute
+        private class AdjectiveSuperlativeTestAttribute : AdjectiveDegreesTestAttribute
         {
             public override IEnumerable<object?[]> GetData(MethodInfo methodInfo)
             {
@@ -115,6 +171,8 @@ namespace Grammar.Czech.Test
                     new [] { "mladý", "nejmladší" },
                     new [] { "starý", "nejstarší" },
                     new [] { "hezký", "nejhezčí" },
+                    new [] { "malý", "nejmenší" },
+                    new [] { "tenký", "nejtenčí" }
                 };
 
                 return list;

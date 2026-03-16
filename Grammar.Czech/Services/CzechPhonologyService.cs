@@ -110,5 +110,18 @@ namespace Grammar.Czech.Services
             var result = czechP?.PalatalizationTargets?.GetValueOrDefault(context) ?? phoneme?.PalatalizeTo;
             return result is not null ? stem[..^1] + result : stem;
         }
+
+        public string ApplySoftConsonantBeforeE(string stem)
+        {
+            var last = stem[^1..];
+            var phoneme = _registry.Get(last);
+
+            if (phoneme?.PalatalizeTo is not null)
+            {
+                return stem + "ě";
+            }
+
+            return stem + "e";
+        }
     }
 }

@@ -59,12 +59,14 @@ namespace Grammar.Czech.Services
 
             if (word.Degree != null && word.Degree != Degree.Positive)
             {
-                if (_supletives.ContainsKey(word.Lemma))
+                if (_supletives.TryGetValue(word.Lemma, out var supletiveStem))
                 {
-                    stem = _supletives.GetValueOrDefault(word.Lemma);
+                    stem = supletiveStem + "š";
                 }
-
-                stem = BuildComparativeStem(stem);
+                else
+                {
+                    stem = BuildComparativeStem(stem);
+                }
             }
 
             var supPrefix = (word.Degree == Degree.Superlative) ? "nej" : string.Empty;
@@ -89,13 +91,23 @@ namespace Grammar.Czech.Services
                 return baseStem.EndsWith("k") ? softened : softened + "š";
             }
 
-            var group1 = new[] { "d", "t", "n", "s", "z", "r", "l" };
+            if (baseStem.EndsWith("n"))
+            {
+                return czechPhonologyService.ApplySoftConsonantBeforeE(baseStem) + "jš";
+            }
+
+            var group1 = new[] { "d", "t", "s", "z", "r" };
             if (group1.Any(s => baseStem.EndsWith(s) && !MorphologyHelper.EndsWithTwoConsonants(baseStem)))
             {
                 return baseStem + "š";
             }
 
-            return baseStem + "ejš";
+            if (baseStem.EndsWith("l"))
+            {
+                return baseStem + "ejš";
+            }
+
+            return baseStem + "ějš";
         }
 
         private static readonly Dictionary<string, string> _supletives = new()

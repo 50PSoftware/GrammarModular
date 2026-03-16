@@ -196,12 +196,20 @@
                 IsAnimate = true,
             };
 
+            var someoneRequest = new CzechWordRequest
+            {
+                Lemma = "někdo",
+                WordCategory = WordCategory.Pronoun,
+                Case = Case.Genitive,
+            };
+
             PrintPronounForms(engine, meRequest);
             PrintPronounForms(engine, sheRequest);
             PrintPronounForms(engine, theyRequest);
             PrintPronounForms(engine, myRequest);
             Console.WriteLine("{0} -> {1}", tenRequest.Lemma, engine.GetForm(tenRequest).Form);
             Console.WriteLine("{0} -> {1}", mujRequest.Lemma, engine.GetForm(mujRequest).Form);
+            Console.WriteLine("{0} -> {1}", someoneRequest.Lemma, engine.GetForm(someoneRequest).Form);
         }
 
         private static void PrintWordInfo(CzechWordRequest request)
