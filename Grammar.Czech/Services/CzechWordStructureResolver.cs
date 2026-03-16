@@ -87,6 +87,10 @@ namespace Grammar.Czech.Services
 
         private string ExtractNounRoot(string lemma, CzechWordRequest request)
         {
+            // vzor píseň
+            if (lemma.EndsWith("eň"))
+                return lemma[..^2] + "n";
+
             string root;
 
             if (lemma.Length > 1 && !MorphologyHelper.IsConsonant(lemma[^1]))
@@ -100,12 +104,18 @@ namespace Grammar.Czech.Services
                 root = lemma;
             }
 
-            if (request.Gender == Gender.Masculine &&
+            var hasMobileVowel = MorphologyHelper.EndsWithVowelConsonantVowelConsonant(lemma);
+
+            if (hasMobileVowel && !(request.Case == Case.Nominative && request.Number == Number.Singular))
+            {
+                root = phonologyService.RemoveMobileVowel(root, true);
+            }
+            else if (request.Gender == Gender.Masculine &&
                 !(request.Case == Case.Nominative &&
                 request.Number == Number.Singular))
             {
-                var hasMobileVowel = nounDataProvider.GetIrregulars().TryGetValue(request.Lemma.ToLower(), out var irregular) && irregular.HasMobileVowel;
-                root = phonologyService.RemoveMobileVowel(root, hasMobileVowel);
+                var hasMobileVowelIrregular = nounDataProvider.GetIrregulars().TryGetValue(request.Lemma.ToLower(), out var irregular) && irregular.HasMobileVowel;
+                root = phonologyService.RemoveMobileVowel(root, hasMobileVowelIrregular);
             }
 
             return root;

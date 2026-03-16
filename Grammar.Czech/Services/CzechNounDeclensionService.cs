@@ -11,17 +11,19 @@ namespace Grammar.Czech.Services
     {
         private readonly INounDataProvider dataProvider;
         private readonly IWordStructureResolver<CzechWordRequest> wordStructureResolver;
-        private readonly IPhonologyService<CzechWordRequest> phonologyService;
+        private readonly ICzechPhonologyService phonologyService;
         private readonly ISofteningRuleEvaluator<CzechWordRequest> softeningRuleEvaluator;
         private readonly IEpenthesisRuleEvaluator<CzechWordRequest> epenthesisRuleEvaluator;
+        private readonly IJotationRuleEvaluator<CzechWordRequest> jotationRuleEvaluator;
 
-        public CzechNounDeclensionService(INounDataProvider dataProvider, IWordStructureResolver<CzechWordRequest> wordStructureResolver, IPhonologyService<CzechWordRequest> phonologyService, ISofteningRuleEvaluator<CzechWordRequest> softeningRuleEvaluator, IEpenthesisRuleEvaluator<CzechWordRequest> epenthesisRuleEvaluator)
+        public CzechNounDeclensionService(INounDataProvider dataProvider, IWordStructureResolver<CzechWordRequest> wordStructureResolver, ICzechPhonologyService phonologyService, ISofteningRuleEvaluator<CzechWordRequest> softeningRuleEvaluator, IEpenthesisRuleEvaluator<CzechWordRequest> epenthesisRuleEvaluator, IJotationRuleEvaluator<CzechWordRequest> jotationRuleEvaluator)
         {
             this.dataProvider = dataProvider;
             this.wordStructureResolver = wordStructureResolver;
             this.phonologyService = phonologyService;
             this.softeningRuleEvaluator = softeningRuleEvaluator;
             this.epenthesisRuleEvaluator = epenthesisRuleEvaluator;
+            this.jotationRuleEvaluator = jotationRuleEvaluator;
         }
 
         public WordForm GetForm(CzechWordRequest word)
@@ -103,7 +105,19 @@ namespace Grammar.Czech.Services
                 stem = phonologyService.ApplySoftening(stem);
             }
 
-            return new WordForm(MorphologyHelper.ApplyFormEnding(stem, softeningRuleEvaluator.GetEndingTransformation(word) ?? ending));
+            var hasMobileVowelRemoval = MorphologyHelper.EndsWithVowelConsonantVowelConsonant(word.Lemma);
+
+            var finalEnding = softeningRuleEvaluator.GetEndingTransformation(word) ?? ending;
+            if (jotationRuleEvaluator.ShouldApplyJotation(stem, finalEnding, hasMobileVowelRemoval))
+            {
+                finalEnding = phonologyService.ApplyJotation(finalEnding);
+            }
+            else
+            {
+                finalEnding = phonologyService.ApplyEndingAfterSoftConsonant(stem, ending);
+            }
+
+            return new WordForm(MorphologyHelper.ApplyFormEnding(stem, finalEnding));
         }
 
         public (Gender, string, Number, bool) GuessGenderAndPattern(string lemma)

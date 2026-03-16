@@ -36,6 +36,7 @@ namespace Grammar.Czech
             services.AddSingleton<IWordStructureResolver<CzechWordRequest>, CzechWordStructureResolver>();
             services.AddSingleton<ISofteningRuleEvaluator<CzechWordRequest>, CzechSofteningRuleEvaluator>();
             services.AddSingleton<IEpenthesisRuleEvaluator<CzechWordRequest>, CzechEpenthesisRuleEvaluator>();
+            services.AddSingleton<IJotationRuleEvaluator<CzechWordRequest>, CzechJotationRuleEvaluator>();
             services.AddSingleton<CzechVerbConjugationService>();
             services.AddSingleton<CzechNounDeclensionService>();
             services.AddSingleton<CzechAdjectiveDeclensionService>();

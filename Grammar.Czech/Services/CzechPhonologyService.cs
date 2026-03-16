@@ -123,5 +123,28 @@ namespace Grammar.Czech.Services
 
             return stem + "e";
         }
+
+        public string ApplyJotation(string ending)
+        {
+            var normalized = ending.TrimStart('-');
+            if (normalized.EndsWith("e"))
+                return ending.Replace("e", "ě", StringComparison.Ordinal);
+
+            return ending;
+        }
+
+        public string ApplyEndingAfterSoftConsonant(string stem, string ending)
+        {
+            var normalizedEnding = ending.TrimStart('-');
+            if(!normalizedEnding.StartsWith("e"))
+                return ending;
+
+            var last = stem[^1..];
+            var phoneme = _registry.Get(last);
+            if (phoneme?.PalatalizeTo is not null)
+                return ending.Replace("e", "ě");
+
+            return ending;
+        }
     }
 }

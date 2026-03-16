@@ -8,5 +8,7 @@ namespace Grammar.Czech.Interfaces
     {
         string ApplySoftening(string stem, PalatalizationContext context);
         string ApplySoftConsonantBeforeE(string stem);
+        string ApplyJotation(string ending);
+        string ApplyEndingAfterSoftConsonant(string stem, string ending);
     }
 }
