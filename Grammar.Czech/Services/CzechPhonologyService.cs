@@ -127,13 +127,14 @@ namespace Grammar.Czech.Services
         public string ApplyJotation(string ending)
         {
             var normalized = ending.TrimStart('-');
-            if (normalized.EndsWith("e"))
-                return ending.Replace("e", "ě", StringComparison.Ordinal);
+            var dashPrefix = normalized.Length;
+            if (!normalized.StartsWith("e"))
+                return ending;
 
-            return ending;
+            return ending[..dashPrefix] + 'ě' + normalized[1..];
         }
 
-        public string ApplyEndingAfterSoftConsonant(string stem, string ending)
+        public string ApplyDTNRule(string stem, string ending)
         {
             var normalizedEnding = ending.TrimStart('-');
             if(!normalizedEnding.StartsWith("e"))
@@ -141,7 +142,7 @@ namespace Grammar.Czech.Services
 
             var last = stem[^1..];
             var phoneme = _registry.Get(last);
-            if (phoneme?.PalatalizeTo is not null && last == "n")
+            if (phoneme?.PalatalizeTo is not null)
                 return ending.Replace("e", "ě");
 
             return ending;

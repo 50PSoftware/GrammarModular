@@ -114,7 +114,7 @@ namespace Grammar.Czech.Services
             }
             else
             {
-                finalEnding = phonologyService.ApplyEndingAfterSoftConsonant(stem, ending);
+                finalEnding = phonologyService.ApplyDTNRule(stem, finalEnding);
             }
 
             return new WordForm(MorphologyHelper.ApplyFormEnding(stem, finalEnding));
