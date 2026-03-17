@@ -79,7 +79,16 @@
   },
   "kůň": {
     "inheritsFrom": "muž",
-    "stem": "kon"
+    "stem": "kon",
+    "overrides": {
+      "plural": {
+        "1": "koně",
+        "2": "koní",
+        "3": "koním",
+        "5": "koně",
+        "7": "koňmi"
+      }
+    }
   },
   "nůž": {
     "inheritsFrom": "stroj",

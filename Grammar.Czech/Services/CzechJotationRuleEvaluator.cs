@@ -19,8 +19,13 @@ namespace Grammar.Czech.Services
             this._registry = registry;
         }
 
-        public bool ShouldApplyJotation(string stem, string ending, bool hasMobileVowelRemoval)
+        public bool ShouldApplyJotation(CzechWordRequest request, string stem, string ending, bool hasMobileVowelRemoval)
         {
+            if (request.Case == Core.Enums.Case.Vocative)
+            {
+                return false;
+            }
+
             var normalizedEnding = ending.TrimStart('-');
             if (hasMobileVowelRemoval)
             {
@@ -36,7 +41,8 @@ namespace Grammar.Czech.Services
             var phoneme = _registry.Get(lastConsonant);
             
             var isLabial = phoneme?.Place == ArticulationPlace.Bilabial || (phoneme?.Place == ArticulationPlace.Labiodental && phoneme.Symbol == "v");
-            return isLabial && normalizedEnding == "e";
+            var isNasal = phoneme?.Place == ArticulationPlace.Alveolar && phoneme?.Manner == ArticulationManner.Nasal;
+            return (isLabial && normalizedEnding == "e") || (isNasal && normalizedEnding.StartsWith("e"));
         }
     }
 }

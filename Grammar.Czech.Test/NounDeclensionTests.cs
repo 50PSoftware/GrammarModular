@@ -139,6 +139,8 @@ namespace Grammar.Czech.Test
                                             "psi", "psů", "psům", "psy", "psi", "psech", "psy"}) },
                     { "dům", ("hrad", Gender.Masculine, false, new [] { "dům", "domu", "domu", "dům", "dome", "domě", "domem",
                                             "domy", "domů", "domům", "domy", "domy", "domech", "domy"}) },
+                    { "kůň", ("muž", Gender.Masculine, true, new [] { "kůň", "koně", "koni", "koně", "koni", "koni", "koněm",
+                                            "koně", "koní", "koním", "koně", "koně", "koních", "koňmi"}) }
                 };
 
                 var data = new List<object[]>();

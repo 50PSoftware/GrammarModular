@@ -110,13 +110,19 @@ namespace Grammar.Czech.Services
             var hasMobileVowelRemoval = MorphologyHelper.EndsWithVowelConsonantVowelConsonant(word.Lemma);
 
             var finalEnding = softeningRuleEvaluator.GetEndingTransformation(word, out var endingTransformationApplied) ?? ending;
-            if (jotationRuleEvaluator.ShouldApplyJotation(stem, finalEnding, hasMobileVowelRemoval))
+
+
+            if (jotationRuleEvaluator.ShouldApplyJotation(word, stem, finalEnding, hasMobileVowelRemoval))
             {
                 finalEnding = ortographyService.ApplyJotationOrthography(finalEnding);
             }
-
-            if (!endingTransformationApplied)
+            else if (!endingTransformationApplied)
             {
+                if (word.Case != Case.Vocative)
+                {
+                    finalEnding = ortographyService.ApplyDTNEndingOrthography(stem, finalEnding);
+                }
+
                 finalEnding = ortographyService.NormalizeEndingOrthography(stem, finalEnding);
             }
 

@@ -97,10 +97,9 @@ namespace Grammar.Czech.Services
             {
                 //return czechPhonologyService.ApplySoftConsonantBeforeE(baseStem) + "jš";
 
-                var softenedStem = czechPhonologyService.ApplySoftening(baseStem, PalatalizationContext.First);
                 var ortographicVowel = ortographyService.ApplyJotationOrthography("-e").TrimStart('-');
 
-                return softenedStem + ortographicVowel + "jš";
+                return baseStem + ortographicVowel + "jš";
             }
 
             var group1 = new[] { "d", "t", "s", "z", "r" };
