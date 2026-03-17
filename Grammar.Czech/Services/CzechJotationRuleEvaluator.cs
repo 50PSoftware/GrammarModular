@@ -2,11 +2,6 @@
 using Grammar.Core.Interfaces;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Grammar.Czech.Services
 {
@@ -39,7 +34,7 @@ namespace Grammar.Czech.Services
 
             var lastConsonant = stem[^1..];
             var phoneme = _registry.Get(lastConsonant);
-            
+
             var isLabial = phoneme?.Place == ArticulationPlace.Bilabial || (phoneme?.Place == ArticulationPlace.Labiodental && phoneme.Symbol == "v");
             var isNasal = phoneme?.Place == ArticulationPlace.Alveolar && phoneme?.Manner == ArticulationManner.Nasal;
             return (isLabial && normalizedEnding == "e") || (isNasal && normalizedEnding.StartsWith("e"));

@@ -5,7 +5,6 @@ using Grammar.Czech.Providers;
 using Grammar.Czech.Providers.JsonProviders;
 using Grammar.Czech.Services;
 using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
 
 namespace Grammar.Czech
 {
@@ -19,7 +18,6 @@ namespace Grammar.Czech
         /// <returns>ServiceCollection s přidanými službami.</returns>
         public static IServiceCollection AddCzechGrammarServices(this IServiceCollection services)
         {
-
             // Providers
             services.AddSingleton<IVerbDataProvider>(new JsonVerbDataProvider());
             services.AddSingleton<INounDataProvider>(new JsonNounDataProvider());

@@ -6,6 +6,7 @@ namespace Grammar.Czech.Interfaces
     public interface IPronounDataProvider
     {
         public Dictionary<string, PronounData> GetPronouns();
+
         public Dictionary<string, PronounParadigm> GetParadigms();
     }
 }

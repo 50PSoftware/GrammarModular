@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Grammar.Core.Enums
+﻿namespace Grammar.Core.Enums
 {
     /// <summary>
     /// Morfologická třída flexe — nezávislá na sémantickém typu slova.

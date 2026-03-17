@@ -1,4 +1,5 @@
 ﻿using Grammar.Core.Enums;
+
 namespace Grammar.Czech.Models
 {
     public sealed record VerbPattern

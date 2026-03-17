@@ -4,7 +4,6 @@
     using Grammar.Czech;
     using Grammar.Czech.Models;
     using Grammar.Czech.Services;
-    using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
 
     internal class Program

@@ -111,7 +111,6 @@ namespace Grammar.Czech.Services
 
             var finalEnding = softeningRuleEvaluator.GetEndingTransformation(word, out var endingTransformationApplied) ?? ending;
 
-
             if (jotationRuleEvaluator.ShouldApplyJotation(word, stem, finalEnding, hasMobileVowelRemoval))
             {
                 finalEnding = ortographyService.ApplyJotationOrthography(finalEnding);

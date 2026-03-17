@@ -1,9 +1,7 @@
-﻿using Grammar.Core.Enums.PhonologicalFeatures;
-using Grammar.Core.Interfaces;
+﻿using Grammar.Core.Interfaces;
 using Grammar.Czech.Enums.Phonology;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
-using System.ComponentModel;
 
 namespace Grammar.Czech.Services
 {

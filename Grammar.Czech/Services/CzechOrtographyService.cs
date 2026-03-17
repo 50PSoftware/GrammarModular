@@ -1,12 +1,6 @@
 ﻿using Grammar.Core.Enums.PhonologicalFeatures;
 using Grammar.Core.Interfaces;
 using Grammar.Czech.Interfaces;
-using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Grammar.Czech.Services
 {

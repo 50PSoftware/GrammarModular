@@ -145,7 +145,7 @@ namespace Grammar.Czech.Test
 
                 var data = new List<object[]>();
 
-                foreach (var (k,v) in dict)
+                foreach (var (k, v) in dict)
                 {
                     var lemma = k;
                     var pattern = v.Item1;
@@ -220,6 +220,5 @@ namespace Grammar.Czech.Test
                 return methodInfo.Name;
             }
         }
-
     }
 }
