@@ -53,7 +53,7 @@ namespace Grammar.Czech.Services
             var isBaseWordPattern = word.Lemma == word.Pattern;
 
             var numberKey = word.Number == Number.Singular ? "singular" : "plural";
-            var caseKey = ((int)word.Case).ToString();
+            var caseKey = word.Case.ToString();
 
             NounPattern? irregular = null;
 
@@ -117,11 +117,6 @@ namespace Grammar.Czech.Services
             }
             else if (!endingTransformationApplied)
             {
-                if (word.Case != Case.Vocative)
-                {
-                    finalEnding = ortographyService.ApplyDTNEndingOrthography(stem, finalEnding);
-                }
-
                 finalEnding = ortographyService.NormalizeEndingOrthography(stem, finalEnding);
             }
 

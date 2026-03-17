@@ -23,7 +23,7 @@ namespace Grammar.Czech.Test
             var wordStructureResolver = new CzechWordStructureResolver(verbDataprovider, nounDataPrvider, prefixService, phonologyService);
             var softeningEvaluator = new CzechSofteningRuleEvaluator();
             var epenthesisEvaluator = new CzechEpenthesisRuleEvaluator(registry);
-            var jotationEvaluator = new CzechJotationRuleEvaluator(registry);
+            var jotationEvaluator = new CzechJotationRuleEvaluator(registry, wordStructureResolver);
             var ortographyService = new CzechOrtographyService(registry);
 
             nounDeclensionService = new CzechNounDeclensionService(nounDataPrvider, wordStructureResolver, phonologyService, softeningEvaluator, epenthesisEvaluator, jotationEvaluator, ortographyService);
@@ -133,14 +133,43 @@ namespace Grammar.Czech.Test
                                             "studentky", "studentek", "studentkám", "studentky", "studentky", "studentkách", "studentkami"}) },
                     { "studentík", ("pán", Gender.Masculine, true, new [] {"studentík", "studentíka", "studentíkovi", "studentíka", "studentíku", "studentíkovi", "studentíkem",
                                             "studentíci", "studentíků", "studentíkům", "studentíky", "studentíci", "studentících", "studentíky" }) },
-                    {"žena", ("žena", Gender.Feminine, null, new [] {"žena", "ženy", "ženě", "ženu", "ženo", "ženě","ženou",
-                                            "ženy", "žen", "ženám", "ženy", "ženy", "ženách", "ženami"}) },
                     { "pes", ("pán", Gender.Masculine, true, new [] {"pes", "psa", "psovi", "psa", "pse","psovi", "psem",
                                             "psi", "psů", "psům", "psy", "psi", "psech", "psy"}) },
                     { "dům", ("hrad", Gender.Masculine, false, new [] { "dům", "domu", "domu", "dům", "dome", "domě", "domem",
                                             "domy", "domů", "domům", "domy", "domy", "domech", "domy"}) },
                     { "kůň", ("muž", Gender.Masculine, true, new [] { "kůň", "koně", "koni", "koně", "koni", "koni", "koněm",
-                                            "koně", "koní", "koním", "koně", "koně", "koních", "koňmi"}) }
+                                            "koně", "koní", "koním", "koně", "koně", "koních", "koňmi"}) },
+                    { "chlapec", ("muž", Gender.Masculine, true, new [] {"chlapec", "chlapce", "chlapci", "chlapce", "chlapče", "chlapci", "chlapcem",
+                                            "chlapci", "chlapců", "chlapcům", "chlapce", "chlapci", "chlapcích", "chlapci"}) },
+                    { "pán", ("pán", Gender.Masculine, true, new [] { "pán", "pána", "pánovi", "pána", "pane", "pánovi", "pánem",
+                                            "páni", "pánů", "pánům", "pány", "páni", "pánech", "pány"}) },
+                    { "hrad", ("hrad", Gender.Masculine, false, new [] {"hrad", "hradu", "hradu", "hrad", "hrade", "hradě", "hradem",
+                                            "hrady", "hradů", "hradům", "hrady", "hrady", "hradech", "hrady"}) },
+                    { "muž", ("muž", Gender.Masculine, true, new [] { "muž", "muže", "muži", "muže", "muži", "muži", "mužem",
+                                            "muži", "mužů" ,"mužům", "muže", "muži", "mužích", "muži" })},
+                    { "stroj", ("stroj", Gender.Masculine, false, new [] { "stroj", "stroje", "stroji", "stroj", "stroji", "stroji", "strojem",
+                                            "stroje", "strojů", "strojům", "stroje", "stroje", "strojích", "stroji"}) },
+                    { "předseda", ("předseda", Gender.Masculine, true, new[] {"předseda", "předsedy", "předsedovi", "předsedu", "předsedo", "předsedovi", "předsedou",
+                                            "předsedové", "předsedů", "předsedům", "předsedy", "předsedové", "předsedech", "předsedy"}) },
+                    { "soudce", ("soudce", Gender.Masculine, true, new[] { "soudce", "soudce", "soudci", "soudce", "soudče", "soudci", "soudcem",
+                                            "soudci", "soudců", "soudcům", "soudce", "soudci", "soudcích", "soudci"}) },
+                    { "žena", ("žena", Gender.Feminine, null, new [] {"žena", "ženy", "ženě", "ženu", "ženo", "ženě", "ženou",
+                                            "ženy", "žen", "ženám", "ženy", "ženy", "ženách", "ženami"}) },
+                    { "růže", ("růže", Gender.Feminine, null, new [] { "růže", "růže", "růži", "růži", "růže", "růži", "růží",
+                                            "růže", "růží", "růžím", "růže", "růže", "růžích", "růžemi"}) },
+                    { "píseň", ("píseň", Gender.Feminine, null, new [] {"píseň", "písně", "písni", "píseň", "písni", "písni", "písní",
+                                            "písně", "písní", "písním", "písně", "písně", "písních", "písněmi"}) },
+                    { "kost",("kost", Gender.Feminine, null, new [] { "kost", "kosti", "kosti", "kost", "kosti", "kosti", "kostí",
+                                            "kosti", "kostí", "kostem", "kosti", "kosti", "kostech" ,"kostmi"}) },
+                    { "město", ("město", Gender.Neuter, null, new [] {"město", "města", "městu", "město", "město", "městě", "městem",
+                                            "města", "měst", "městům", "města", "města", "městech", "městy" }) },
+                    { "moře", ("moře", Gender.Neuter, null, new [] { "moře", "moře", "moři", "moře", "moře", "moři", "mořem",
+                                            "moře", "moří", "mořím", "moře", "moře", "mořích", "moři"}) },
+                    { "kuře", ("kuře", Gender.Neuter, null, new [] {"kuře", "kuřete", "kuřeti", "kuře", "kuře", "kuřeti", "kuřetem",
+                                            "kuřata", "kuřat", "kuřatům", "kuřata", "kuřata", "kuřatech", "kuřaty"}) },
+                    { "stavení", ("stavení", Gender.Neuter, null, new [] {"stavení", "stavení", "stavení", "stavení", "stavení", "stavení", "stavením",
+                                            "stavení", "stavení", "stavením", "stavení", "stavení", "staveních", "staveními"}) }
+
                 };
 
                 var data = new List<object[]>();

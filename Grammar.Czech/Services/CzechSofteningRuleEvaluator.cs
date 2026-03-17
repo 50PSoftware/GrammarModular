@@ -15,8 +15,8 @@ namespace Grammar.Czech.Services
             new("žena", WordCategory.Noun, Number.Singular, Case.Dative, req => !req.Lemma.EndsWith("ka") && req.Lemma != "žena"),
             new("žena", WordCategory.Noun, Number.Singular, Case.Locative, req => !req.Lemma.EndsWith("ka") && req.Lemma != "žena"),
 
-            new(null, WordCategory.Noun, null, Case.Vocative,
-                req => req.Lemma?.EndsWith("ec") == true),
+            new("muž", WordCategory.Noun, Number.Singular, Case.Vocative,
+                req => req.Lemma?.EndsWith("ec") == true, EndingTransformation: "-e"),
 
             new("pán", WordCategory.Noun, Number.Plural, Case.Nominative,
     req => req.Lemma.EndsWith("k"),

@@ -1,14 +1,14 @@
 {
   "conditional": {
     "singular": {
-      "1": "bych",
-      "2": "bys",
-      "3": "by"
+      "First": "bych",
+      "Second": "bys",
+      "Third": "by"
     },
     "plural": {
-      "1": "bychom",
-      "2": "byste",
-      "3": "by"
+      "First": "bychom",
+      "Second": "byste",
+      "Third": "by"
     }
   },
   "reflexive": {

@@ -191,7 +191,7 @@ namespace Grammar.Czech.Services
 
             var wordStructure = wordStructureResolver.AnalyzeStructure(word);
             var numberKey = word.Number == Number.Singular ? "singular" : "plural";
-            var personKey = (int)word.Person;
+            var personKey = word.Person.ToString();
 
             if (word.Tense == Tense.Present && pattern.Aspect == VerbAspect.Perfective)
             {

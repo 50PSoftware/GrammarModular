@@ -3,24 +3,16 @@
     "inheritsFrom": "město",
     "overrides": {
       "singular": {
-        "6": "oku"
+        "Locative": "oku"
       },
       "plural": {
-        "1": "oči",
-        "2": "očí",
-        "3": "očím",
-        "4": "oči",
-        "5": "oči",
-        "6": "očích",
-        "7": "očima"
-      }
-    }
-  },
-  "chlapec": {
-    "inheritsFrom": "muž",
-    "overrides": {
-      "singular": {
-        "5": "-e"
+        "Nominative": "oči",
+        "Genitive": "očí",
+        "Dative": "očím",
+        "Accusative": "oči",
+        "Vocative": "oči",
+        "Locative": "očích",
+        "Instrumental": "očima"
       }
     }
   },
@@ -41,7 +33,7 @@
     "stem": "dom",
     "overrides": {
       "singular": {
-        "4": "dům"
+        "Accusative": "dům"
       }
     }
   },
@@ -82,11 +74,11 @@
     "stem": "kon",
     "overrides": {
       "plural": {
-        "1": "koně",
-        "2": "koní",
-        "3": "koním",
-        "5": "koně",
-        "7": "koňmi"
+        "Nominative": "koně",
+        "Genitive": "koní",
+        "Dative": "koním",
+        "Vocative": "koně",
+        "Instrumental": "koňmi"
       }
     }
   },

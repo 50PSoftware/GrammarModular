@@ -7,11 +7,13 @@ namespace Grammar.Czech.Services
 {
     public class CzechJotationRuleEvaluator : IJotationRuleEvaluator<CzechWordRequest>
     {
-        private readonly IPhonemeRegistry _registry;
+        private readonly IPhonemeRegistry registry;
+        private readonly IWordStructureResolver<CzechWordRequest> wordResolver;
 
-        public CzechJotationRuleEvaluator(IPhonemeRegistry registry)
+        public CzechJotationRuleEvaluator(IPhonemeRegistry registry, IWordStructureResolver<CzechWordRequest> structureResolver)
         {
-            this._registry = registry;
+            this.registry = registry;
+            this.wordResolver = structureResolver;
         }
 
         public bool ShouldApplyJotation(CzechWordRequest request, string stem, string ending, bool hasMobileVowelRemoval)
@@ -33,11 +35,25 @@ namespace Grammar.Czech.Services
             }
 
             var lastConsonant = stem[^1..];
-            var phoneme = _registry.Get(lastConsonant);
+            var phoneme = registry.Get(lastConsonant);
 
             var isLabial = phoneme?.Place == ArticulationPlace.Bilabial || (phoneme?.Place == ArticulationPlace.Labiodental && phoneme.Symbol == "v");
             var isNasal = phoneme?.Place == ArticulationPlace.Alveolar && phoneme?.Manner == ArticulationManner.Nasal;
-            return (isLabial && normalizedEnding == "e") || (isNasal && normalizedEnding.StartsWith("e"));
+            var isDTN = phoneme?.Place == ArticulationPlace.Alveolar && (phoneme?.Manner == ArticulationManner.Nasal || phoneme?.Manner == ArticulationManner.Plosive);
+            var patternRequest = new CzechWordRequest
+            {
+                Lemma = request.Pattern,
+                Case = Core.Enums.Case.Nominative,
+                Number = Core.Enums.Number.Singular,
+                Pattern = request.Pattern,
+                Gender = request.Gender,
+                IsAnimate = request.IsAnimate
+            };
+
+            var patternLastConsonant = wordResolver.AnalyzeStructure(patternRequest).Root[^1..];
+            var patternPhoneme = registry.Get(patternLastConsonant);
+            var isSoftPattern = patternPhoneme?.Place == ArticulationPlace.Palatal;
+            return isLabial && normalizedEnding == "e" || isSoftPattern && isDTN && !isLabial && normalizedEnding.StartsWith("e");
         }
     }
 }

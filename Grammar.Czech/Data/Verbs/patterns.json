@@ -2,14 +2,14 @@
   "trida1": {
     "present": {
       "singular": {
-        "1": "-u",
-        "2": "-eš",
-        "3": "-e"
+        "First": "-u",
+        "Second": "-eš",
+        "Third": "-e"
       },
       "plural": {
-        "1": "-eme",
-        "2": "-ete",
-        "3": "-ou"
+        "First": "-eme",
+        "Second": "-ete",
+        "Third": "-ou"
       }
     },
     "pastParticiple": {
@@ -44,14 +44,14 @@
   "trida2": {
     "present": {
       "singular": {
-        "1": "-nu",
-        "2": "-neš",
-        "3": "-ne"
+        "First": "-nu",
+        "Second": "-neš",
+        "Third": "-ne"
       },
       "plural": {
-        "1": "-neme",
-        "2": "-nete",
-        "3": "-nou"
+        "First": "-neme",
+        "Second": "-nete",
+        "Third": "-nou"
       }
     },
     "pastParticiple": {
@@ -86,14 +86,14 @@
   "trida3": {
     "present": {
       "singular": {
-        "1": "-ji",
-        "2": "-ješ",
-        "3": "-je"
+        "First": "-ji",
+        "Second": "-ješ",
+        "Third": "-je"
       },
       "plural": {
-        "1": "-jeme",
-        "2": "-jete",
-        "3": "-jí"
+        "First": "-jeme",
+        "Second": "-jete",
+        "Third": "-jí"
       }
     },
     "pastParticiple": {
@@ -128,14 +128,14 @@
   "trida4": {
     "present": {
       "singular": {
-        "1": "-ím",
-        "2": "-íš",
-        "3": "-í"
+        "First": "-ím",
+        "Second": "-íš",
+        "Third": "-í"
       },
       "plural": {
-        "1": "-íme",
-        "2": "-íte",
-        "3": "-í"
+        "First": "-íme",
+        "Second": "-íte",
+        "Third": "-í"
       }
     },
     "pastParticiple": {
@@ -170,14 +170,14 @@
   "trida5": {
     "present": {
       "singular": {
-        "1": "-ám",
-        "2": "-áš",
-        "3": "-á"
+        "First": "-ám",
+        "Second": "-áš",
+        "Third": "-á"
       },
       "plural": {
-        "1": "-áme",
-        "2": "-áte",
-        "3": "-ají"
+        "First": "-áme",
+        "Second": "-áte",
+        "Third": "-ají"
       }
     },
     "pastParticiple": {

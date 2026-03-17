@@ -6,38 +6,12 @@ namespace Grammar.Czech.Services
 {
     public class CzechOrtographyService : ICzechOrtographyService
     {
+
         private readonly IPhonemeRegistry _registry;
 
         public CzechOrtographyService(IPhonemeRegistry registry)
         {
             this._registry = registry;
-        }
-
-        /// <inheritdoc/>
-        public string ApplyDTNEndingOrthography(string stem, string ending)
-        {
-            if (string.IsNullOrEmpty(stem) || string.IsNullOrEmpty(ending))
-                return ending;
-
-            var normalizedEnding = ending.TrimStart('-');
-            var dashPrefix = ending.Length - normalizedEnding.Length;
-
-            // Pouze e→ě konverze
-            if (normalizedEnding != "e")
-                return ending;
-
-            var phoneme = _registry.Get(stem[^1..]);
-
-            // DTN: Alveolar + Nasal nebo Plosive (n, d, t)
-            // Grafém ě po DTN signalizuje palatalizaci: ně=[ňe], dě=[ďe], tě=[ťe]
-            var isDTN = phoneme?.Place == ArticulationPlace.Alveolar
-                && (phoneme.Manner == ArticulationManner.Nasal
-                    || phoneme.Manner == ArticulationManner.Plosive);
-
-            if (!isDTN)
-                return ending;
-
-            return ending[..dashPrefix] + 'ě' + normalizedEnding[1..];
         }
 
         /// <inheritdoc/>

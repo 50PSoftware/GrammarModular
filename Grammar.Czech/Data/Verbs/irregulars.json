@@ -12,26 +12,26 @@
     "imperativeStem": "buď",
     "present": {
       "singular": {
-        "1": "-em",
-        "2": "-i",
-        "3": "je"
+        "First": "-em",
+        "Second": "-i",
+        "Third": "je"
       },
       "plural": {
-        "1": "-me",
-        "2": "-te",
-        "3": "-ou"
+        "First": "-me",
+        "Second": "-te",
+        "Third": "-ou"
       }
     },
     "future": {
       "singular": {
-        "1": "-u",
-        "2": "-eš",
-        "3": "-e"
+        "First": "-u",
+        "Second": "-eš",
+        "Third": "-e"
       },
       "plural": {
-        "1": "-eme",
-        "2": "-ete",
-        "3": "-ou"
+        "First": "-eme",
+        "Second": "-ete",
+        "Third": "-ou"
       }
     },
     "pastParticiple": {

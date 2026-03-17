@@ -13,13 +13,5 @@
         /// (non-DTN a non-labiální konsonant).
         /// </summary>
         string NormalizeEndingOrthography(string stem, string ending);
-
-        /// <summary>
-        /// Ortografická konverze e→ě po DTN konsonantech (d, t, n).
-        /// Grafém ě po DTN signalizuje palatalizaci: ně=[ňe], dě=[ďe], tě=[ťe].
-        /// Příklad: stem="kon" + "-e" → "-ě" → "koně" ✓
-        /// Vokativ se neaplikuje — guard zajišťuje caller (ShouldApplyJotation vrátí false).
-        /// </summary>
-        string ApplyDTNEndingOrthography(string stem, string ending);
     }
 }
