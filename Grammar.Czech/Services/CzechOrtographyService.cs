@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Grammar.Czech.Services
 {
-    public class CzechOrtographyService : IOrtographyService
+    public class CzechOrtographyService : ICzechOrtographyService
     {
         private readonly IPhonemeRegistry _registry;
 
@@ -18,6 +18,20 @@ namespace Grammar.Czech.Services
         {
             this._registry = registry;
         }
+
+        /// <inheritdoc/>
+        public string ApplyJotationOrthography(string ending)
+        {
+            var normalized = ending.TrimStart('-');
+            var dashPrefix = ending.Length - normalized.Length;
+
+            if (!normalized.StartsWith('e'))
+                return ending;
+
+            return ending[..dashPrefix] + 'ě' + normalized[1..];
+        }
+
+        /// <inheritdoc/>
         public string NormalizeEndingOrthography(string stem, string ending)
         {
             if (string.IsNullOrEmpty(stem) || string.IsNullOrEmpty(ending))

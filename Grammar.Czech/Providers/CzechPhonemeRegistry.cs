@@ -77,7 +77,6 @@ namespace Grammar.Czech.Providers
             ["y"] = new Phoneme { Symbol = "y", Backness = VowelBackness.Front, Height = VowelHeight.Close, IsRounded = false, LongCounterpart = "ý" },
             ["o"] = new Phoneme { Symbol = "o", Backness = VowelBackness.Back, Height = VowelHeight.Mid, IsRounded = true, LongCounterpart = "ů" },
             ["u"] = new Phoneme { Symbol = "u", Backness = VowelBackness.Back, Height = VowelHeight.Close, IsRounded = true },
-            ["ě"] = new Phoneme { Symbol = "ě", Backness = VowelBackness.Front, Height = VowelHeight.Mid, IsRounded = false },
             ["á"] = new Phoneme { Symbol = "á", Backness = VowelBackness.Central, Height = VowelHeight.Open, IsRounded = false, ShortCounterpart = "a" },
             ["é"] = new Phoneme { Symbol = "é", Backness = VowelBackness.Front, Height = VowelHeight.Mid, IsRounded = false, ShortCounterpart = "e" },
             ["í"] = new Phoneme { Symbol = "í", Backness = VowelBackness.Front, Height = VowelHeight.Close, IsRounded = false, ShortCounterpart = "i" },
@@ -87,7 +86,9 @@ namespace Grammar.Czech.Providers
             ["ů"] = new Phoneme { Symbol = "ů", Backness = VowelBackness.Back, Height = VowelHeight.Close, IsRounded = true, ShortCounterpart = "o" },
             ["ou"] = new Phoneme { Symbol = "ou", Backness = VowelBackness.Back },
             ["eu"] = new Phoneme { Symbol = "eu", Backness = VowelBackness.Front },
-            ["au"] = new Phoneme { Symbol = "au", Backness = VowelBackness.Central }
+            ["au"] = new Phoneme { Symbol = "au", Backness = VowelBackness.Central },
+            //["ě"] = new Phoneme { Symbol = "ě", Backness = VowelBackness.Front, Height = VowelHeight.Mid, IsRounded = false },
+            ["ě"] = new Phoneme { Symbol = "ě" },
         };
 
         public IReadOnlyCollection<Phoneme> AllPhonemes => _phonemes.Values;

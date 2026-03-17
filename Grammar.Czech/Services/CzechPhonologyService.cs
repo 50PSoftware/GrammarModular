@@ -113,27 +113,17 @@ namespace Grammar.Czech.Services
             return result is not null ? stem[..^1] + result : stem;
         }
 
-        public string ApplySoftConsonantBeforeE(string stem)
-        {
-            var last = stem[^1..];
-            var phoneme = _registry.Get(last);
+        //public string ApplySoftConsonantBeforeE(string stem)
+        //{
+        //    var last = stem[^1..];
+        //    var phoneme = _registry.Get(last);
 
-            if (phoneme?.PalatalizeTo is not null)
-            {
-                return stem + "ě";
-            }
+        //    if (phoneme?.PalatalizeTo is not null)
+        //    {
+        //        return stem + "ě";
+        //    }
 
-            return stem + "e";
-        }
-
-        public string ApplyJotation(string ending)
-        {
-            var normalized = ending.TrimStart('-');
-            var dashPrefix = ending.Length - normalized.Length;
-            if (!normalized.StartsWith("e"))
-                return ending;
-
-            return ending[..dashPrefix] + 'ě' + normalized[1..];
-        }
+        //    return stem + "e";
+        //}
     }
 }

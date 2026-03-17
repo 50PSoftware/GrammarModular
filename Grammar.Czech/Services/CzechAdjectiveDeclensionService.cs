@@ -13,12 +13,14 @@ namespace Grammar.Czech.Services
         private readonly IAdjectiveDataProvider dataProvider;
         private readonly IWordStructureResolver<CzechWordRequest> wordStructureResolver;
         private readonly ICzechPhonologyService czechPhonologyService;
+        private readonly ICzechOrtographyService ortographyService;
 
-        public CzechAdjectiveDeclensionService(IAdjectiveDataProvider dataProvider, IWordStructureResolver<CzechWordRequest> wordStructureResolver, ICzechPhonologyService czechPhonologyService)
+        public CzechAdjectiveDeclensionService(IAdjectiveDataProvider dataProvider, IWordStructureResolver<CzechWordRequest> wordStructureResolver, ICzechPhonologyService czechPhonologyService, ICzechOrtographyService ortographyService)
         {
             this.dataProvider = dataProvider;
             this.wordStructureResolver = wordStructureResolver;
             this.czechPhonologyService = czechPhonologyService;
+            this.ortographyService = ortographyService;
         }
 
         public WordForm GetForm(CzechWordRequest word)
@@ -93,7 +95,12 @@ namespace Grammar.Czech.Services
 
             if (baseStem.EndsWith("n"))
             {
-                return czechPhonologyService.ApplySoftConsonantBeforeE(baseStem) + "jš";
+                //return czechPhonologyService.ApplySoftConsonantBeforeE(baseStem) + "jš";
+
+                var softenedStem = czechPhonologyService.ApplySoftening(baseStem, PalatalizationContext.First);
+                var ortographicVowel = ortographyService.ApplyJotationOrthography("-e").TrimStart('-');
+
+                return softenedStem + ortographicVowel + "jš";
             }
 
             var group1 = new[] { "d", "t", "s", "z", "r" };
