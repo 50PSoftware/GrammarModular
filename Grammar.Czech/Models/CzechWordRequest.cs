@@ -37,8 +37,8 @@ namespace Grammar.Czech.Models
         public WordCategory WordCategory { get; set; }
         public string? Pattern { get; set; }
         public string? AdditionalData { get; set; }
-        public bool IsNegative { get; set; }
+        public bool IsNegative { get; set; } = false;
         public bool? IsAnimate { get; set; }
-        public bool IsAfterPreposition { get; internal set; }
+        public bool IsAfterPreposition { get; set; } = false;
     }
 }

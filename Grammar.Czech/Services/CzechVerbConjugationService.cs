@@ -39,10 +39,10 @@ namespace Grammar.Czech.Services
             ICzechParticleService czechParticleService,
             ICzechPrefixService czechPrefixService)
         {
-            this.dataProvider          = dataProvider;
+            this.dataProvider = dataProvider;
             this.verbStructureResolver = verbStructureResolver;
-            this.czechParticleService  = czechParticleService;
-            this.czechPrefixService    = czechPrefixService;
+            this.czechParticleService = czechParticleService;
+            this.czechPrefixService = czechPrefixService;
         }
 
         // ------------------------------------------------------------------ //
@@ -81,9 +81,9 @@ namespace Grammar.Czech.Services
                 word.Pattern = mappedKey;
             }
 
-            var pattern    = ResolvePattern(word);
+            var pattern = ResolvePattern(word);
             var verbStruct = verbStructureResolver.AnalyzeVerbStructure(word);
-            var numberKey  = word.Number == Number.Singular ? "singular" : "plural";
+            var numberKey = word.Number == Number.Singular ? "singular" : "plural";
 
             if (word.Tense == null && word.Modus == Modus.Indicative)
                 throw new ArgumentException("Tense must be specified for indicative mood.");
@@ -96,11 +96,11 @@ namespace Grammar.Czech.Services
 
             return (word.Voice, word.Modus, effectiveTense) switch
             {
-                (Voice.Passive, _, _)     => BuildPassiveForm(word, pattern, verbStruct, numberKey),
+                (Voice.Passive, _, _) => BuildPassiveForm(word, pattern, verbStruct, numberKey),
                 (_, Modus.Conditional, _) => BuildConditionalForm(pattern, verbStruct, numberKey, word.Gender),
-                (_, Modus.Imperative, _)  => BuildImperativeForm(word, verbStruct),
-                (_, _, Tense.Past)        => BuildPastForm(pattern, verbStruct, numberKey, word.Gender),
-                _                         => BuildPresentFutureForm(word, pattern, verbStruct, numberKey, effectiveTense),
+                (_, Modus.Imperative, _) => BuildImperativeForm(word, verbStruct),
+                (_, _, Tense.Past) => BuildPastForm(pattern, verbStruct, numberKey, word.Gender),
+                _ => BuildPresentFutureForm(word, pattern, verbStruct, numberKey, effectiveTense),
             };
         }
 
@@ -127,11 +127,11 @@ namespace Grammar.Czech.Services
                 return null;
 
             // Pořadí je kritické — "ovat" musí předcházet "at"
-            if (lemma.EndsWith("ovat"))                                              return VerbClass.Class3;
-            if (lemma.EndsWith("it")  || lemma.EndsWith("ít")
-             || lemma.EndsWith("et")  || lemma.EndsWith("ět"))                       return VerbClass.Class4;
-            if (lemma.EndsWith("at")  || lemma.EndsWith("át"))                       return VerbClass.Class5;
-            if (lemma.EndsWith("nout"))                                              return VerbClass.Class2;
+            if (lemma.EndsWith("ovat")) return VerbClass.Class3;
+            if (lemma.EndsWith("it") || lemma.EndsWith("ít")
+             || lemma.EndsWith("et") || lemma.EndsWith("ět")) return VerbClass.Class4;
+            if (lemma.EndsWith("at") || lemma.EndsWith("át")) return VerbClass.Class5;
+            if (lemma.EndsWith("nout")) return VerbClass.Class2;
 
             // trida1 (nést, brát, péct...) nelze spolehlivě odvodit z infinitivu
             return null;
@@ -181,16 +181,16 @@ namespace Grammar.Czech.Services
         private static VerbPattern Merge(VerbPattern @base, VerbPattern irregular) =>
             @base with
             {
-                Stem              = irregular.Stem              ?? @base.Stem,
-                FutureStem        = irregular.FutureStem        ?? @base.FutureStem,
-                PresentStem       = irregular.PresentStem       ?? @base.PresentStem,
-                PastStem          = irregular.PastStem          ?? @base.PastStem,
-                PassiveStem       = irregular.PassiveStem       ?? @base.PassiveStem,
-                ImperativeStem    = irregular.ImperativeStem    ?? @base.ImperativeStem,
-                Aspect            = irregular.Aspect,
-                Present           = irregular.Present           ?? @base.Present,
-                Future            = irregular.Future            ?? @base.Future,
-                PastParticiple    = irregular.PastParticiple    ?? @base.PastParticiple,
+                Stem = irregular.Stem ?? @base.Stem,
+                FutureStem = irregular.FutureStem ?? @base.FutureStem,
+                PresentStem = irregular.PresentStem ?? @base.PresentStem,
+                PastStem = irregular.PastStem ?? @base.PastStem,
+                PassiveStem = irregular.PassiveStem ?? @base.PassiveStem,
+                ImperativeStem = irregular.ImperativeStem ?? @base.ImperativeStem,
+                Aspect = irregular.Aspect,
+                Present = irregular.Present ?? @base.Present,
+                Future = irregular.Future ?? @base.Future,
+                PastParticiple = irregular.PastParticiple ?? @base.PastParticiple,
                 PassiveParticiple = irregular.PassiveParticiple ?? @base.PassiveParticiple,
             };
 
@@ -208,7 +208,7 @@ namespace Grammar.Czech.Services
             VerbStructure verbStruct, string numberKey)
         {
             var genderKey = ResolveGenderKey(word.Gender);
-            var stem      = verbStruct.PassiveStem ?? verbStruct.PastStem;
+            var stem = verbStruct.PassiveStem ?? verbStruct.PastStem;
 
             // Heuristické úpravy kmene pasiva.
             // Jde o lexikální výjimky, které nelze pokrýt obecným pravidlem přes phoneme registry.
@@ -256,7 +256,7 @@ namespace Grammar.Czech.Services
         /// </summary>
         private WordForm BuildImperativeForm(CzechWordRequest word, VerbStructure verbStruct)
         {
-            var prefix   = verbStruct.Prefix ?? string.Empty;
+            var prefix = verbStruct.Prefix ?? string.Empty;
             var baseStem = verbStruct.ImperativeStem ?? verbStruct.PresentStem;
 
             string result = (word.Number, word.Person) switch
@@ -321,7 +321,7 @@ namespace Grammar.Czech.Services
             var tenseForms = effectiveTense switch
             {
                 Tense.Present => pattern.Present,
-                Tense.Future  => pattern.Future ?? pattern.Present,
+                Tense.Future => pattern.Future ?? pattern.Present,
                 _ => throw new InvalidOperationException(
                     $"Unsupported tense: {effectiveTense}.")
             };
@@ -330,7 +330,7 @@ namespace Grammar.Czech.Services
             var pDict = numberKey switch
             {
                 "singular" => tenseForms.Singular?.ToDictionary(),
-                "plural"   => tenseForms.Plural?.ToDictionary(),
+                "plural" => tenseForms.Plural?.ToDictionary(),
                 _ => null
             };
 
@@ -357,8 +357,8 @@ namespace Grammar.Czech.Services
         private static string ResolveGenderKey(Gender? gender) => gender switch
         {
             Gender.Masculine => "masculine",
-            Gender.Feminine  => "feminine",
-            Gender.Neuter    => "neuter",
+            Gender.Feminine => "feminine",
+            Gender.Neuter => "neuter",
             _ => throw new NotSupportedException($"Unsupported gender: {gender}.")
         };
 
