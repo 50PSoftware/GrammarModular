@@ -1,4 +1,5 @@
 using Grammar.Core.Enums;
+using Grammar.Core.Enums.PhonologicalFeatures;
 using Grammar.Core.Interfaces;
 using Grammar.Core.Models.Word;
 using Grammar.Czech.Helpers;
@@ -18,6 +19,7 @@ namespace Grammar.Czech.Services
         private readonly IVerbStructureResolver<CzechWordRequest> verbStructureResolver;
         private readonly ICzechParticleService czechParticleService;
         private readonly ICzechPrefixService czechPrefixService;
+        private readonly IPhonemeRegistry phonemeRegistry;
 
         /// <summary>
         /// Mapování <see cref="VerbClass"/> na klíče generických vzorů v patterns.json.
@@ -37,17 +39,17 @@ namespace Grammar.Czech.Services
             IVerbDataProvider dataProvider,
             IVerbStructureResolver<CzechWordRequest> verbStructureResolver,
             ICzechParticleService czechParticleService,
-            ICzechPrefixService czechPrefixService)
+            ICzechPrefixService czechPrefixService,
+            IPhonemeRegistry phonemeRegistry)
         {
-            this.dataProvider = dataProvider;
+            this.dataProvider          = dataProvider;
             this.verbStructureResolver = verbStructureResolver;
-            this.czechParticleService = czechParticleService;
-            this.czechPrefixService = czechPrefixService;
+            this.czechParticleService  = czechParticleService;
+            this.czechPrefixService    = czechPrefixService;
+            this.phonemeRegistry       = phonemeRegistry;
         }
 
-        // ------------------------------------------------------------------ //
-        //  Veřejné API                                                        //
-        // ------------------------------------------------------------------ //
+        #region Public API
 
         /// <summary>
         /// Vrátí základní morfologický tvar slovesa (bez auxiliárních sloves,
@@ -81,9 +83,9 @@ namespace Grammar.Czech.Services
                 word.Pattern = mappedKey;
             }
 
-            var pattern = ResolvePattern(word);
+            var pattern    = ResolvePattern(word);
             var verbStruct = verbStructureResolver.AnalyzeVerbStructure(word);
-            var numberKey = word.Number == Number.Singular ? "singular" : "plural";
+            var numberKey  = word.Number == Number.Singular ? "singular" : "plural";
 
             if (word.Tense == null && word.Modus == Modus.Indicative)
                 throw new ArgumentException("Tense must be specified for indicative mood.");
@@ -96,11 +98,11 @@ namespace Grammar.Czech.Services
 
             return (word.Voice, word.Modus, effectiveTense) switch
             {
-                (Voice.Passive, _, _) => BuildPassiveForm(word, pattern, verbStruct, numberKey),
+                (Voice.Passive, _, _)     => BuildPassiveForm(word, pattern, verbStruct, numberKey),
                 (_, Modus.Conditional, _) => BuildConditionalForm(pattern, verbStruct, numberKey, word.Gender),
-                (_, Modus.Imperative, _) => BuildImperativeForm(word, verbStruct),
-                (_, _, Tense.Past) => BuildPastForm(pattern, verbStruct, numberKey, word.Gender),
-                _ => BuildPresentFutureForm(word, pattern, verbStruct, numberKey, effectiveTense),
+                (_, Modus.Imperative, _)  => BuildImperativeForm(word, verbStruct),
+                (_, _, Tense.Past)        => BuildPastForm(pattern, verbStruct, numberKey, word.Gender),
+                _                         => BuildPresentFutureForm(word, pattern, verbStruct, numberKey, effectiveTense),
             };
         }
 
@@ -142,9 +144,9 @@ namespace Grammar.Czech.Services
         /// </summary>
         public string GuessVerbPattern(string lemma) => lemma.ToLower();
 
-        // ------------------------------------------------------------------ //
-        //  Pattern resolution                                                  //
-        // ------------------------------------------------------------------ //
+        #endregion Public API
+
+        #region Pattern Resolution
 
         /// <summary>
         /// Vrátí <see cref="VerbPattern"/> pro daný request.
@@ -181,22 +183,22 @@ namespace Grammar.Czech.Services
         private static VerbPattern Merge(VerbPattern @base, VerbPattern irregular) =>
             @base with
             {
-                Stem = irregular.Stem ?? @base.Stem,
-                FutureStem = irregular.FutureStem ?? @base.FutureStem,
-                PresentStem = irregular.PresentStem ?? @base.PresentStem,
-                PastStem = irregular.PastStem ?? @base.PastStem,
-                PassiveStem = irregular.PassiveStem ?? @base.PassiveStem,
-                ImperativeStem = irregular.ImperativeStem ?? @base.ImperativeStem,
-                Aspect = irregular.Aspect,
-                Present = irregular.Present ?? @base.Present,
-                Future = irregular.Future ?? @base.Future,
-                PastParticiple = irregular.PastParticiple ?? @base.PastParticiple,
+                Stem              = irregular.Stem              ?? @base.Stem,
+                FutureStem        = irregular.FutureStem        ?? @base.FutureStem,
+                PresentStem       = irregular.PresentStem       ?? @base.PresentStem,
+                PastStem          = irregular.PastStem          ?? @base.PastStem,
+                PassiveStem       = irregular.PassiveStem       ?? @base.PassiveStem,
+                ImperativeStem    = irregular.ImperativeStem    ?? @base.ImperativeStem,
+                Aspect            = irregular.Aspect,
+                Present           = irregular.Present           ?? @base.Present,
+                Future            = irregular.Future            ?? @base.Future,
+                PastParticiple    = irregular.PastParticiple    ?? @base.PastParticiple,
                 PassiveParticiple = irregular.PassiveParticiple ?? @base.PassiveParticiple,
             };
 
-        // ------------------------------------------------------------------ //
-        //  Privátní build metody                                              //
-        // ------------------------------------------------------------------ //
+        #endregion Pattern Resolution
+
+        #region Build Methods
 
         /// <summary>
         /// Sestaví tvar pasivního participia (trpný rod).
@@ -208,7 +210,7 @@ namespace Grammar.Czech.Services
             VerbStructure verbStruct, string numberKey)
         {
             var genderKey = ResolveGenderKey(word.Gender);
-            var stem = verbStruct.PassiveStem ?? verbStruct.PastStem;
+            var stem      = verbStruct.PassiveStem ?? verbStruct.PastStem;
 
             // Heuristické úpravy kmene pasiva.
             // Jde o lexikální výjimky, které nelze pokrýt obecným pravidlem přes phoneme registry.
@@ -248,28 +250,34 @@ namespace Grammar.Czech.Services
 
         /// <summary>
         /// Sestaví imperativní tvar.
-        /// <para>
-        /// Kmen: <see cref="VerbStructure.ImperativeStem"/> (explicitní z dat: buď, měj, piš...)
-        /// nebo <see cref="VerbStructure.PresentStem"/> jako fallback pro regulární slovesa.
-        /// </para>
-        /// Dvě sousední souhlásky na konci kmene → vloží epentetické <c>-i</c> (2. os. sg).
         /// </summary>
+        /// <remarks>
+        /// Výběr kmene: <see cref="VerbStructure.ImperativeStem"/> (explicitní z dat nebo
+        /// odvozený resolverem), fallback na <see cref="VerbStructure.PresentStem"/>.
+        ///
+        /// Pravidla sufixu (CzechEncy IMPERATIV):
+        /// <list type="bullet">
+        ///   <item>Dvě souhlásky na konci kmene → 2sg: +i; pl: +ěme/+ěte pokud DTN, jinak +me/+te.</item>
+        ///   <item>Jedna souhláska (před ní vokál) → 2sg: +Ø; pl: +me/+te.</item>
+        ///   <item>Vokál na konci kmene (kupuj, dělej) → 2sg: +Ø; pl: +me/+te.</item>
+        /// </list>
+        /// </remarks>
         private WordForm BuildImperativeForm(CzechWordRequest word, VerbStructure verbStruct)
         {
-            var prefix = verbStruct.Prefix ?? string.Empty;
+            var prefix   = verbStruct.Prefix ?? string.Empty;
             var baseStem = verbStruct.ImperativeStem ?? verbStruct.PresentStem;
+
+            var twoConsonants       = MorphologyHelper.EndsWithTwoConsonants(baseStem);
+            var finalConsonantIsDtn = twoConsonants && IsDtn(baseStem[^1]);
 
             string result = (word.Number, word.Person) switch
             {
-                (Number.Singular, Person.Second)
-                    when MorphologyHelper.EndsWithTwoConsonants(baseStem)
-                    => baseStem + "i",
-                (Number.Singular, Person.Second)
-                    => baseStem,
-                (Number.Plural, Person.First)
-                    => baseStem + "me",
-                (Number.Plural, Person.Second)
-                    => baseStem + "te",
+                (Number.Singular, Person.Second) when twoConsonants       => baseStem + "i",
+                (Number.Singular, Person.Second)                          => baseStem,
+                (Number.Plural,   Person.First)  when finalConsonantIsDtn => baseStem + "ěme",
+                (Number.Plural,   Person.First)                           => baseStem + "me",
+                (Number.Plural,   Person.Second) when finalConsonantIsDtn => baseStem + "ěte",
+                (Number.Plural,   Person.Second)                          => baseStem + "te",
                 _ => throw new InvalidOperationException(
                     "Imperative exists only for 2nd person (sg/pl) and 1st person plural.")
             };
@@ -321,7 +329,7 @@ namespace Grammar.Czech.Services
             var tenseForms = effectiveTense switch
             {
                 Tense.Present => pattern.Present,
-                Tense.Future => pattern.Future ?? pattern.Present,
+                Tense.Future  => pattern.Future ?? pattern.Present,
                 _ => throw new InvalidOperationException(
                     $"Unsupported tense: {effectiveTense}.")
             };
@@ -330,7 +338,7 @@ namespace Grammar.Czech.Services
             var pDict = numberKey switch
             {
                 "singular" => tenseForms.Singular?.ToDictionary(),
-                "plural" => tenseForms.Plural?.ToDictionary(),
+                "plural"   => tenseForms.Plural?.ToDictionary(),
                 _ => null
             };
 
@@ -347,9 +355,21 @@ namespace Grammar.Czech.Services
             return new WordForm(PrefixedForm(verbStruct.Prefix, stem, ending));
         }
 
-        // ------------------------------------------------------------------ //
-        //  Statické helpery                                                   //
-        // ------------------------------------------------------------------ //
+        #endregion Build Methods
+
+        #region Helpers
+
+        /// <summary>
+        /// Returns <c>true</c> when the character is a DTN consonant (Alveolar Nasal or Plosive:
+        /// d, t, n) — the context in which a following suffix <c>e</c> must be written as <c>ě</c>.
+        /// Decision is delegated to <see cref="IPhonemeRegistry"/> per project principle #2.
+        /// </summary>
+        private bool IsDtn(char c)
+        {
+            var phoneme = phonemeRegistry.Get(c);
+            return phoneme is { Place: ArticulationPlace.Alveolar }
+                && phoneme.Manner is ArticulationManner.Nasal or ArticulationManner.Plosive;
+        }
 
         /// <summary>
         /// Převede <see cref="Gender"/> na řetězcový klíč pro indexování do paradigmat.
@@ -357,8 +377,8 @@ namespace Grammar.Czech.Services
         private static string ResolveGenderKey(Gender? gender) => gender switch
         {
             Gender.Masculine => "masculine",
-            Gender.Feminine => "feminine",
-            Gender.Neuter => "neuter",
+            Gender.Feminine  => "feminine",
+            Gender.Neuter    => "neuter",
             _ => throw new NotSupportedException($"Unsupported gender: {gender}.")
         };
 
@@ -371,5 +391,7 @@ namespace Grammar.Czech.Services
             var full = string.IsNullOrEmpty(prefix) ? stem : prefix + stem;
             return MorphologyHelper.ApplyFormEnding(full, ending);
         }
+
+        #endregion Helpers
     }
 }

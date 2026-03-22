@@ -1,4 +1,4 @@
-﻿using Grammar.Core.Enums;
+using Grammar.Core.Enums;
 using Grammar.Core.Interfaces;
 using Grammar.Core.Models.Word;
 using Grammar.Czech.Helpers;
@@ -31,6 +31,8 @@ namespace Grammar.Czech.Services
             };
         }
 
+        #region Structure Analysis
+
         public WordStructure AnalyzeStructure(CzechWordRequest wordRequest)
         {
             ValidateRequest(wordRequest);
@@ -57,6 +59,8 @@ namespace Grammar.Czech.Services
                 throw new ArgumentException("Pattern cannost be empty.", nameof(wordRequest));
             }
         }
+
+        #endregion Structure Analysis
 
         #region Noun
 
@@ -172,8 +176,6 @@ namespace Grammar.Czech.Services
                 $"Add it to irregulars.json or use a trida1–trida5 class pattern.");
         }
 
-        // --- Privátní pomocné metody ---
-
         private VerbStructure BuildFromExplicitStems(string? prefix, VerbPattern pattern) =>
             new()
             {
@@ -199,20 +201,26 @@ namespace Grammar.Czech.Services
             };
         }
 
-        // trida5: dělat → PresentStem: děl, PastStem: děla
-        // Koncovky: -ám, -áš, -á | past: -l
-        // "děl" + "ám" = "dělám" ✓ | "děla" + "l" = "dělal" ✓
+        // trida5: dělat → PresentStem: děl, PastStem: děla, ImperativeStem: dělej
+        // Koncovky: -ám, -áš, -á | past: -l | imp: -Ø (2sg), -me (1pl), -te (2pl)
+        // "děl"   + "ám"  = "dělám"  ✓
+        // "děla"  + "l"   = "dělal"  ✓
+        // "dělej" + ""    = "dělej"  ✓
         private VerbStructure DeriveTrida5(string? prefix, string lemma, VerbAspect aspect)
         {
             if (lemma.EndsWith("at") || lemma.EndsWith("át"))
+            {
+                var presentStem = lemma[..^2];  // dělat → děl
                 return new()
                 {
-                    Prefix = prefix,
-                    PresentStem = lemma[..^2],   // dělat → děl
-                    PastStem = lemma[..^1],   // dělat → děla
-                    PassiveStem = lemma[..^1],   // děla + -n = dělan
-                    Aspect = aspect
+                    Prefix         = prefix,
+                    PresentStem    = presentStem,
+                    PastStem       = lemma[..^1],            // dělat → děla
+                    PassiveStem    = lemma[..^1],            // děla  + -n = dělan
+                    ImperativeStem = presentStem + "ej",     // děl   + ej = dělej
+                    Aspect         = aspect
                 };
+            }
 
             return UnknownInfinitiveFallback(prefix, lemma, aspect);
         }
@@ -222,61 +230,75 @@ namespace Grammar.Czech.Services
         // Koncovky: -ím, -íš, -í | past: -l
         // "pros" + "ím" = "prosím" ✓ | "prosi" + "l" = "prosil" ✓
         // "trp"  + "ím" = "trpím"  ✓ | "trpě"  + "l" = "trpěl"  ✓
+        //
+        // Imperativ trida4: PresentStem končí na jednu souhlásku → suffix -Ø
+        // "pros" + ""  = "pros!"  ✓ | "trp" + "" = "trp!" ✓
+        // ImperativeStem se nestaví — BuildImperativeForm použije PresentStem jako fallback.
         private VerbStructure DeriveTrida4(string? prefix, string lemma, VerbAspect aspect)
         {
             if (lemma.EndsWith("it") || lemma.EndsWith("ít") ||
                 lemma.EndsWith("et") || lemma.EndsWith("ět"))
                 return new()
                 {
-                    Prefix = prefix,
+                    Prefix      = prefix,
                     PresentStem = lemma[..^2],   // prosit → pros, trpět → trp
-                    PastStem = lemma[..^1],   // prosit → prosi, trpět → trpě
-                    PassiveStem = lemma[..^1],   // prosi + -n = prosiny (dle kontextu)
-                    Aspect = aspect
+                    PastStem    = lemma[..^1],   // prosit → prosi, trpět → trpě
+                    PassiveStem = lemma[..^1],   // prosi + -n = prosin (dle kontextu)
+                    Aspect      = aspect
                 };
 
             return UnknownInfinitiveFallback(prefix, lemma, aspect);
         }
 
-        // trida3: kupovat → PresentStem: kupu, PastStem: kupova
+        // trida3: kupovat → PresentStem: kupu, PastStem: kupova, ImperativeStem: kupuj
         // Logika: "kupovat"[..^4] = "kup" + "u" = "kupu"
-        //         "kupu" + "-je" = "kupuje" ✓
-        //         "kupova" + "-l" = "kupoval" ✓
+        //         "kupu"   + "-je"  = "kupuje"  ✓
+        //         "kupova" + "-l"   = "kupoval" ✓
+        //         "kupuj"  + ""     = "kupuj!"  ✓
         // Alternace ov→uj je morfologicky systematická pro -ovat; phoneme registry ji nepokrývá.
         private VerbStructure DeriveTrida3(string? prefix, string lemma, VerbAspect aspect)
         {
             if (lemma.EndsWith("ovat"))
+            {
+                var presentStem = lemma[..^4] + "u";   // kupovat → kupu
                 return new()
                 {
-                    Prefix = prefix,
-                    PresentStem = lemma[..^4] + "u",  // kupovat → kup+u = kupu
-                    PastStem = lemma[..^1],          // kupovat → kupova
-                    PassiveStem = lemma[..^1],          // kupova + -n = kupován
-                    Aspect = aspect
+                    Prefix         = prefix,
+                    PresentStem    = presentStem,
+                    PastStem       = lemma[..^1],       // kupovat → kupova
+                    PassiveStem    = lemma[..^1],       // kupova  + -n = kupován
+                    ImperativeStem = presentStem + "j", // kupu    + j  = kupuj
+                    Aspect         = aspect
                 };
+            }
 
             return UnknownInfinitiveFallback(prefix, lemma, aspect);
         }
 
-        // trida2: tisknout → PresentStem: tisk, PastStem: tisk (best-effort)
-        // Koncovky: -nu, -neš, -ne (n je SOUČÁSTÍ KONCOVKY, ne kmene!)
-        // "tisk" + "-ne" = "tiskne" ✓ | "tisk" + "-l" = "tiskl" ✓
+        // trida2: tisknout → PresentStem: tisk, ImperativeStem: tiskn
+        // Koncovky přítomného času: -nu, -neš, -ne  (tematická "n" je SOUČÁSTÍ KONCOVKY)
+        // "tisk" + "-ne"  = "tiskne"  ✓
+        // "tisk" + "-l"   = "tiskl"   ✓  (best-effort; pohybová slovesa → irregulars.json)
+        //
+        // Imperativ: tematická "n" přechází do kmene:
+        // "tiskn" → EndsWithTwoConsonants → +i → "tiskni!" ✓
+        // "tiskn" + "ěme" = "tiskněme!" ✓  (DTN pravidlo v BuildImperativeForm)
         //
         // ⚠ KNOWN LIMITATION: PastStem je approximate.
-        //   "minout" → past "minul" ≠ "min" + "l" = "mil"
-        //   Důvod: Dvě podtřídy — momentová (tisk) vs. pohybová (min).
+        //   "minout" → past "minul" ≠ "min" + "l"
         //   Správné řešení: přidat pastStem do irregulars.json pro pohybová slovesa.
         private VerbStructure DeriveTrida2(string? prefix, string lemma, VerbAspect aspect)
         {
             if (lemma.EndsWith("nout"))
             {
-                var presentStem = lemma[..^4];  // tisknout → tisk (odebereme "nout")
+                var presentStem = lemma[..^4];  // tisknout → tisk
                 return new()
                 {
-                    Prefix = prefix,
-                    PresentStem = presentStem,
-                    PastStem = presentStem,  // best-effort; pohybová slovesa potřebují irregulars
-                    Aspect = aspect
+                    Prefix         = prefix,
+                    PresentStem    = presentStem,
+                    PastStem       = presentStem,           // best-effort
+                    ImperativeStem = presentStem + "n",     // tisk + n = tiskn
+                    Aspect         = aspect
                 };
             }
 
@@ -288,7 +310,6 @@ namespace Grammar.Czech.Services
         // Tato metoda je jen nouzový fallback pro neznámá slovesa.
         private VerbStructure DeriveTrida1(string? prefix, string lemma, VerbAspect aspect)
         {
-            // Zkus aspoň odebrat infinitivní příponu
             var stem = lemma switch
             {
                 _ when lemma.EndsWith("st") => lemma[..^2],

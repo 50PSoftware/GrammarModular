@@ -14,15 +14,15 @@ namespace Grammar.Czech.Test
         [TestInitialize]
         public void Setup()
         {
-            var verbDataProvider    = new JsonVerbDataProvider();
-            var nounDataProvider    = new JsonNounDataProvider();
-            var prefixDataProvider  = new JsonPrefixDataProvider();
+            var verbDataProvider     = new JsonVerbDataProvider();
+            var nounDataProvider     = new JsonNounDataProvider();
+            var prefixDataProvider   = new JsonPrefixDataProvider();
             var particleDataProvider = new JsonParticlesDataProvider();
 
-            var registry            = new CzechPhonemeRegistry();
-            var phonologyService    = new CzechPhonologyService(registry);
-            var prefixService       = new CzechPrefixService(prefixDataProvider);
-            var particleService     = new CzechParticleService(particleDataProvider);
+            var registry          = new CzechPhonemeRegistry();
+            var phonologyService  = new CzechPhonologyService(registry);
+            var prefixService     = new CzechPrefixService(prefixDataProvider);
+            var particleService   = new CzechParticleService(particleDataProvider);
 
             var verbStructureResolver = new CzechWordStructureResolver(
                 verbDataProvider, nounDataProvider, prefixService, phonologyService);
@@ -31,12 +31,11 @@ namespace Grammar.Czech.Test
                 verbDataProvider,
                 verbStructureResolver,
                 particleService,
-                prefixService);
+                prefixService,
+                registry);
         }
 
-        // ------------------------------------------------------------------ //
-        //  Přítomný čas                                                       //
-        // ------------------------------------------------------------------ //
+        #region Present Tense
 
         /// <summary>
         /// Pokrývá: named pattern (nese, dělá), generické třídy (trida3, trida4)
@@ -81,9 +80,9 @@ namespace Grammar.Czech.Test
             Assert.AreEqual(expected, result.Form);
         }
 
-        // ------------------------------------------------------------------ //
-        //  Minulý čas                                                         //
-        // ------------------------------------------------------------------ //
+        #endregion Present Tense
+
+        #region Past Tense
 
         /// <summary>
         /// Pokrývá: named pattern (nese, dělá), generická třída (trida4), být.
@@ -126,9 +125,9 @@ namespace Grammar.Czech.Test
             Assert.AreEqual(expected, result.Form);
         }
 
-        // ------------------------------------------------------------------ //
-        //  Budoucí čas                                                        //
-        // ------------------------------------------------------------------ //
+        #endregion Past Tense
+
+        #region Future Tense
 
         /// <summary>
         /// Pokrývá:
@@ -168,24 +167,44 @@ namespace Grammar.Czech.Test
             Assert.AreEqual(expected, result.Form);
         }
 
-        // ------------------------------------------------------------------ //
-        //  Imperativ                                                          //
-        // ------------------------------------------------------------------ //
+        #endregion Future Tense
+
+        #region Imperative
 
         /// <summary>
-        /// Pokrývá:
-        /// - být → explicitní ImperativeStem z dat ("buď")
-        /// - nést/nese → fallback na PresentStem, bez dvojité souhlásky
-        /// - tisknout/trida2 → PresentStem="tisk", EndsWithTwoConsonants → epentetické "i"
+        /// Pokrývá všechny třídy a obě čísla:
+        /// - být    → explicitní ImperativeStem z dat ("buď"); ď není DTN → buďme/buďte
+        /// - nést   → trida1/nese, fallback na PresentStem="nes"; jedna souhláska → Ø/me/te
+        /// - prosit → trida4, PresentStem="pros"; jedna souhláska → Ø/me/te
+        /// - tisknout → trida2, ImperativeStem="tiskn"; dvě souhlásky: +i / DTN n → +ěme/+ěte
+        /// - kupovat → trida3, ImperativeStem="kupuj"; vokál na konci → Ø/me/te
+        /// - dělat  → trida5, ImperativeStem="dělej"; vokál na konci → Ø/me/te
         /// </summary>
         [DataTestMethod]
-        [DataRow("být",      "být",    "Second", "Singular", "buď!",    DisplayName = "být – imp. 2sg")]
-        [DataRow("být",      "být",    "First",  "Plural",   "buďme!",  DisplayName = "být – imp. 1pl")]
-        [DataRow("být",      "být",    "Second", "Plural",   "buďte!",  DisplayName = "být – imp. 2pl")]
-        [DataRow("nést",     "nese",   "Second", "Singular", "nes!",    DisplayName = "nést – imp. 2sg")]
-        [DataRow("nést",     "nese",   "Second", "Plural",   "neste!",  DisplayName = "nést – imp. 2pl")]
-        [DataRow("tisknout", "trida2", "Second", "Singular", "tiski!",  DisplayName = "tisknout – imp. 2sg (epenthesis)")]
+        // být
+        [DataRow("být",      "být",    "Second", "Singular", "buď!",      DisplayName = "být – imp. 2sg")]
+        [DataRow("být",      "být",    "First",  "Plural",   "buďme!",    DisplayName = "být – imp. 1pl")]
+        [DataRow("být",      "být",    "Second", "Plural",   "buďte!",    DisplayName = "být – imp. 2pl")]
+        // nést (trida1 / named pattern nese)
+        [DataRow("nést",     "nese",   "Second", "Singular", "nes!",      DisplayName = "nést – imp. 2sg")]
+        [DataRow("nést",     "nese",   "First",  "Plural",   "nesme!",    DisplayName = "nést – imp. 1pl")]
+        [DataRow("nést",     "nese",   "Second", "Plural",   "neste!",    DisplayName = "nést – imp. 2pl")]
+        // prosit (trida4)
+        [DataRow("prosit",   "trida4", "Second", "Singular", "pros!",     DisplayName = "prosit – imp. 2sg")]
+        [DataRow("prosit",   "trida4", "First",  "Plural",   "prosme!",   DisplayName = "prosit – imp. 1pl")]
+        [DataRow("prosit",   "trida4", "Second", "Plural",   "proste!",   DisplayName = "prosit – imp. 2pl")]
+        // tisknout (trida2) — dvě souhlásky, finální n je DTN
+        [DataRow("tisknout", "trida2", "Second", "Singular", "tiskni!",   DisplayName = "tisknout – imp. 2sg")]
+        [DataRow("tisknout", "trida2", "First",  "Plural",   "tiskněme!", DisplayName = "tisknout – imp. 1pl")]
         [DataRow("tisknout", "trida2", "Second", "Plural",   "tiskněte!", DisplayName = "tisknout – imp. 2pl")]
+        // kupovat (trida3) — ImperativeStem="kupuj", končí vokálem
+        [DataRow("kupovat",  "trida3", "Second", "Singular", "kupuj!",    DisplayName = "kupovat – imp. 2sg")]
+        [DataRow("kupovat",  "trida3", "First",  "Plural",   "kupujme!",  DisplayName = "kupovat – imp. 1pl")]
+        [DataRow("kupovat",  "trida3", "Second", "Plural",   "kupujte!",  DisplayName = "kupovat – imp. 2pl")]
+        // dělat (trida5) — ImperativeStem="dělej", končí vokálem
+        [DataRow("dělat",    "dělá",   "Second", "Singular", "dělej!",    DisplayName = "dělat – imp. 2sg")]
+        [DataRow("dělat",    "dělá",   "First",  "Plural",   "dělejme!",  DisplayName = "dělat – imp. 1pl")]
+        [DataRow("dělat",    "dělá",   "Second", "Plural",   "dělejte!",  DisplayName = "dělat – imp. 2pl")]
         public void GetBasicForm_Imperative_ReturnsCorrectForm(
             string lemma, string pattern, string person, string number, string expected)
         {
@@ -204,5 +223,7 @@ namespace Grammar.Czech.Test
 
             Assert.AreEqual(expected, result.Form);
         }
+
+        #endregion Imperative
     }
 }
