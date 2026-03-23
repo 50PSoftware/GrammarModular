@@ -26,6 +26,8 @@ namespace Grammar.Czech.Services
             if (request.WordCategory == WordCategory.Verb)
             {
                 var verbForm = morphologyEngine.GetBasicForm(request).Form;
+                if (request.Modus == Modus.Imperative) return new WordForm(verbForm);
+
                 if (request.Aspect == VerbAspect.Imperfective && request.Tense == Tense.Future)
                 {
                     verbForm = verbPhraseBuilderService.BuildSynteticFuturePhrase(verbForm, request.Number, request.Person, request.Modus, request.Gender, request.IsNegative);
