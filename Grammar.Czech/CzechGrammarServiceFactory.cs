@@ -26,6 +26,9 @@ namespace Grammar.Czech
             services.AddSingleton<IParticleDataProvider>(new JsonParticlesDataProvider());
             services.AddSingleton<IPrepositionDataProvider>(new JsonPrepositionsDataProvider());
             services.AddSingleton<IPronounDataProvider>(new JsonPronounDataProvider());
+            services.AddSingleton<ICzechRootProvider, JsonRootProvider>();
+            services.AddSingleton<IRootProvider>(sp => sp.GetRequiredService<ICzechRootProvider>());
+            services.AddSingleton<IValencyProvider, JsonValencyProvider>();
 
             // Services
             services.AddSingleton<IPhonemeRegistry, CzechPhonemeRegistry>();
