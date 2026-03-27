@@ -20,7 +20,8 @@ namespace Grammar.Czech.Test
             var prefixService = new CzechPrefixService(new JsonPrefixDataProvider());
             var registry = new CzechPhonemeRegistry();
             var phonologyService = new CzechPhonologyService(registry);
-            var wordStructureResolver = new CzechWordStructureResolver(verbDataProvider, nounDataProvider, prefixService, phonologyService);
+            var rootProvider = new JsonRootProvider();
+            var wordStructureResolver = new CzechWordStructureResolver(verbDataProvider, nounDataProvider, prefixService, phonologyService, rootProvider);
             var ortographyService = new CzechOrtographyService(registry);
 
             var adjectiveDataProvider = new JsonAdjectiveDataProvider();

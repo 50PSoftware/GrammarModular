@@ -1,57 +1,55 @@
 {
+  "student": {
+    "studentka": {
+      "pos": "Noun",
+      "pattern": "žena",
+      "gender": "Feminine",
+      "isAnimate": true,
+      "derivationSuffix": "k"
+    },
+    "studentík": {
+      "pos": "Noun",
+      "pattern": "pán",
+      "gender": "Masculine",
+      "isAnimate": true
+    }
+  },
   "mlad": {
-    "root": "mlad",
-    "derivations": [
-      {
-        "lemma": "mladý",
-        "suffix": "ý",
-        "partOfSpeech": "Adjective",
-        "type": "Primary",
-        "pattern": "mladý",
-        "gender": null,
-        "isAnimate": null,
-        "alternations": []
-      },
-      {
-        "lemma": "mládí",
-        "suffix": "í",
-        "partOfSpeech": "Noun",
-        "type": "Nominalisation",
-        "pattern": "stavení",
-        "gender": "Neuter",
-        "isAnimate": false,
-        "alternations": [ "LengthenRoot" ]
-      },
-      {
-        "lemma": "mladík",
-        "suffix": "ík",
-        "partOfSpeech": "Noun",
-        "type": "Agentive",
-        "pattern": "pán",
-        "gender": "Masculine",
-        "isAnimate": true,
-        "alternations": []
-      },
-      {
-        "lemma": "mladost",
-        "suffix": "ost",
-        "partOfSpeech": "Noun",
-        "type": "Nominalisation",
-        "pattern": "kost",
-        "gender": "Feminine",
-        "isAnimate": false,
-        "alternations": []
-      },
-      {
-        "lemma": "mladší",
-        "suffix": "ší",
-        "partOfSpeech": "Adjective",
-        "type": "Primary",
-        "pattern": "jarní",
-        "gender": null,
-        "isAnimate": null,
-        "alternations": []
-      }
-    ]
+    "mladý": {
+      "pos": "Adjective",
+      "pattern": "mladý"
+    },
+    "mládí": {
+      "pos": "Noun",
+      "pattern": "stavení",
+      "gender": "Neuter"
+    },
+    "mladík": {
+      "pos": "Noun",
+      "pattern": "pán",
+      "gender": "Masculine",
+      "isAnimate": true
+    },
+    "mladost": {
+      "pos": "Noun",
+      "pattern": "kost",
+      "gender": "Feminine"
+    }
+  },
+  "jabl": {
+    "jablko": {
+      "pos": "Noun",
+      "pattern": "město",
+      "gender": "Neuter"
+    },
+    "jablíčko": {
+      "pos": "Noun",
+      "pattern": "město",
+      "gender": "Neuter"
+    },
+    "jablečný": {
+      "pos": "Adjective",
+      "pattern": "mladý"
+    }
   }
 }

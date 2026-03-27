@@ -26,8 +26,9 @@ namespace Grammar.Czech.Test
             prefixService = new CzechPrefixService(perfixProvider);
             var registry = new CzechPhonemeRegistry();
             phonologyService = new CzechPhonologyService(registry);
-            resolver = new CzechWordStructureResolver(verbDataProvider, nounDataProvider, prefixService, phonologyService);
-            verbResolver = new CzechWordStructureResolver(verbDataProvider, nounDataProvider, prefixService, phonologyService);
+            var rootProvider = new JsonRootProvider();
+            resolver = new CzechWordStructureResolver(verbDataProvider, nounDataProvider, prefixService, phonologyService, rootProvider);
+            verbResolver = new CzechWordStructureResolver(verbDataProvider, nounDataProvider, prefixService, phonologyService, rootProvider);
         }
 
         #region Nouns

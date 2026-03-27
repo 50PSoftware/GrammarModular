@@ -1,4 +1,5 @@
 using Grammar.Core.Helpers;
+using Grammar.Core.Interfaces;
 using Grammar.Core.Models.Derivation;
 using Grammar.Czech.Helpers;
 using Grammar.Czech.Interfaces;
@@ -12,15 +13,20 @@ namespace Grammar.Czech.Providers.JsonProviders
     /// and implements <see cref="ICzechRootProvider"/>.
     /// </summary>
     /// <remarks>
-    /// The data is loaded once on first access via a thread-safe <see cref="Lazy{T}"/>.
-    /// The <c>IRootProvider</c> methods map <see cref="CzechRootEntry"/> to the
-    /// language-agnostic <see cref="RootEntry"/> type for callers that only depend
-    /// on <c>Grammar.Core</c>.
+    /// <para>
+    /// The JSON format is a two-level flat map: root key → (lemma → metadata).
+    /// At load time a reverse index (lemma → root entry) is built for O(1)
+    /// <see cref="GetCzechByLemma"/> lookups.
+    /// </para>
+    /// <para>
+    /// Both the forward and reverse dictionaries are loaded exactly once via a
+    /// thread-safe <see cref="Lazy{T}"/>.
+    /// </para>
     /// </remarks>
-    public class JsonRootProvider : ICzechRootProvider
+    public sealed class JsonRootProvider : ICzechRootProvider
     {
-        private readonly string _rootsPath = "Data.Lexicon.roots";
-        private readonly Lazy<Dictionary<string, CzechRootEntry>> _roots;
+        private readonly Lazy<Dictionary<string, CzechRootEntry>> _byRoot;
+        private readonly Lazy<Dictionary<string, CzechRootEntry>> _byLemma;
 
         /// <summary>
         /// Initializes a new instance of <see cref="JsonRootProvider"/> and sets up
@@ -29,21 +35,23 @@ namespace Grammar.Czech.Providers.JsonProviders
         public JsonRootProvider()
         {
             var assembly = Assembly.GetExecutingAssembly();
-            _roots = new Lazy<Dictionary<string, CzechRootEntry>>(
-                () => JsonLoader.LoadDictionaryFromFile<CzechRootEntry>(
-                    assembly, _rootsPath, JsonHelpers.SerializerOptions)!,
+
+            _byRoot = new Lazy<Dictionary<string, CzechRootEntry>>(
+                () => LoadRoots(assembly),
+                LazyThreadSafetyMode.ExecutionAndPublication);
+
+            _byLemma = new Lazy<Dictionary<string, CzechRootEntry>>(
+                () => BuildReverseIndex(_byRoot.Value),
                 LazyThreadSafetyMode.ExecutionAndPublication);
         }
 
         /// <inheritdoc/>
         public CzechRootEntry? GetCzechByRoot(string root)
-            => _roots.Value.TryGetValue(root.ToLowerInvariant(), out var entry) ? entry : null;
+            => _byRoot.Value.TryGetValue(root.ToLowerInvariant(), out var entry) ? entry : null;
 
         /// <inheritdoc/>
         public CzechRootEntry? GetCzechByLemma(string lemma)
-            => _roots.Value.Values.FirstOrDefault(
-                e => e.Derivations.Any(
-                    d => d.Lemma.Equals(lemma, StringComparison.OrdinalIgnoreCase)));
+            => _byLemma.Value.TryGetValue(lemma.ToLowerInvariant(), out var entry) ? entry : null;
 
         /// <inheritdoc/>
         public RootEntry? GetByRoot(string root)
@@ -52,6 +60,40 @@ namespace Grammar.Czech.Providers.JsonProviders
         /// <inheritdoc/>
         public RootEntry? GetByLemma(string lemma)
             => MapToCore(GetCzechByLemma(lemma));
+
+        private static Dictionary<string, CzechRootEntry> LoadRoots(Assembly assembly)
+        {
+            // JSON: { "mlad": { "mladý": {...}, "mladík": {...} }, ... }
+            // Deserialise as Dictionary<string, Dictionary<string, CzechDerivationLink>>
+            // then wrap each inner dict into CzechRootEntry.
+            var raw = JsonLoader.LoadDictionaryFromFile<Dictionary<string, CzechDerivationLink>>(
+                assembly, "Data.Lexicon.roots", JsonHelpers.SerializerOptions)
+                ?? [];
+
+            return raw.ToDictionary(
+                kvp => kvp.Key.ToLowerInvariant(),
+                kvp => new CzechRootEntry
+                {
+                    Root = kvp.Key,
+                    Derivations = kvp.Value
+                });
+        }
+
+        private static Dictionary<string, CzechRootEntry> BuildReverseIndex(
+            Dictionary<string, CzechRootEntry> byRoot)
+        {
+            var index = new Dictionary<string, CzechRootEntry>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var rootEntry in byRoot.Values)
+            {
+                foreach (var lemma in rootEntry.Derivations.Keys)
+                {
+                    index[lemma] = rootEntry;
+                }
+            }
+
+            return index;
+        }
 
         private static RootEntry? MapToCore(CzechRootEntry? czech)
         {
@@ -63,7 +105,7 @@ namespace Grammar.Czech.Providers.JsonProviders
             return new RootEntry
             {
                 Root = czech.Root,
-                Derivations = czech.Derivations
+                Derivations = (IReadOnlyList<DerivationLink>)czech.Derivations.Values.ToList()
             };
         }
     }
