@@ -2,6 +2,7 @@
   "student": {
     "studentka": {
       "pos": "Noun",
+      "type": "Feminative",
       "pattern": "žena",
       "gender": "Feminine",
       "isAnimate": true,
@@ -9,6 +10,7 @@
     },
     "studentík": {
       "pos": "Noun",
+      "type": "Diminutive",
       "pattern": "pán",
       "gender": "Masculine",
       "isAnimate": true
@@ -17,21 +19,25 @@
   "mlad": {
     "mladý": {
       "pos": "Adjective",
+      "type": "Primary",
       "pattern": "mladý"
     },
     "mládí": {
       "pos": "Noun",
+      "type": "Nominalisation",
       "pattern": "stavení",
       "gender": "Neuter"
     },
     "mladík": {
       "pos": "Noun",
+      "type": "Agentive",
       "pattern": "pán",
       "gender": "Masculine",
       "isAnimate": true
     },
     "mladost": {
       "pos": "Noun",
+      "type": "Nominalisation",
       "pattern": "kost",
       "gender": "Feminine"
     }
@@ -39,16 +45,19 @@
   "jabl": {
     "jablko": {
       "pos": "Noun",
+      "type": "Primary",
       "pattern": "město",
       "gender": "Neuter"
     },
     "jablíčko": {
       "pos": "Noun",
+      "type": "Diminutive",
       "pattern": "město",
       "gender": "Neuter"
     },
     "jablečný": {
       "pos": "Adjective",
+      "type": "Primary",
       "pattern": "mladý"
     }
   }

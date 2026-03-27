@@ -8,15 +8,15 @@ namespace Grammar.Czech.Models.Derivation
     /// </summary>
     /// <remarks>
     /// <para>
-    /// The full derivational suffix is not stored — it is computed at runtime as
+    /// The full derivational suffix is not stored — it is computable at runtime as
     /// <c>lemma[rootKey.Length..]</c> whenever needed.
     /// Only <see cref="DerivationSuffix"/> is stored, and only when it is phonologically
     /// active during inflection (i.e., it triggers epenthesis or softening in
     /// <c>CzechWordStructureResolver</c>).
     /// </para>
     /// <para>
-    /// Derivation type classification (Feminative, Diminutive, …) and phonological
-    /// alternation instructions belong to <c>IDerivationService</c>, not to this record.
+    /// Phonological alternation instructions belong to <c>IDerivationService</c>,
+    /// not to this record.
     /// </para>
     /// </remarks>
     public sealed record CzechDerivationLink
@@ -24,6 +24,14 @@ namespace Grammar.Czech.Models.Derivation
         /// <summary>Gets the part of speech of this lexeme.</summary>
         [JsonPropertyName("pos")]
         public WordCategory PartOfSpeech { get; init; }
+
+        /// <summary>
+        /// Gets the morphological relationship expressed by this derivation
+        /// (e.g., Feminative, Diminutive, Agentive).
+        /// Used by <c>IDerivationService.GetDerivedRequest</c> as a lookup key.
+        /// </summary>
+        [JsonPropertyName("type")]
+        public DerivationType Type { get; init; }
 
         /// <summary>
         /// Gets the inflectional pattern key (e.g., "pán", "žena", "mladý").

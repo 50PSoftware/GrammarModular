@@ -45,6 +45,8 @@ namespace Grammar.Czech.Providers.JsonProviders
                 LazyThreadSafetyMode.ExecutionAndPublication);
         }
 
+        #region ICzechRootProvider
+
         /// <inheritdoc/>
         public CzechRootEntry? GetCzechByRoot(string root)
             => _byRoot.Value.TryGetValue(root.ToLowerInvariant(), out var entry) ? entry : null;
@@ -52,6 +54,10 @@ namespace Grammar.Czech.Providers.JsonProviders
         /// <inheritdoc/>
         public CzechRootEntry? GetCzechByLemma(string lemma)
             => _byLemma.Value.TryGetValue(lemma.ToLowerInvariant(), out var entry) ? entry : null;
+
+        #endregion ICzechRootProvider
+
+        #region IRootProvider
 
         /// <inheritdoc/>
         public RootEntry? GetByRoot(string root)
@@ -61,11 +67,14 @@ namespace Grammar.Czech.Providers.JsonProviders
         public RootEntry? GetByLemma(string lemma)
             => MapToCore(GetCzechByLemma(lemma));
 
+        #endregion IRootProvider
+
+        #region Private helpers
+
         private static Dictionary<string, CzechRootEntry> LoadRoots(Assembly assembly)
         {
-            // JSON: { "mlad": { "mladý": {...}, "mladík": {...} }, ... }
-            // Deserialise as Dictionary<string, Dictionary<string, CzechDerivationLink>>
-            // then wrap each inner dict into CzechRootEntry.
+            // roots.json lives at: Grammar.Czech/Data/Roots/roots.json
+            // Embedded resource path: Grammar.Czech.Data.Roots.roots
             var raw = JsonLoader.LoadDictionaryFromFile<Dictionary<string, CzechDerivationLink>>(
                 assembly, "Data.Lexicon.roots", JsonHelpers.SerializerOptions)
                 ?? [];
@@ -74,7 +83,7 @@ namespace Grammar.Czech.Providers.JsonProviders
                 kvp => kvp.Key.ToLowerInvariant(),
                 kvp => new CzechRootEntry
                 {
-                    Root = kvp.Key,
+                    Root        = kvp.Key,
                     Derivations = kvp.Value
                 });
         }
@@ -95,6 +104,11 @@ namespace Grammar.Czech.Providers.JsonProviders
             return index;
         }
 
+        /// <summary>
+        /// Maps a <see cref="CzechRootEntry"/> to the language-agnostic <see cref="RootEntry"/>.
+        /// Only fields present on <see cref="DerivationLink"/> are populated; Czech-specific
+        /// metadata stays in the typed layer.
+        /// </summary>
         private static RootEntry? MapToCore(CzechRootEntry? czech)
         {
             if (czech is null)
@@ -102,11 +116,23 @@ namespace Grammar.Czech.Providers.JsonProviders
                 return null;
             }
 
+            // CzechDerivationLink does NOT inherit from DerivationLink — manual projection required.
+            // Lemma is the dictionary key in roots.json, not a field on CzechDerivationLink.
+            var derivations = czech.Derivations
+                .Select(kvp => new DerivationLink
+                {
+                    Lemma        = kvp.Key,
+                    PartOfSpeech = kvp.Value.PartOfSpeech
+                })
+                .ToList();
+
             return new RootEntry
             {
-                Root = czech.Root,
-                Derivations = (IReadOnlyList<DerivationLink>)czech.Derivations.Values.ToList()
+                Root        = czech.Root,
+                Derivations = derivations
             };
         }
+
+        #endregion Private helpers
     }
 }
