@@ -1,7 +1,5 @@
 ﻿using Grammar.Core.Enums;
-using Grammar.Core.Enums.PhonologicalFeatures;
 using Grammar.Core.Interfaces;
-using Grammar.Core.Models.Phonology;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
 

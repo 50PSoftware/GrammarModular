@@ -6,22 +6,34 @@
       "slots": [
         {
           "role": "Actor",
-          "realization": { "case": "Nominative", "preposition": null },
+          "realization": {
+            "case": "Nominative",
+            "preposition": null
+          },
           "isObligatory": true
         },
         {
           "role": "Patient",
-          "realization": { "case": "Accusative", "preposition": null },
+          "realization": {
+            "case": "Accusative",
+            "preposition": null
+          },
           "isObligatory": true
         },
         {
           "role": "Addressee",
-          "realization": { "case": "Dative", "preposition": null },
+          "realization": {
+            "case": "Dative",
+            "preposition": null
+          },
           "isObligatory": false
         },
         {
           "role": "Direction",
-          "realization": { "case": "Accusative", "preposition": "na" },
+          "realization": {
+            "case": "Accusative",
+            "preposition": "na"
+          },
           "isObligatory": false
         }
       ]
@@ -34,17 +46,26 @@
       "slots": [
         {
           "role": "Actor",
-          "realization": { "case": "Nominative", "preposition": null },
+          "realization": {
+            "case": "Nominative",
+            "preposition": null
+          },
           "isObligatory": true
         },
         {
           "role": "Patient",
-          "realization": { "case": "Accusative", "preposition": null },
+          "realization": {
+            "case": "Accusative",
+            "preposition": null
+          },
           "isObligatory": true
         },
         {
           "role": "Addressee",
-          "realization": { "case": "Dative", "preposition": null },
+          "realization": {
+            "case": "Dative",
+            "preposition": null
+          },
           "isObligatory": false
         }
       ]
@@ -57,17 +78,26 @@
       "slots": [
         {
           "role": "Actor",
-          "realization": { "case": "Nominative", "preposition": null },
+          "realization": {
+            "case": "Nominative",
+            "preposition": null
+          },
           "isObligatory": true
         },
         {
           "role": "Direction",
-          "realization": { "case": "Accusative", "preposition": "do" },
+          "realization": {
+            "case": "Accusative",
+            "preposition": "do"
+          },
           "isObligatory": false
         },
         {
           "role": "Origin",
-          "realization": { "case": "Genitive", "preposition": "z" },
+          "realization": {
+            "case": "Genitive",
+            "preposition": "z"
+          },
           "isObligatory": false
         }
       ]
@@ -78,7 +108,10 @@
       "slots": [
         {
           "role": "Actor",
-          "realization": { "case": "Nominative", "preposition": null },
+          "realization": {
+            "case": "Nominative",
+            "preposition": null
+          },
           "isObligatory": true
         }
       ]
@@ -91,12 +124,18 @@
       "slots": [
         {
           "role": "Actor",
-          "realization": { "case": "Nominative", "preposition": null },
+          "realization": {
+            "case": "Nominative",
+            "preposition": null
+          },
           "isObligatory": true
         },
         {
           "role": "Patient",
-          "realization": { "case": "Accusative", "preposition": null },
+          "realization": {
+            "case": "Accusative",
+            "preposition": null
+          },
           "isObligatory": true
         }
       ]

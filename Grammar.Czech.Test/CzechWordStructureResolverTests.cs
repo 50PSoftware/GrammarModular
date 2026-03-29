@@ -1,6 +1,5 @@
 using Grammar.Core.Enums;
 using Grammar.Core.Interfaces;
-using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
 using Grammar.Czech.Providers;
 using Grammar.Czech.Providers.JsonProviders;
@@ -29,21 +28,22 @@ namespace Grammar.Czech.Test
         [TestInitialize]
         public void Setup()
         {
-            var registry         = new CzechPhonemeRegistry();
+            var registry = new CzechPhonemeRegistry();
             var phonologyService = new CzechPhonologyService(registry);
             var nounDataProvider = new JsonNounDataProvider();
             var verbDataProvider = new JsonVerbDataProvider();
-            var prefixService    = new CzechPrefixService(new JsonPrefixDataProvider());
+            var prefixService = new CzechPrefixService(new JsonPrefixDataProvider());
             var epenthesisRule = new CzechEpenthesisRuleEvaluator(registry);
 
             var sut = new CzechWordStructureResolver(
                 verbDataProvider, nounDataProvider, prefixService, phonologyService, registry, epenthesisRule);
 
-            _resolver     = sut;
+            _resolver = sut;
             _verbResolver = sut;
         }
 
         // -------------------------------------------------------------------------
+
         #region vzor žena
 
         [TestMethod]
@@ -72,13 +72,14 @@ namespace Grammar.Czech.Test
             var result = _resolver.AnalyzeStructure(request);
 
             // Assert
-            Assert.AreEqual(expectedRoot,   result.Root,             $"Root pro {lemma}");
+            Assert.AreEqual(expectedRoot, result.Root, $"Root pro {lemma}");
             Assert.AreEqual(expectedSuffix, result.DerivationSuffix, $"DerivationSuffix pro {lemma}");
         }
 
-        #endregion
+        #endregion vzor žena
 
         // -------------------------------------------------------------------------
+
         #region vzor město — strukturní sufix
 
         [TestMethod]
@@ -93,7 +94,7 @@ namespace Grammar.Czech.Test
             var result = _resolver.AnalyzeStructure(request);
 
             // Assert
-            Assert.AreEqual(expectedRoot,   result.Root,             $"Root pro {lemma}");
+            Assert.AreEqual(expectedRoot, result.Root, $"Root pro {lemma}");
             Assert.AreEqual(expectedSuffix, result.DerivationSuffix, $"DerivationSuffix pro {lemma}");
         }
 
@@ -111,9 +112,10 @@ namespace Grammar.Czech.Test
             Assert.AreEqual("měst", result.Root);
         }
 
-        #endregion
+        #endregion vzor město — strukturní sufix
 
         // -------------------------------------------------------------------------
+
         #region vzor kost
 
         [TestMethod]
@@ -130,9 +132,10 @@ namespace Grammar.Czech.Test
             Assert.IsNull(result.DerivationSuffix);
         }
 
-        #endregion
+        #endregion vzor kost
 
         // -------------------------------------------------------------------------
+
         #region Mobile vowel
 
         [TestMethod]
@@ -174,9 +177,10 @@ namespace Grammar.Czech.Test
             Assert.AreEqual("otc", result.Root);
         }
 
-        #endregion
+        #endregion Mobile vowel
 
         // -------------------------------------------------------------------------
+
         #region Verbs
 
         [TestMethod]
@@ -185,17 +189,17 @@ namespace Grammar.Czech.Test
             // Arrange
             var request = new CzechWordRequest
             {
-                Lemma        = "donést",
-                Pattern      = "nese",
+                Lemma = "donést",
+                Pattern = "nese",
                 WordCategory = WordCategory.Verb,
-                Tense        = Tense.Present
+                Tense = Tense.Present
             };
 
             // Act
             var result = _verbResolver.AnalyzeVerbStructure(request);
 
             // Assert
-            Assert.AreEqual("do",  result.Prefix);
+            Assert.AreEqual("do", result.Prefix);
             Assert.AreEqual("nes", result.PresentStem);
         }
 
@@ -205,10 +209,10 @@ namespace Grammar.Czech.Test
             // Arrange
             var request = new CzechWordRequest
             {
-                Lemma        = "být",
-                Pattern      = "být",
+                Lemma = "být",
+                Pattern = "být",
                 WordCategory = WordCategory.Verb,
-                Tense        = Tense.Present
+                Tense = Tense.Present
             };
 
             // Act
@@ -218,9 +222,10 @@ namespace Grammar.Czech.Test
             Assert.AreEqual("js", result.PresentStem);
         }
 
-        #endregion
+        #endregion Verbs
 
         // -------------------------------------------------------------------------
+
         #region Guard clauses
 
         [TestMethod]
@@ -239,27 +244,29 @@ namespace Grammar.Czech.Test
             Assert.ThrowsException<ArgumentException>(() => _resolver.AnalyzeStructure(request));
         }
 
-        #endregion
+        #endregion Guard clauses
 
         // -------------------------------------------------------------------------
+
         #region Helpers
 
         private static CzechWordRequest BuildNounRequest(
             string lemma, string pattern, Gender gender, Case @case, Number number, bool? hasMobileVowel = null) =>
             new()
             {
-                Lemma        = lemma,
-                Pattern      = pattern,
+                Lemma = lemma,
+                Pattern = pattern,
                 WordCategory = WordCategory.Noun,
-                Gender       = gender,
-                Case         = @case,
-                Number       = number,
+                Gender = gender,
+                Case = @case,
+                Number = number,
                 HasMobileVowel = hasMobileVowel
             };
 
-        #endregion
+        #endregion Helpers
 
         // -------------------------------------------------------------------------
+
         #region Test data attributes
 
         /// <summary>
@@ -290,6 +297,6 @@ namespace Grammar.Czech.Test
             ];
         }
 
-        #endregion
+        #endregion Test data attributes
     }
 }

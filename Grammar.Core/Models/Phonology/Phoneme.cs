@@ -40,6 +40,6 @@ namespace Grammar.Core.Models.Phonology
         public string? ShortCounterpart { get; init; }
         public string? LongCounterpart { get; init; }
 
-        #endregion Alternations
+        #endregion Alternartions
     }
 }

@@ -168,7 +168,7 @@ namespace Grammar.Czech.Services
         /// <inheritdoc/>
         public VerbStructure AnalyzeVerbStructure(CzechWordRequest request)
         {
-            var prefix    = ExtractPrefix(request.Lemma);
+            var prefix = ExtractPrefix(request.Lemma);
             var lemmaBase = prefix != null ? request.Lemma[prefix.Length..] : request.Lemma;
 
             // Named patterns (nese, dělá, být…) — explicit stems in irregulars.json
@@ -199,12 +199,12 @@ namespace Grammar.Czech.Services
         private VerbStructure BuildFromExplicitStems(string? prefix, VerbPattern pattern) =>
             new()
             {
-                Prefix         = prefix,
-                PresentStem    = pattern.PresentStem    ?? pattern.Stem!,
-                PastStem       = pattern.PastStem       ?? pattern.Stem!,
-                PassiveStem    = pattern.PassiveStem,
+                Prefix = prefix,
+                PresentStem = pattern.PresentStem ?? pattern.Stem!,
+                PastStem = pattern.PastStem ?? pattern.Stem!,
+                PassiveStem = pattern.PassiveStem,
                 ImperativeStem = pattern.ImperativeStem,
-                Aspect         = pattern.Aspect
+                Aspect = pattern.Aspect
             };
 
         private VerbStructure DeriveFromInfinitive(
@@ -217,7 +217,7 @@ namespace Grammar.Czech.Services
                 "trida3" => DeriveTrida3(prefix, lemma, aspect),
                 "trida2" => DeriveTrida2(prefix, lemma, aspect),
                 "trida1" => DeriveTrida1(prefix, lemma, aspect),
-                _        => throw new NotSupportedException($"Unknown pattern class: '{patternKey}'")
+                _ => throw new NotSupportedException($"Unknown pattern class: '{patternKey}'")
             };
         }
 
@@ -229,12 +229,12 @@ namespace Grammar.Czech.Services
                 var presentStem = lemma[..^2];
                 return new()
                 {
-                    Prefix         = prefix,
-                    PresentStem    = presentStem,
-                    PastStem       = lemma[..^1],
-                    PassiveStem    = lemma[..^1],
+                    Prefix = prefix,
+                    PresentStem = presentStem,
+                    PastStem = lemma[..^1],
+                    PassiveStem = lemma[..^1],
                     ImperativeStem = presentStem + "ej",
-                    Aspect         = aspect
+                    Aspect = aspect
                 };
             }
 
@@ -245,16 +245,16 @@ namespace Grammar.Czech.Services
         //         trpět  → PresentStem: trp,  PastStem: trpě
         private VerbStructure DeriveTrida4(string? prefix, string lemma, VerbAspect aspect)
         {
-            if (lemma.EndsWith("it")  || lemma.EndsWith("ít") ||
-                lemma.EndsWith("et")  || lemma.EndsWith("ět"))
+            if (lemma.EndsWith("it") || lemma.EndsWith("ít") ||
+                lemma.EndsWith("et") || lemma.EndsWith("ět"))
             {
                 return new()
                 {
-                    Prefix      = prefix,
+                    Prefix = prefix,
                     PresentStem = lemma[..^2],
-                    PastStem    = lemma[..^1],
+                    PastStem = lemma[..^1],
                     PassiveStem = lemma[..^1],
-                    Aspect      = aspect
+                    Aspect = aspect
                 };
             }
 
@@ -269,12 +269,12 @@ namespace Grammar.Czech.Services
                 var presentStem = lemma[..^4] + "u";
                 return new()
                 {
-                    Prefix         = prefix,
-                    PresentStem    = presentStem,
-                    PastStem       = lemma[..^1],
-                    PassiveStem    = lemma[..^1],
+                    Prefix = prefix,
+                    PresentStem = presentStem,
+                    PastStem = lemma[..^1],
+                    PassiveStem = lemma[..^1],
                     ImperativeStem = presentStem + "j",
-                    Aspect         = aspect
+                    Aspect = aspect
                 };
             }
 
@@ -290,11 +290,11 @@ namespace Grammar.Czech.Services
                 var presentStem = lemma[..^4];
                 return new()
                 {
-                    Prefix         = prefix,
-                    PresentStem    = presentStem,
-                    PastStem       = presentStem,
+                    Prefix = prefix,
+                    PresentStem = presentStem,
+                    PastStem = presentStem,
                     ImperativeStem = presentStem + "n",
-                    Aspect         = aspect
+                    Aspect = aspect
                 };
             }
 
@@ -311,25 +311,25 @@ namespace Grammar.Czech.Services
                 _ when lemma.EndsWith("zt") => lemma[..^2],
                 _ when lemma.EndsWith("ct") => lemma[..^2],
                 _ when lemma.EndsWith("ít") => lemma[..^2],
-                _                           => lemma
+                _ => lemma
             };
 
             return new()
             {
-                Prefix      = prefix,
+                Prefix = prefix,
                 PresentStem = stem,
-                PastStem    = stem,
-                Aspect      = aspect
+                PastStem = stem,
+                Aspect = aspect
             };
         }
 
         private VerbStructure UnknownInfinitiveFallback(string? prefix, string lemma, VerbAspect aspect) =>
             new()
             {
-                Prefix      = prefix,
+                Prefix = prefix,
                 PresentStem = lemma,
-                PastStem    = lemma,
-                Aspect      = aspect
+                PastStem = lemma,
+                Aspect = aspect
             };
 
         #endregion Verb

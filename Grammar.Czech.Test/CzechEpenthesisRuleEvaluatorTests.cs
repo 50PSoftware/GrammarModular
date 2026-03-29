@@ -28,6 +28,7 @@ namespace Grammar.Czech.Test
         }
 
         // -------------------------------------------------------------------------
+
         #region ReturnsTrue — heterorganní shluky bez asimilace
 
         [TestMethod]
@@ -45,9 +46,10 @@ namespace Grammar.Czech.Test
             Assert.IsTrue(result, $"Očekávána epentheze: {stem}+{suffix} → gen.pl. ({lemma})");
         }
 
-        #endregion
+        #endregion ReturnsTrue — heterorganní shluky bez asimilace
 
         // -------------------------------------------------------------------------
+
         #region ReturnsFalse — fonologicky stabilní shluky
 
         [TestMethod]
@@ -65,9 +67,10 @@ namespace Grammar.Czech.Test
             Assert.IsFalse(result, $"Epentheze se nesmí aplikovat: {stem}+{suffix} ({lemma})");
         }
 
-        #endregion
+        #endregion ReturnsFalse — fonologicky stabilní shluky
 
         // -------------------------------------------------------------------------
+
         #region Guard clauses
 
         [TestMethod]
@@ -96,10 +99,10 @@ namespace Grammar.Czech.Test
         {
             var request = new CzechWordRequest
             {
-                Lemma        = "mladičký",
+                Lemma = "mladičký",
                 WordCategory = WordCategory.Adjective,
-                Case         = Case.Genitive,
-                Number       = Number.Plural
+                Case = Case.Genitive,
+                Number = Number.Plural
             };
 
             var result = _evaluator.ShouldApplyEpenthesis("mladič", "k", request);
@@ -143,26 +146,28 @@ namespace Grammar.Czech.Test
             Assert.IsFalse(result);
         }
 
-        #endregion
+        #endregion Guard clauses
 
         // -------------------------------------------------------------------------
+
         #region Helpers
 
         private static CzechWordRequest BuildRequest(
             string lemma, string pattern, Gender gender, Case @case, Number number) =>
             new()
             {
-                Lemma        = lemma,
-                Pattern      = pattern,
+                Lemma = lemma,
+                Pattern = pattern,
                 WordCategory = WordCategory.Noun,
-                Gender       = gender,
-                Case         = @case,
-                Number       = number
+                Gender = gender,
+                Case = @case,
+                Number = number
             };
 
-        #endregion
+        #endregion Helpers
 
         // -------------------------------------------------------------------------
+
         #region Test data attributes
 
         /// <summary>
@@ -202,6 +207,6 @@ namespace Grammar.Czech.Test
             ];
         }
 
-        #endregion
+        #endregion Test data attributes
     }
 }
