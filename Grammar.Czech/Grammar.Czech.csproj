@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
 
     <PackageId>50PSoftware.GrammarModular.Czech</PackageId>
-    <Version>1.0.0-preview.9</Version>
+    <Version>1.0.0-preview.10</Version>
     <Authors>Vojtěch Pchálek</Authors>
     <Company>50PSoftware</Company>
     <Description>Czech morphologial generator for .NET</Description>
