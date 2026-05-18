@@ -362,3 +362,4 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /GrammarModular.zip
+/Grammar.Czech.Cli/Properties/launchSettings.json
