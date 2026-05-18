@@ -63,9 +63,9 @@ namespace Grammar.Czech.Services
                     verbNegationApplied = request.IsNegative;
                 }
 
-                if (request.HasReflexive.GetValueOrDefault())
+                if (request.ReflexiveType != ReflexiveType.None)
                 {
-                    verbForm = verbPhraseBuilderService.BuildReflexivePhrase(verbForm, (request.Case == Case.Dative));
+                    verbForm = verbPhraseBuilderService.BuildReflexivePhrase(verbForm, request.ReflexiveType);
                 }
 
                 form = new WordForm(verbForm);

@@ -40,8 +40,8 @@ namespace Grammar.Czech.Models
         /// </summary>
         public string Dative { get; init; }
         /// <summary>
-        /// Gets or sets standard.
+        /// Gets or sets accusative.
         /// </summary>
-        public string Standard { get; init; }
+        public string Accusative { get; init; }
     }
 }

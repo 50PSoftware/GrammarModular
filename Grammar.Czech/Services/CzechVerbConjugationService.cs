@@ -289,8 +289,8 @@ namespace Grammar.Czech.Services
                     "Imperative exists only for 2nd person (sg/pl) and 1st person plural.")
             };
 
-            if (word.HasReflexive.HasValue && word.HasReflexive.Value)
-                result += $" {_czechParticleService.GetReflexive(word.Case == Case.Dative)}";
+            if (word.ReflexiveType != ReflexiveType.None)
+                result += $" {_czechParticleService.GetReflexive(word.ReflexiveType)}";
 
             return new WordForm($"{prefix}{result}!");
         }

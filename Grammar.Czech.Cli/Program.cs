@@ -295,35 +295,114 @@ namespace Grammar.Cli
             //Console.WriteLine(composer.GetFullForm(pnaWordRequest).Form);
             //Console.WriteLine(composer.GetFullForm(chlap).Form);
 
-            var kaRequest = new CzechWordRequest
+            //var kaRequest = new CzechWordRequest
+            //{
+            //    Lemma = "vzpomínka",
+            //    WordCategory = WordCategory.Noun,
+            //    Gender = Gender.Feminine,
+            //    Number = Number.Plural,
+            //    Case = Case.Genitive,
+            //    Pattern = "žena"
+            //};
+
+            //Console.WriteLine(composer.GetFullForm(kaRequest).Form);
+
+            //kaRequest.Lemma = "studentka";
+            //Console.WriteLine(composer.GetFullForm(kaRequest).Form);
+
+            //kaRequest.Lemma = "kresba";
+            //Console.WriteLine(composer.GetFullForm(kaRequest).Form);
+
+            //kaRequest.Lemma = "lebka";
+            //Console.WriteLine(composer.GetFullForm(kaRequest).Form);
+
+            //kaRequest.Lemma = "bavlnka";
+            //Console.WriteLine(composer.GetFullForm(kaRequest).Form);
+
+            //kaRequest.Lemma = "sestra";
+            //Console.WriteLine(composer.GetFullForm(kaRequest).Form);
+
+            //kaRequest.Lemma = "pravda";
+            //Console.WriteLine(composer.GetFullForm(kaRequest).Form);
+
+            var po = new CzechWordRequest
             {
-                Lemma = "vzpomínka",
                 WordCategory = WordCategory.Noun,
-                Gender = Gender.Feminine,
-                Number = Number.Plural,
-                Case = Case.Genitive,
-                Pattern = "žena"
+                Case = Case.Nominative,
             };
 
-            Console.WriteLine(composer.GetFullForm(kaRequest).Form);
+            var pr = new CzechWordRequest
+            {
+                WordCategory = WordCategory.Verb,
+                Aspect = VerbAspect.Perfective,
+                Voice = Voice.Active
+            };
 
-            kaRequest.Lemma = "studentka";
-            Console.WriteLine(composer.GetFullForm(kaRequest).Form);
+            po.Lemma = "Klára";
+            po.Number = Number.Singular;
+            po.Gender = Gender.Feminine;
+            po.Pattern = "žena";
 
-            kaRequest.Lemma = "kresba";
-            Console.WriteLine(composer.GetFullForm(kaRequest).Form);
+            pr.Lemma = "učit";
+            pr.VerbClass = VerbClass.Class4;
+            pr.Tense = Tense.Present;
+            pr.Modus = Modus.Conjunctive;
 
-            kaRequest.Lemma = "lebka";
-            Console.WriteLine(composer.GetFullForm(kaRequest).Form);
+            Console.WriteLine(SimpleSentenceBuilder(composer, po, pr));
 
-            kaRequest.Lemma = "bavlnka";
-            Console.WriteLine(composer.GetFullForm(kaRequest).Form);
+            pr.ReflexiveType = ReflexiveType.ReflexivumTantum_Se;  // učit se
 
-            kaRequest.Lemma = "sestra";
-            Console.WriteLine(composer.GetFullForm(kaRequest).Form);
+            Console.WriteLine(SimpleSentenceBuilder(composer, po, pr));
+        }
 
-            kaRequest.Lemma = "pravda";
-            Console.WriteLine(composer.GetFullForm(kaRequest).Form);
+        private static string SimpleSentenceBuilder(CzechWordFormComposer composer, params CzechWordRequest[] requests)
+        {
+            #region preparation
+            var pr = requests.First(v => v.WordCategory == WordCategory.Verb);
+            var po = requests.First(v => v.WordCategory == WordCategory.Noun || v.WordCategory == WordCategory.Pronoun && v.Case == Case.Nominative);
+            #endregion
+
+            pr.Gender = po.Gender switch
+            {
+                Gender.Masculine when po.IsAnimate.HasValue && po.IsAnimate.Value => Gender.Masculine,
+                Gender.Masculine when (po.IsAnimate.HasValue && !po.IsAnimate.Value) || !po.IsAnimate.HasValue => Gender.Feminine,
+                _ => po.Gender
+            };
+
+            if (po.WordCategory == WordCategory.Pronoun)
+            {
+                switch(po.Lemma)
+                {
+                    case "já":
+                    case "my":
+                        pr.Person = Person.First;
+                        break;
+
+                    case "ty":
+                    case "vy":
+                        pr.Person = Person.Second;
+                        break;
+
+                    case "ona":
+                    case "on":
+                    case "ono":
+                    case "ony":
+                    case "oni":
+                        pr.Person = Person.Third;
+                        break;
+                }
+            }
+            else
+            {
+                pr.Person = Person.Third;
+            }
+
+            var prForm = composer.GetFullForm(pr).Form;
+            var poForm = composer.GetFullForm(po).Form;
+
+            poForm = string.Join(string.Empty, poForm[0].ToString().ToUpperInvariant(), poForm.Substring(1));
+
+            return string.Format("{0} {1}.", poForm, prForm);
         }
 
         private static void PrintWordInfo(CzechWordRequest request)

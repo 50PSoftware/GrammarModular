@@ -1,6 +1,8 @@
+using Grammar.Core.Helpers;
 using Grammar.Czech.Helpers;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
+using System.Reflection;
 using System.Text.Json;
 
 namespace Grammar.Czech.Providers.JsonProviders
@@ -18,7 +20,8 @@ namespace Grammar.Czech.Providers.JsonProviders
         /// </summary>
         public JsonParticlesDataProvider()
         {
-            _data = new Lazy<ParticlesData>(() => JsonSerializer.Deserialize<ParticlesData>(File.ReadAllText(_particlePath), JsonHelpers.SerializerOptions)!);
+            var assembly = Assembly.GetExecutingAssembly();
+            _data = new Lazy<ParticlesData>(() => JsonLoader.Load<ParticlesData>(assembly, _particlePath, JsonHelpers.SerializerOptions));
         }
 
         /// <summary>

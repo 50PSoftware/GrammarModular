@@ -37,14 +37,19 @@ namespace Grammar.Czech.Services
         }
 
         /// <summary>
-        /// Gets the reflexive particle for the supplied grammatical context.
+        /// Gets the reflexive particle for the supplied reflexive type.
         /// </summary>
-        /// <param name="isDative">True when the particle should use its dative form; otherwise, false.</param>
-        /// <returns>The reflexive particle for the requested case context.</returns>
-        public string GetReflexive(bool isDative = false)
+        /// <param name="reflexiveType">The reflexive type that determines whether se or si is returned.</param>
+        /// <returns>The reflexive particle for the requested type.</returns>
+        public string GetReflexive(ReflexiveType reflexiveType)
         {
+            if (reflexiveType == ReflexiveType.None)
+                throw new ArgumentOutOfRangeException(nameof(reflexiveType));
+
             var reflexive = dataProvider.GetParticles().Reflexive;
-            return isDative ? reflexive.Dative : reflexive.Standard;
+            return reflexiveType is ReflexiveType.ReflexivumTantum_Si or ReflexiveType.DerivedBenefactive_Si
+                ? reflexive.Dative
+                : reflexive.Accusative;
         }
     }
 }

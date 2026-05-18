@@ -35,9 +35,9 @@ namespace Grammar.Czech.Models
         /// </summary>
         public Degree? Degree { get; set; }
         /// <summary>
-        /// Gets or sets a value indicating whether the verb phrase contains a reflexive particle.
+        /// Gets or sets the reflexive type, which determines the reflexive particle (se/si) for the verb phrase.
         /// </summary>
-        public bool? HasReflexive { get; set; }
+        public ReflexiveType ReflexiveType { get; set; }
         /// <summary>
         /// Gets or sets a value indicating whether the verb phrase includes an explicit subject.
         /// </summary>

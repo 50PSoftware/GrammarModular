@@ -12,7 +12,7 @@
     }
   },
   "reflexive": {
-    "standard": "si",
-    "dative": "se"
+    "dative": "si",
+    "accusative": "se"
   }
 }

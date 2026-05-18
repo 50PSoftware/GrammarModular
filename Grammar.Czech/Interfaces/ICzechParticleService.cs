@@ -16,10 +16,10 @@ namespace Grammar.Czech.Interfaces
         string GetConditionalParticle(Number? number, Person? person);
 
         /// <summary>
-        /// Gets the reflexive particle for the supplied grammatical context.
+        /// Gets the reflexive particle for the supplied reflexive type.
         /// </summary>
-        /// <param name="isDative">True when the particle should use its dative form; otherwise, false.</param>
-        /// <returns>The reflexive particle for the requested case context.</returns>
-        string GetReflexive(bool isDative = false);
+        /// <param name="reflexiveType">The reflexive type that determines whether se or si is returned.</param>
+        /// <returns>The reflexive particle for the requested type.</returns>
+        string GetReflexive(ReflexiveType reflexiveType);
     }
 }

@@ -80,11 +80,11 @@ namespace Grammar.Czech.Services
         /// Adds the appropriate Czech reflexive particle to a verb phrase.
         /// </summary>
         /// <param name="verbForm">The finite or participial verb form to combine into a phrase.</param>
-        /// <param name="isDative">True when the particle should use its dative form; otherwise, false.</param>
+        /// <param name="reflexiveType">The reflexive type that determines whether se or si is appended.</param>
         /// <returns>The verb phrase with the reflexive particle appended.</returns>
-        public string BuildReflexivePhrase(string verbForm, bool isDative)
+        public string BuildReflexivePhrase(string verbForm, ReflexiveType reflexiveType)
         {
-            var reflexive = particleService.GetReflexive(isDative);
+            var reflexive = particleService.GetReflexive(reflexiveType);
             return $"{verbForm} {reflexive}";
         }
 
