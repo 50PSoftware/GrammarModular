@@ -1,4 +1,5 @@
 using Grammar.Core.Enums;
+using Grammar.Czech.Enums;
 using Grammar.Czech.Interfaces;
 
 namespace Grammar.Czech.Services

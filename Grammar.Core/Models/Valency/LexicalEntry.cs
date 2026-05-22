@@ -26,10 +26,5 @@ namespace Grammar.Core.Models.Valency
         /// Gets or sets the inflection pattern key.
         /// </summary>
         public string? Pattern { get; init; }
-
-        /// <summary>
-        /// Gets or sets the reflexive type, encoding which particle (se/si) the verb requires.
-        /// </summary>
-        public ReflexiveType ReflexiveType { get; init; }
     }
 }

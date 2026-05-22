@@ -1,5 +1,6 @@
 using Grammar.Core.Enums;
 using Grammar.Core.Interfaces;
+using Grammar.Czech.Enums;
 
 namespace Grammar.Czech.Models
 {

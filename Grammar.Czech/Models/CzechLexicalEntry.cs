@@ -1,5 +1,6 @@
 using Grammar.Core.Enums;
 using Grammar.Core.Models.Valency;
+using Grammar.Czech.Enums;
 
 namespace Grammar.Czech.Models
 {
@@ -32,5 +33,10 @@ namespace Grammar.Czech.Models
         /// Gets or sets aspect Counterpart.
         /// </summary>
         public string? AspectCounterpart { get; init; }
+
+        /// <summary>
+        /// Gets or sets the reflexive type, encoding which particle (se/si) the verb requires.
+        /// </summary>
+        public ReflexiveType ReflexiveType { get; init; }
     }
 }

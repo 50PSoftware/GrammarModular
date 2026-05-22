@@ -2,6 +2,7 @@ namespace Grammar.Cli
 {
     using Grammar.Core.Enums;
     using Grammar.Czech;
+    using Grammar.Czech.Enums;
     using Grammar.Czech.Models;
     using Grammar.Czech.Services;
     using Microsoft.Extensions.DependencyInjection;
