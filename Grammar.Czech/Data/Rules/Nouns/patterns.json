@@ -86,11 +86,6 @@
         "Locative": "-ích",
         "Instrumental": "-ěmi"
       }
-    },
-    "overrides": {
-      "singular": {
-        "Accusative": "píseň"
-      }
     }
   },
   "kost": {

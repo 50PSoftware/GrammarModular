@@ -19,13 +19,14 @@ namespace Grammar.Czech.Services
         private readonly ISofteningRuleEvaluator<CzechWordRequest> _softeningRuleEvaluator;
         private readonly IEpenthesisRuleEvaluator<CzechWordRequest> _epenthesisRuleEvaluator;
         private readonly IJotationRuleEvaluator<CzechWordRequest> _jotationRuleEvaluator;
+        private readonly ISyncretismRuleEvaluator<CzechWordRequest> _syncretismRuleEvaluator;
         private readonly ICzechOrtographyService _ortographyService;
         private readonly IValencyProvider<CzechLexicalEntry> _valencyProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechNounDeclensionService"/> type.
         /// </summary>
-        public CzechNounDeclensionService(INounDataProvider dataProvider, IWordStructureResolver<CzechWordRequest> wordStructureResolver, ICzechPhonologyService phonologyService, ISofteningRuleEvaluator<CzechWordRequest> softeningRuleEvaluator, IEpenthesisRuleEvaluator<CzechWordRequest> epenthesisRuleEvaluator, IJotationRuleEvaluator<CzechWordRequest> jotationRuleEvaluator, ICzechOrtographyService ortographyService, IValencyProvider<CzechLexicalEntry> valencyProvider)
+        public CzechNounDeclensionService(INounDataProvider dataProvider, IWordStructureResolver<CzechWordRequest> wordStructureResolver, ICzechPhonologyService phonologyService, ISofteningRuleEvaluator<CzechWordRequest> softeningRuleEvaluator, IEpenthesisRuleEvaluator<CzechWordRequest> epenthesisRuleEvaluator, IJotationRuleEvaluator<CzechWordRequest> jotationRuleEvaluator, ISyncretismRuleEvaluator<CzechWordRequest> syncretismRuleEvaluator, ICzechOrtographyService ortographyService, IValencyProvider<CzechLexicalEntry> valencyProvider)
         {
             this._dataProvider = dataProvider;
             this._wordStructureResolver = wordStructureResolver;
@@ -33,6 +34,7 @@ namespace Grammar.Czech.Services
             this._softeningRuleEvaluator = softeningRuleEvaluator;
             this._epenthesisRuleEvaluator = epenthesisRuleEvaluator;
             this._jotationRuleEvaluator = jotationRuleEvaluator;
+            this._syncretismRuleEvaluator = syncretismRuleEvaluator;
             this._ortographyService = ortographyService;
             this._valencyProvider = valencyProvider;
         }
@@ -59,7 +61,8 @@ namespace Grammar.Czech.Services
                 throw new InvalidOperationException($"{word.Lemma} se nevyskytuje v jednotném čísle.");
             }
 
-            if (word.Case == Case.Nominative && (word.Number == Number.Singular || (word.IsPluralOnly.HasValue && word.IsPluralOnly.Value && word.Number == Number.Plural)))
+            // Synkretismus přímých pádů (nominativ = lemma) — před vyhledáním koncovky.
+            if (_syncretismRuleEvaluator.ShouldUseLemmaForm(word))
             {
                 return new WordForm(word.Lemma);
             }
@@ -89,6 +92,12 @@ namespace Grammar.Czech.Services
             if (!pattern.Endings.TryGetValue(numberKey, out var caseDict) ||
                 !caseDict.TryGetValue(caseKey, out var ending))
                 throw new InvalidOperationException($"Ending not found for {numberKey} {caseKey}.");
+
+            // Synkretismus přímých pádů: Ak. sg. s nulovou koncovkou = Nom. sg. (= lemma).
+            if (_syncretismRuleEvaluator.ShouldUseLemmaForm(word, ending))
+            {
+                return new WordForm(word.Lemma);
+            }
 
             // případná výjimka před výpočtem tvaru
             if (pattern.Overrides != null &&

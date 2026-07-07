@@ -31,10 +31,11 @@ namespace Grammar.Czech.Test
             var softeningEvaluator = new CzechSofteningRuleEvaluator();
             var epenthesisEvaluator = new CzechEpenthesisRuleEvaluator(registry);
             var jotationEvaluator = new CzechJotationRuleEvaluator(registry, wordStructureResolver);
+            var syncretismEvaluator = new CzechSyncretismRuleEvaluator();
             var ortographyService = new CzechOrtographyService(registry);
             var valencyProvider = new JsonValencyProvider();
 
-            nounDeclensionService = new CzechNounDeclensionService(nounDataPrvider, wordStructureResolver, phonologyService, softeningEvaluator, epenthesisEvaluator, jotationEvaluator, ortographyService, valencyProvider);
+            nounDeclensionService = new CzechNounDeclensionService(nounDataPrvider, wordStructureResolver, phonologyService, softeningEvaluator, epenthesisEvaluator, jotationEvaluator, syncretismEvaluator, ortographyService, valencyProvider);
         }
 
         [TestMethod]

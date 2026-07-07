@@ -354,6 +354,29 @@ namespace Grammar.Cli
             pr.ReflexiveType = ReflexiveType.ReflexivumTantum_Se;  // učit se
 
             Console.WriteLine(SimpleSentenceBuilder(composer, po, pr));
+
+            var thirstRequest = new CzechWordRequest
+            {
+                Lemma = "žízeň",
+                WordCategory = WordCategory.Noun,
+                Number = Number.Singular,
+                Case = Case.Accusative,
+                Pattern = "píseň",
+                Gender = Gender.Feminine
+            };
+
+            var songRequest = new CzechWordRequest
+            {
+                Lemma = "píseň",
+                WordCategory = WordCategory.Noun,
+                Number = Number.Singular,
+                Case = Case.Accusative,
+                Pattern = "píseň",
+                Gender = Gender.Feminine
+            };
+
+            Console.WriteLine(composer.GetFullForm(thirstRequest).Form);
+            Console.WriteLine(composer.GetFullForm(songRequest).Form);
         }
 
         private static string SimpleSentenceBuilder(CzechWordFormComposer composer, params CzechWordRequest[] requests)
