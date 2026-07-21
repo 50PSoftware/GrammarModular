@@ -1,3 +1,4 @@
+using Grammar.Core.Enums.PhonologicalFeatures;
 using Grammar.Core.Interfaces;
 using Grammar.Czech.Enums.Phonology;
 using Grammar.Czech.Interfaces;
@@ -160,6 +161,29 @@ namespace Grammar.Czech.Services
             var czechP = phoneme as CzechPhoneme;
             var result = czechP?.PalatalizationTargets?.GetValueOrDefault(context) ?? phoneme?.PalatalizeTo;
             return result is not null ? stem[..^1] + result : stem;
+        }
+
+        /// <summary>
+        /// Applies orthographic consonant softening before a soft ending, leaving d/t/n unchanged.
+        /// </summary>
+        /// <param name="stem">The stem to transform.</param>
+        /// <param name="context">The palatalization context used to choose the softening target.</param>
+        /// <returns>The stem after orthographic consonant softening has been applied.</returns>
+        public string ApplyOrthographicSoftening(string stem, PalatalizationContext context)
+        {
+            if (stem is null)
+            {
+                throw new ArgumentNullException(nameof(stem));
+            }
+
+            var phoneme = _registry.Get(stem[^1..]);
+
+            // d/t/n palatalization is phonetic only; the ě digraph carries it, so keep the grapheme.
+            var isDTN = phoneme?.Place == ArticulationPlace.Alveolar
+                && (phoneme.Manner == ArticulationManner.Plosive
+                    || phoneme.Manner == ArticulationManner.Nasal);
+
+            return isDTN ? stem : ApplySoftening(stem, context);
         }
     }
 }

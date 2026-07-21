@@ -91,6 +91,32 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies the -ě digraph realization for žena-pattern nouns in dative and locative singular.
+        /// </summary>
+        /// <param name="lemma">The dictionary form to inflect.</param>
+        /// <param name="expected">The expected dative/locative singular form.</param>
+        [TestMethod]
+        [ZenaSoftEndingData]
+        public void GetForm_ZenaDativeLocativeSg_ReturnsExpected(string lemma, string expected)
+        {
+            foreach (var @case in new[] { Case.Dative, Case.Locative })
+            {
+                var request = new CzechWordRequest
+                {
+                    Lemma = lemma,
+                    WordCategory = WordCategory.Noun,
+                    Pattern = "žena",
+                    Gender = Gender.Feminine,
+                    Number = Number.Singular,
+                    Case = @case
+                };
+
+                var result = nounDeclensionService.GetForm(request).Form;
+                Assert.AreEqual(expected, result, $"Pro pád {@case} lemmatu '{lemma}'.");
+            }
+        }
+
+        /// <summary>
         /// Verifies that GetForm sg nom returns expected.
         /// </summary>
         /// <param name="lemma">The dictionary form to resolve or analyze.</param>
@@ -122,6 +148,47 @@ namespace Grammar.Czech.Test
                 var result = nounDeclensionService.GetForm(request).Form;
                 var expected = vals[index];
                 Assert.AreEqual(expected, result, $"Pro pád {request.Case?.ToString()} se očekávalo: {expected}.");
+            }
+        }
+
+        /// <summary>
+        /// Provides žena-pattern dative/locative singular test cases covering the -ě digraph.
+        /// </summary>
+        private class ZenaSoftEndingDataAttribute : NounDeclensionTestAttribue
+        {
+            /// <summary>
+            /// Provides data rows for a parameterized MSTest method.
+            /// </summary>
+            /// <param name="methodInfo">The test method requesting data.</param>
+            /// <returns>The test data rows for the requested method.</returns>
+            public override IEnumerable<object?[]> GetData(MethodInfo methodInfo)
+            {
+                return new List<object[]>
+                {
+                    // d/t/n — grapheme stays, ě carries the softening
+                    new[] { "žena", "ženě" },
+                    new[] { "Jana", "Janě" },
+                    new[] { "Marta", "Martě" },
+                    new[] { "Linda", "Lindě" },
+                    // labials b/p/m and v/f — ě kept
+                    new[] { "ryba", "rybě" },
+                    new[] { "lampa", "lampě" },
+                    new[] { "máma", "mámě" },
+                    new[] { "Eva", "Evě" },
+                    new[] { "žirafa", "žirafě" },
+                    // r → ř, ě → e
+                    new[] { "Klára", "Kláře" },
+                    // s/z/l — ě → e
+                    new[] { "kosa", "kose" },
+                    new[] { "koza", "koze" },
+                    new[] { "škola", "škole" },
+                    // velar 2nd palatalization — k→c, h→z, ch→š, g→z
+                    new[] { "ruka", "ruce" },
+                    new[] { "noha", "noze" },
+                    new[] { "moucha", "mouše" },
+                    new[] { "Praha", "Praze" },
+                    new[] { "droga", "droze" },
+                };
             }
         }
 

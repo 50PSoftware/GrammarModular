@@ -127,7 +127,7 @@ namespace Grammar.Czech.Services
 
             if (_softeningRuleEvaluator.ShouldApplySoftening(word, out var palatalizationContext))
             {
-                stem = _phonologyService.ApplySoftening(stem, palatalizationContext);
+                stem = _phonologyService.ApplyOrthographicSoftening(stem, palatalizationContext);
             }
 
             var hasMobileERemoval = word.HasMobileE ?? MorphologyHelper.EndsWithVowelConsonantVowelConsonant(word.Lemma);
@@ -140,7 +140,7 @@ namespace Grammar.Czech.Services
             }
             else if (!endingTransformationApplied)
             {
-                finalEnding = _ortographyService.NormalizeEndingOrthography(stem, finalEnding);
+                finalEnding = _ortographyService.NormalizeEndingOrthography(stem, finalEnding, word.Pattern);
             }
 
             return new WordForm(MorphologyHelper.ApplyFormEnding(stem, finalEnding));

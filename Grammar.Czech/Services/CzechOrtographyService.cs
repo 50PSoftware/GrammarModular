@@ -40,8 +40,9 @@ namespace Grammar.Czech.Services
         /// </summary>
         /// <param name="stem">The stem to transform.</param>
         /// <param name="ending">The ending used to choose the morphology rule.</param>
+        /// <param name="pattern">The declension pattern, used to distinguish hard vs. soft paradigms.</param>
         /// <returns>The normalized ending spelling for the supplied stem.</returns>
-        public string NormalizeEndingOrthography(string stem, string ending)
+        public string NormalizeEndingOrthography(string stem, string ending, string pattern)
         {
             if (string.IsNullOrEmpty(stem) || string.IsNullOrEmpty(ending))
                 return ending;
@@ -59,15 +60,26 @@ namespace Grammar.Czech.Services
                 && (phoneme.Manner == ArticulationManner.Nasal
                     || phoneme.Manner == ArticulationManner.Plosive);
 
-            // Bilabial pouze — Labiodental (v, f) sem nepatří, řeší jotace
-            var isLabial = phoneme?.Place == ArticulationPlace.Bilabial;
+            // Bilabiála (b/p/m) — ě se drží vždy (žena→mámě, hrad→domě, píseň→země).
+            var isBilabial = phoneme?.Place == ArticulationPlace.Bilabial;
 
-            // ě má smysl jen po DTN (ňe/ďe/ťe) a labiálách (jotace)
-            // Kdekoliv jinde je ortografická chyba → normalizuj na e
-            if (!isDTN && !isLabial)
+            // Labiodentála (v/f) — ě se drží jen v tvrdém skloňování (žena→Evě, žirafě);
+            // v měkkém vzoru je koncové -e měkké (píseň→větve).
+            var isHardLabiodental = phoneme?.Place == ArticulationPlace.Labiodental
+                && !SoftPatterns.Contains(pattern);
+
+            // ě se drží po DTN (ňe/ďe/ťe → dě/tě/ně) a po labiále dle výše.
+            // Kdekoliv jinde je ortografická chyba → normalizuj na e.
+            if (!isDTN && !isBilabial && !isHardLabiodental)
                 return ending[..dashPrefix] + 'e' + normalizedEnding[1..];
 
             return ending;
         }
+
+        // Měkké skloňovací vzory — koncové -e po labiále zůstává měkké (bez ě).
+        private static readonly HashSet<string> SoftPatterns = new()
+        {
+            "píseň", "růže", "moře", "kuře", "stroj", "muž", "soudce", "stavení"
+        };
     }
 }

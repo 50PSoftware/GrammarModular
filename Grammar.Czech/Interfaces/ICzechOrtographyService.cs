@@ -12,9 +12,10 @@ namespace Grammar.Czech.Interfaces
         string ApplyJotationOrthography(string ending);
 
         /// <summary>
-        /// Normalizace ě→e v koncovce kde ě ortograficky nedává smysl
-        /// (non-DTN a non-labiální konsonant).
+        /// Normalizace ě→e v koncovce kde ě ortograficky nedává smysl.
+        /// ě se drží po d/t/n vždy; po labiále jen v tvrdém skloňování — v měkkém
+        /// (vzor <paramref name="pattern"/> píseň/růže…) se koncové soft -e nemění na ě (větev→větve).
         /// </summary>
-        string NormalizeEndingOrthography(string stem, string ending);
+        string NormalizeEndingOrthography(string stem, string ending, string pattern);
     }
 }

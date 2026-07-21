@@ -12,8 +12,8 @@ namespace Grammar.Czech.Services
     {
         private readonly List<SofteningRule> rules = new()
         {
-            new("žena", WordCategory.Noun, Number.Singular, Case.Dative, req => req.Lemma.EndsWith("ka"), EndingTransformation: "-e", Context: PalatalizationContext.Second),
-            new("žena", WordCategory.Noun, Number.Singular, Case.Locative, req => req.Lemma.EndsWith("ka"), EndingTransformation: "-e",Context: PalatalizationContext.Second),
+            new("žena", WordCategory.Noun, Number.Singular, Case.Dative, IsVelarStem, EndingTransformation: "-e", Context: PalatalizationContext.Second),
+            new("žena", WordCategory.Noun, Number.Singular, Case.Locative, IsVelarStem, EndingTransformation: "-e", Context: PalatalizationContext.Second),
 
             new("žena", WordCategory.Noun, Number.Singular, Case.Dative, req => !req.Lemma.EndsWith("ka") && req.Lemma != "žena"),
             new("žena", WordCategory.Noun, Number.Singular, Case.Locative, req => !req.Lemma.EndsWith("ka") && req.Lemma != "žena"),
@@ -54,6 +54,13 @@ namespace Grammar.Czech.Services
             applied = rule?.EndingTransformation is not null;
             return rule?.EndingTransformation;
         }
+
+        // Feminine žena velar stems undergoing 2nd palatalization in dat/loc sg: k→c, h→z, g→z.
+        // ch (moucha) is excluded — it stays on the general 1st-palatalization path (ch→š → mouše).
+        private static bool IsVelarStem(CzechWordRequest req) =>
+            req.Lemma.EndsWith("ka")
+            || (req.Lemma.EndsWith("ha") && !req.Lemma.EndsWith("cha"))
+            || req.Lemma.EndsWith("ga");
 
         private SofteningRule? GetMatchingRule(CzechWordRequest wordRequest)
         {

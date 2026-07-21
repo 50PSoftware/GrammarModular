@@ -93,7 +93,10 @@ namespace Grammar.Czech.Services
 
             var derivationSuffix = DetectNounDerivationSuffix(lemma, pattern);
 
-            if (!string.IsNullOrEmpty(derivationSuffix) && root.EndsWith(derivationSuffix))
+            // Ordinal comparison: culture-aware EndsWith treats a trailing "ch" as one collation
+            // unit under cs-CZ, so root.EndsWith("h") would wrongly return false for stems like
+            // "mouch", leaving a spurious derivation suffix that then gets re-appended.
+            if (!string.IsNullOrEmpty(derivationSuffix) && root.EndsWith(derivationSuffix, StringComparison.Ordinal))
             {
                 if (_epenthesisRuleEvaluator.ShouldApplyEpenthesis(root[..^derivationSuffix.Length], derivationSuffix, wordRequest))
                 {

@@ -46,7 +46,19 @@ namespace Grammar.Czech.Providers
                 { PalatalizationContext.First, "č"},
                 { PalatalizationContext.Second, "c" } }
             },
-            ["g"] = new Phoneme { Symbol = "g", Place = ArticulationPlace.Velar, Manner = ArticulationManner.Plosive, Voicing = Voicing.Voiced, VoicelessCounterpart = "k" },
+            ["g"] = new CzechPhoneme
+            {
+                Symbol = "g",
+                Place = ArticulationPlace.Velar,
+                Manner = ArticulationManner.Plosive,
+                Voicing = Voicing.Voiced,
+                VoicelessCounterpart = "k",
+                // 2nd palatalization g→z (droga→droze). No PalatalizeTo: the reverse map is keyed
+                // by PalatalizeTo and "z" is already taken by h, so a base target would collide.
+                PalatalizationTargets = new() {
+                { PalatalizationContext.First, "ž" },
+                { PalatalizationContext.Second, "z" } }
+            },
             ["ch"] = new CzechPhoneme
             {
                 Symbol = "ch",
