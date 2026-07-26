@@ -17,7 +17,12 @@ namespace Grammar.Czech.Models
         /// <summary>
         /// Gets or sets a value indicating whether mobile vowel alternation applies.
         /// </summary>
-        public bool? HasMobileVowel { get; init; }
+        /// <remarks>
+        /// Named to match the hasMobileE key in lexicon.json and <see cref="CzechWordRequest.HasMobileE"/>.
+        /// It was HasMobileVowel, which the camelCase naming policy turned into a key the data never had,
+        /// so the lexicon's mobile-vowel flag deserialized to null for every entry.
+        /// </remarks>
+        public bool? HasMobileE { get; init; }
 
         /// <summary>
         /// Gets or sets a value indicating whether genitive plural shortening applies.

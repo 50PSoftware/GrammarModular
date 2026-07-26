@@ -12,8 +12,10 @@ namespace Grammar.Czech.Providers.JsonProviders
     /// </summary>
     public sealed class JsonValencyProvider : IValencyProvider<CzechLexicalEntry>
     {
-        private readonly string _lexiconPath = "Data.Valency.lexicon";
-        private readonly string _valencyPath = "Data.Valency.valency";
+        // The files live under Data/Lexicon, not Data/Valency — the old paths named a folder that
+        // never existed, so every load threw before it could return anything.
+        private const string LexiconPath = "Data.Lexicon.lexicon";
+        private const string ValencyPath = "Data.Lexicon.valency";
 
         private readonly Lazy<Dictionary<string, CzechLexicalEntry>> _lexicon;
         private readonly Lazy<Dictionary<string, List<ValencyFrame>>> _frames;
@@ -64,12 +66,12 @@ namespace Grammar.Czech.Providers.JsonProviders
 
         private static Dictionary<string, CzechLexicalEntry> LoadLexicon(Assembly assembly)
             => JsonLoader.LoadDictionaryFromFile<CzechLexicalEntry>(
-                assembly, "Data.Valency.lexicon", JsonHelpers.SerializerOptions)
+                assembly, LexiconPath, JsonHelpers.SerializerOptions)
                ?? [];
 
         private static Dictionary<string, List<ValencyFrame>> LoadFrames(Assembly assembly)
             => JsonLoader.LoadDictionaryFromFile<List<ValencyFrame>>(
-                assembly, "Data.Valency.valency", JsonHelpers.SerializerOptions)
+                assembly, ValencyPath, JsonHelpers.SerializerOptions)
                ?? [];
     }
 }

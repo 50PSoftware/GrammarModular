@@ -171,7 +171,7 @@ namespace Grammar.Czech.Services
                 ?? throw new LemmaNotFoundException(lemma,
                     $"Lemma '{lemma}' found in lexicon but Pattern is null.");
 
-            return (gender, pattern, Number.Singular, entry.IsAnimate ?? false, entry.HasMobileVowel);
+            return (gender, pattern, Number.Singular, entry.IsAnimate ?? false, entry.HasMobileE);
         }
     }
 }
