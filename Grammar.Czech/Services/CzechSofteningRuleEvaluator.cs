@@ -70,9 +70,14 @@ namespace Grammar.Czech.Services
 
         private static bool EndsWithCh(CzechWordRequest req, string stem) => stem.EndsWith("ch", StringComparison.Ordinal);
 
-        // Velar stems take -u in the vocative sg. with no palatalization: vojáku, hochu, vrahu.
+        // Velar stems take -u in the vocative sg. with no palatalization. All four velars, per IJP:
+        // "jejichž tvarotvorný základ končí na -k, -g, -h, -ch, mají koncovku -u" — vojáku, biologu,
+        // vrahu, hochu. The g was missing and gave biologe.
         private static bool IsVelarVocativeStem(CzechWordRequest req, string stem) =>
-            EndsWithK(req, stem) || EndsWithCh(req, stem) || stem.EndsWith("h", StringComparison.Ordinal);
+            EndsWithK(req, stem)
+            || EndsWithCh(req, stem)
+            || stem.EndsWith("h", StringComparison.Ordinal)
+            || stem.EndsWith("g", StringComparison.Ordinal);
 
         // A consonant before the final r means syllabic r, which palatalizes in the vocative sg.:
         // bratr → bratře, Petr → Petře, ministr → ministře. A vowel before the r keeps the plain

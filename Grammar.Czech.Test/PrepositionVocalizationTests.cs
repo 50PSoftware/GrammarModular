@@ -50,6 +50,16 @@ namespace Grammar.Czech.Test
         // sibilant-initial cluster after v
         [DataRow("v", "škole", "ve")]
         [DataRow("v", "smyslu", "ve")]
+        // the second consonant of the cluster repeats the preposition's
+        [DataRow("v", "dveřích", "ve")]
+        [DataRow("v", "svém", "ve")]
+        [DataRow("v", "dvou", "ve")]
+        [DataRow("k", "skoku", "ke")]
+        // three consonants running
+        [DataRow("k", "středu", "ke")]
+        [DataRow("s", "vstupem", "se")]
+        [DataRow("v", "skladišti", "ve")]
+        [DataRow("z", "vzpomínek", "ze")]
         public void Vocalize_TriggeringWord_ReturnsVocalizedForm(string preposition, string followingWord, string expected)
         {
             Assert.AreEqual(expected, service.Vocalize(preposition, followingWord));
@@ -69,6 +79,9 @@ namespace Grammar.Czech.Test
         [DataRow("z", "lesa")]
         [DataRow("k", "domu")]
         [DataRow("s", "bratrem")]
+        // a syllabic preposition keeps its own vowel, even before the same consonant
+        [DataRow("bez", "zákona")]
+        [DataRow("od", "dveří")]
         // no vocalized variant at all
         [DataRow("na", "stole")]
         [DataRow("do", "domu")]

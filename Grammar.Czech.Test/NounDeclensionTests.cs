@@ -341,6 +341,7 @@ namespace Grammar.Czech.Test
                     new[] { "voják", "vojáku", "pán" },
                     new[] { "hoch", "hochu", "pán" },
                     new[] { "vrah", "vrahu", "pán" },
+                    new[] { "biolog", "biologu", "pán" },
                     // soft and -a patterns
                     new[] { "muž", "muži", "muž" },
                     new[] { "chlapec", "chlapče", "muž" },

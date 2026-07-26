@@ -57,10 +57,19 @@ namespace Grammar.Czech.Services
         /// <param name="followingWord">The word that immediately follows the preposition.</param>
         /// <returns>The vocalized variant when the following word requires it; otherwise, the preposition unchanged.</returns>
         /// <remarks>
-        /// Covers the phonologically regular triggers: the following word opens with the same consonant or its
-        /// voicing counterpart (ve vodě, se sestrou, ze země, ke kamarádovi), or with the cluster mn-
-        /// (se mnou, ke mně), or — for v and z — with a sibilant-initial cluster (ve škole, ze zdi).
-        /// The lexicalized cases are not covered and would need their own data: ve dvou, ve třech, ke stu.
+        /// Vocalization is not a settled rule — the IJP is explicit that usage decides and the forms vary —
+        /// so this covers the tendencies it states and no more:
+        /// <list type="bullet">
+        /// <item>before mn-, whatever the preposition: se mnou, ke mně, beze mne, ode mne;</item>
+        /// <item>the same consonant or its voicing counterpart: ve vodě, se sestrou, ze země, ke gauči;</item>
+        /// <item>the second consonant of the cluster repeats the preposition's: ve dveřích, ve svém,
+        /// ke skoku, ve dvou;</item>
+        /// <item>three or more consonants: ke středu, se vstupem, ve skladišti, ze vzpomínek;</item>
+        /// <item>for v and z, a sibilant-initial cluster: ve škole, ve smyslu.</item>
+        /// </list>
+        /// Syllabic prepositions are excluded from all of it except mn-, because they mostly do not vocalize
+        /// even before the same consonant: bez zákona, not beze zákona.
+        /// Genuinely lexicalized forms stay out of reach of any rule: ve třech, ke stu.
         /// </remarks>
         public string Vocalize(string preposition, string followingWord)
         {
@@ -71,29 +80,59 @@ namespace Grammar.Czech.Services
                 return preposition;
             }
 
-            var next = followingWord.ToLowerInvariant();
-            var final = preposition[^1];
-
-            return RequiresVocalization(final, next) ? data.Vocalized : preposition;
+            return RequiresVocalization(preposition, followingWord.ToLowerInvariant()) ? data.Vocalized : preposition;
         }
 
-        private static bool RequiresVocalization(char prepositionFinal, string next)
+        private static bool RequiresVocalization(string preposition, string next)
         {
             if (next.StartsWith("mn", StringComparison.Ordinal))
             {
                 return true;
             }
 
-            if (SameOrPaired(prepositionFinal, next[0]))
+            // A syllabic preposition already has its vowel and keeps it: bez zákona, od dveří.
+            if (preposition.Any(IsVowel))
+            {
+                return false;
+            }
+
+            var final = preposition[^1];
+
+            if (SameOrPaired(final, next[0]))
             {
                 return true;
             }
 
-            // v and z also vocalize before a cluster that opens with a sibilant: ve škole, ve smyslu, ze zdi.
-            return prepositionFinal is 'v' or 'z'
-                && next.Length > 1
-                && "szšž".Contains(next[0])
-                && !IsVowel(next[1]);
+            if (LeadingConsonants(next) < 2)
+            {
+                return false;
+            }
+
+            // The second consonant of the cluster repeating the preposition's: ve dveřích, ke skoku, ve dvou.
+            if (next[1] == final)
+            {
+                return true;
+            }
+
+            // Three consonants running are awkward enough on their own: ke středu, ve skladišti.
+            if (LeadingConsonants(next) >= 3)
+            {
+                return true;
+            }
+
+            // v and z also vocalize before a cluster that opens with a sibilant: ve škole, ve smyslu.
+            return final is 'v' or 'z' && "szšž".Contains(next[0]);
+        }
+
+        private static int LeadingConsonants(string word)
+        {
+            var count = 0;
+            while (count < word.Length && !IsVowel(word[count]))
+            {
+                count++;
+            }
+
+            return count;
         }
 
         // Voicing pairs, plus the sibilant series that s and z share with š and ž.
