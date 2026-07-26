@@ -1,4 +1,5 @@
 using Grammar.Core.Enums;
+using Grammar.Core.Models.Valency;
 using Grammar.Czech.Enums;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
@@ -18,6 +19,7 @@ namespace Grammar.Czech.Services
         private readonly ICzechPronounService pronounService;
         private readonly ICzechPrepositionService prepositionService;
         private readonly ICzechConjunctionService conjunctionService;
+        private readonly ICzechValencyService valencyService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechSentenceBuilder"/> type.
@@ -27,13 +29,15 @@ namespace Grammar.Czech.Services
             ICzechParticleService particleService,
             ICzechPronounService pronounService,
             ICzechPrepositionService prepositionService,
-            ICzechConjunctionService conjunctionService)
+            ICzechConjunctionService conjunctionService,
+            ICzechValencyService valencyService)
         {
             this.composer = composer;
             this.particleService = particleService;
             this.pronounService = pronounService;
             this.prepositionService = prepositionService;
             this.conjunctionService = conjunctionService;
+            this.valencyService = valencyService;
         }
 
         /// <summary>
@@ -115,6 +119,8 @@ namespace Grammar.Czech.Services
 
         private string RenderClause(CzechClause clause, bool firstPositionTaken)
         {
+            clause = ApplyValencyFrame(clause);
+
             var predicate = ApplySubjectAgreement(clause);
 
             // Short pronouns leave the constituent order entirely and join the cluster, so they have to be
@@ -141,6 +147,49 @@ namespace Grammar.Czech.Services
             var words = BuildLinearOrder(preVerbal, verbRest, particleService.ContractCluster(clitics), postVerbal, firstPositionTaken);
 
             return string.Join(' ', words);
+        }
+
+        // The frame says how each argument of this verb is realized, so the caller states the functor and the
+        // word and the case follows from the verb. A case set explicitly wins — the frame fills gaps, it does
+        // not overrule a deliberate choice.
+        private CzechClause ApplyValencyFrame(CzechClause clause)
+        {
+            if (clause.Predicate.WordCategory != WordCategory.Verb)
+            {
+                return clause;
+            }
+
+            var frame = valencyService.GetFrame(clause.Predicate.Lemma, clause.FrameLabel);
+
+            return clause with { Elements = clause.Elements.Select(element => ApplySlot(element, frame, clause.Predicate.Lemma)).ToList() };
+        }
+
+        private ClauseElement ApplySlot(ClauseElement element, ValencyFrame? frame, string verbLemma)
+        {
+            var slot = frame is null ? null : valencyService.GetSlot(frame, element.Functor);
+
+            // An inner participant belongs to the verb, so a verb with no slot for it cannot take it at all.
+            // Free modifications attach to any verb and are never licensed by a frame.
+            if (slot is null && frame is not null && valencyService.IsInnerParticipant(element.Functor))
+            {
+                throw new InvalidOperationException(
+                    $"Sloveso '{verbLemma}' nemá slot pro funktor {element.Functor}. Rámec '{frame.FrameLabel}' obsahuje: "
+                    + string.Join(", ", frame.Slots.Select(s => s.Functor)) + ".");
+            }
+
+            if (slot is null || element.Word.Case is not null)
+            {
+                return element;
+            }
+
+            var word = element.Word;
+            word.Case = slot.Realization.Case;
+
+            return element with
+            {
+                Word = word,
+                Preposition = element.Preposition ?? slot.Realization.Preposition
+            };
         }
 
         // One constituent, however many words. The whole phrase counts as a single unit for second position,

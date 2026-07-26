@@ -5,7 +5,7 @@
       "frameLabel": "transfer",
       "slots": [
         {
-          "role": "Actor",
+          "functor": "ACT",
           "realization": {
             "case": "Nominative",
             "preposition": null
@@ -13,7 +13,7 @@
           "isObligatory": true
         },
         {
-          "role": "Patient",
+          "functor": "PAT",
           "realization": {
             "case": "Accusative",
             "preposition": null
@@ -21,7 +21,7 @@
           "isObligatory": true
         },
         {
-          "role": "Addressee",
+          "functor": "ADDR",
           "realization": {
             "case": "Dative",
             "preposition": null
@@ -29,7 +29,7 @@
           "isObligatory": false
         },
         {
-          "role": "Direction",
+          "functor": "DIR3",
           "realization": {
             "case": "Accusative",
             "preposition": "na"
@@ -45,7 +45,7 @@
       "frameLabel": "transfer",
       "slots": [
         {
-          "role": "Actor",
+          "functor": "ACT",
           "realization": {
             "case": "Nominative",
             "preposition": null
@@ -53,7 +53,7 @@
           "isObligatory": true
         },
         {
-          "role": "Patient",
+          "functor": "PAT",
           "realization": {
             "case": "Accusative",
             "preposition": null
@@ -61,7 +61,7 @@
           "isObligatory": true
         },
         {
-          "role": "Addressee",
+          "functor": "ADDR",
           "realization": {
             "case": "Dative",
             "preposition": null
@@ -77,7 +77,7 @@
       "frameLabel": "motion",
       "slots": [
         {
-          "role": "Actor",
+          "functor": "ACT",
           "realization": {
             "case": "Nominative",
             "preposition": null
@@ -85,15 +85,15 @@
           "isObligatory": true
         },
         {
-          "role": "Direction",
+          "functor": "DIR3",
           "realization": {
-            "case": "Accusative",
+            "case": "Genitive",
             "preposition": "do"
           },
           "isObligatory": false
         },
         {
-          "role": "Origin",
+          "functor": "DIR1",
           "realization": {
             "case": "Genitive",
             "preposition": "z"
@@ -107,7 +107,7 @@
       "frameLabel": "process",
       "slots": [
         {
-          "role": "Actor",
+          "functor": "ACT",
           "realization": {
             "case": "Nominative",
             "preposition": null
@@ -123,7 +123,7 @@
       "frameLabel": "perception",
       "slots": [
         {
-          "role": "Actor",
+          "functor": "ACT",
           "realization": {
             "case": "Nominative",
             "preposition": null
@@ -131,7 +131,7 @@
           "isObligatory": true
         },
         {
-          "role": "Patient",
+          "functor": "PAT",
           "realization": {
             "case": "Accusative",
             "preposition": null

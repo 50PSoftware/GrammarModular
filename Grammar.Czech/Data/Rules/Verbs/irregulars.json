@@ -45,7 +45,6 @@
       }
     }
   },
-
   "mít": {
     "inheritsFrom": "trida5",
     "aspect": "imperfective",
@@ -53,7 +52,6 @@
     "pastStem": "mě",
     "imperativeStem": "měj"
   },
-
   "chtít": {
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
@@ -73,7 +71,6 @@
       }
     }
   },
-
   "moci": {
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
@@ -92,7 +89,6 @@
       }
     }
   },
-
   "vědět": {
     "aspect": "imperfective",
     "stem": "ví",
@@ -124,14 +120,12 @@
       }
     }
   },
-
   "umět": {
     "inheritsFrom": "trida4",
     "aspect": "imperfective",
     "stem": "um",
     "pastStem": "umě"
   },
-
   "jíst": {
     "aspect": "imperfective",
     "stem": "jez",
@@ -150,103 +144,102 @@
       }
     }
   },
-
   "jít": {
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
     "stem": "jd",
-    "pastStem": "še"
+    "pastStem": "š",
+    "pastParticiple": {
+      "masculine": {
+        "singular": "-el",
+        "plural": "-li"
+      },
+      "feminine": {
+        "singular": "-la",
+        "plural": "-ly"
+      },
+      "neuter": {
+        "singular": "-lo",
+        "plural": "-la"
+      }
+    }
   },
-
   "jet": {
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
     "stem": "jed",
     "pastStem": "je"
   },
-
   "hrát": {
     "inheritsFrom": "trida3",
     "aspect": "imperfective",
     "stem": "hra",
     "pastStem": "hrá"
   },
-
   "zvát": {
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
     "stem": "zv",
     "pastStem": "zva"
   },
-
   "spát": {
     "inheritsFrom": "trida4",
     "aspect": "imperfective",
     "stem": "sp",
     "pastStem": "spa"
   },
-
   "ležet": {
     "inheritsFrom": "trida4",
     "aspect": "imperfective",
     "stem": "lež",
     "pastStem": "leže"
   },
-
   "sedět": {
     "inheritsFrom": "trida4",
     "aspect": "imperfective",
     "stem": "sed",
     "pastStem": "sedě"
   },
-
   "běžet": {
     "inheritsFrom": "trida4",
     "aspect": "imperfective",
     "stem": "běž",
     "pastStem": "běže"
   },
-
   "vidět": {
     "inheritsFrom": "trida4",
     "aspect": "imperfective",
     "stem": "vid",
     "pastStem": "vidě"
   },
-
   "klást": {
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
     "stem": "klad"
   },
-
   "číst": {
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
     "stem": "čt",
     "pastStem": "čet"
   },
-
   "téci": {
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
     "stem": "teč",
     "pastStem": "tek"
   },
-
   "řvát": {
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
     "stem": "řv",
     "pastStem": "řva"
   },
-
   "říct": {
     "inheritsFrom": "trida2",
     "aspect": "perfective",
     "stem": "řek"
   },
-
   "dát": {
     "inheritsFrom": "trida5",
     "aspect": "perfective",
@@ -254,21 +247,18 @@
     "pastStem": "da",
     "imperativeStem": "dej"
   },
-
   "vzít": {
     "inheritsFrom": "trida1",
     "aspect": "perfective",
     "stem": "vezm",
     "pastStem": "vza"
   },
-
   "pomoci": {
     "inheritsFrom": "trida1",
     "aspect": "perfective",
     "stem": "pomůž",
     "pastStem": "pomoh"
   },
-
   "psát": {
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
@@ -279,7 +269,6 @@
     "imperativeStem": "piš",
     "passiveStem": "psá"
   },
-
   "nese": {
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
@@ -287,7 +276,6 @@
     "infinitive": "nést",
     "passiveStem": "nese"
   },
-
   "bere": {
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
@@ -295,7 +283,6 @@
     "pastStem": "bra",
     "infinitive": "brát"
   },
-
   "maže": {
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
@@ -303,7 +290,6 @@
     "pastStem": "maza",
     "infinitive": "mazat"
   },
-
   "peče": {
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
@@ -311,7 +297,6 @@
     "pastStem": "pek",
     "infinitive": "péct"
   },
-
   "umře": {
     "inheritsFrom": "trida1",
     "aspect": "perfective",
@@ -319,7 +304,6 @@
     "pastStem": "umře",
     "infinitive": "umřít"
   },
-
   "dělá": {
     "inheritsFrom": "trida5",
     "aspect": "imperfective",
@@ -328,7 +312,6 @@
     "imperativeStem": "dělej",
     "infinitive": "dělat"
   },
-
   "prosí": {
     "inheritsFrom": "trida4",
     "aspect": "imperfective",
@@ -336,7 +319,6 @@
     "pastStem": "prosi",
     "passiveStem": "proše"
   },
-
   "kupuje": {
     "inheritsFrom": "trida3",
     "aspect": "imperfective",
@@ -345,7 +327,6 @@
     "passiveStem": "kupova",
     "infinitive": "kupovat"
   },
-
   "tiskne": {
     "inheritsFrom": "trida2",
     "aspect": "imperfective",
@@ -367,7 +348,6 @@
       }
     }
   },
-
   "mine": {
     "inheritsFrom": "trida1",
     "aspect": "perfective",
@@ -390,7 +370,6 @@
       }
     }
   },
-
   "kryje": {
     "inheritsFrom": "trida3",
     "aspect": "imperfective",
@@ -413,7 +392,6 @@
       }
     }
   },
-
   "jmout": {
     "inheritsFrom": "dojme",
     "aspect": "perfective",

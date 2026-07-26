@@ -8,9 +8,14 @@ namespace Grammar.Core.Models.Valency
     public sealed record ValencySlot
     {
         /// <summary>
-        /// Gets or sets the semantic role represented by the slot.
+        /// Gets or sets the FGD functor represented by the slot.
         /// </summary>
-        public SemanticRole Role { get; init; }
+        /// <remarks>
+        /// The same vocabulary the clause model uses, so a constituent's functor and a frame's slot match
+        /// directly. It replaces the earlier SemanticRole, which named the same things differently and could
+        /// not be lined up with a <see cref="Grammar.Core.Enums.FgdFunctor"/> without a translation step.
+        /// </remarks>
+        public FgdFunctor Functor { get; init; }
 
         /// <summary>
         /// Gets the syntactic realization required by the valency slot.

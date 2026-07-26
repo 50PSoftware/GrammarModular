@@ -21,6 +21,15 @@ namespace Grammar.Czech.Models.Syntax
         public IReadOnlyList<ClauseElement> Elements { get; init; } = [];
 
         /// <summary>
+        /// Gets the valency frame to read the predicate's arguments from, when the verb has more than one.
+        /// </summary>
+        /// <remarks>
+        /// Only needed to disambiguate: jít has a motion frame and a process frame, and they take different
+        /// arguments. A verb with a single frame needs nothing here.
+        /// </remarks>
+        public string? FrameLabel { get; init; }
+
+        /// <summary>
         /// Gets the punctuation mark that closes the sentence.
         /// </summary>
         public string Terminator { get; init; } = ".";

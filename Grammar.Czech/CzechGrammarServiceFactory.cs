@@ -74,6 +74,7 @@ namespace Grammar.Czech
 
             services.AddSingleton<ICzechPrepositionService, CzechPrepositionService>();
             services.AddSingleton<ICzechConjunctionService, CzechConjunctionService>();
+            services.AddSingleton<ICzechValencyService, CzechValencyService>();
 
             services.AddSingleton<CzechAuxiliaryVerbService>();
             services.AddSingleton<CzechVerbPhraseBuilderService>();

@@ -514,6 +514,60 @@
             };
 
             Console.WriteLine(sentenceBuilder.Build(clause with { Elements = [ktera, @object] }));
+
+            // Valenční rámec: u argumentů se pád nezadává, plyne ze slovesa.
+            var kniha = new CzechWordRequest
+            {
+                Lemma = "kniha",
+                WordCategory = WordCategory.Noun,
+                Gender = Gender.Feminine,
+                Number = Number.Singular,
+                Pattern = "žena"
+            };
+
+            var zena = new CzechWordRequest
+            {
+                Lemma = "žena",
+                WordCategory = WordCategory.Noun,
+                Gender = Gender.Feminine,
+                Number = Number.Singular,
+                Pattern = "žena"
+            };
+
+            var davat = new CzechWordRequest
+            {
+                Lemma = "dávat",
+                WordCategory = WordCategory.Verb,
+                Pattern = "trida5",
+                Tense = Tense.Past,
+                Modus = Modus.Indicative,
+                Voice = Voice.Active,
+                Aspect = VerbAspect.Imperfective,
+                Person = Person.Third,
+                Number = Number.Singular,
+                Gender = Gender.Feminine
+            };
+
+            Console.WriteLine(sentenceBuilder.Build(new CzechClause
+            {
+                Predicate = davat,
+                Elements =
+                [
+                    subject,
+                    ClauseElement.Of(zena, FgdFunctor.ADDR, InformationStatus.New),
+                    ClauseElement.Of(kniha, FgdFunctor.PAT, InformationStatus.New)
+                ]
+            }));
+
+            // Předložku i její pád nese taky rámec.
+            var jit = davat with { Lemma = "jít", Pattern = "jít" };
+
+            Console.WriteLine(sentenceBuilder.Build(new CzechClause
+            {
+                Predicate = jit,
+                FrameLabel = "motion",
+                Elements = [subject, ClauseElement.Of(skola with { Case = null }, FgdFunctor.DIR3, InformationStatus.New)]
+            }));
         }
 
         private static void PrintWordInfo(CzechWordRequest request)

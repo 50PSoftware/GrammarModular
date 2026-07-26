@@ -211,7 +211,7 @@ namespace Grammar.Czech.Test
             var slots = valency.GetFrames("dát").First().Slots;
             Assert.IsTrue(slots.Count > 0, "Rámec slovesa dát nemá sloty.");
 
-            var patient = slots.Single(slot => slot.Role == SemanticRole.Patient);
+            var patient = slots.Single(slot => slot.Functor == FgdFunctor.PAT);
             Assert.AreEqual(Case.Accusative, patient.Realization.Case, "Realizace slotu se nenačetla.");
             Assert.IsTrue(patient.IsObligatory);
         }
