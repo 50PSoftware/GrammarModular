@@ -69,7 +69,8 @@ namespace Grammar.Czech.Services
         /// </list>
         /// Syllabic prepositions are excluded from all of it except mn-, because they mostly do not vocalize
         /// even before the same consonant: bez zákona, not beze zákona.
-        /// Genuinely lexicalized forms stay out of reach of any rule: ve třech, ke stu.
+        /// Genuinely lexicalized forms are out of reach of any rule and are listed per preposition in
+        /// <see cref="PrepositionData.VocalizeBefore"/> instead: se dvěma, se třemi, se čtyřmi.
         /// </remarks>
         public string Vocalize(string preposition, string followingWord)
         {
@@ -80,12 +81,18 @@ namespace Grammar.Czech.Services
                 return preposition;
             }
 
-            return RequiresVocalization(preposition, followingWord.ToLowerInvariant()) ? data.Vocalized : preposition;
+            return RequiresVocalization(data, preposition, followingWord.ToLowerInvariant()) ? data.Vocalized : preposition;
         }
 
-        private static bool RequiresVocalization(string preposition, string next)
+        private static bool RequiresVocalization(PrepositionData data, string preposition, string next)
         {
             if (next.StartsWith("mn", StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            // Lexicalized combinations no cluster rule reaches, listed in the data for this preposition.
+            if (data.VocalizeBefore.Any(prefix => next.StartsWith(prefix, StringComparison.Ordinal)))
             {
                 return true;
             }

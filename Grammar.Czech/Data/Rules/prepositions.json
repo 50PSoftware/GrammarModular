@@ -25,6 +25,7 @@
   "s": {
     "originType": "Original",
     "vocalized": "se",
+    "vocalizeBefore": [ "dvěma", "třemi", "čtyřmi", "dvěmi" ],
     "variants": [
       {
         "case": "Instrumental",

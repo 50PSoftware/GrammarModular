@@ -17,6 +17,7 @@ namespace Grammar.Czech.Services
         private readonly CzechWordFormComposer composer;
         private readonly ICzechParticleService particleService;
         private readonly ICzechPronounService pronounService;
+        private readonly ICzechNumeralService numeralService;
         private readonly ICzechPrepositionService prepositionService;
         private readonly ICzechConjunctionService conjunctionService;
         private readonly ICzechValencyService valencyService;
@@ -28,6 +29,7 @@ namespace Grammar.Czech.Services
             CzechWordFormComposer composer,
             ICzechParticleService particleService,
             ICzechPronounService pronounService,
+            ICzechNumeralService numeralService,
             ICzechPrepositionService prepositionService,
             ICzechConjunctionService conjunctionService,
             ICzechValencyService valencyService)
@@ -35,6 +37,7 @@ namespace Grammar.Czech.Services
             this.composer = composer;
             this.particleService = particleService;
             this.pronounService = pronounService;
+            this.numeralService = numeralService;
             this.prepositionService = prepositionService;
             this.conjunctionService = conjunctionService;
             this.valencyService = valencyService;
@@ -121,6 +124,10 @@ namespace Grammar.Czech.Services
         {
             clause = ApplyValencyFrame(clause);
 
+            // Has to sit between the two: the frame decides what case the phrase stands in, and the numeral
+            // rewrites the head's case off the back of it — which subject agreement then has to see.
+            clause = ApplyCardinalGovernment(clause);
+
             var predicate = ApplySubjectAgreement(clause);
 
             // Short pronouns leave the constituent order entirely and join the cluster, so they have to be
@@ -189,6 +196,81 @@ namespace Grammar.Czech.Services
             {
                 Word = word,
                 Preposition = element.Preposition ?? slot.Realization.Preposition
+            };
+        }
+
+        // The one place Czech runs agreement backwards. Everywhere else the head hands its categories down to
+        // its attributes; a cardinal from five up instead forces the noun it counts into the genitive plural
+        // and, through the element, the predicate into the neuter singular — pět žáků bylo.
+        private CzechClause ApplyCardinalGovernment(CzechClause clause) =>
+            clause with { Elements = clause.Elements.Select(GovernByCardinal).ToList() };
+
+        private ClauseElement GovernByCardinal(ClauseElement element)
+        {
+            var index = element.Modifiers
+                .Select((modifier, position) => (modifier, position))
+                .Where(candidate => candidate.modifier.WordCategory == WordCategory.Numerale)
+                .Select(candidate => (int?)candidate.position)
+                .FirstOrDefault();
+
+            if (index is null)
+            {
+                return element;
+            }
+
+            var numeral = element.Modifiers[index.Value];
+            var agreement = numeralService.GetAgreement(numeral.Lemma);
+
+            // An ordinal is an ordinary agreeing attribute and wants the normal head-to-modifier path.
+            if (agreement == CardinalAgreement.None)
+            {
+                return element;
+            }
+
+            var head = element.Word;
+            var phraseCase = head.Case ?? Case.Nominative;
+
+            // The numeral carries the case of the whole phrase. Setting it here also keeps AgreeWithHead off
+            // it later, since that only fills categories still unset.
+            numeral.Case = phraseCase;
+            numeral.Gender ??= head.Gender;
+            numeral.IsAnimate ??= head.IsAnimate;
+            numeral.Number ??= head.Number;
+
+            // What decides the genitive is the case of the phrase, never whether a preposition stands in
+            // front of it. "Pro pět studentů" keeps the genitive because the preposition governs the
+            // accusative, which is direct; "o pěti studentech" loses it because the locative is not.
+            var isDirect = phraseCase is Case.Nominative or Case.Accusative or Case.Vocative;
+            var isCountable = head.IsCountable ?? true;
+
+            (head.Case, head.Number) = agreement switch
+            {
+                CardinalAgreement.AgreesSingular => (phraseCase, Number.Singular),
+                CardinalAgreement.AgreesPlural => (phraseCase, Number.Plural),
+                CardinalAgreement.AlwaysGenitivePlural => (Case.Genitive, Number.Plural),
+                CardinalAgreement.GenitiveSingular => (Case.Genitive, Number.Singular),
+                CardinalAgreement.GenitivePluralInDirectCases when !isCountable => (Case.Genitive, Number.Singular),
+                CardinalAgreement.GenitivePluralInDirectCases => isDirect
+                    ? (Case.Genitive, Number.Plural)
+                    : (phraseCase, Number.Plural),
+                _ => (head.Case, head.Number)
+            };
+
+            var modifiers = element.Modifiers.ToList();
+            modifiers[index.Value] = numeral;
+
+            // An uncountable noun under mnoho ends up in the genitive singular, which is a different
+            // agreement from the one the lemma carries; the predicate has to be told the one that applied.
+            var effective = agreement == CardinalAgreement.GenitivePluralInDirectCases && !isCountable
+                ? CardinalAgreement.GenitiveSingular
+                : agreement;
+
+            return element with
+            {
+                Word = head,
+                Modifiers = modifiers,
+                PhraseCase = phraseCase,
+                Agreement = effective
             };
         }
 
@@ -397,8 +479,11 @@ namespace Grammar.Czech.Services
         {
             var predicate = clause.Predicate;
 
+            // A counted subject stands in the nominative as a phrase while its head noun is genitive, so the
+            // phrase case is what identifies it — "pět studentů" is the subject of "pět studentů přišlo".
             var subject = clause.Elements
-                .Where(element => element.Functor == FgdFunctor.ACT && element.Word.Case == Case.Nominative)
+                .Where(element => element.Functor == FgdFunctor.ACT
+                    && (element.PhraseCase ?? element.Word.Case) == Case.Nominative)
                 .Select(element => (ClauseElement?)element)
                 .FirstOrDefault();
 
@@ -416,8 +501,16 @@ namespace Grammar.Czech.Services
             }
 
             predicate.Person = ResolvePerson(subject.Word);
-            predicate.Number = subject.Word.Number;
-            predicate.Gender = subject.Word.Gender;
+
+            // A subject counted from five up stops behaving like a plural: the predicate goes neuter singular
+            // regardless of the noun's own gender — "pět žáků bylo", against "tři žáci byli".
+            (predicate.Number, predicate.Gender) = subject.Agreement switch
+            {
+                CardinalAgreement.GenitivePluralInDirectCases
+                    or CardinalAgreement.AlwaysGenitivePlural
+                    or CardinalAgreement.GenitiveSingular => (Number.Singular, Gender.Neuter),
+                _ => (subject.Word.Number, subject.Word.Gender)
+            };
 
             return predicate;
         }

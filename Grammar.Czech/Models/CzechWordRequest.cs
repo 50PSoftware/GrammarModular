@@ -125,6 +125,16 @@ namespace Grammar.Czech.Models
         public bool? IsPluralOnly { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the noun denotes something countable.
+        /// </summary>
+        /// <remarks>
+        /// Only the vague quantifiers care: mnoho and málo take the genitive plural of a countable noun
+        /// (mnoho studentů) and the genitive singular of an uncountable one (mnoho práce). Left unset, a
+        /// noun counts as countable.
+        /// </remarks>
+        public bool? IsCountable { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether mobile vowel alternation applies.
         /// </summary>
         public bool? HasMobileE { get; set; }

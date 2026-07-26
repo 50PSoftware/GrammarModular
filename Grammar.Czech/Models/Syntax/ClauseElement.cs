@@ -1,4 +1,5 @@
 using Grammar.Core.Enums;
+using Grammar.Czech.Enums;
 
 namespace Grammar.Czech.Models.Syntax
 {
@@ -54,6 +55,25 @@ namespace Grammar.Czech.Models.Syntax
         /// Gets the communicative status that decides where the constituent lands relative to the verb.
         /// </summary>
         public InformationStatus Status { get; init; } = InformationStatus.New;
+
+        /// <summary>
+        /// Gets the case the whole constituent stands in, once a numeral has rewritten the head's own case.
+        /// </summary>
+        /// <remarks>
+        /// In "pět studentů" the head noun is genitive, yet the phrase is the nominative subject. Without
+        /// this, subject agreement would look at the head, see a genitive, and find no subject at all. The
+        /// builder fills it; a caller leaves it null.
+        /// </remarks>
+        public Case? PhraseCase { get; init; }
+
+        /// <summary>
+        /// Gets the agreement this constituent imposes on the predicate when it is the subject.
+        /// </summary>
+        /// <remarks>
+        /// Carried here rather than looked up again during subject agreement, so that step stays a pure
+        /// function of the clause. Filled by the builder from the numeral among the modifiers.
+        /// </remarks>
+        public CardinalAgreement Agreement { get; init; } = CardinalAgreement.None;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ClauseElement"/> type.

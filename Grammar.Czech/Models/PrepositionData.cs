@@ -24,6 +24,15 @@ namespace Grammar.Czech.Models
         /// </remarks>
         public string? Vocalized { get; init; }
         /// <summary>
+        /// Gets the word beginnings that take the vocalized form regardless of what the cluster rules say.
+        /// </summary>
+        /// <remarks>
+        /// A handful of combinations are lexicalized rather than derivable: se mnou, and the numerals
+        /// se dvěma, se třemi, se čtyřmi. Their clusters are only two consonants deep and share nothing with
+        /// the preposition, so no rule about sibilants or three-consonant runs reaches them.
+        /// </remarks>
+        public List<string> VocalizeBefore { get; init; } = new();
+        /// <summary>
         /// Gets the case and semantic variants supported by the preposition.
         /// </summary>
         public List<PrepositionVariant> Variants { get; init; } = new();

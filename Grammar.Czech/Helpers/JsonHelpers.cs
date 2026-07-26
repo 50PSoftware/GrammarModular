@@ -22,7 +22,8 @@ namespace Grammar.Czech.Helpers
                     Converters = {
                         new JsonStringEnumConverter(JsonNamingPolicy.CamelCase),
                         new VerbTenseFormsConverter(),
-                        new PronounParadigmConverter()
+                        new PronounParadigmConverter(),
+                        new NumeralParadigmConverter()
                     },
                 };
             }

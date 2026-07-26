@@ -1,0 +1,187 @@
+{
+  "jeden": {
+    "Singular": {
+      "MasculineAnimate": {
+        "Nominative": "jeden",
+        "Genitive": "jednoho",
+        "Dative": "jednomu",
+        "Accusative": "jednoho",
+        "Vocative": "jeden",
+        "Locative": "jednom",
+        "Instrumental": "jedním"
+      },
+      "MasculineInanimate": {
+        "Nominative": "jeden",
+        "Genitive": "jednoho",
+        "Dative": "jednomu",
+        "Accusative": "jeden",
+        "Vocative": "jeden",
+        "Locative": "jednom",
+        "Instrumental": "jedním"
+      },
+      "Feminine": {
+        "Nominative": "jedna",
+        "Genitive": "jedné",
+        "Dative": "jedné",
+        "Accusative": "jednu",
+        "Vocative": "jedna",
+        "Locative": "jedné",
+        "Instrumental": "jednou"
+      },
+      "Neuter": {
+        "Nominative": "jedno",
+        "Genitive": "jednoho",
+        "Dative": "jednomu",
+        "Accusative": "jedno",
+        "Vocative": "jedno",
+        "Locative": "jednom",
+        "Instrumental": "jedním"
+      }
+    },
+    "Plural": {
+      "MasculineAnimate": {
+        "Nominative": "jedni",
+        "Genitive": "jedněch",
+        "Dative": "jedněm",
+        "Accusative": "jedny",
+        "Vocative": "jedni",
+        "Locative": "jedněch",
+        "Instrumental": "jedněmi"
+      },
+      "Neuter": {
+        "Nominative": "jedna",
+        "Genitive": "jedněch",
+        "Dative": "jedněm",
+        "Accusative": "jedna",
+        "Vocative": "jedna",
+        "Locative": "jedněch",
+        "Instrumental": "jedněmi"
+      },
+      "Other": {
+        "Nominative": "jedny",
+        "Genitive": "jedněch",
+        "Dative": "jedněm",
+        "Accusative": "jedny",
+        "Vocative": "jedny",
+        "Locative": "jedněch",
+        "Instrumental": "jedněmi"
+      }
+    }
+  },
+
+  "dva": {
+    "MasculineAnimate": {
+      "Nominative": "dva",
+      "Genitive": "dvou",
+      "Dative": "dvěma",
+      "Accusative": "dva",
+      "Vocative": "dva",
+      "Locative": "dvou",
+      "Instrumental": "dvěma"
+    },
+    "MasculineInanimate": {
+      "Nominative": "dva",
+      "Genitive": "dvou",
+      "Dative": "dvěma",
+      "Accusative": "dva",
+      "Vocative": "dva",
+      "Locative": "dvou",
+      "Instrumental": "dvěma"
+    },
+    "Feminine": {
+      "Nominative": "dvě",
+      "Genitive": "dvou",
+      "Dative": "dvěma",
+      "Accusative": "dvě",
+      "Vocative": "dvě",
+      "Locative": "dvou",
+      "Instrumental": "dvěma"
+    },
+    "Neuter": {
+      "Nominative": "dvě",
+      "Genitive": "dvou",
+      "Dative": "dvěma",
+      "Accusative": "dvě",
+      "Vocative": "dvě",
+      "Locative": "dvou",
+      "Instrumental": "dvěma"
+    },
+    "Other": {
+      "Nominative": "dvě",
+      "Genitive": "dvou",
+      "Dative": "dvěma",
+      "Accusative": "dvě",
+      "Vocative": "dvě",
+      "Locative": "dvou",
+      "Instrumental": "dvěma"
+    }
+  },
+
+  "oba": {
+    "MasculineAnimate": {
+      "Nominative": "oba",
+      "Genitive": "obou",
+      "Dative": "oběma",
+      "Accusative": "oba",
+      "Vocative": "oba",
+      "Locative": "obou",
+      "Instrumental": "oběma"
+    },
+    "MasculineInanimate": {
+      "Nominative": "oba",
+      "Genitive": "obou",
+      "Dative": "oběma",
+      "Accusative": "oba",
+      "Vocative": "oba",
+      "Locative": "obou",
+      "Instrumental": "oběma"
+    },
+    "Feminine": {
+      "Nominative": "obě",
+      "Genitive": "obou",
+      "Dative": "oběma",
+      "Accusative": "obě",
+      "Vocative": "obě",
+      "Locative": "obou",
+      "Instrumental": "oběma"
+    },
+    "Neuter": {
+      "Nominative": "obě",
+      "Genitive": "obou",
+      "Dative": "oběma",
+      "Accusative": "obě",
+      "Vocative": "obě",
+      "Locative": "obou",
+      "Instrumental": "oběma"
+    },
+    "Other": {
+      "Nominative": "obě",
+      "Genitive": "obou",
+      "Dative": "oběma",
+      "Accusative": "obě",
+      "Vocative": "obě",
+      "Locative": "obou",
+      "Instrumental": "oběma"
+    }
+  },
+
+  "tři": {
+    "Nominative": "tři",
+    "Genitive": "tří",
+    "Dative": "třem",
+    "Accusative": "tři",
+    "Vocative": "tři",
+    "Locative": "třech",
+    "Instrumental": "třemi"
+  },
+
+  "čtyři": {
+    "Nominative": "čtyři",
+    "Genitive": "čtyř",
+    "Dative": "čtyřem",
+    "Accusative": "čtyři",
+    "Vocative": "čtyři",
+    "Locative": "čtyřech",
+    "Instrumental": "čtyřmi"
+  }
+}

@@ -1,0 +1,2108 @@
+{
+  "nula": {
+    "type": "Cardinal",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 0,
+    "declensionPattern": "žena",
+    "gender": "Feminine"
+  },
+  "jeden": {
+    "type": "Cardinal",
+    "morphology": "Pronominal",
+    "agreement": "AgreesSingular",
+    "value": 1,
+    "paradigmId": "jeden"
+  },
+  "dva": {
+    "type": "Cardinal",
+    "morphology": "DualRelic",
+    "agreement": "AgreesPlural",
+    "value": 2,
+    "paradigmId": "dva",
+    "fixedNumber": "Plural"
+  },
+  "oba": {
+    "type": "Cardinal",
+    "morphology": "DualRelic",
+    "agreement": "AgreesPlural",
+    "paradigmId": "oba",
+    "fixedNumber": "Plural"
+  },
+  "tři": {
+    "type": "Cardinal",
+    "morphology": "ThreeFour",
+    "agreement": "AgreesPlural",
+    "value": 3,
+    "paradigmId": "tři",
+    "fixedNumber": "Plural",
+    "overrides": {
+      "any": {
+        "Genitive": {
+          "default": "tří",
+          "colloquial": "třech"
+        },
+        "Instrumental": {
+          "default": "třemi",
+          "paired": "třema"
+        }
+      }
+    }
+  },
+  "čtyři": {
+    "type": "Cardinal",
+    "morphology": "ThreeFour",
+    "agreement": "AgreesPlural",
+    "value": 4,
+    "paradigmId": "čtyři",
+    "fixedNumber": "Plural",
+    "overrides": {
+      "any": {
+        "Genitive": {
+          "default": "čtyř",
+          "colloquial": "čtyřech"
+        },
+        "Instrumental": {
+          "default": "čtyřmi",
+          "paired": "čtyřma"
+        }
+      }
+    }
+  },
+  "pět": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 5
+  },
+  "šest": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 6
+  },
+  "sedm": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 7
+  },
+  "osm": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 8
+  },
+  "devět": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 9,
+    "overrides": {
+      "any": {
+        "Genitive": {
+          "default": "devíti"
+        },
+        "Dative": {
+          "default": "devíti"
+        },
+        "Locative": {
+          "default": "devíti"
+        },
+        "Instrumental": {
+          "default": "devíti"
+        }
+      }
+    }
+  },
+  "deset": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 10
+  },
+  "jedenáct": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 11
+  },
+  "dvanáct": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 12
+  },
+  "třináct": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 13
+  },
+  "čtrnáct": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 14
+  },
+  "patnáct": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 15
+  },
+  "šestnáct": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 16
+  },
+  "sedmnáct": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 17
+  },
+  "osmnáct": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 18
+  },
+  "devatenáct": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 19
+  },
+  "dvacet": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 20
+  },
+  "třicet": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 30
+  },
+  "čtyřicet": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 40
+  },
+  "padesát": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 50
+  },
+  "šedesát": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 60
+  },
+  "sedmdesát": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 70
+  },
+  "osmdesát": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 80
+  },
+  "devadesát": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "value": 90
+  },
+  "sto": {
+    "type": "Cardinal",
+    "morphology": "NounNeuter",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 100,
+    "declensionPattern": "město",
+    "gender": "Neuter",
+    "isAnimate": false,
+    "overrides": {
+      "singular": {
+        "Locative": {
+          "default": "stu"
+        }
+      },
+      "plural": {
+        "Genitive": {
+          "default": "set"
+        }
+      }
+    },
+    "composite": {
+      "forms": {
+        "2": {
+          "Nominative": "stě",
+          "Genitive": "set",
+          "Dative": "stům",
+          "Accusative": "stě",
+          "Vocative": "stě",
+          "Locative": "stech",
+          "Instrumental": "sty"
+        },
+        "3": {
+          "Nominative": "sta",
+          "Genitive": "set",
+          "Dative": "stům",
+          "Accusative": "sta",
+          "Vocative": "sta",
+          "Locative": "stech",
+          "Instrumental": "sty"
+        },
+        "5": {
+          "Nominative": "set",
+          "Genitive": "set",
+          "Dative": "stům",
+          "Accusative": "set",
+          "Vocative": "set",
+          "Locative": "stech",
+          "Instrumental": "sty"
+        }
+      }
+    }
+  },
+  "tisíc": {
+    "type": "Cardinal",
+    "morphology": "NounMasculine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 1000,
+    "declensionPattern": "stroj",
+    "gender": "Masculine",
+    "isAnimate": false,
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "tisíc",
+          "rare": "tisíců"
+        }
+      }
+    }
+  },
+  "milion": {
+    "type": "Cardinal",
+    "morphology": "NounMasculine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 1000000,
+    "declensionPattern": "hrad",
+    "gender": "Masculine",
+    "isAnimate": false
+  },
+  "miliarda": {
+    "type": "Cardinal",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 1000000000,
+    "declensionPattern": "žena",
+    "gender": "Feminine"
+  },
+  "bilion": {
+    "type": "Cardinal",
+    "morphology": "NounMasculine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 1000000000000,
+    "declensionPattern": "hrad",
+    "gender": "Masculine",
+    "isAnimate": false
+  },
+  "několik": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "overrides": {
+      "any": {
+        "Genitive": {
+          "default": "několika"
+        },
+        "Dative": {
+          "default": "několika"
+        },
+        "Locative": {
+          "default": "několika"
+        },
+        "Instrumental": {
+          "default": "několika"
+        }
+      }
+    }
+  },
+  "kolik": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "overrides": {
+      "any": {
+        "Genitive": {
+          "default": "kolika"
+        },
+        "Dative": {
+          "default": "kolika"
+        },
+        "Locative": {
+          "default": "kolika"
+        },
+        "Instrumental": {
+          "default": "kolika"
+        }
+      }
+    }
+  },
+  "tolik": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "overrides": {
+      "any": {
+        "Genitive": {
+          "default": "tolika"
+        },
+        "Dative": {
+          "default": "tolika"
+        },
+        "Locative": {
+          "default": "tolika"
+        },
+        "Instrumental": {
+          "default": "tolika"
+        }
+      }
+    }
+  },
+  "mnoho": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "overrides": {
+      "any": {
+        "Genitive": {
+          "default": "mnoha"
+        },
+        "Dative": {
+          "default": "mnoha"
+        },
+        "Locative": {
+          "default": "mnoha"
+        },
+        "Instrumental": {
+          "default": "mnoha"
+        }
+      }
+    }
+  },
+  "málo": {
+    "type": "Cardinal",
+    "morphology": "FiveNinetyNine",
+    "agreement": "GenitivePluralInDirectCases",
+    "overrides": {
+      "any": {
+        "Genitive": {
+          "default": "mála"
+        },
+        "Dative": {
+          "default": "mála"
+        },
+        "Locative": {
+          "default": "mála"
+        },
+        "Instrumental": {
+          "default": "mála"
+        }
+      }
+    }
+  },
+  "moc": {
+    "type": "Cardinal",
+    "morphology": "Indeclinable",
+    "agreement": "GenitivePluralInDirectCases"
+  },
+  "hodně": {
+    "type": "Cardinal",
+    "morphology": "Indeclinable",
+    "agreement": "GenitivePluralInDirectCases"
+  },
+  "dost": {
+    "type": "Cardinal",
+    "morphology": "Indeclinable",
+    "agreement": "GenitivePluralInDirectCases"
+  },
+  "pár": {
+    "type": "Cardinal",
+    "morphology": "Indeclinable",
+    "agreement": "GenitivePluralInDirectCases"
+  },
+  "první": {
+    "type": "Ordinal",
+    "morphology": "SoftAdjective",
+    "agreement": "None",
+    "value": 1,
+    "declensionPattern": "jarní",
+    "ordinalOf": "jeden"
+  },
+  "druhý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 2,
+    "declensionPattern": "mladý",
+    "ordinalOf": "dva"
+  },
+  "třetí": {
+    "type": "Ordinal",
+    "morphology": "SoftAdjective",
+    "agreement": "None",
+    "value": 3,
+    "declensionPattern": "jarní",
+    "ordinalOf": "tři"
+  },
+  "čtvrtý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 4,
+    "declensionPattern": "mladý",
+    "ordinalOf": "čtyři"
+  },
+  "pátý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 5,
+    "declensionPattern": "mladý",
+    "ordinalOf": "pět"
+  },
+  "šestý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 6,
+    "declensionPattern": "mladý",
+    "ordinalOf": "šest"
+  },
+  "sedmý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 7,
+    "declensionPattern": "mladý",
+    "ordinalOf": "sedm"
+  },
+  "osmý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 8,
+    "declensionPattern": "mladý",
+    "ordinalOf": "osm"
+  },
+  "devátý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 9,
+    "declensionPattern": "mladý",
+    "ordinalOf": "devět"
+  },
+  "desátý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 10,
+    "declensionPattern": "mladý",
+    "ordinalOf": "deset"
+  },
+  "jedenáctý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 11,
+    "declensionPattern": "mladý",
+    "ordinalOf": "jedenáct"
+  },
+  "dvanáctý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 12,
+    "declensionPattern": "mladý",
+    "ordinalOf": "dvanáct"
+  },
+  "třináctý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 13,
+    "declensionPattern": "mladý",
+    "ordinalOf": "třináct"
+  },
+  "čtrnáctý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 14,
+    "declensionPattern": "mladý",
+    "ordinalOf": "čtrnáct"
+  },
+  "patnáctý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 15,
+    "declensionPattern": "mladý",
+    "ordinalOf": "patnáct"
+  },
+  "šestnáctý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 16,
+    "declensionPattern": "mladý",
+    "ordinalOf": "šestnáct"
+  },
+  "sedmnáctý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 17,
+    "declensionPattern": "mladý",
+    "ordinalOf": "sedmnáct"
+  },
+  "osmnáctý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 18,
+    "declensionPattern": "mladý",
+    "ordinalOf": "osmnáct"
+  },
+  "devatenáctý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 19,
+    "declensionPattern": "mladý",
+    "ordinalOf": "devatenáct"
+  },
+  "dvacátý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 20,
+    "declensionPattern": "mladý",
+    "ordinalOf": "dvacet"
+  },
+  "třicátý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 30,
+    "declensionPattern": "mladý",
+    "ordinalOf": "třicet"
+  },
+  "čtyřicátý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 40,
+    "declensionPattern": "mladý",
+    "ordinalOf": "čtyřicet"
+  },
+  "padesátý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 50,
+    "declensionPattern": "mladý",
+    "ordinalOf": "padesát"
+  },
+  "šedesátý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 60,
+    "declensionPattern": "mladý",
+    "ordinalOf": "šedesát"
+  },
+  "sedmdesátý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 70,
+    "declensionPattern": "mladý",
+    "ordinalOf": "sedmdesát"
+  },
+  "osmdesátý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 80,
+    "declensionPattern": "mladý",
+    "ordinalOf": "osmdesát"
+  },
+  "devadesátý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 90,
+    "declensionPattern": "mladý",
+    "ordinalOf": "devadesát"
+  },
+  "stý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 100,
+    "declensionPattern": "mladý",
+    "ordinalOf": "sto"
+  },
+  "dvoustý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 200,
+    "declensionPattern": "mladý"
+  },
+  "třístý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 300,
+    "declensionPattern": "mladý"
+  },
+  "čtyřstý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 400,
+    "declensionPattern": "mladý"
+  },
+  "pětistý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 500,
+    "declensionPattern": "mladý"
+  },
+  "šestistý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 600,
+    "declensionPattern": "mladý"
+  },
+  "sedmistý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 700,
+    "declensionPattern": "mladý"
+  },
+  "osmistý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 800,
+    "declensionPattern": "mladý"
+  },
+  "devítistý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 900,
+    "declensionPattern": "mladý"
+  },
+  "tisící": {
+    "type": "Ordinal",
+    "morphology": "SoftAdjective",
+    "agreement": "None",
+    "value": 1000,
+    "declensionPattern": "jarní",
+    "ordinalOf": "tisíc"
+  },
+  "miliontý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 1000000,
+    "declensionPattern": "mladý",
+    "ordinalOf": "milion"
+  },
+  "několikátý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "declensionPattern": "mladý",
+    "ordinalOf": "několik"
+  },
+  "kolikátý": {
+    "type": "Ordinal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "declensionPattern": "mladý",
+    "ordinalOf": "kolik"
+  },
+  "dvojí": {
+    "type": "Sortal",
+    "morphology": "SoftAdjective",
+    "agreement": "None",
+    "value": 2,
+    "declensionPattern": "jarní"
+  },
+  "trojí": {
+    "type": "Sortal",
+    "morphology": "SoftAdjective",
+    "agreement": "None",
+    "value": 3,
+    "declensionPattern": "jarní"
+  },
+  "obojí": {
+    "type": "Sortal",
+    "morphology": "SoftAdjective",
+    "agreement": "None",
+    "declensionPattern": "jarní"
+  },
+  "čtverý": {
+    "type": "Sortal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 4,
+    "declensionPattern": "mladý"
+  },
+  "paterý": {
+    "type": "Sortal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 5,
+    "declensionPattern": "mladý"
+  },
+  "šesterý": {
+    "type": "Sortal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 6,
+    "declensionPattern": "mladý"
+  },
+  "sedmerý": {
+    "type": "Sortal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 7,
+    "declensionPattern": "mladý"
+  },
+  "osmerý": {
+    "type": "Sortal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 8,
+    "declensionPattern": "mladý"
+  },
+  "devaterý": {
+    "type": "Sortal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 9,
+    "declensionPattern": "mladý"
+  },
+  "desaterý": {
+    "type": "Sortal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 10,
+    "declensionPattern": "mladý"
+  },
+  "dvacaterý": {
+    "type": "Sortal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 20,
+    "declensionPattern": "mladý"
+  },
+  "sterý": {
+    "type": "Sortal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 100,
+    "declensionPattern": "mladý"
+  },
+  "tisícerý": {
+    "type": "Sortal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "value": 1000,
+    "declensionPattern": "mladý"
+  },
+  "několikerý": {
+    "type": "Sortal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "declensionPattern": "mladý"
+  },
+  "kolikerý": {
+    "type": "Sortal",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "declensionPattern": "mladý"
+  },
+  "jedny": {
+    "type": "Set",
+    "morphology": "Pronominal",
+    "agreement": "AgreesPlural",
+    "value": 1,
+    "paradigmId": "jeden",
+    "fixedNumber": "Plural"
+  },
+  "dvoje": {
+    "type": "Set",
+    "morphology": "SoftAdjective",
+    "agreement": "AgreesPlural",
+    "value": 2,
+    "declensionPattern": "jarní",
+    "delegationLemma": "dvojí",
+    "fixedNumber": "Plural",
+    "overrides": {
+      "plural": {
+        "Nominative": {
+          "default": "dvoje"
+        },
+        "Accusative": {
+          "default": "dvoje"
+        },
+        "Vocative": {
+          "default": "dvoje"
+        }
+      }
+    }
+  },
+  "troje": {
+    "type": "Set",
+    "morphology": "SoftAdjective",
+    "agreement": "AgreesPlural",
+    "value": 3,
+    "declensionPattern": "jarní",
+    "delegationLemma": "trojí",
+    "fixedNumber": "Plural",
+    "overrides": {
+      "plural": {
+        "Nominative": {
+          "default": "troje"
+        },
+        "Accusative": {
+          "default": "troje"
+        },
+        "Vocative": {
+          "default": "troje"
+        }
+      }
+    }
+  },
+  "oboje": {
+    "type": "Set",
+    "morphology": "SoftAdjective",
+    "agreement": "AgreesPlural",
+    "declensionPattern": "jarní",
+    "delegationLemma": "obojí",
+    "fixedNumber": "Plural",
+    "overrides": {
+      "plural": {
+        "Nominative": {
+          "default": "oboje"
+        },
+        "Accusative": {
+          "default": "oboje"
+        },
+        "Vocative": {
+          "default": "oboje"
+        }
+      }
+    }
+  },
+  "čtvery": {
+    "type": "Set",
+    "morphology": "HardAdjective",
+    "agreement": "AgreesPlural",
+    "value": 4,
+    "declensionPattern": "mladý",
+    "delegationLemma": "čtverý",
+    "fixedNumber": "Plural",
+    "overrides": {
+      "plural": {
+        "Nominative": {
+          "default": "čtvery"
+        },
+        "Accusative": {
+          "default": "čtvery"
+        },
+        "Vocative": {
+          "default": "čtvery"
+        }
+      }
+    }
+  },
+  "patery": {
+    "type": "Set",
+    "morphology": "HardAdjective",
+    "agreement": "AgreesPlural",
+    "value": 5,
+    "declensionPattern": "mladý",
+    "delegationLemma": "paterý",
+    "fixedNumber": "Plural",
+    "overrides": {
+      "plural": {
+        "Nominative": {
+          "default": "patery"
+        },
+        "Accusative": {
+          "default": "patery"
+        },
+        "Vocative": {
+          "default": "patery"
+        }
+      }
+    }
+  },
+  "šestery": {
+    "type": "Set",
+    "morphology": "HardAdjective",
+    "agreement": "AgreesPlural",
+    "value": 6,
+    "declensionPattern": "mladý",
+    "delegationLemma": "šesterý",
+    "fixedNumber": "Plural",
+    "overrides": {
+      "plural": {
+        "Nominative": {
+          "default": "šestery"
+        },
+        "Accusative": {
+          "default": "šestery"
+        },
+        "Vocative": {
+          "default": "šestery"
+        }
+      }
+    }
+  },
+  "sedmery": {
+    "type": "Set",
+    "morphology": "HardAdjective",
+    "agreement": "AgreesPlural",
+    "value": 7,
+    "declensionPattern": "mladý",
+    "delegationLemma": "sedmerý",
+    "fixedNumber": "Plural",
+    "overrides": {
+      "plural": {
+        "Nominative": {
+          "default": "sedmery"
+        },
+        "Accusative": {
+          "default": "sedmery"
+        },
+        "Vocative": {
+          "default": "sedmery"
+        }
+      }
+    }
+  },
+  "osmery": {
+    "type": "Set",
+    "morphology": "HardAdjective",
+    "agreement": "AgreesPlural",
+    "value": 8,
+    "declensionPattern": "mladý",
+    "delegationLemma": "osmerý",
+    "fixedNumber": "Plural",
+    "overrides": {
+      "plural": {
+        "Nominative": {
+          "default": "osmery"
+        },
+        "Accusative": {
+          "default": "osmery"
+        },
+        "Vocative": {
+          "default": "osmery"
+        }
+      }
+    }
+  },
+  "devatery": {
+    "type": "Set",
+    "morphology": "HardAdjective",
+    "agreement": "AgreesPlural",
+    "value": 9,
+    "declensionPattern": "mladý",
+    "delegationLemma": "devaterý",
+    "fixedNumber": "Plural",
+    "overrides": {
+      "plural": {
+        "Nominative": {
+          "default": "devatery"
+        },
+        "Accusative": {
+          "default": "devatery"
+        },
+        "Vocative": {
+          "default": "devatery"
+        }
+      }
+    }
+  },
+  "desatery": {
+    "type": "Set",
+    "morphology": "HardAdjective",
+    "agreement": "AgreesPlural",
+    "value": 10,
+    "declensionPattern": "mladý",
+    "delegationLemma": "desaterý",
+    "fixedNumber": "Plural",
+    "overrides": {
+      "plural": {
+        "Nominative": {
+          "default": "desatery"
+        },
+        "Accusative": {
+          "default": "desatery"
+        },
+        "Vocative": {
+          "default": "desatery"
+        }
+      }
+    }
+  },
+  "dvacatery": {
+    "type": "Set",
+    "morphology": "HardAdjective",
+    "agreement": "AgreesPlural",
+    "value": 20,
+    "declensionPattern": "mladý",
+    "delegationLemma": "dvacaterý",
+    "fixedNumber": "Plural",
+    "overrides": {
+      "plural": {
+        "Nominative": {
+          "default": "dvacatery"
+        },
+        "Accusative": {
+          "default": "dvacatery"
+        },
+        "Vocative": {
+          "default": "dvacatery"
+        }
+      }
+    }
+  },
+  "stery": {
+    "type": "Set",
+    "morphology": "HardAdjective",
+    "agreement": "AgreesPlural",
+    "value": 100,
+    "declensionPattern": "mladý",
+    "delegationLemma": "sterý",
+    "fixedNumber": "Plural",
+    "overrides": {
+      "plural": {
+        "Nominative": {
+          "default": "stery"
+        },
+        "Accusative": {
+          "default": "stery"
+        },
+        "Vocative": {
+          "default": "stery"
+        }
+      }
+    }
+  },
+  "tisícery": {
+    "type": "Set",
+    "morphology": "HardAdjective",
+    "agreement": "AgreesPlural",
+    "value": 1000,
+    "declensionPattern": "mladý",
+    "delegationLemma": "tisícerý",
+    "fixedNumber": "Plural",
+    "overrides": {
+      "plural": {
+        "Nominative": {
+          "default": "tisícery"
+        },
+        "Accusative": {
+          "default": "tisícery"
+        },
+        "Vocative": {
+          "default": "tisícery"
+        }
+      }
+    }
+  },
+  "několikery": {
+    "type": "Set",
+    "morphology": "HardAdjective",
+    "agreement": "AgreesPlural",
+    "declensionPattern": "mladý",
+    "delegationLemma": "několikerý",
+    "fixedNumber": "Plural",
+    "overrides": {
+      "plural": {
+        "Nominative": {
+          "default": "několikery"
+        },
+        "Accusative": {
+          "default": "několikery"
+        },
+        "Vocative": {
+          "default": "několikery"
+        }
+      }
+    }
+  },
+  "dvé": {
+    "type": "Aggregate",
+    "morphology": "Indeclinable",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 2
+  },
+  "tré": {
+    "type": "Aggregate",
+    "morphology": "Indeclinable",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 3
+  },
+  "čtvero": {
+    "type": "Aggregate",
+    "morphology": "NounNeuter",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 4,
+    "declensionPattern": "město",
+    "gender": "Neuter",
+    "isAnimate": false,
+    "overrides": {
+      "singular": {
+        "Locative": {
+          "default": "čtveru"
+        }
+      }
+    }
+  },
+  "patero": {
+    "type": "Aggregate",
+    "morphology": "NounNeuter",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 5,
+    "declensionPattern": "město",
+    "gender": "Neuter",
+    "isAnimate": false,
+    "overrides": {
+      "singular": {
+        "Locative": {
+          "default": "pateru"
+        }
+      }
+    }
+  },
+  "šestero": {
+    "type": "Aggregate",
+    "morphology": "NounNeuter",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 6,
+    "declensionPattern": "město",
+    "gender": "Neuter",
+    "isAnimate": false,
+    "overrides": {
+      "singular": {
+        "Locative": {
+          "default": "šesteru"
+        }
+      }
+    }
+  },
+  "sedmero": {
+    "type": "Aggregate",
+    "morphology": "NounNeuter",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 7,
+    "declensionPattern": "město",
+    "gender": "Neuter",
+    "isAnimate": false,
+    "overrides": {
+      "singular": {
+        "Locative": {
+          "default": "sedmeru"
+        }
+      }
+    }
+  },
+  "osmero": {
+    "type": "Aggregate",
+    "morphology": "NounNeuter",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 8,
+    "declensionPattern": "město",
+    "gender": "Neuter",
+    "isAnimate": false,
+    "overrides": {
+      "singular": {
+        "Locative": {
+          "default": "osmeru"
+        }
+      }
+    }
+  },
+  "devatero": {
+    "type": "Aggregate",
+    "morphology": "NounNeuter",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 9,
+    "declensionPattern": "město",
+    "gender": "Neuter",
+    "isAnimate": false,
+    "overrides": {
+      "singular": {
+        "Locative": {
+          "default": "devateru"
+        }
+      }
+    }
+  },
+  "desatero": {
+    "type": "Aggregate",
+    "morphology": "NounNeuter",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 10,
+    "declensionPattern": "město",
+    "gender": "Neuter",
+    "isAnimate": false,
+    "overrides": {
+      "singular": {
+        "Locative": {
+          "default": "desateru"
+        }
+      }
+    }
+  },
+  "dvacatero": {
+    "type": "Aggregate",
+    "morphology": "NounNeuter",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 20,
+    "declensionPattern": "město",
+    "gender": "Neuter",
+    "isAnimate": false,
+    "overrides": {
+      "singular": {
+        "Locative": {
+          "default": "dvacateru"
+        }
+      }
+    }
+  },
+  "stero": {
+    "type": "Aggregate",
+    "morphology": "NounNeuter",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 100,
+    "declensionPattern": "město",
+    "gender": "Neuter",
+    "isAnimate": false,
+    "overrides": {
+      "singular": {
+        "Locative": {
+          "default": "steru"
+        }
+      }
+    }
+  },
+  "tisícero": {
+    "type": "Aggregate",
+    "morphology": "NounNeuter",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 1000,
+    "declensionPattern": "město",
+    "gender": "Neuter",
+    "isAnimate": false,
+    "overrides": {
+      "singular": {
+        "Locative": {
+          "default": "tisíceru"
+        }
+      }
+    }
+  },
+  "několikero": {
+    "type": "Aggregate",
+    "morphology": "NounNeuter",
+    "agreement": "AlwaysGenitivePlural",
+    "declensionPattern": "město",
+    "gender": "Neuter",
+    "isAnimate": false,
+    "overrides": {
+      "singular": {
+        "Locative": {
+          "default": "několikeru"
+        }
+      }
+    }
+  },
+  "dvakrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 2
+  },
+  "třikrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 3
+  },
+  "čtyřikrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 4
+  },
+  "pětkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 5
+  },
+  "desetkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 10
+  },
+  "stokrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 100
+  },
+  "tisíckrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 1000
+  },
+  "několikrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None"
+  },
+  "mnohokrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None"
+  },
+  "málokrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None"
+  },
+  "párkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None"
+  },
+  "dvojnásob": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None"
+  },
+  "trojnásob": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None"
+  },
+  "dvojmo": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None"
+  },
+  "trojmo": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None"
+  },
+  "čtvermo": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None"
+  },
+  "dvojnásobný": {
+    "type": "Multiplicative",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "declensionPattern": "mladý"
+  },
+  "trojnásobný": {
+    "type": "Multiplicative",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "declensionPattern": "mladý"
+  },
+  "čtyřnásobný": {
+    "type": "Multiplicative",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "declensionPattern": "mladý"
+  },
+  "pětinásobný": {
+    "type": "Multiplicative",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "declensionPattern": "mladý"
+  },
+  "mnohonásobný": {
+    "type": "Multiplicative",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "declensionPattern": "mladý"
+  },
+  "dvojitý": {
+    "type": "Multiplicative",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "declensionPattern": "mladý"
+  },
+  "trojitý": {
+    "type": "Multiplicative",
+    "morphology": "HardAdjective",
+    "agreement": "None",
+    "declensionPattern": "mladý"
+  },
+  "polovina": {
+    "type": "Fractional",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "declensionPattern": "žena",
+    "gender": "Feminine"
+  },
+  "třetina": {
+    "type": "Fractional",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "declensionPattern": "žena",
+    "gender": "Feminine"
+  },
+  "čtvrtina": {
+    "type": "Fractional",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "declensionPattern": "žena",
+    "gender": "Feminine"
+  },
+  "pětina": {
+    "type": "Fractional",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "declensionPattern": "žena",
+    "gender": "Feminine"
+  },
+  "šestina": {
+    "type": "Fractional",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "declensionPattern": "žena",
+    "gender": "Feminine"
+  },
+  "sedmina": {
+    "type": "Fractional",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "declensionPattern": "žena",
+    "gender": "Feminine"
+  },
+  "osmina": {
+    "type": "Fractional",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "declensionPattern": "žena",
+    "gender": "Feminine"
+  },
+  "devítina": {
+    "type": "Fractional",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "declensionPattern": "žena",
+    "gender": "Feminine"
+  },
+  "desetina": {
+    "type": "Fractional",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "declensionPattern": "žena",
+    "gender": "Feminine"
+  },
+  "setina": {
+    "type": "Fractional",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "declensionPattern": "žena",
+    "gender": "Feminine"
+  },
+  "tisícina": {
+    "type": "Fractional",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "declensionPattern": "žena",
+    "gender": "Feminine"
+  },
+  "půl": {
+    "type": "Fractional",
+    "morphology": "Indeclinable",
+    "agreement": "AlwaysGenitivePlural"
+  },
+  "čtvrt": {
+    "type": "Fractional",
+    "morphology": "Indeclinable",
+    "agreement": "AlwaysGenitivePlural"
+  },
+  "dvojice": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 2,
+    "declensionPattern": "růže",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "dvojic"
+        }
+      }
+    }
+  },
+  "trojice": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 3,
+    "declensionPattern": "růže",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "trojic"
+        }
+      }
+    }
+  },
+  "čtveřice": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 4,
+    "declensionPattern": "růže",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "čtveřic"
+        }
+      }
+    }
+  },
+  "pětice": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 5,
+    "declensionPattern": "růže",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "pětic"
+        }
+      }
+    }
+  },
+  "šestice": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 6,
+    "declensionPattern": "růže",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "šestic"
+        }
+      }
+    }
+  },
+  "sedmice": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 7,
+    "declensionPattern": "růže",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "sedmic"
+        }
+      }
+    }
+  },
+  "osmice": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 8,
+    "declensionPattern": "růže",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "osmic"
+        }
+      }
+    }
+  },
+  "devítice": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 9,
+    "declensionPattern": "růže",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "devític"
+        }
+      }
+    }
+  },
+  "desítice": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 10,
+    "declensionPattern": "růže",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "desític"
+        }
+      }
+    }
+  },
+  "dvojka": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 2,
+    "declensionPattern": "žena",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "dvojek"
+        }
+      }
+    }
+  },
+  "trojka": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 3,
+    "declensionPattern": "žena",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "trojek"
+        }
+      }
+    }
+  },
+  "pětka": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 5,
+    "declensionPattern": "žena",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "pětek"
+        }
+      }
+    }
+  },
+  "desítka": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 10,
+    "declensionPattern": "žena",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "desítek"
+        }
+      }
+    }
+  },
+  "stovka": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 100,
+    "declensionPattern": "žena",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "stovek"
+        }
+      }
+    }
+  },
+  "tisícovka": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 1000,
+    "declensionPattern": "žena",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "tisícovek"
+        }
+      }
+    }
+  },
+  "jedenkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 1
+  },
+  "šestkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 6
+  },
+  "sedmkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 7
+  },
+  "osmkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 8
+  },
+  "devětkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 9
+  },
+  "jedenáctkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 11
+  },
+  "dvanáctkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 12
+  },
+  "třináctkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 13
+  },
+  "čtrnáctkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 14
+  },
+  "patnáctkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 15
+  },
+  "šestnáctkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 16
+  },
+  "sedmnáctkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 17
+  },
+  "osmnáctkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 18
+  },
+  "devatenáctkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 19
+  },
+  "dvacetkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 20
+  },
+  "třicetkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 30
+  },
+  "čtyřicetkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 40
+  },
+  "padesátkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 50
+  },
+  "šedesátkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 60
+  },
+  "sedmdesátkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 70
+  },
+  "osmdesátkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 80
+  },
+  "devadesátkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 90
+  },
+  "milionkrát": {
+    "type": "Multiplicative",
+    "morphology": "Adverb",
+    "agreement": "None",
+    "value": 1000000
+  },
+  "jedenáctina": {
+    "type": "Fractional",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "declensionPattern": "žena",
+    "gender": "Feminine"
+  },
+  "dvanáctina": {
+    "type": "Fractional",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "declensionPattern": "žena",
+    "gender": "Feminine"
+  },
+  "dvacetina": {
+    "type": "Fractional",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "declensionPattern": "žena",
+    "gender": "Feminine"
+  },
+  "padesátina": {
+    "type": "Fractional",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "declensionPattern": "žena",
+    "gender": "Feminine"
+  },
+  "milióntina": {
+    "type": "Fractional",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "declensionPattern": "žena",
+    "gender": "Feminine"
+  },
+  "jedenáctice": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 11,
+    "declensionPattern": "růže",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "jedenáctic"
+        }
+      }
+    }
+  },
+  "dvanáctice": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 12,
+    "declensionPattern": "růže",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "dvanáctic"
+        }
+      }
+    }
+  },
+  "čtyřka": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 4,
+    "declensionPattern": "žena",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "čtyřek"
+        }
+      }
+    }
+  },
+  "šestka": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 6,
+    "declensionPattern": "žena",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "šestek"
+        }
+      }
+    }
+  },
+  "sedmička": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 7,
+    "declensionPattern": "žena",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "sedmiček"
+        }
+      }
+    }
+  },
+  "osmička": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 8,
+    "declensionPattern": "žena",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "osmiček"
+        }
+      }
+    }
+  },
+  "devítka": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 9,
+    "declensionPattern": "žena",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "devítek"
+        }
+      }
+    }
+  },
+  "dvacítka": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 20,
+    "declensionPattern": "žena",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "dvacítek"
+        }
+      }
+    }
+  },
+  "padesátka": {
+    "type": "Group",
+    "morphology": "NounFeminine",
+    "agreement": "AlwaysGenitivePlural",
+    "value": 50,
+    "declensionPattern": "žena",
+    "gender": "Feminine",
+    "overrides": {
+      "plural": {
+        "Genitive": {
+          "default": "padesátek"
+        }
+      }
+    }
+  }
+}

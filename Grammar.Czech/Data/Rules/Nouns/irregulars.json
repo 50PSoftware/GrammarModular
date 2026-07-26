@@ -90,5 +90,50 @@
   "švec": {
     "inheritsFrom": "muž",
     "stem": "ševc"
+  },
+  "ruka": {
+    "inheritsFrom": "žena",
+    "overrides": {
+      "plural": {
+        "Nominative": "ruce",
+        "Genitive": "rukou",
+        "Dative": "rukám",
+        "Accusative": "ruce",
+        "Vocative": "ruce",
+        "Locative": "rukou",
+        "Instrumental": "rukama"
+      }
+    }
+  },
+  "noha": {
+    "inheritsFrom": "žena",
+    "overrides": {
+      "plural": {
+        "Nominative": "nohy",
+        "Genitive": "nohou",
+        "Dative": "nohám",
+        "Accusative": "nohy",
+        "Vocative": "nohy",
+        "Locative": "nohou",
+        "Instrumental": "nohama"
+      }
+    }
+  },
+  "ucho": {
+    "inheritsFrom": "město",
+    "overrides": {
+      "singular": {
+        "Locative": "uchu"
+      },
+      "plural": {
+        "Nominative": "uši",
+        "Genitive": "uší",
+        "Dative": "uším",
+        "Accusative": "uši",
+        "Vocative": "uši",
+        "Locative": "uších",
+        "Instrumental": "ušima"
+      }
+    }
   }
 }

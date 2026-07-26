@@ -45,6 +45,20 @@ Data pokrývají osobní, přivlastňovací, zvratná, ukazovací, tázací, vzt
 
 Volitelně se rozlišuje varianta po předložce přes `CzechWordRequest.IsAfterPreposition`.
 
+### Číslovky
+
+Číslovky se čtou z `Grammar.Czech/Data/Rules/Numerals/patterns.json` a paradigmata z `Grammar.Czech/Data/Rules/Numerals/paradigms.json`. Data pokrývají všech devět druhů — základní, řadové, druhové, souborové, úhrnné, násobné, dílové, skupinové a neurčité napříč druhy. Podílné číslovky (*po dvou*) jsou konstrukce, ne lexikální položky, a skládá je `CzechNumeralComposer`.
+
+`CzechNumeralService` vybírá strategii podle `NumeralMorphology`: sdílená paradigmata (*jeden*, *dva*, *oba*, *tři*, *čtyři*), pravidlo pro dvoutvarové paradigma 5–99, delegaci na adjektivní i substantivní skloňování a nesklonné položky. Dublety (*tří/třech*, *tisíc/tisíců*) i duálové tvary párových částí těla (*třema rukama*) se vybírají přes `NumeralFormOptions`.
+
+`CzechNumeralComposer` vypíše číslo slovy se skloňováním všech částí — `365` v instrumentálu dá *třemi sty šedesáti pěti* — a zvládá nepravidelné násobky sta (*dvě stě*, *tři sta*, *pět set*). Složené číslovky 21–99 mají všechny tři varianty z IJP id=792 přes `CompoundVariant`: *dvacet jedna žáků* (výchozí), *dvacet jeden žák* a spřežku *jedenadvacet*. `ComposeOfType` pojmenuje hodnotu číslovkou kteréhokoli druhu — z `5` udělá *pět*, *pátý*, *paterý*, *patery*, *patero* i *pětkrát*.
+
+Kongruenci počítaného předmětu nese `CardinalAgreement` a uplatňuje ji `CzechSentenceBuilder`: *pět studentů bylo* proti *tři studenti byli*. Je to jediné místo, kde shoda míří od přívlastku k řídícímu jménu, a ne naopak.
+
+Číslovku lze zadat i číslicemi. Nesklonná zůstane, ale kongruenci si odvodí z hodnoty — a desetinné číslo se řídí zlomkem, takže bere genitiv singuláru: *1,5 metru*, *14,25 sekundy*.
+
+Zápis číslovek číslicemi kontroluje `ICzechNumeralOrthographyService` — odmítne *5tý*, *10ti* i *20-krát* a umí je opravit.
+
 ### Slovesa
 
 Slovesa se generují z pravidel v:
@@ -94,8 +108,8 @@ Hlavní registrace pro DI je `AddCzechGrammarServices()` v `Grammar.Czech/CzechG
 Hlavní vstupy:
 
 - `CzechWordFormComposer` pro plný tvar slova nebo slovesné fráze,
-- `MorphologyEngine` pro přímé směrování na substantiva, adjektiva, zájmena a základní slovesné tvary,
-- specializované servisy jako `CzechNounDeclensionService`, `CzechAdjectiveDeclensionService`, `CzechPronounService` a `CzechVerbConjugationService`.
+- `MorphologyEngine` pro přímé směrování na substantiva, adjektiva, zájmena, číslovky a základní slovesné tvary,
+- specializované servisy jako `CzechNounDeclensionService`, `CzechAdjectiveDeclensionService`, `CzechPronounService`, `CzechNumeralService` a `CzechVerbConjugationService`.
 
 ## Rychlý start
 
@@ -163,7 +177,7 @@ dotnet run --project Grammar.Czech.Cli
 dotnet test Grammar.Czech.Test
 ```
 
-Testy jsou v MSTest a pokrývají hlavně substantiva, adjektiva, zájmena, slovesa a vybrané fonologické evaluátory/služby.
+Testy jsou v MSTest a pokrývají hlavně substantiva, adjektiva, zájmena, číslovky, slovesa a vybrané fonologické evaluátory/služby.
 
 ## Datová vrstva
 
@@ -177,6 +191,8 @@ Všechna gramatická data v projektu `Grammar.Czech` jsou embedded JSON resource
 | `Data/Rules/Adjectives/patterns.json` | adjektivní vzory |
 | `Data/Rules/Pronouns/patterns.json` | data zájmen |
 | `Data/Rules/Pronouns/paradigms.json` | zájmenná paradigmata |
+| `Data/Rules/Numerals/patterns.json` | data číslovek |
+| `Data/Rules/Numerals/paradigms.json` | paradigmata číslovek |
 | `Data/Rules/Verbs/patterns.json` | obecné slovesné třídy a vzory |
 | `Data/Rules/Verbs/irregulars.json` | nepravidelná slovesa |
 | `Data/Rules/prefixes.json` | prefixy |
@@ -188,11 +204,13 @@ Všechna gramatická data v projektu `Grammar.Czech` jsou embedded JSON resource
 ## Známá omezení
 
 - Volající často musí dodat `Pattern`, `Gender`, `Number`, `Case`, `Person`, `Tense`, `Aspect`, `Modus` a `Voice`; projekt zatím není analyzátor přirozeného textu.
-- `MorphologyEngine.GetForm` podporuje jen `Noun`, `Adjective` a `Pronoun`; slovesa jdou přes `GetBasicForm` nebo přes `CzechWordFormComposer.GetFullForm`.
+- `MorphologyEngine.GetForm` podporuje jen `Noun`, `Adjective`, `Pronoun` a `Numerale`; slovesa jdou přes `GetBasicForm` nebo přes `CzechWordFormComposer.GetFullForm`.
 - `CzechAlternationRuleEvaluator` není registrovaný v DI a krácení genitivu plurálu není aktivně napojené ve skloňování substantiv.
 - Lexikon není úplný slovník češtiny; `ResolveGenderAndPattern` a `ResolveVerbAspect` fungují jen pro lemmata obsažená v `lexicon.json`.
 - CLI je demo, ne uživatelský nástroj pro obecné dotazování.
-- Numeralia a generování celých vět jsou mimo aktuální implementaci.
+- Číslovky nepodporují ustrnulou variantu úhrnných číslovek (*bez patero ponožek*), kterou IJP id=792 uvádí vedle skloňované jako rovněž spisovnou; generuje se vždy skloňovaná.
+- Ukazovací zájmeno před číslovkou (*těch pět studentů*) se shoduje s hlavou fráze, ne s celou frází.
+- `CzechNumeralComposer.ComposeOrdinal` a `ComposeOfType` skládají jen z lemmat ve slovníku; hodnota vyžadující chybějící složku (např. *dvoutisící*) selže s výjimkou, místo aby si tvar vymyslela.
 
 ## Licence
 

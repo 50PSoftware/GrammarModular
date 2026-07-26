@@ -26,24 +26,8 @@ namespace Grammar.Czech.Models.JsonConverters
 
             foreach (var numberProp in root.EnumerateObject())
             {
-                var number = Enum.Parse<Number>(numberProp.Name);
-                var genderSlots = new Dictionary<GenderSlot, Dictionary<Case, string>>();
-
-                foreach (var genderProp in numberProp.Value.EnumerateObject())
-                {
-                    var genderSlot = Enum.Parse<GenderSlot>(genderProp.Name);
-                    var caseForms = new Dictionary<Case, string>();
-
-                    foreach (var caseProp in genderProp.Value.EnumerateObject())
-                    {
-                        var grammaticalCase = Enum.Parse<Case>(caseProp.Name);
-                        caseForms[grammaticalCase] = caseProp.Value.GetString()!;
-                    }
-
-                    genderSlots[genderSlot] = caseForms;
-                }
-
-                slots[number] = genderSlots;
+                slots[NestedCaseTableReader.ParseKey<Number>(numberProp.Name, "číslo")] =
+                    NestedCaseTableReader.ReadGenderSlots(numberProp.Value);
             }
 
             return new PronounParadigm { Slots = slots };

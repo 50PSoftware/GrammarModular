@@ -1,5 +1,6 @@
 using Grammar.Core.Enums;
 using Grammar.Core.Interfaces;
+using Grammar.Czech.Enums;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
 using Grammar.Czech.Services;
@@ -158,6 +159,97 @@ namespace Grammar.Czech.Test
                     Assert.IsTrue(
                         paradigms.ContainsKey(data.ParadigmId),
                         $"Zájmeno '{lemma}' odkazuje na neexistující paradigma '{data.ParadigmId}'.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Numeral patterns and paradigms load, and an entry carries its paradigm.
+        /// </summary>
+        [TestMethod]
+        public void NumeralDataProvider_LoadsPatternsAndParadigms()
+        {
+            var data = provider.GetRequiredService<INumeralDataProvider>();
+
+            Assert.IsTrue(data.GetNumerals().Count > 0, "Číslovky se nenačetly.");
+            Assert.IsTrue(data.GetParadigms().Count > 0, "Paradigmata číslovek se nenačetla.");
+            Assert.AreEqual("dva", data.GetNumerals()["dva"].ParadigmId, "Číslovka dva ztratila odkaz na paradigma.");
+            Assert.AreEqual(5m, data.GetNumerals()["pět"].Value, "Číslovka pět ztratila číselnou hodnotu.");
+        }
+
+        /// <summary>
+        /// Every paradigm and declension pattern a numeral points at exists, in the provider its morphology
+        /// says it should.
+        /// </summary>
+        [TestMethod]
+        public void NumeralDataProvider_EveryPatternReferenceResolves()
+        {
+            var numerals = provider.GetRequiredService<INumeralDataProvider>().GetNumerals();
+            var paradigms = provider.GetRequiredService<INumeralDataProvider>().GetParadigms();
+            var adjectives = provider.GetRequiredService<IAdjectiveDataProvider>().GetPatterns();
+            var nouns = provider.GetRequiredService<INounDataProvider>().GetPatterns();
+
+            foreach (var (lemma, data) in numerals)
+            {
+                if (data.ParadigmId is not null)
+                {
+                    Assert.IsTrue(
+                        paradigms.ContainsKey(data.ParadigmId),
+                        $"Číslovka '{lemma}' odkazuje na neexistující paradigma '{data.ParadigmId}'.");
+                }
+
+                if (data.DeclensionPattern is null)
+                {
+                    continue;
+                }
+
+                IEnumerable<string>? expected = data.Morphology switch
+                {
+                    NumeralMorphology.HardAdjective or NumeralMorphology.SoftAdjective => adjectives.Keys,
+                    NumeralMorphology.NounMasculine or NumeralMorphology.NounNeuter
+                        or NumeralMorphology.NounFeminine => nouns.Keys,
+                    _ => null
+                };
+
+                Assert.IsNotNull(
+                    expected,
+                    $"Číslovka '{lemma}' má vzor '{data.DeclensionPattern}', ale morfologie {data.Morphology} žádný vzor nepoužívá.");
+
+                Assert.IsTrue(
+                    expected.Contains(data.DeclensionPattern),
+                    $"Číslovka '{lemma}' odkazuje na neexistující vzor '{data.DeclensionPattern}'.");
+            }
+        }
+
+        /// <summary>
+        /// Every numeral paradigm resolves all seven cases in at least one gender slot.
+        /// </summary>
+        /// <remarks>
+        /// The converter accepts three nesting depths and tells them apart by the first property name, so a
+        /// mistyped key would quietly normalize to the wrong shape rather than throw. This is the net under
+        /// that: a paradigm that lost a level ends up missing cases here.
+        /// </remarks>
+        [TestMethod]
+        public void NumeralDataProvider_EveryParadigmCoversAllCases()
+        {
+            var paradigms = provider.GetRequiredService<INumeralDataProvider>().GetParadigms();
+            var allCases = Enum.GetValues<Case>();
+
+            foreach (var (id, paradigm) in paradigms)
+            {
+                Assert.IsTrue(paradigm.Slots.Count > 0, $"Paradigma '{id}' je prázdné.");
+
+                foreach (var (number, genderSlots) in paradigm.Slots)
+                {
+                    foreach (var (genderSlot, forms) in genderSlots)
+                    {
+                        var missing = allCases.Where(c => !forms.ContainsKey(c)).ToList();
+
+                        Assert.AreEqual(
+                            0,
+                            missing.Count,
+                            $"Paradigma '{id}' ({number}/{genderSlot}) postrádá pády: {string.Join(", ", missing)}.");
+                    }
                 }
             }
         }

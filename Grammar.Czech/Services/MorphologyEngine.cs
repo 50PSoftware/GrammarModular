@@ -13,16 +13,18 @@ namespace Grammar.Czech.Services
         private readonly CzechNounDeclensionService nounDeclensionService;
         private readonly CzechAdjectiveDeclensionService adjectiveDeclensionService;
         private readonly CzechPronounService pronounService;
+        private readonly CzechNumeralService numeralService;
         private readonly CzechVerbConjugationService verbConjugationService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MorphologyEngine"/> type.
         /// </summary>
-        public MorphologyEngine(CzechNounDeclensionService nounDeclensionService, CzechAdjectiveDeclensionService adjectiveDeclensionService, CzechPronounService pronounService, CzechVerbConjugationService verbConjugationService)
+        public MorphologyEngine(CzechNounDeclensionService nounDeclensionService, CzechAdjectiveDeclensionService adjectiveDeclensionService, CzechPronounService pronounService, CzechNumeralService numeralService, CzechVerbConjugationService verbConjugationService)
         {
             this.nounDeclensionService = nounDeclensionService;
             this.adjectiveDeclensionService = adjectiveDeclensionService;
             this.pronounService = pronounService;
+            this.numeralService = numeralService;
             this.verbConjugationService = verbConjugationService;
         }
 
@@ -52,6 +54,7 @@ namespace Grammar.Czech.Services
                 WordCategory.Noun => nounDeclensionService.GetForm(word),
                 WordCategory.Adjective => adjectiveDeclensionService.GetForm(word),
                 WordCategory.Pronoun => pronounService.GetForm(word),
+                WordCategory.Numerale => numeralService.GetForm(word),
                 _ => throw new NotSupportedException($"Unsupported category: {word.WordCategory}")
             };
         }

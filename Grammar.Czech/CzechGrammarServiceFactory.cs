@@ -29,6 +29,7 @@ namespace Grammar.Czech
             services.AddSingleton<IPrepositionDataProvider>(new JsonPrepositionsDataProvider());
             services.AddSingleton<IConjunctionDataProvider>(new JsonConjunctionDataProvider());
             services.AddSingleton<IPronounDataProvider>(new JsonPronounDataProvider());
+            services.AddSingleton<INumeralDataProvider>(new JsonNumeralDataProvider());
 
             // ── Valency & lexical dictionary ─────────────────────────────────────────
             services.AddSingleton<IValencyProvider<CzechLexicalEntry>, JsonValencyProvider>();
@@ -62,6 +63,15 @@ namespace Grammar.Czech
                 sp.GetRequiredService<CzechPronounService>());
             services.AddSingleton<IInflectionService<CzechWordRequest>>(sp =>
                 sp.GetRequiredService<CzechPronounService>());
+
+            // Deliberately not bound to IInflectionService<CzechWordRequest>: that key is already taken by
+            // the pronoun service above, and the last registration would silently win. Numerals are reached
+            // through MorphologyEngine, which takes the concrete services.
+            services.AddSingleton<CzechNumeralService>();
+            services.AddSingleton<ICzechNumeralService>(sp =>
+                sp.GetRequiredService<CzechNumeralService>());
+            services.AddSingleton<CzechNumeralComposer>();
+            services.AddSingleton<ICzechNumeralOrthographyService, CzechNumeralOrthographyService>();
 
             // ── Supporting services ──────────────────────────────────────────────────
             services.AddSingleton<CzechPrefixService>();

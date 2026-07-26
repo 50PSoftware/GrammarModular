@@ -14,17 +14,5 @@ namespace Grammar.Czech.Models
             /// </summary>
             public Dictionary<Number, Dictionary<GenderSlot, Dictionary<Case, string>>> Slots { get; init; } = new();
         }
-
-        /// <summary>
-        /// Specifies gender Slot values.
-        /// </summary>
-        public enum GenderSlot
-        {
-            MasculineAnimate,
-            MasculineInanimate,
-            Feminine,
-            Neuter,
-            Other   // pro plurál kde fem/neutr/inan sdílejí tvary
-        }
     }
 }
