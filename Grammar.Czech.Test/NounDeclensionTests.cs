@@ -346,6 +346,8 @@ namespace Grammar.Czech.Test
                     new[] { "muž", "muži", "muž" },
                     new[] { "chlapec", "chlapče", "muž" },
                     new[] { "předseda", "předsedo", "předseda" },
+                    // soudce keeps the nominative form; *soudče is non-standard per IJP
+                    new[] { "soudce", "soudce", "soudce" },
                 };
             }
         }
@@ -411,7 +413,9 @@ namespace Grammar.Czech.Test
                                             "stroje", "strojů", "strojům", "stroje", "stroje", "strojích", "stroji"}) },
                     { "předseda", ("předseda", Gender.Masculine, true, null, new[] {"předseda", "předsedy", "předsedovi", "předsedu", "předsedo", "předsedovi", "předsedou",
                                             "předsedové", "předsedů", "předsedům", "předsedy", "předsedové", "předsedech", "předsedy"}) },
-                    { "soudce", ("soudce", Gender.Masculine, true, null, new[] { "soudce", "soudce", "soudci", "soudce", "soudče", "soudci", "soudcem",
+                    // Vokativ je roven nominativu: IJP uvádí u vzoru soudce tvar "soudce" a *soudče
+                    // označuje za nespisovné — vzniká „patrně nevýrazností formy 5. p. totožné s 1. p.“
+                    { "soudce", ("soudce", Gender.Masculine, true, null, new[] { "soudce", "soudce", "soudci", "soudce", "soudce", "soudci", "soudcem",
                                             "soudci", "soudců", "soudcům", "soudce", "soudci", "soudcích", "soudci"}) },
                     { "žena", ("žena", Gender.Feminine, null, null, new [] {"žena", "ženy", "ženě", "ženu", "ženo", "ženě", "ženou",
                                             "ženy", "žen", "ženám", "ženy", "ženy", "ženách", "ženami"}) },

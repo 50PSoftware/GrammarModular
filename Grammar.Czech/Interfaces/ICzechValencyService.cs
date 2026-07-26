@@ -33,9 +33,15 @@ namespace Grammar.Czech.Interfaces
         /// <param name="functor">The functor to classify.</param>
         /// <returns><see langword="true"/> for an inner participant; otherwise, <see langword="false"/>.</returns>
         /// <remarks>
-        /// Inner participants (ACT, PAT, ADDR, ORIG, EFF) belong to the verb and appear at most once per
-        /// clause, so a verb that has no slot for one cannot take it. Free modifications — time, place,
+        /// The five inner participants are the aktanty of the Functional Generative Description, which NESČ
+        /// lists as konatel, patiens, adresát, původ and výsledek — ACT, PAT, ADDR, ORIG, EFF. They belong
+        /// to the verb, so a verb that has no slot for one cannot take it. Free modifications — time, place,
         /// manner and the rest — attach to any verb and are never licensed by the frame.
+        /// <para>
+        /// The other half of the FGD criterion, that an inner participant occurs at most once with a given
+        /// verb while a free modification may repeat, is not enforced here: nothing stops a caller from
+        /// passing two PAT elements.
+        /// </para>
         /// </remarks>
         bool IsInnerParticipant(FgdFunctor functor);
     }
