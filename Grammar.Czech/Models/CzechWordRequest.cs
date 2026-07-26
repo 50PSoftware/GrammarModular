@@ -40,9 +40,15 @@ namespace Grammar.Czech.Models
         /// </summary>
         public ReflexiveType ReflexiveType { get; set; }
         /// <summary>
-        /// Gets or sets a value indicating whether the verb phrase includes an explicit subject.
+        /// Gets or sets a value indicating whether some constituent precedes the verb in the clause.
         /// </summary>
-        public bool? HasExplicitSubject { get; set; }
+        /// <remarks>
+        /// This drives Wackernagel placement of the clitic cluster, so what matters is whether the first
+        /// position is already taken — by a subject, a fronted adverbial, an object, anything. It was
+        /// previously called HasExplicitSubject, which made a fronted non-subject come out as
+        /// "Včera myl se" instead of "Včera se myl". <see cref="Services.CzechSentenceBuilder"/> sets it.
+        /// </remarks>
+        public bool? HasPrecedingConstituent { get; set; }
         /// <summary>
         /// Gets or sets the Czech verb class used for pattern inference.
         /// </summary>

@@ -60,13 +60,13 @@ namespace Grammar.Czech.Services
                 }
                 else if (request.Modus == Modus.Conditional)
                 {
-                    verbForm = verbPhraseBuilderService.BuildConditionalPhrase(verbForm, request.Number, request.Person, request.HasExplicitSubject.GetValueOrDefault(), request.IsNegative);
+                    verbForm = verbPhraseBuilderService.BuildConditionalPhrase(verbForm, request.Number, request.Person, request.HasPrecedingConstituent.GetValueOrDefault(), request.IsNegative);
                     verbNegationApplied = request.IsNegative;
                 }
 
                 if (request.ReflexiveType != ReflexiveType.None)
                 {
-                    verbForm = verbPhraseBuilderService.BuildReflexivePhrase(verbForm, request.ReflexiveType);
+                    verbForm = verbPhraseBuilderService.BuildReflexivePhrase(verbForm, request.ReflexiveType, request.HasPrecedingConstituent.GetValueOrDefault());
                 }
 
                 form = new WordForm(verbForm);

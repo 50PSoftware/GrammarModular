@@ -34,7 +34,10 @@ namespace Grammar.Czech.Services
 
             var conditional = dataProvider.GetParticles().Conditional;
             var section = number == Number.Singular ? conditional.Singular : conditional.Plural;
-            return section[((int)person).ToString()];
+
+            // Klíče v particles.json jsou názvy členů výčtu (First/Second/Third), ne jejich číselné
+            // hodnoty — dictionary klíče se nepřejmenovávají, PropertyNamingPolicy na ně nedopadá.
+            return section[person.Value.ToString()];
         }
 
         /// <summary>
@@ -51,6 +54,25 @@ namespace Grammar.Czech.Services
             return reflexiveType is ReflexiveType.ReflexivumTantum_Si or ReflexiveType.DerivedBenefactive_Si
                 ? reflexive.Dative
                 : reflexive.Accusative;
+        }
+
+        /// <summary>
+        /// Determines whether the supplied word is a clitic auxiliary that precedes the reflexive particle
+        /// inside the Wackernagel clitic cluster.
+        /// </summary>
+        /// <param name="word">The single word to classify.</param>
+        /// <returns><see langword="true"/> when the word is a clitic auxiliary; otherwise, <see langword="false"/>.</returns>
+        /// <remarks>
+        /// Only the conditional particles for now. The past-tense auxiliaries jsem/jsi/jsme/jste belong to the
+        /// same cluster rank, but BuildPastForm does not emit them yet; once it does they have to be added here.
+        /// The future auxiliary budu/budeš/… is deliberately absent — it carries stress, so it counts as a
+        /// first constituent rather than as part of the cluster.
+        /// </remarks>
+        public bool IsCliticAuxiliary(string word)
+        {
+            var conditional = dataProvider.GetParticles().Conditional;
+            return conditional.Singular.Values.Contains(word)
+                || conditional.Plural.Values.Contains(word);
         }
     }
 }

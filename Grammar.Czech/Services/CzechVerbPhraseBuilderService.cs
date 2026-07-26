@@ -12,11 +12,11 @@ namespace Grammar.Czech.Services
         private readonly CzechParticleService particleService;
         private readonly CzechPrefixService prefixService;
 
-        private string BuildConditionalAuxiliary(string verbForm, Number? number, Person? person, bool explicitSubject, bool isNegative)
+        private string BuildConditionalAuxiliary(string verbForm, Number? number, Person? person, bool hasPrecedingConstituent, bool isNegative)
         {
             var particle = particleService.GetConditionalParticle(number, person);
             var negation = isNegative ? prefixService.GetNegativePrefix() : string.Empty;
-            return explicitSubject ? $"{particle} {negation}{verbForm}" : $"{negation}{verbForm} {particle}";
+            return hasPrecedingConstituent ? $"{particle} {negation}{verbForm}" : $"{negation}{verbForm} {particle}";
         }
 
         /// <summary>
@@ -35,12 +35,12 @@ namespace Grammar.Czech.Services
         /// <param name="verbForm">The finite or participial verb form to combine into a phrase.</param>
         /// <param name="number">The grammatical number supplied by the test data.</param>
         /// <param name="person">The requested grammatical person.</param>
-        /// <param name="explicitSubject">The optional explicit subject to place before the verb phrase.</param>
+        /// <param name="hasPrecedingConstituent">True when some constituent already occupies first position in the clause.</param>
         /// <param name="isNegative">True when the generated phrase should be negated; otherwise, false.</param>
         /// <returns>The assembled conditional verb phrase.</returns>
-        public string BuildConditionalPhrase(string verbForm, Number? number, Person? person, bool explicitSubject, bool isNegative)
+        public string BuildConditionalPhrase(string verbForm, Number? number, Person? person, bool hasPrecedingConstituent, bool isNegative)
         {
-            return BuildConditionalAuxiliary(verbForm, number, person, explicitSubject, isNegative);
+            return BuildConditionalAuxiliary(verbForm, number, person, hasPrecedingConstituent, isNegative);
         }
 
         /// <summary>
@@ -78,15 +78,41 @@ namespace Grammar.Czech.Services
         }
 
         /// <summary>
-        /// Adds the appropriate Czech reflexive particle to a verb phrase.
+        /// Places the Czech reflexive particle inside a verb phrase according to its position in the clitic cluster.
         /// </summary>
         /// <param name="verbForm">The finite or participial verb form to combine into a phrase.</param>
-        /// <param name="reflexiveType">The reflexive type that determines whether se or si is appended.</param>
-        /// <returns>The verb phrase with the reflexive particle appended.</returns>
-        public string BuildReflexivePhrase(string verbForm, ReflexiveType reflexiveType)
+        /// <param name="reflexiveType">The reflexive type that determines whether se or si is placed.</param>
+        /// <param name="hasPrecedingConstituent">True when some constituent already occupies first position in the clause.</param>
+        /// <returns>The verb phrase with the reflexive particle in place.</returns>
+        /// <remarks>
+        /// se/si is a second-position (Wackernagel) clitic:
+        /// <list type="bullet">
+        /// <item>A clitic auxiliary outranks the reflexive in the cluster, so the particle goes straight after it,
+        /// wherever it sits: bych se myl, myl bych se.</item>
+        /// <item>Otherwise the particle follows the first stressed word — the preceding constituent when the
+        /// clause has one, the first word of the phrase when it does not: Já se budu bát, Budu se bát.</item>
+        /// </list>
+        /// The caller owns the first-position question, because the verb phrase cannot see the clause.
+        /// <see cref="CzechSentenceBuilder"/> answers it; a caller that assembles a clause by hand must set the
+        /// flag from whether anything precedes the verb, not from whether a subject exists.
+        /// Short pronouns (mi, ti, ho, ji) are cluster members too and are not handled yet.
+        /// </remarks>
+        public string BuildReflexivePhrase(string verbForm, ReflexiveType reflexiveType, bool hasPrecedingConstituent)
         {
             var reflexive = particleService.GetReflexive(reflexiveType);
-            return $"{verbForm} {reflexive}";
+            var words = verbForm.Split(' ');
+
+            for (int index = 0; index < words.Length; index++)
+            {
+                if (particleService.IsCliticAuxiliary(words[index]))
+                {
+                    return string.Join(' ', words[..(index + 1)].Append(reflexive).Concat(words[(index + 1)..]));
+                }
+            }
+
+            return hasPrecedingConstituent
+                ? $"{reflexive} {verbForm}"
+                : string.Join(' ', words[..1].Append(reflexive).Concat(words[1..]));
         }
 
         /// <summary>

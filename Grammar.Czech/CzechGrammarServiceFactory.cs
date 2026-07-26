@@ -80,6 +80,7 @@ namespace Grammar.Czech
             // ── Top-level entry points ───────────────────────────────────────────────
             services.AddSingleton<MorphologyEngine>();
             services.AddSingleton<CzechWordFormComposer>();
+            services.AddSingleton<CzechSentenceBuilder>();
 
             return services;
         }

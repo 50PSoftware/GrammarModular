@@ -1,0 +1,276 @@
+using Grammar.Core.Enums;
+using Grammar.Czech.Enums;
+using Grammar.Czech.Models;
+using Grammar.Czech.Models.Syntax;
+using Grammar.Czech.Services;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Grammar.Czech.Test
+{
+    /// <summary>
+    /// Verifies clause linearization: subject agreement, functional sentence perspective,
+    /// and Wackernagel placement of the clitic cluster.
+    /// </summary>
+    [TestClass]
+    public sealed class SentenceBuilderTests
+    {
+        private static CzechSentenceBuilder builder = null!;
+
+        /// <summary>
+        /// Builds the full service graph once for the whole fixture.
+        /// </summary>
+        [ClassInitialize]
+        public static void SetupClass(TestContext _)
+        {
+            var services = new ServiceCollection();
+            services.AddCzechGrammarServices();
+            builder = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true })
+                              .GetRequiredService<CzechSentenceBuilder>();
+        }
+
+        private static CzechWordRequest Verb(
+            ReflexiveType reflexive = ReflexiveType.None,
+            Modus modus = Modus.Indicative,
+            Tense tense = Tense.Present,
+            VerbAspect? aspect = null,
+            bool isNegative = false) => new()
+            {
+                Lemma = "dělat",
+                Pattern = "dělá",
+                WordCategory = WordCategory.Verb,
+                Modus = modus,
+                Tense = tense,
+                Aspect = aspect,
+                Voice = Voice.Active,
+                Person = Person.Third,
+                Number = Number.Singular,
+                Gender = Gender.Masculine,
+                IsNegative = isNegative,
+                ReflexiveType = reflexive
+            };
+
+        private static ClauseElement Noun(string lemma, string pattern, Case @case, Gender gender, InformationStatus status, FgdFunctor functor) =>
+            ClauseElement.Of(
+                new CzechWordRequest
+                {
+                    Lemma = lemma,
+                    Pattern = pattern,
+                    WordCategory = WordCategory.Noun,
+                    Gender = gender,
+                    Number = Number.Singular,
+                    IsAnimate = gender == Gender.Masculine,
+                    Case = @case
+                },
+                functor,
+                status);
+
+        private static ClauseElement Subject(string lemma = "student", InformationStatus status = InformationStatus.Given) =>
+            Noun(lemma, "pán", Case.Nominative, Gender.Masculine, status, FgdFunctor.ACT);
+
+        #region Functional sentence perspective
+
+        /// <summary>
+        /// Given material forms the theme before the verb, new material the rheme after it.
+        /// </summary>
+        [TestMethod]
+        public void Build_GivenSubjectAndNewObject_PutsThemeFirstAndRhemeLast()
+        {
+            var clause = new CzechClause
+            {
+                Predicate = Verb(),
+                Elements =
+                [
+                    Subject(),
+                    Noun("úkol", "hrad", Case.Accusative, Gender.Masculine, InformationStatus.New, FgdFunctor.PAT)
+                ]
+            };
+
+            Assert.AreEqual("Student dělá úkol.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// A new subject belongs to the rheme, so it follows the verb.
+        /// </summary>
+        [TestMethod]
+        public void Build_NewSubject_FollowsTheVerb()
+        {
+            var clause = new CzechClause
+            {
+                Predicate = Verb(),
+                Elements = [Subject(status: InformationStatus.New)]
+            };
+
+            Assert.AreEqual("Dělá student.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// Contrastive material is fronted ahead of the theme.
+        /// </summary>
+        [TestMethod]
+        public void Build_ContrastiveElement_IsFrontedAheadOfTheTheme()
+        {
+            var clause = new CzechClause
+            {
+                Predicate = Verb(),
+                Elements =
+                [
+                    Subject(),
+                    Noun("úkol", "hrad", Case.Accusative, Gender.Masculine, InformationStatus.Contrastive, FgdFunctor.PAT)
+                ]
+            };
+
+            Assert.AreEqual("Úkol student dělá.", builder.Build(clause));
+        }
+
+        #endregion Functional sentence perspective
+
+        #region Wackernagel position
+
+        /// <summary>
+        /// The bug this builder exists for: the clitic follows the first constituent even when that
+        /// constituent is not the subject.
+        /// </summary>
+        [TestMethod]
+        public void Build_FrontedNonSubject_PlacesCliticAfterIt()
+        {
+            var clause = new CzechClause
+            {
+                Predicate = Verb(ReflexiveType.ReflexivumTantum_Se, tense: Tense.Past),
+                Elements = [Noun("večer", "hrad", Case.Nominative, Gender.Masculine, InformationStatus.Given, FgdFunctor.TWHEN)]
+            };
+
+            Assert.AreEqual("Večer se dělal.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// The cluster follows the first constituent only — not all pre-verbal constituents.
+        /// </summary>
+        [TestMethod]
+        public void Build_TwoPreVerbalConstituents_PlacesCliticAfterTheFirstOnly()
+        {
+            var clause = new CzechClause
+            {
+                Predicate = Verb(ReflexiveType.ReflexivumTantum_Se, tense: Tense.Past),
+                Elements =
+                [
+                    Subject(),
+                    Noun("večer", "hrad", Case.Nominative, Gender.Masculine, InformationStatus.Given, FgdFunctor.TWHEN)
+                ]
+            };
+
+            Assert.AreEqual("Student se večer dělal.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// With nothing before the verb, the verb opens the clause and the clitic follows its first word.
+        /// </summary>
+        [TestMethod]
+        public void Build_VerbInitialClause_PlacesCliticAfterTheVerb()
+        {
+            var clause = new CzechClause
+            {
+                Predicate = Verb(ReflexiveType.ReflexivumTantum_Se, tense: Tense.Past)
+            };
+
+            Assert.AreEqual("Dělal se.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// The conditional particle outranks the reflexive inside the cluster, and the whole cluster moves together.
+        /// </summary>
+        [TestMethod]
+        public void Build_ConditionalWithReflexive_KeepsClusterOrderAndMovesItTogether()
+        {
+            var clause = new CzechClause
+            {
+                Predicate = Verb(ReflexiveType.ReflexivumTantum_Se, modus: Modus.Conditional),
+                Elements = [Subject()]
+            };
+
+            Assert.AreEqual("Student by se dělal.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// Verb-initial conditional keeps the cluster after the participle.
+        /// </summary>
+        [TestMethod]
+        public void Build_VerbInitialConditionalWithReflexive_PlacesClusterAfterTheParticiple()
+        {
+            var clause = new CzechClause
+            {
+                Predicate = Verb(ReflexiveType.ReflexivumTantum_Se, modus: Modus.Conditional)
+            };
+
+            Assert.AreEqual("Dělal by se.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// Budu carries stress, so it opens a verb-initial clause and the clitic follows it;
+        /// with a constituent in front, the clitic goes there instead.
+        /// </summary>
+        [TestMethod]
+        public void Build_PeriphrasticFutureWithReflexive_PlacesCliticAfterTheFirstStressedWord()
+        {
+            var verbInitial = new CzechClause
+            {
+                Predicate = Verb(ReflexiveType.ReflexivumTantum_Se, tense: Tense.Future, aspect: VerbAspect.Imperfective)
+            };
+
+            Assert.AreEqual("Bude se dělat.", builder.Build(verbInitial));
+
+            var withSubject = verbInitial with { Elements = [Subject()] };
+
+            Assert.AreEqual("Student se bude dělat.", builder.Build(withSubject));
+        }
+
+        /// <summary>
+        /// Negation attaches to the verb; the cluster still sits in second position.
+        /// </summary>
+        [TestMethod]
+        public void Build_NegatedConditionalWithReflexive_KeepsNegationOnTheVerb()
+        {
+            var clause = new CzechClause
+            {
+                Predicate = Verb(ReflexiveType.ReflexivumTantum_Se, modus: Modus.Conditional, isNegative: true),
+                Elements = [Subject()]
+            };
+
+            Assert.AreEqual("Student by se nedělal.", builder.Build(clause));
+        }
+
+        #endregion Wackernagel position
+
+        #region Agreement
+
+        /// <summary>
+        /// Person, number and gender of the predicate follow the nominative actor.
+        /// </summary>
+        /// <param name="pronoun">The subject pronoun lemma.</param>
+        /// <param name="expected">The expected sentence.</param>
+        [DataTestMethod]
+        [DataRow("já", "Já dělám.")]
+        [DataRow("ty", "Ty děláš.")]
+        [DataRow("my", "My děláme.")]
+        [DataRow("vy", "Vy děláte.")]
+        public void Build_PronounSubject_AgreesInPerson(string pronoun, string expected)
+        {
+            var subject = new CzechWordRequest
+            {
+                Lemma = pronoun,
+                WordCategory = WordCategory.Pronoun,
+                Case = Case.Nominative,
+                Number = pronoun is "my" or "vy" ? Number.Plural : Number.Singular
+            };
+
+            var clause = new CzechClause
+            {
+                Predicate = Verb(),
+                Elements = [ClauseElement.Of(subject, FgdFunctor.ACT, InformationStatus.Given)]
+            };
+
+            Assert.AreEqual(expected, builder.Build(clause));
+        }
+
+        #endregion Agreement
+    }
+}

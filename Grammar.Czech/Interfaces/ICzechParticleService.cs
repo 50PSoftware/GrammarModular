@@ -22,5 +22,13 @@ namespace Grammar.Czech.Interfaces
         /// <param name="reflexiveType">The reflexive type that determines whether se or si is returned.</param>
         /// <returns>The reflexive particle for the requested type.</returns>
         string GetReflexive(ReflexiveType reflexiveType);
+
+        /// <summary>
+        /// Determines whether the supplied word is a clitic auxiliary that precedes the reflexive particle
+        /// inside the Wackernagel clitic cluster.
+        /// </summary>
+        /// <param name="word">The single word to classify.</param>
+        /// <returns><see langword="true"/> when the word is a clitic auxiliary; otherwise, <see langword="false"/>.</returns>
+        bool IsCliticAuxiliary(string word);
     }
 }

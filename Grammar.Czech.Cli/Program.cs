@@ -1,9 +1,10 @@
-namespace Grammar.Cli
+﻿namespace Grammar.Cli
 {
     using Grammar.Core.Enums;
     using Grammar.Czech;
     using Grammar.Czech.Enums;
     using Grammar.Czech.Models;
+    using Grammar.Czech.Models.Syntax;
     using Grammar.Czech.Services;
     using Microsoft.Extensions.DependencyInjection;
     using System.Data.SqlTypes;
@@ -326,107 +327,101 @@ namespace Grammar.Cli
             //kaRequest.Lemma = "pravda";
             //Console.WriteLine(composer.GetFullForm(kaRequest).Form);
 
-            var po = new CzechWordRequest
+            PrintSentences(provider.GetRequiredService<CzechSentenceBuilder>());
+
+            var nameRequest = new CzechWordRequest
             {
-                WordCategory = WordCategory.Noun,
-                Case = Case.Nominative,
-            };
-
-            var pr = new CzechWordRequest
-            {
-                WordCategory = WordCategory.Verb,
-                Aspect = VerbAspect.Perfective,
-                Voice = Voice.Active
-            };
-
-            po.Lemma = "Klára";
-            po.Number = Number.Singular;
-            po.Gender = Gender.Feminine;
-            po.Pattern = "žena";
-
-            pr.Lemma = "učit";
-            pr.VerbClass = VerbClass.Class4;
-            pr.Tense = Tense.Present;
-            pr.Modus = Modus.Conjunctive;
-
-            Console.WriteLine(SimpleSentenceBuilder(composer, po, pr));
-
-            pr.ReflexiveType = ReflexiveType.ReflexivumTantum_Se;  // učit se
-
-            Console.WriteLine(SimpleSentenceBuilder(composer, po, pr));
-
-            var thirstRequest = new CzechWordRequest
-            {
-                Lemma = "žízeň",
-                WordCategory = WordCategory.Noun,
+                Lemma = "Mendominátor",
+                Case = Case.Vocative,
                 Number = Number.Singular,
-                Case = Case.Accusative,
-                Pattern = "píseň",
-                Gender = Gender.Feminine
-            };
-
-            var songRequest = new CzechWordRequest
-            {
-                Lemma = "píseň",
+                Gender = Gender.Masculine,
+                IsAnimate = true,
+                Pattern = "pán",
                 WordCategory = WordCategory.Noun,
-                Number = Number.Singular,
-                Case = Case.Accusative,
-                Pattern = "píseň",
-                Gender = Gender.Feminine
+                HasMobileE = false
             };
 
-            Console.WriteLine(composer.GetFullForm(thirstRequest).Form);
-            Console.WriteLine(composer.GetFullForm(songRequest).Form);
+            Console.WriteLine(composer.GetFullForm(nameRequest).Form);
         }
 
-        private static string SimpleSentenceBuilder(CzechWordFormComposer composer, params CzechWordRequest[] requests)
+        /// <summary>
+        /// Prints one clause in several information structures to show what the sentence builder decides:
+        /// the order of constituents and where the clitic cluster lands.
+        /// </summary>
+        private static void PrintSentences(CzechSentenceBuilder sentenceBuilder)
         {
-            #region preparation
-            var pr = requests.First(v => v.WordCategory == WordCategory.Verb);
-            var po = requests.First(v => v.WordCategory == WordCategory.Noun || v.WordCategory == WordCategory.Pronoun && v.Case == Case.Nominative);
-            #endregion
-
-            pr.Gender = po.Gender switch
+            var klara = new CzechWordRequest
             {
-                Gender.Masculine when po.IsAnimate.HasValue && po.IsAnimate.Value => Gender.Masculine,
-                Gender.Masculine when (po.IsAnimate.HasValue && !po.IsAnimate.Value) || !po.IsAnimate.HasValue => Gender.Feminine,
-                _ => po.Gender
+                Lemma = "Klára",
+                WordCategory = WordCategory.Noun,
+                Gender = Gender.Feminine,
+                Number = Number.Singular,
+                Case = Case.Nominative,
+                Pattern = "žena"
             };
 
-            if (po.WordCategory == WordCategory.Pronoun)
+            var cestina = new CzechWordRequest
             {
-                switch(po.Lemma)
-                {
-                    case "já":
-                    case "my":
-                        pr.Person = Person.First;
-                        break;
+                Lemma = "čeština",
+                WordCategory = WordCategory.Noun,
+                Gender = Gender.Feminine,
+                Number = Number.Singular,
+                Case = Case.Accusative,
+                Pattern = "žena"
+            };
 
-                    case "ty":
-                    case "vy":
-                        pr.Person = Person.Second;
-                        break;
-
-                    case "ona":
-                    case "on":
-                    case "ono":
-                    case "ony":
-                    case "oni":
-                        pr.Person = Person.Third;
-                        break;
-                }
-            }
-            else
+            var vecer = new CzechWordRequest
             {
-                pr.Person = Person.Third;
-            }
+                Lemma = "večer",
+                WordCategory = WordCategory.Noun,
+                Gender = Gender.Masculine,
+                Number = Number.Singular,
+                Case = Case.Nominative,
+                IsAnimate = false,
+                Pattern = "hrad"
+            };
 
-            var prForm = composer.GetFullForm(pr).Form;
-            var poForm = composer.GetFullForm(po).Form;
+            var ucitSe = new CzechWordRequest
+            {
+                Lemma = "učit",
+                WordCategory = WordCategory.Verb,
+                Pattern = "trida4",
+                Tense = Tense.Present,
+                Modus = Modus.Indicative,
+                Voice = Voice.Active,
+                Aspect = VerbAspect.Imperfective,
+                ReflexiveType = ReflexiveType.ReflexivumTantum_Se,
 
-            poForm = string.Join(string.Empty, poForm[0].ToString().ToUpperInvariant(), poForm.Substring(1));
+                // Výchozí kategorie pro věty bez podmětu; se subjektem je shoda přepíše.
+                Person = Person.Third,
+                Number = Number.Singular,
+                Gender = Gender.Feminine
+            };
 
-            return string.Format("{0} {1}.", poForm, prForm);
+            var subject = ClauseElement.Of(klara, FgdFunctor.ACT, InformationStatus.Given);
+            var @object = ClauseElement.Of(cestina, FgdFunctor.PAT, InformationStatus.New);
+            var time = ClauseElement.Of(vecer, FgdFunctor.TWHEN, InformationStatus.Given);
+
+            var clause = new CzechClause { Predicate = ucitSe, Elements = [subject, @object] };
+
+            // Klitikum za podmětem.
+            Console.WriteLine(sentenceBuilder.Build(clause));
+
+            // Klitikum za prvním konstituentem, ne za oběma předslovesnými.
+            Console.WriteLine(sentenceBuilder.Build(clause with { Elements = [subject, time, @object] }));
+
+            // Bez podmětu drží klitikum druhou pozici za slovesem.
+            Console.WriteLine(sentenceBuilder.Build(clause with { Elements = [@object] }));
+
+            // Fronting nepodmětu — kvůli tomuhle builder vznikl.
+            Console.WriteLine(sentenceBuilder.Build(clause with { Elements = [time, @object] }));
+
+            // Kondicionál: částice předchází reflexivum a celý klastr se stěhuje spolu.
+            Console.WriteLine(sentenceBuilder.Build(clause with
+            {
+                Predicate = ucitSe with { Modus = Modus.Conditional },
+                Elements = [subject, @object]
+            }));
         }
 
         private static void PrintWordInfo(CzechWordRequest request)

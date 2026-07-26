@@ -90,9 +90,13 @@ namespace Grammar.Czech.Services
             if (word.Tense == null && word.Modus == Modus.Indicative)
                 throw new ArgumentException("Tense must be specified for indicative mood.");
 
+            // Vid patří slovesu, ne třídě — trida4 pokrývá prosit (nedok.) i koupit (dok.). Obecné třídy
+            // v patterns.json žádný vid nedeklarují, takže by jinak všechny spadly na výchozí Perfective.
+            var aspect = word.Aspect ?? pattern.Aspect;
+
             // Perfektivní sloveso v přítomném čase → tvar je fakticky budoucí
             var effectiveTense =
-                word.Tense == Tense.Present && pattern.Aspect == VerbAspect.Perfective
+                word.Tense == Tense.Present && aspect == VerbAspect.Perfective
                     ? Tense.Future
                     : word.Tense;
 

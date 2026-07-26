@@ -148,5 +148,74 @@ namespace Grammar.Czech.Test
         }
 
         #endregion Past tense
+
+        #region Clitic cluster
+
+        /// <summary>
+        /// Conditional forms with reflexive particles. The conditional particle is itself a clitic and
+        /// outranks the reflexive in the cluster, so se/si follows it whichever side of the participle it sits on.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow(false, false, "ReflexivumTantum_Se", "dělal bych se", DisplayName = "kondicionál bez podmětu – dělal bych se")]
+        [DataRow(true, false, "ReflexivumTantum_Se", "bych se dělal", DisplayName = "kondicionál s podmětem – bych se dělal")]
+        [DataRow(false, false, "DerivedBenefactive_Si", "dělal bych si", DisplayName = "kondicionál bez podmětu – dělal bych si")]
+        [DataRow(true, false, "DerivedBenefactive_Si", "bych si dělal", DisplayName = "kondicionál s podmětem – bych si dělal")]
+        [DataRow(true, true, "ReflexivumTantum_Se", "bych se nedělal", DisplayName = "záporný kondicionál s podmětem – bych se nedělal")]
+        [DataRow(false, true, "ReflexivumTantum_Se", "nedělal bych se", DisplayName = "záporný kondicionál bez podmětu – nedělal bych se")]
+        public void GetFullForm_ConditionalWithReflexive_PlacesParticleAfterAuxiliary(
+            bool explicitSubject, bool isNegative, string reflexiveType, string expected)
+        {
+            var request = new CzechWordRequest
+            {
+                Lemma = "dělat",
+                Pattern = "dělá",
+                WordCategory = WordCategory.Verb,
+                Modus = Modus.Conditional,
+                Voice = Voice.Active,
+                Person = Person.First,
+                Number = Number.Singular,
+                Gender = Gender.Masculine,
+                IsNegative = isNegative,
+                HasPrecedingConstituent = explicitSubject,
+                ReflexiveType = Enum.Parse<ReflexiveType>(reflexiveType),
+            };
+
+            var result = composer.GetFullForm(request);
+
+            Assert.AreEqual(expected, result.Form);
+        }
+
+        /// <summary>
+        /// Periphrastic future with reflexive particles. Budu carries stress, so it is a first constituent
+        /// rather than part of the cluster: the particle follows it only when no subject is written out.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow(false, "ReflexivumTantum_Se", "budu se dělat", DisplayName = "futurum bez podmětu – budu se dělat")]
+        [DataRow(true, "ReflexivumTantum_Se", "se budu dělat", DisplayName = "futurum s podmětem – se budu dělat")]
+        [DataRow(false, "DerivedBenefactive_Si", "budu si dělat", DisplayName = "futurum bez podmětu – budu si dělat")]
+        public void GetFullForm_FutureWithReflexive_PlacesParticleAfterFirstStressedWord(
+            bool explicitSubject, string reflexiveType, string expected)
+        {
+            var request = new CzechWordRequest
+            {
+                Lemma = "dělat",
+                Pattern = "dělá",
+                WordCategory = WordCategory.Verb,
+                Tense = Tense.Future,
+                Aspect = VerbAspect.Imperfective,
+                Modus = Modus.Indicative,
+                Voice = Voice.Active,
+                Person = Person.First,
+                Number = Number.Singular,
+                HasPrecedingConstituent = explicitSubject,
+                ReflexiveType = Enum.Parse<ReflexiveType>(reflexiveType),
+            };
+
+            var result = composer.GetFullForm(request);
+
+            Assert.AreEqual(expected, result.Form);
+        }
+
+        #endregion Clitic cluster
     }
 }

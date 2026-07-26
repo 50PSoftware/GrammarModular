@@ -31,6 +31,56 @@
         /// <summary>
         /// Effect (efekt) — the resulting state or product of the action.
         /// </summary>
-        EFF
+        EFF,
+
+        /// <summary>
+        /// Directional-from (odkud) — the starting point of a movement.
+        /// </summary>
+        DIR1,
+
+        /// <summary>
+        /// Directional-through (kudy) — the path of a movement.
+        /// </summary>
+        DIR2,
+
+        /// <summary>
+        /// Directional-to (kam) — the target of a movement.
+        /// </summary>
+        DIR3,
+
+        /// <summary>
+        /// Locative (kde) — the place where the event holds.
+        /// </summary>
+        LOC,
+
+        /// <summary>
+        /// Manner (jak) — the way the event proceeds.
+        /// </summary>
+        MANN,
+
+        /// <summary>
+        /// Means (čím) — the instrument used.
+        /// </summary>
+        MEANS,
+
+        /// <summary>
+        /// Beneficiary (pro koho) — the party the event is meant to benefit.
+        /// </summary>
+        BEN,
+
+        /// <summary>
+        /// Cause (proč) — the reason the event occurs.
+        /// </summary>
+        CAUS,
+
+        /// <summary>
+        /// Aim (za jakým účelem) — the purpose the event serves.
+        /// </summary>
+        AIM,
+
+        /// <summary>
+        /// Temporal-when (kdy) — the time the event holds.
+        /// </summary>
+        TWHEN
     }
 }
