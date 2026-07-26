@@ -128,6 +128,43 @@ namespace Grammar.Czech.Test
             => Assert.AreEqual(expected, BuildCounted(numeral, noun, pattern, Enum.Parse<Gender>(gender)));
 
         /// <summary>
+        /// V nepřímých pádech se počítaný předmět po 5–99 shoduje (pěti korunám), kdežto po substantivních
+        /// sto a tisíc zůstává v genitivu plurálu (ke stu korun).
+        /// </summary>
+        /// <remarks>
+        /// U sto připouští IJP id=792 dvě strategie: nesklonné sto se shodou („ke sto korunám, o sto
+        /// korunách, se sto korunami“), nebo skloněné sto s genitivem i se shodou („ke stu korun/korunám“).
+        /// Data volí druhou z nich a drží ji důsledně; první tímto modelem vyjádřit nejde, protože ten nese
+        /// jednu vazbu na lemma. Test tu volbu fixuje, aby zůstala rozhodnutím, ne náhodou.
+        /// </remarks>
+        /// <param name="numeral">Číslovka.</param>
+        /// <param name="grammaticalCase">Pád celé jmenné skupiny.</param>
+        /// <param name="expected">Očekávaný tvar počítaného předmětu.</param>
+        [DataTestMethod]
+        [DataRow("pět", "Dative", "korunám", DisplayName = "pěti korunám – shoda")]
+        [DataRow("pět", "Locative", "korunách", DisplayName = "pěti korunách – shoda")]
+        [DataRow("sto", "Dative", "stu korun", DisplayName = "ke stu korun – skloněné sto s genitivem")]
+        [DataRow("sto", "Instrumental", "stem korun", DisplayName = "se stem korun – skloněné sto s genitivem")]
+        public void Build_CountedNounInObliqueCase_FollowsTheNumeralsAgreementClass(
+            string numeral, string grammaticalCase, string expected)
+        {
+            var clause = new CzechClause
+            {
+                Predicate = WasPredicate(),
+                Elements =
+                [
+                    ClauseElement.Of(
+                        Noun("koruna", "žena", Gender.Feminine, Enum.Parse<Case>(grammaticalCase)),
+                        [Numeral(numeral)],
+                        FgdFunctor.LOC,
+                        InformationStatus.New)
+                ]
+            };
+
+            StringAssert.Contains(builder.Build(clause), expected);
+        }
+
+        /// <summary>
         /// Mnoho a málo berou u nepočitatelných jmen genitiv singuláru: mnoho práce, ne *mnoho prací.
         /// </summary>
         [TestMethod]
