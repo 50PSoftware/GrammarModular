@@ -15,10 +15,15 @@
   "v": {
     "originType": "Original",
     "vocalized": "ve",
+    "vocalizeBefore": [ "dvou", "třech", "čtyřech" ],
     "variants": [
       {
         "case": "Locative",
         "semanticGroup": "Location"
+      },
+      {
+        "case": "Accusative",
+        "semanticGroup": "Time"
       }
     ]
   },

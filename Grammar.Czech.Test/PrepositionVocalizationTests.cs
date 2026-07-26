@@ -92,6 +92,22 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Forms that usage settled and no cluster rule reaches are listed per preposition.
+        /// </summary>
+        /// <param name="preposition">The preposition to place.</param>
+        /// <param name="followingWord">The word that follows it.</param>
+        /// <param name="expected">The expected surface form.</param>
+        [DataTestMethod]
+        [DataRow("v", "třech", "ve")]
+        [DataRow("v", "dvou", "ve")]
+        [DataRow("s", "dvěma", "se")]
+        [DataRow("s", "třemi", "se")]
+        public void Vocalize_LexicalizedForm_UsesTheListedVariant(string preposition, string followingWord, string expected)
+        {
+            Assert.AreEqual(expected, service.Vocalize(preposition, followingWord));
+        }
+
+        /// <summary>
         /// An unknown preposition is passed through rather than rejected — the data is a working set,
         /// not a closed list.
         /// </summary>

@@ -32,6 +32,8 @@ namespace Grammar.Czech.Test
         /// <param name="case">The case it is expected to govern.</param>
         [DataTestMethod]
         [DataRow("v", "Locative")]
+        // v also governs the accusative, in temporal use: v pondělí, v deset hodin
+        [DataRow("v", "Accusative")]
         [DataRow("na", "Locative")]
         [DataRow("na", "Accusative")]
         [DataRow("do", "Genitive")]
@@ -50,7 +52,7 @@ namespace Grammar.Czech.Test
         [TestMethod]
         public void IsAllowed_UngovernedCase_ReturnsFalse()
         {
-            Assert.IsFalse(service.IsAllowed("v", Case.Genitive));
+            Assert.IsFalse(service.IsAllowed("v", Case.Instrumental));
             Assert.IsFalse(service.IsAllowed("do", Case.Dative));
         }
 

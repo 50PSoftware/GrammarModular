@@ -279,6 +279,36 @@ namespace Grammar.Czech.Test
             Assert.AreEqual(expected, composer.GetFullForm(request).Form);
         }
 
+        /// <summary>
+        /// The second-person singular conditional sheds its -s onto the reflexive instead of keeping it:
+        /// by ses, by sis — "umyl by ses", not "umyl bys se". Only the singular does this; byste stays whole.
+        /// </summary>
+        /// <param name="number">The requested number.</param>
+        /// <param name="reflexiveType">The reflexive type.</param>
+        /// <param name="expected">The expected phrase.</param>
+        [DataTestMethod]
+        [DataRow("Singular", "ReflexivumTantum_Se", "dělal by ses", DisplayName = "kondicionál 2sg – dělal by ses")]
+        [DataRow("Singular", "DerivedBenefactive_Si", "dělal by sis", DisplayName = "kondicionál 2sg dativ – dělal by sis")]
+        [DataRow("Plural", "ReflexivumTantum_Se", "dělali byste se", DisplayName = "kondicionál 2pl bez stažení – dělali byste se")]
+        public void GetFullForm_SecondPersonConditionalWithReflexive_ShedsTheSOntoTheReflexive(
+            string number, string reflexiveType, string expected)
+        {
+            var request = new CzechWordRequest
+            {
+                Lemma = "dělat",
+                Pattern = "dělá",
+                WordCategory = WordCategory.Verb,
+                Modus = Modus.Conditional,
+                Voice = Voice.Active,
+                Person = Person.Second,
+                Number = Enum.Parse<Number>(number),
+                Gender = Gender.Masculine,
+                ReflexiveType = Enum.Parse<ReflexiveType>(reflexiveType),
+            };
+
+            Assert.AreEqual(expected, composer.GetFullForm(request).Form);
+        }
+
         #endregion Clitic cluster
     }
 }

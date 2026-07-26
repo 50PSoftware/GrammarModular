@@ -134,6 +134,30 @@ namespace Grammar.Czech.Test
             Assert.AreEqual("Student dělal a dělal a dělal.", builder.Build(sentence));
         }
 
+        /// <summary>
+        /// nebo and či are punctuated by the relation between the clauses, not by the conjunction, so the
+        /// exclusive reading has to be stated: freely interchangeable alternatives take no comma, mutually
+        /// exclusive ones do.
+        /// </summary>
+        /// <param name="conjunction">The conjunction.</param>
+        /// <param name="requiresComma">The relation, or null to take the conjunction's default.</param>
+        /// <param name="expected">The expected sentence.</param>
+        [DataTestMethod]
+        [DataRow("nebo", null, "Student dělal nebo dělal.")]
+        [DataRow("nebo", true, "Student dělal, nebo dělal.")]
+        [DataRow("či", true, "Student dělal, či dělal.")]
+        public void Build_ExclusiveCoordination_TakesACommaWhenStated(string conjunction, bool? requiresComma, string expected)
+        {
+            var sentence = new Coordination(conjunction,
+            [
+                Clause(Verb("dělat", "dělá"), Petr()),
+                Clause(Verb("dělat", "dělá"))
+            ],
+            requiresComma);
+
+            Assert.AreEqual(expected, builder.Build(sentence));
+        }
+
         #endregion Coordination
 
         #region Subordination

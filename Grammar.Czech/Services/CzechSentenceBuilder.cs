@@ -88,7 +88,9 @@ namespace Grammar.Czech.Services
                 throw new InvalidOperationException("Souřadné souvětí musí mít alespoň jednu klauzi.");
             }
 
-            var separator = conjunctionService.RequiresComma(coordination.Conjunction)
+            var requiresComma = coordination.RequiresComma ?? conjunctionService.RequiresComma(coordination.Conjunction);
+
+            var separator = requiresComma
                 ? $", {coordination.Conjunction} "
                 : $" {coordination.Conjunction} ";
 
