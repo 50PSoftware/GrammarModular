@@ -451,6 +451,90 @@ namespace Grammar.Czech.Test
 
         #endregion Relative clauses
 
+        #region End to end
+
+        /// <summary>
+        /// One sentence exercising the whole layer at once: an attribute agreeing inside a phrase, a relative
+        /// clause agreeing with its antecedent, argument cases taken from the verb's valency frame, a
+        /// prepositional phrase with vocalization, a dependent clause, and the clitic cluster landing after
+        /// the conjunction and after the relative pronoun rather than after either verb.
+        /// </summary>
+        [TestMethod]
+        public void Build_WholeComplexSentence_ComposesEveryLayer()
+        {
+            CzechWordRequest Fem(string lemma, Case? @case = null) => new()
+            {
+                Lemma = lemma,
+                Pattern = "žena",
+                WordCategory = WordCategory.Noun,
+                Gender = Gender.Feminine,
+                Number = Number.Singular,
+                Case = @case
+            };
+
+            CzechWordRequest Ucit() => new()
+            {
+                Lemma = "učit",
+                Pattern = "trida4",
+                WordCategory = WordCategory.Verb,
+                Modus = Modus.Indicative,
+                Tense = Tense.Past,
+                Aspect = VerbAspect.Imperfective,
+                Voice = Voice.Active,
+                Person = Person.Third,
+                Number = Number.Singular,
+                Gender = Gender.Feminine,
+                ReflexiveType = ReflexiveType.ReflexivumTantum_Se
+            };
+
+            var subject = new ClauseElement
+            {
+                Word = Fem("studentka", Case.Nominative),
+                Modifiers = [new CzechWordRequest { Lemma = "mladý", Pattern = "mladý", WordCategory = WordCategory.Adjective, Degree = Degree.Positive }],
+                Functor = FgdFunctor.ACT,
+                Status = InformationStatus.Given,
+                Relative = new RelativeAttachment
+                {
+                    Pronoun = "který",
+                    Case = Case.Nominative,
+                    Clause = new CzechClause
+                    {
+                        Predicate = Ucit(),
+                        Elements = [ClauseElement.Of("v", Fem("škola", Case.Locative), FgdFunctor.LOC, InformationStatus.New)]
+                    }
+                }
+            };
+
+            var main = new CzechClause
+            {
+                Predicate = new CzechWordRequest
+                {
+                    Lemma = "dát",
+                    Pattern = "dát",
+                    WordCategory = WordCategory.Verb,
+                    Modus = Modus.Indicative,
+                    Tense = Tense.Past,
+                    Aspect = VerbAspect.Perfective,
+                    Voice = Voice.Active
+                },
+                Elements =
+                [
+                    subject,
+                    // No case on either: both come from the valency frame of dát.
+                    ClauseElement.Of(Fem("žena"), FgdFunctor.ADDR, InformationStatus.New),
+                    ClauseElement.Of(Fem("kniha"), FgdFunctor.PAT, InformationStatus.New)
+                ]
+            };
+
+            var sentence = new Subordination(main, "protože", new CzechClause { Predicate = Ucit() });
+
+            Assert.AreEqual(
+                "Mladá studentka, která se učila ve škole, dala ženě knihu, protože se učila.",
+                builder.Build(sentence));
+        }
+
+        #endregion End to end
+
         #region Inventory
 
         /// <summary>
