@@ -3,6 +3,7 @@ using Grammar.Czech.Enums;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
 using Grammar.Czech.Models.Syntax;
+using System.Text.RegularExpressions;
 
 namespace Grammar.Czech.Services
 {
@@ -51,8 +52,15 @@ namespace Grammar.Czech.Services
         {
             // Capitalization and the final mark belong to the sentence, not to any one clause, so they are
             // applied once here — a dependent clause must get neither.
-            return Capitalize(Render(sentence, firstPositionTaken: false)) + FindTerminator(sentence);
+            return Capitalize(NormalizePunctuation(Render(sentence, firstPositionTaken: false))) + FindTerminator(sentence);
         }
+
+        // A relative clause always emits the comma that closes it, because whether one is needed depends on
+        // what follows and the constituent cannot see that. Two commas therefore meet whenever the clause it
+        // closes is also followed by a comma of its own, and a comma is left dangling whenever the relative
+        // clause happens to end the sentence. Both are settled here, once, rather than guessed at per site.
+        private static string NormalizePunctuation(string sentence) =>
+            Regex.Replace(sentence, @",(\s*,)+", ",").TrimEnd().TrimEnd(',');
 
         private string Render(SentenceNode sentence, bool firstPositionTaken) => sentence switch
         {
@@ -153,17 +161,52 @@ namespace Grammar.Czech.Services
                 .Append(composer.GetFullForm(head).Form)
                 .ToList();
 
-            if (!afterPreposition)
+            if (afterPreposition)
             {
-                return string.Join(' ', words);
+                ValidateGovernment(element);
+
+                // Vocalization looks at whatever actually comes next, which is the first modifier when there is one.
+                words.Insert(0, prepositionService.Vocalize(element.Preposition!, words[0]));
             }
 
-            ValidateGovernment(element);
+            var text = string.Join(' ', words);
 
-            // Vocalization looks at whatever actually comes next, which is the first modifier when there is one.
-            words.Insert(0, prepositionService.Vocalize(element.Preposition!, words[0]));
+            return element.Relative is null ? text : $"{text}, {RenderRelative(element)}";
+        }
 
-            return string.Join(' ', words);
+        // The pronoun agrees with the antecedent in gender, number and animacy, and takes its case from the
+        // role it plays inside the relative clause. It also fills the first position of that clause, so the
+        // cluster follows it: "muž, kterého jsem viděl".
+        // The closing comma is emitted here and removed again if the sentence happens to end on it.
+        private string RenderRelative(ClauseElement element)
+        {
+            var relative = element.Relative!;
+            var antecedent = element.Word;
+
+            if (pronounService.GetPronounType(relative.Pronoun) != PronounType.Relative)
+            {
+                throw new InvalidOperationException($"'{relative.Pronoun}' není vztažné zájmeno.");
+            }
+
+            var pronoun = pronounService.TryGetForm(
+                relative.Pronoun, relative.Case, antecedent.Gender, antecedent.Number, antecedent.IsAnimate, null)
+                ?? throw new InvalidOperationException(
+                    $"Vztažné zájmeno '{relative.Pronoun}' nemá tvar pro pád {relative.Case}.");
+
+            var clause = relative.Clause;
+
+            // A nominative pronoun is the subject of its clause, so the predicate agrees with the antecedent
+            // through it — "muž, který se učil" against "žena, která se učila".
+            if (relative.Case == Case.Nominative)
+            {
+                var predicate = clause.Predicate;
+                predicate.Person = Person.Third;
+                predicate.Number = antecedent.Number;
+                predicate.Gender = antecedent.Gender;
+                clause = clause with { Predicate = predicate };
+            }
+
+            return $"{pronoun} {RenderClause(clause, firstPositionTaken: true)},";
         }
 
         private void ValidateGovernment(ClauseElement element)

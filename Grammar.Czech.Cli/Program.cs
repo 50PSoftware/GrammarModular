@@ -501,6 +501,19 @@
                 clause with { Predicate = ucitSe with { ReflexiveType = ReflexiveType.None }, Elements = [subject, @object] },
                 "protože",
                 clause with { Elements = [veSkole] })));
+
+            // Vztažná věta: zájmeno se shoduje s Klárou v rodě a čísle, pád si bere ze své role.
+            var ktera = subject with
+            {
+                Relative = new RelativeAttachment
+                {
+                    Pronoun = "který",
+                    Case = Case.Nominative,
+                    Clause = new CzechClause { Predicate = ucitSe with { Tense = Tense.Past }, Elements = [veSkole] }
+                }
+            };
+
+            Console.WriteLine(sentenceBuilder.Build(clause with { Elements = [ktera, @object] }));
         }
 
         private static void PrintWordInfo(CzechWordRequest request)

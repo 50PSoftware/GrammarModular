@@ -219,6 +219,214 @@ namespace Grammar.Czech.Test
 
         #endregion Subordination
 
+        #region Relative clauses
+
+        private static CzechWordRequest Noun(string lemma, string pattern, Gender gender, Case @case, bool isAnimate, Number number = Number.Singular) => new()
+        {
+            Lemma = lemma,
+            Pattern = pattern,
+            WordCategory = WordCategory.Noun,
+            Gender = gender,
+            Number = number,
+            IsAnimate = isAnimate,
+            Case = @case
+        };
+
+        /// <summary>
+        /// A subject relative pronoun agrees with its antecedent, and so does the predicate through it.
+        /// </summary>
+        /// <param name="lemma">The antecedent lemma.</param>
+        /// <param name="pattern">The antecedent pattern.</param>
+        /// <param name="gender">The antecedent gender.</param>
+        /// <param name="isAnimate">The antecedent animacy.</param>
+        /// <param name="expected">The expected sentence.</param>
+        [DataTestMethod]
+        [DataRow("student", "pán", "Masculine", true, "Student, který se dělal, dělal.")]
+        [DataRow("žena", "žena", "Feminine", false, "Žena, která se dělala, dělala.")]
+        [DataRow("město", "město", "Neuter", false, "Město, které se dělalo, dělalo.")]
+        public void Build_SubjectRelative_AgreesPronounAndPredicateWithTheAntecedent(
+            string lemma, string pattern, string gender, bool isAnimate, string expected)
+        {
+            var antecedent = Noun(lemma, pattern, Enum.Parse<Gender>(gender), Case.Nominative, isAnimate);
+
+            var subject = new ClauseElement
+            {
+                Word = antecedent,
+                Functor = FgdFunctor.ACT,
+                Status = InformationStatus.Given,
+                Relative = new RelativeAttachment
+                {
+                    Pronoun = "který",
+                    Case = Case.Nominative,
+                    Clause = Clause(Verb("dělat", "dělá", ReflexiveType.ReflexivumTantum_Se))
+                }
+            };
+
+            var predicate = Verb("dělat", "dělá");
+
+            Assert.AreEqual(expected, builder.Build(Clause(predicate, subject)));
+        }
+
+        /// <summary>
+        /// An object relative takes its case from its role in the relative clause while still agreeing with
+        /// the antecedent — masculine animate accusative is kterého, inanimate is který.
+        /// </summary>
+        /// <param name="lemma">The antecedent lemma.</param>
+        /// <param name="pattern">The antecedent pattern.</param>
+        /// <param name="isAnimate">The antecedent animacy.</param>
+        /// <param name="expected">The expected sentence.</param>
+        [DataTestMethod]
+        [DataRow("student", "pán", true, "Dělal studenta, kterého jsem dělal.")]
+        [DataRow("hrad", "hrad", false, "Dělal hrad, který jsem dělal.")]
+        public void Build_ObjectRelative_TakesItsCaseFromTheRelativeClause(
+            string lemma, string pattern, bool isAnimate, string expected)
+        {
+            var relativePredicate = Verb("dělat", "dělá");
+            relativePredicate.Person = Person.First;
+
+            var @object = new ClauseElement
+            {
+                Word = Noun(lemma, pattern, Gender.Masculine, Case.Accusative, isAnimate),
+                Functor = FgdFunctor.PAT,
+                Status = InformationStatus.New,
+                Relative = new RelativeAttachment
+                {
+                    Pronoun = "který",
+                    Case = Case.Accusative,
+                    Clause = Clause(relativePredicate)
+                }
+            };
+
+            Assert.AreEqual(expected, builder.Build(Clause(Verb("dělat", "dělá"), @object)));
+        }
+
+        /// <summary>
+        /// The relative pronoun fills the first position of its clause, so the cluster follows the pronoun
+        /// rather than the verb.
+        /// </summary>
+        [TestMethod]
+        public void Build_RelativeClauseWithAuxiliary_PlacesClusterAfterThePronoun()
+        {
+            var relativePredicate = Verb("dělat", "dělá", ReflexiveType.ReflexivumTantum_Se);
+            relativePredicate.Person = Person.First;
+
+            var @object = new ClauseElement
+            {
+                Word = Noun("student", "pán", Gender.Masculine, Case.Accusative, true),
+                Functor = FgdFunctor.PAT,
+                Status = InformationStatus.New,
+                Relative = new RelativeAttachment
+                {
+                    Pronoun = "který",
+                    Case = Case.Genitive,
+                    Clause = Clause(relativePredicate)
+                }
+            };
+
+            Assert.AreEqual("Dělal studenta, kterého jsem se dělal.", builder.Build(Clause(Verb("dělat", "dělá"), @object)));
+        }
+
+        /// <summary>
+        /// The antecedent and its relative clause are one constituent, so the main clause's cluster follows
+        /// the whole thing rather than splitting it.
+        /// </summary>
+        [TestMethod]
+        public void Build_RelativeOnSubject_KeepsTheMainClusterAfterTheWholeConstituent()
+        {
+            var subject = new ClauseElement
+            {
+                Word = Noun("student", "pán", Gender.Masculine, Case.Nominative, true),
+                Functor = FgdFunctor.ACT,
+                Status = InformationStatus.Given,
+                Relative = new RelativeAttachment
+                {
+                    Pronoun = "který",
+                    Case = Case.Nominative,
+                    Clause = Clause(Verb("dělat", "dělá"))
+                }
+            };
+
+            var predicate = Verb("dělat", "dělá", ReflexiveType.ReflexivumTantum_Se);
+
+            Assert.AreEqual("Student, který dělal, se dělal.", builder.Build(Clause(predicate, subject)));
+        }
+
+        /// <summary>
+        /// jenž declines from its own paradigm rather than as an adjective.
+        /// </summary>
+        [TestMethod]
+        public void Build_JenzPronoun_UsesItsOwnParadigm()
+        {
+            var subject = new ClauseElement
+            {
+                Word = Noun("student", "pán", Gender.Masculine, Case.Nominative, true),
+                Functor = FgdFunctor.ACT,
+                Status = InformationStatus.Given,
+                Relative = new RelativeAttachment
+                {
+                    Pronoun = "jenž",
+                    Case = Case.Nominative,
+                    Clause = Clause(Verb("dělat", "dělá"))
+                }
+            };
+
+            Assert.AreEqual("Student, jenž dělal, dělal.", builder.Build(Clause(Verb("dělat", "dělá"), subject)));
+        }
+
+        /// <summary>
+        /// A pronoun that is not a relative one is reported.
+        /// </summary>
+        [TestMethod]
+        public void Build_NonRelativePronoun_Throws()
+        {
+            var subject = new ClauseElement
+            {
+                Word = Noun("student", "pán", Gender.Masculine, Case.Nominative, true),
+                Functor = FgdFunctor.ACT,
+                Status = InformationStatus.Given,
+                Relative = new RelativeAttachment
+                {
+                    Pronoun = "ten",
+                    Case = Case.Nominative,
+                    Clause = Clause(Verb("dělat", "dělá"))
+                }
+            };
+
+            var exception = Assert.ThrowsException<InvalidOperationException>(
+                () => builder.Build(Clause(Verb("dělat", "dělá"), subject)));
+
+            StringAssert.Contains(exception.Message, "ten");
+        }
+
+        /// <summary>
+        /// A relative clause inside a subordinate clause keeps both boundaries punctuated once each.
+        /// </summary>
+        [TestMethod]
+        public void Build_RelativeInsideSubordination_DoesNotDoubleTheComma()
+        {
+            var subject = new ClauseElement
+            {
+                Word = Noun("student", "pán", Gender.Masculine, Case.Nominative, true),
+                Functor = FgdFunctor.ACT,
+                Status = InformationStatus.Given,
+                Relative = new RelativeAttachment
+                {
+                    Pronoun = "který",
+                    Case = Case.Nominative,
+                    Clause = Clause(Verb("dělat", "dělá"))
+                }
+            };
+
+            var sentence = new Subordination(
+                Clause(Verb("dělat", "dělá"), Petr()),
+                "protože",
+                Clause(Verb("dělat", "dělá"), subject));
+
+            Assert.AreEqual("Student dělal, protože student, který dělal, dělal.", builder.Build(sentence));
+        }
+
+        #endregion Relative clauses
+
         #region Inventory
 
         /// <summary>

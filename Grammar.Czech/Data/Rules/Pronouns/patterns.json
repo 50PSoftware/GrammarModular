@@ -350,12 +350,12 @@
   "jaký": {
     "type": "Interrogative",
     "inflectionClass": "AdjectiveHard",
-    "declensionPattern": "mlady"
+    "declensionPattern": "mladý"
   },
   "který": {
     "type": "Relative",
     "inflectionClass": "AdjectiveHard",
-    "declensionPattern": "mlady"
+    "declensionPattern": "mladý"
   },
   "jenž": {
     "type": "Relative",
@@ -383,7 +383,7 @@
   "žádný": {
     "type": "Negative",
     "inflectionClass": "AdjectiveHard",
-    "declensionPattern": "mlady"
+    "declensionPattern": "mladý"
   },
   "někdo": {
     "type": "Indefinite",
@@ -406,26 +406,26 @@
   "nějaký": {
     "type": "Indefinite",
     "inflectionClass": "AdjectiveHard",
-    "declensionPattern": "mlady"
+    "declensionPattern": "mladý"
   },
   "některý": {
     "type": "Indefinite",
     "inflectionClass": "AdjectiveHard",
-    "declensionPattern": "mlady"
+    "declensionPattern": "mladý"
   },
   "každý": {
     "type": "Indefinite",
     "inflectionClass": "AdjectiveHard",
-    "declensionPattern": "mlady"
+    "declensionPattern": "mladý"
   },
   "takový": {
     "type": "Demonstrative",
     "inflectionClass": "AdjectiveHard",
-    "declensionPattern": "mlady"
+    "declensionPattern": "mladý"
   },
   "nijaký": {
     "type": "Negative",
     "inflectionClass": "AdjectiveHard",
-    "declensionPattern": "mlady"
+    "declensionPattern": "mladý"
   }
 }

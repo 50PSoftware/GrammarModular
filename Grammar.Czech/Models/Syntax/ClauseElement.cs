@@ -37,6 +37,15 @@ namespace Grammar.Czech.Models.Syntax
         public string? Preposition { get; init; }
 
         /// <summary>
+        /// Gets the relative clause modifying this constituent, or null when there is none.
+        /// </summary>
+        /// <remarks>
+        /// It is rendered right after the constituent, where the antecedent is, and counts as part of it —
+        /// so the main clause's clitic cluster follows the whole thing: "Muž, který se učil, se umyl".
+        /// </remarks>
+        public RelativeAttachment? Relative { get; init; }
+
+        /// <summary>
         /// Gets the FGD functor the constituent fills.
         /// </summary>
         public FgdFunctor Functor { get; init; }

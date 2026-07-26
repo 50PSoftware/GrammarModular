@@ -130,6 +130,59 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Every pattern a pronoun points at exists in the data it points into.
+        /// </summary>
+        /// <remarks>
+        /// Loading a file is not enough — a reference across files can dangle just as quietly.
+        /// Eight pronouns named the adjective pattern "mlady" while the key is "mladý", so every
+        /// adjective-declining pronoun (který, každý, takový, …) threw on inflection.
+        /// </remarks>
+        [TestMethod]
+        public void PronounDataProvider_EveryPatternReferenceResolves()
+        {
+            var pronouns = provider.GetRequiredService<IPronounDataProvider>().GetPronouns();
+            var paradigms = provider.GetRequiredService<IPronounDataProvider>().GetParadigms();
+            var adjectives = provider.GetRequiredService<IAdjectiveDataProvider>().GetPatterns();
+
+            foreach (var (lemma, data) in pronouns)
+            {
+                if (data.DeclensionPattern is not null)
+                {
+                    Assert.IsTrue(
+                        adjectives.ContainsKey(data.DeclensionPattern),
+                        $"Zájmeno '{lemma}' odkazuje na neexistující vzor přídavných jmen '{data.DeclensionPattern}'.");
+                }
+
+                if (data.ParadigmId is not null)
+                {
+                    Assert.IsTrue(
+                        paradigms.ContainsKey(data.ParadigmId),
+                        $"Zájmeno '{lemma}' odkazuje na neexistující paradigma '{data.ParadigmId}'.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Every pattern a noun irregular inherits from exists.
+        /// </summary>
+        [TestMethod]
+        public void NounDataProvider_EveryInheritsFromResolves()
+        {
+            var data = provider.GetRequiredService<INounDataProvider>();
+            var patterns = data.GetPatterns();
+
+            foreach (var (lemma, irregular) in data.GetIrregulars())
+            {
+                if (irregular.InheritsFrom is not null)
+                {
+                    Assert.IsTrue(
+                        patterns.ContainsKey(irregular.InheritsFrom),
+                        $"Nepravidelné '{lemma}' dědí z neexistujícího vzoru '{irregular.InheritsFrom}'.");
+                }
+            }
+        }
+
+        /// <summary>
         /// Conjunctions load with both their type and their comma rule.
         /// </summary>
         [TestMethod]
