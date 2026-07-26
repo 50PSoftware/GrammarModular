@@ -2,6 +2,7 @@ using Grammar.Core.Enums;
 using Grammar.Czech.Enums;
 using Grammar.Czech.Services;
 using Microsoft.Extensions.DependencyInjection;
+using System.Globalization;
 
 namespace Grammar.Czech.Test
 {
@@ -311,6 +312,78 @@ namespace Grammar.Czech.Test
             StringAssert.Contains(exception.Message, "37");
             StringAssert.Contains(exception.Message, "Sortal");
         }
+
+        #endregion
+
+        #region Řadové spřežky
+
+        /// <summary>
+        /// Spřežky řadových číslovek podle IJP id=791: pětadvacátý, stopadesátý.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow(21, "Nominative", "jedenadvacátý", DisplayName = "21. – jedenadvacátý")]
+        [DataRow(22, "Nominative", "dvaadvacátý", DisplayName = "22. – dvaadvacátý")]
+        [DataRow(24, "Nominative", "čtyřiadvacátý", DisplayName = "24. – čtyřiadvacátý")]
+        [DataRow(25, "Nominative", "pětadvacátý", DisplayName = "25. – pětadvacátý")]
+        [DataRow(25, "Genitive", "pětadvacátého", DisplayName = "25. – gen. pětadvacátého")]
+        [DataRow(99, "Nominative", "devětadevadesátý", DisplayName = "99. – devětadevadesátý")]
+        [DataRow(150, "Nominative", "stopadesátý", DisplayName = "150. – stopadesátý")]
+        [DataRow(125, "Nominative", "stopětadvacátý", DisplayName = "125. – stopětadvacátý")]
+        public void ComposeOrdinal_Contracted_SpellsOutSprezka(int value, string grammaticalCase, string expected)
+            => Assert.AreEqual(
+                expected,
+                composer.ComposeOrdinal(value, Enum.Parse<Case>(grammaticalCase), CompoundVariant.Contracted));
+
+        /// <summary>
+        /// Kde spřežka neexistuje, vrátí se nestažený tvar, ne chyba.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow(5, "pátý", DisplayName = "5. – pátý (není co stahovat)")]
+        [DataRow(30, "třicátý", DisplayName = "30. – třicátý (celá desítka)")]
+        [DataRow(100, "stý", DisplayName = "100. – stý")]
+        [DataRow(1956, "tisící devítistý padesátý šestý", DisplayName = "1956. – nestažené")]
+        public void ComposeOrdinal_ContractedWhereNoSprezkaExists_FallsBackToSpacedForm(int value, string expected)
+            => Assert.AreEqual(expected, composer.ComposeOrdinal(value, Case.Nominative, CompoundVariant.Contracted));
+
+        #endregion
+
+        #region Zlomky a desetinná čísla slovy
+
+        /// <summary>
+        /// Jmenovatel je počítané jméno jako každé jiné, takže se řídí čitatelem.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow(1, 2, "Nominative", "jedna polovina", DisplayName = "1/2 – jedna polovina")]
+        [DataRow(2, 3, "Nominative", "dvě třetiny", DisplayName = "2/3 – dvě třetiny")]
+        [DataRow(3, 4, "Nominative", "tři čtvrtiny", DisplayName = "3/4 – tři čtvrtiny")]
+        [DataRow(5, 8, "Nominative", "pět osmin", DisplayName = "5/8 – pět osmin (Gpl)")]
+        [DataRow(7, 10, "Nominative", "sedm desetin", DisplayName = "7/10 – sedm desetin")]
+        [DataRow(3, 4, "Genitive", "tří čtvrtin", DisplayName = "3/4 – gen. tří čtvrtin")]
+        [DataRow(3, 100, "Nominative", "tři setiny", DisplayName = "3/100 – tři setiny")]
+        public void ComposeFraction_Values_SpellsOutPerUjc(int numerator, int denominator, string grammaticalCase, string expected)
+            => Assert.AreEqual(expected, composer.ComposeFraction(numerator, denominator, Enum.Parse<Case>(grammaticalCase)));
+
+        /// <summary>
+        /// Desetinné číslo se čte jako celá část, slovo celá a zlomek podle počtu desetinných míst.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow("0,5", "nula celá pět desetin", DisplayName = "0,5 – nula celá pět desetin")]
+        [DataRow("1,5", "jedna celá pět desetin", DisplayName = "1,5 – jedna celá pět desetin")]
+        [DataRow("2,3", "dvě celé tři desetiny", DisplayName = "2,3 – dvě celé tři desetiny")]
+        [DataRow("3,14", "tři celé čtrnáct setin", DisplayName = "3,14 – tři celé čtrnáct setin")]
+        [DataRow("1,25", "jedna celá dvacet pět setin", DisplayName = "1,25 – jedna celá dvacet pět setin")]
+        [DataRow("14,25", "čtrnáct celých dvacet pět setin", DisplayName = "14,25 – čtrnáct celých dvacet pět setin")]
+        public void ComposeDecimal_Values_SpellsOutPerUjc(string literal, string expected)
+            => Assert.AreEqual(
+                expected,
+                composer.ComposeDecimal(decimal.Parse(literal.Replace(',', '.'), CultureInfo.InvariantCulture)));
+
+        /// <summary>
+        /// Celé číslo zapsané jako desetinné se vypíše jako základní číslovka.
+        /// </summary>
+        [TestMethod]
+        public void ComposeDecimal_WholeNumber_FallsBackToCardinal()
+            => Assert.AreEqual("pět", composer.ComposeDecimal(5m));
 
         #endregion
 

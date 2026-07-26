@@ -168,6 +168,37 @@ namespace Grammar.Czech.Services
         }
 
         /// <summary>
+        /// Resolves the case and number the counted noun takes.
+        /// </summary>
+        /// <param name="agreement">What the numeral imposes.</param>
+        /// <param name="phraseCase">The case the whole numeral phrase stands in.</param>
+        /// <param name="isCountable">False when the noun denotes something uncountable.</param>
+        /// <returns>The case and number of the counted noun.</returns>
+        public (Case NounCase, Number NounNumber) ResolveCountedForm(
+            CardinalAgreement agreement,
+            Case phraseCase,
+            bool isCountable = true)
+        {
+            // What decides the genitive is the case of the phrase. "Pro pět studentů" keeps it because the
+            // preposition governs the accusative, which is direct; "o pěti studentech" loses it because the
+            // locative is not.
+            var isDirect = phraseCase is Case.Nominative or Case.Accusative or Case.Vocative;
+
+            return agreement switch
+            {
+                CardinalAgreement.AgreesSingular => (phraseCase, Number.Singular),
+                CardinalAgreement.AgreesPlural => (phraseCase, Number.Plural),
+                CardinalAgreement.AlwaysGenitivePlural => (Case.Genitive, Number.Plural),
+                CardinalAgreement.GenitiveSingular => (Case.Genitive, Number.Singular),
+                CardinalAgreement.GenitivePluralInDirectCases when !isCountable => (Case.Genitive, Number.Singular),
+                CardinalAgreement.GenitivePluralInDirectCases => isDirect
+                    ? (Case.Genitive, Number.Plural)
+                    : (phraseCase, Number.Plural),
+                _ => (phraseCase, Number.Singular)
+            };
+        }
+
+        /// <summary>
         /// Gets the numeric value of the numeral.
         /// </summary>
         /// <param name="lemma">The dictionary form to resolve or analyze.</param>

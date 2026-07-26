@@ -31,6 +31,7 @@ namespace Grammar.Czech.Services
         ];
 
         private readonly ICzechNumeralService _numeralService;
+        private readonly CzechAdjectiveDeclensionService _adjectiveService;
         private readonly Dictionary<NumeralType, Dictionary<long, string>> _byTypeAndValue;
         private readonly Dictionary<long, string> _cardinalsByValue;
         private readonly Dictionary<long, string> _ordinalsByValue;
@@ -38,9 +39,13 @@ namespace Grammar.Czech.Services
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechNumeralComposer"/> type.
         /// </summary>
-        public CzechNumeralComposer(ICzechNumeralService numeralService, INumeralDataProvider provider)
+        public CzechNumeralComposer(
+            ICzechNumeralService numeralService,
+            INumeralDataProvider provider,
+            CzechAdjectiveDeclensionService adjectiveService)
         {
             _numeralService = numeralService;
+            _adjectiveService = adjectiveService;
 
             // Several lemmas can share a value within a type — dvojice and dvojka are both groups of two —
             // so the first one wins and the rest stay reachable by lemma through the service.
@@ -183,16 +188,43 @@ namespace Grammar.Czech.Services
         /// inventing a form.
         /// </remarks>
         public string ComposeOrdinal(long value, Case grammaticalCase, Gender? gender = null, bool? isAnimate = null)
+            => ComposeOrdinal(value, grammaticalCase, CompoundVariant.Preferred, gender, isAnimate);
+
+        /// <summary>
+        /// Spells the value out as a declined ordinal numeral under a chosen treatment of compounds.
+        /// </summary>
+        /// <param name="value">The value to spell out.</param>
+        /// <param name="grammaticalCase">The case the whole numeral stands in.</param>
+        /// <param name="variant">Which treatment of a compound to follow.</param>
+        /// <param name="gender">The gender of the noun being modified.</param>
+        /// <param name="isAnimate">True when the modified noun is masculine animate; otherwise, false.</param>
+        /// <returns>The spelled-out ordinal, its parts separated by single spaces.</returns>
+        /// <remarks>
+        /// An ordinal does not agree with anything it counts, so only <see cref="CompoundVariant.Contracted"/>
+        /// changes anything here — it writes twenty-one to ninety-nine as one word, pětadvacátý, and prefixes
+        /// a single hundred to it, stopadesátý. Anything it does not reach falls back to the spaced form.
+        /// </remarks>
+        public string ComposeOrdinal(
+            long value,
+            Case grammaticalCase,
+            CompoundVariant variant,
+            Gender? gender = null,
+            bool? isAnimate = null)
         {
             if (value <= 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(value), "Řadovou číslovku lze vypsat jen pro kladné číslo.");
             }
 
+            if (variant == CompoundVariant.Contracted
+                && TryRenderContractedOrdinal(value, grammaticalCase, gender, isAnimate, out var contracted))
+            {
+                return contracted;
+            }
+
             var words = DecomposeOrdinalValues(value)
                 .Select(component => LookupOrdinal(component, value))
-                .Select(lemma => _numeralService.TryGetForm(lemma, grammaticalCase, gender ?? Gender.Masculine,
-                    Number.Singular, isAnimate ?? true, null) ?? lemma);
+                .Select(lemma => DeclineOrdinal(lemma, grammaticalCase, gender, isAnimate));
 
             return string.Join(' ', words);
         }
@@ -285,7 +317,155 @@ namespace Grammar.Czech.Services
         public string ComposeDistributive(long value)
             => $"po {Compose(value, Case.Locative)}";
 
+        /// <summary>
+        /// Spells a fraction out in words: tři čtvrtiny, pět osmin, jedna polovina.
+        /// </summary>
+        /// <param name="numerator">The numerator, which counts the parts.</param>
+        /// <param name="denominator">The denominator, which names them.</param>
+        /// <param name="grammaticalCase">The case the whole fraction stands in.</param>
+        /// <returns>The spelled-out fraction.</returns>
+        /// <remarks>
+        /// The denominator is an ordinary feminine noun and the numerator counts it like any other, so the
+        /// same agreement governs here as anywhere: one half, two thirds, but five eighths in the genitive
+        /// plural — jedna polovina, dvě třetiny, pět osmin.
+        /// </remarks>
+        public string ComposeFraction(long numerator, long denominator, Case grammaticalCase = Case.Nominative)
+        {
+            if (numerator <= 0 || denominator <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(numerator), "Zlomek lze vypsat jen pro kladné čitatele a jmenovatele.");
+            }
+
+            var lemma = LookupTable(NumeralType.Fractional).TryGetValue(denominator, out var found)
+                ? found
+                : throw new InvalidOperationException($"Pro jmenovatele {denominator} není ve slovníku dílová číslovka.");
+
+            return $"{Compose(numerator, grammaticalCase, Gender.Feminine, false)} {RenderCounted(lemma, numerator, grammaticalCase)}";
+        }
+
+        /// <summary>
+        /// Spells a decimal out in words: jedna celá pět desetin, tři celé čtrnáct setin.
+        /// </summary>
+        /// <param name="value">The value to spell out.</param>
+        /// <param name="grammaticalCase">The case the whole numeral stands in.</param>
+        /// <returns>The spelled-out decimal.</returns>
+        /// <remarks>
+        /// Read as a whole part, the word celá standing for the unit, and a fraction named by however many
+        /// decimal places there are — tenths, hundredths, thousandths. Both celá and the fraction are counted
+        /// nouns, so both follow the numeral in front of them: jedna celá, but pět celých.
+        /// </remarks>
+        public string ComposeDecimal(decimal value, Case grammaticalCase = Case.Nominative)
+        {
+            if (value < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), "Desetinné číslo lze vypsat jen pro nezápornou hodnotu.");
+            }
+
+            var whole = (long)decimal.Truncate(value);
+            var places = BitConverter.GetBytes(decimal.GetBits(value)[3])[2];
+
+            if (places == 0)
+            {
+                return Compose(whole, grammaticalCase);
+            }
+
+            var scale = (long)Math.Pow(10, places);
+            var numerator = (long)((value - whole) * scale);
+
+            var fractionLemma = LookupTable(NumeralType.Fractional).TryGetValue(scale, out var found)
+                ? found
+                : throw new InvalidOperationException(
+                    $"Pro {places} desetinných míst není ve slovníku dílová číslovka pro {scale}.");
+
+            var wholeWords = Compose(whole, grammaticalCase, Gender.Feminine, false);
+            var unitWord = RenderUnitWord(whole, grammaticalCase);
+            var fractionWords = Compose(numerator, grammaticalCase, Gender.Feminine, false);
+            var fractionNoun = RenderCounted(fractionLemma, numerator, grammaticalCase);
+
+            return $"{wholeWords} {unitWord} {fractionWords} {fractionNoun}";
+        }
+
         // ── Privátní metody ────────────────────────────────────────────
+
+        // A numeral-counted noun, shaped by whatever the numerator in front of it imposes.
+        private string RenderCounted(string lemma, long counter, Case phraseCase)
+        {
+            var agreement = _numeralService.GetAgreementForValue(counter);
+            var (nounCase, number) = _numeralService.ResolveCountedForm(agreement, phraseCase);
+
+            return _numeralService.TryGetForm(lemma, nounCase, Gender.Feminine, number, false, null) ?? lemma;
+        }
+
+        // The word celá names the unit a decimal is a whole number of, and is counted like any noun:
+        // nula celá, jedna celá, dvě celé, pět celých. Zero is the exception — nula celá, not nula celých —
+        // because there the numeral names the unit itself rather than a quantity of them.
+        private string RenderUnitWord(long whole, Case phraseCase)
+        {
+            var agreement = whole == 0
+                ? CardinalAgreement.AgreesSingular
+                : _numeralService.GetAgreementForValue(whole);
+
+            var (unitCase, number) = _numeralService.ResolveCountedForm(agreement, phraseCase);
+
+            return _adjectiveService.GetForm(new CzechWordRequest
+            {
+                Lemma = "celý",
+                WordCategory = WordCategory.Adjective,
+                Pattern = "mladý",
+                Gender = Gender.Feminine,
+                Number = number,
+                Case = unitCase,
+                IsAnimate = false,
+                Degree = Degree.Positive,
+            }).Form;
+        }
+
+        // A contracted ordinal ends in the same member the spaced one does, so the last member is declined
+        // and the invariant prefix put in front of it: pěta + dvacátého gives pětadvacátého. That is also
+        // why no contracted ordinal needs a lexicon entry of its own.
+        private bool TryRenderContractedOrdinal(
+            long value,
+            Case grammaticalCase,
+            Gender? gender,
+            bool? isAnimate,
+            out string contracted)
+        {
+            contracted = string.Empty;
+
+            var prefix = string.Empty;
+            var remaining = value;
+
+            // A single hundred prefixes directly, with no joining vowel: stopadesátý.
+            if (remaining is >= 101 and <= 199)
+            {
+                prefix += "sto";
+                remaining -= 100;
+            }
+
+            if (remaining is >= 21 and <= 99 && remaining % 10 != 0)
+            {
+                if (!_cardinalsByValue.TryGetValue(remaining % 10, out var unit))
+                {
+                    return false;
+                }
+
+                prefix += unit + "a";
+                remaining = remaining / 10 * 10;
+            }
+
+            if (prefix.Length == 0 || !_ordinalsByValue.TryGetValue(remaining, out var baseLemma))
+            {
+                return false;
+            }
+
+            contracted = prefix + DeclineOrdinal(baseLemma, grammaticalCase, gender, isAnimate);
+
+            return true;
+        }
+
+        private string DeclineOrdinal(string lemma, Case grammaticalCase, Gender? gender, bool? isAnimate)
+            => _numeralService.TryGetForm(
+                lemma, grammaticalCase, gender ?? Gender.Masculine, Number.Singular, isAnimate ?? true, null) ?? lemma;
 
         // Unit before ten, joined by a: jedenadvacet, čtyřiadvacet, pětadvacet. Only the twenty-one to
         // ninety-nine range contracts, and the result declines by the same rule as pět — hence no lexicon

@@ -60,6 +60,22 @@ namespace Grammar.Czech.Interfaces
         CardinalAgreement GetAgreementForValue(decimal value);
 
         /// <summary>
+        /// Resolves the case and number the counted noun takes.
+        /// </summary>
+        /// <param name="agreement">What the numeral imposes.</param>
+        /// <param name="phraseCase">The case the whole numeral phrase stands in.</param>
+        /// <param name="isCountable">False when the noun denotes something uncountable.</param>
+        /// <returns>The case and number of the counted noun.</returns>
+        /// <remarks>
+        /// Shared by the sentence builder, which rewrites the head of a constituent, and the composer, which
+        /// needs the same shape for the unit word of a decimal and the denominator of a fraction.
+        /// </remarks>
+        (Case NounCase, Number NounNumber) ResolveCountedForm(
+            CardinalAgreement agreement,
+            Case phraseCase,
+            bool isCountable = true);
+
+        /// <summary>
         /// Gets the numeric value of the numeral.
         /// </summary>
         /// <param name="lemma">The dictionary form to resolve or analyze.</param>

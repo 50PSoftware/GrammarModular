@@ -222,6 +222,56 @@ namespace Grammar.Czech.Test
 
         #endregion
 
+        #region Číslovka jako řídící člen
+
+        /// <summary>
+        /// Číslovka může být sama hlavou konstituentu, ne jen přívlastkem. Pak nic neřídí a chová se jako
+        /// každé jiné jméno — rekce se nespouští, protože není co počítat.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow("pět", "Nominative", "Pět", DisplayName = "pět jako podmět")]
+        [DataRow("pět", "Genitive", "Pěti", DisplayName = "pěti – gen.")]
+        [DataRow("sto", "Nominative", "Sto", DisplayName = "sto jako podmět")]
+        [DataRow("tisíc", "Instrumental", "Tisícem", DisplayName = "tisícem – ins.")]
+        public void Build_NumeralAsHead_DeclinesAndGovernsNothing(string lemma, string grammaticalCase, string expectedFirstWord)
+        {
+            var numeral = Numeral(lemma);
+            numeral.Case = Enum.Parse<Case>(grammaticalCase);
+            numeral.Gender = Gender.Neuter;
+            numeral.Number = Number.Singular;
+            numeral.IsAnimate = false;
+
+            var clause = new CzechClause
+            {
+                Predicate = WasPredicate(),
+                Elements = [ClauseElement.Of(numeral, FgdFunctor.ACT, InformationStatus.Given)]
+            };
+
+            StringAssert.StartsWith(builder.Build(clause), expectedFirstWord);
+        }
+
+        /// <summary>
+        /// Číslovka v pozici hlavy neshazuje predikát do neutra singuláru — to dělá jen počítaný předmět.
+        /// </summary>
+        [TestMethod]
+        public void Build_NumeralAsHead_LeavesPredicateAgreementAlone()
+        {
+            var numeral = Numeral("pět");
+            numeral.Case = Case.Nominative;
+            numeral.Gender = Gender.Neuter;
+            numeral.Number = Number.Singular;
+
+            var clause = new CzechClause
+            {
+                Predicate = WasPredicate(),
+                Elements = [ClauseElement.Of(numeral, FgdFunctor.ACT, InformationStatus.Given)]
+            };
+
+            Assert.AreEqual("Pět bylo.", builder.Build(clause));
+        }
+
+        #endregion
+
         #region Regrese — věty bez číslovek se nemění
 
         /// <summary>

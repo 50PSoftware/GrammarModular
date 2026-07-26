@@ -55,7 +55,13 @@ Volitelně se rozlišuje varianta po předložce přes `CzechWordRequest.IsAfter
 
 Kongruenci počítaného předmětu nese `CardinalAgreement` a uplatňuje ji `CzechSentenceBuilder`: *pět studentů bylo* proti *tři studenti byli*. Je to jediné místo, kde shoda míří od přívlastku k řídícímu jménu, a ne naopak.
 
+Spřežky mají i řadové číslovky: `ComposeOrdinal` s `CompoundVariant.Contracted` dá *pětadvacátý* a *stopadesátý*, a kde spřežka neexistuje, vrátí nestažený tvar místo chyby.
+
+Necelá čísla se vypisují slovy taky — `ComposeFraction` udělá ze `3/4` *tři čtvrtiny* a z `5/8` *pět osmin*, `ComposeDecimal` z `3,14` *tři celé čtrnáct setin*. Slovo *celá* i jmenovatel jsou počítaná jména, takže se řídí číslovkou před sebou: *jedna celá*, ale *pět celých*.
+
 Číslovku lze zadat i číslicemi. Nesklonná zůstane, ale kongruenci si odvodí z hodnoty — a desetinné číslo se řídí zlomkem, takže bere genitiv singuláru: *1,5 metru*, *14,25 sekundy*.
+
+Číslovka nemusí být jen přívlastkem; jako řídící člen konstituentu se normálně skloňuje a nic neřídí (*Pět bylo.*).
 
 Zápis číslovek číslicemi kontroluje `ICzechNumeralOrthographyService` — odmítne *5tý*, *10ti* i *20-krát* a umí je opravit.
 

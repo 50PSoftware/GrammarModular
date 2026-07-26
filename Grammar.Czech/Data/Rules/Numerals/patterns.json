@@ -1489,6 +1489,7 @@
     "type": "Fractional",
     "morphology": "NounFeminine",
     "agreement": "AlwaysGenitivePlural",
+    "value": 2,
     "declensionPattern": "žena",
     "gender": "Feminine"
   },
@@ -1496,6 +1497,7 @@
     "type": "Fractional",
     "morphology": "NounFeminine",
     "agreement": "AlwaysGenitivePlural",
+    "value": 3,
     "declensionPattern": "žena",
     "gender": "Feminine"
   },
@@ -1503,6 +1505,7 @@
     "type": "Fractional",
     "morphology": "NounFeminine",
     "agreement": "AlwaysGenitivePlural",
+    "value": 4,
     "declensionPattern": "žena",
     "gender": "Feminine"
   },
@@ -1510,6 +1513,7 @@
     "type": "Fractional",
     "morphology": "NounFeminine",
     "agreement": "AlwaysGenitivePlural",
+    "value": 5,
     "declensionPattern": "žena",
     "gender": "Feminine"
   },
@@ -1517,6 +1521,7 @@
     "type": "Fractional",
     "morphology": "NounFeminine",
     "agreement": "AlwaysGenitivePlural",
+    "value": 6,
     "declensionPattern": "žena",
     "gender": "Feminine"
   },
@@ -1524,6 +1529,7 @@
     "type": "Fractional",
     "morphology": "NounFeminine",
     "agreement": "AlwaysGenitivePlural",
+    "value": 7,
     "declensionPattern": "žena",
     "gender": "Feminine"
   },
@@ -1531,6 +1537,7 @@
     "type": "Fractional",
     "morphology": "NounFeminine",
     "agreement": "AlwaysGenitivePlural",
+    "value": 8,
     "declensionPattern": "žena",
     "gender": "Feminine"
   },
@@ -1538,6 +1545,7 @@
     "type": "Fractional",
     "morphology": "NounFeminine",
     "agreement": "AlwaysGenitivePlural",
+    "value": 9,
     "declensionPattern": "žena",
     "gender": "Feminine"
   },
@@ -1545,6 +1553,7 @@
     "type": "Fractional",
     "morphology": "NounFeminine",
     "agreement": "AlwaysGenitivePlural",
+    "value": 10,
     "declensionPattern": "žena",
     "gender": "Feminine"
   },
@@ -1552,6 +1561,7 @@
     "type": "Fractional",
     "morphology": "NounFeminine",
     "agreement": "AlwaysGenitivePlural",
+    "value": 100,
     "declensionPattern": "žena",
     "gender": "Feminine"
   },
@@ -1559,6 +1569,7 @@
     "type": "Fractional",
     "morphology": "NounFeminine",
     "agreement": "AlwaysGenitivePlural",
+    "value": 1000,
     "declensionPattern": "žena",
     "gender": "Feminine"
   },
@@ -1939,6 +1950,7 @@
     "type": "Fractional",
     "morphology": "NounFeminine",
     "agreement": "AlwaysGenitivePlural",
+    "value": 11,
     "declensionPattern": "žena",
     "gender": "Feminine"
   },
@@ -1946,6 +1958,7 @@
     "type": "Fractional",
     "morphology": "NounFeminine",
     "agreement": "AlwaysGenitivePlural",
+    "value": 12,
     "declensionPattern": "žena",
     "gender": "Feminine"
   },
@@ -1953,6 +1966,7 @@
     "type": "Fractional",
     "morphology": "NounFeminine",
     "agreement": "AlwaysGenitivePlural",
+    "value": 20,
     "declensionPattern": "žena",
     "gender": "Feminine"
   },
@@ -1960,6 +1974,7 @@
     "type": "Fractional",
     "morphology": "NounFeminine",
     "agreement": "AlwaysGenitivePlural",
+    "value": 50,
     "declensionPattern": "žena",
     "gender": "Feminine"
   },
@@ -1967,6 +1982,7 @@
     "type": "Fractional",
     "morphology": "NounFeminine",
     "agreement": "AlwaysGenitivePlural",
+    "value": 1000000,
     "declensionPattern": "žena",
     "gender": "Feminine"
   },

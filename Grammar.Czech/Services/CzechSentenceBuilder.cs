@@ -237,24 +237,9 @@ namespace Grammar.Czech.Services
             numeral.IsAnimate ??= head.IsAnimate;
             numeral.Number ??= head.Number;
 
-            // What decides the genitive is the case of the phrase, never whether a preposition stands in
-            // front of it. "Pro pět studentů" keeps the genitive because the preposition governs the
-            // accusative, which is direct; "o pěti studentech" loses it because the locative is not.
-            var isDirect = phraseCase is Case.Nominative or Case.Accusative or Case.Vocative;
             var isCountable = head.IsCountable ?? true;
 
-            (head.Case, head.Number) = agreement switch
-            {
-                CardinalAgreement.AgreesSingular => (phraseCase, Number.Singular),
-                CardinalAgreement.AgreesPlural => (phraseCase, Number.Plural),
-                CardinalAgreement.AlwaysGenitivePlural => (Case.Genitive, Number.Plural),
-                CardinalAgreement.GenitiveSingular => (Case.Genitive, Number.Singular),
-                CardinalAgreement.GenitivePluralInDirectCases when !isCountable => (Case.Genitive, Number.Singular),
-                CardinalAgreement.GenitivePluralInDirectCases => isDirect
-                    ? (Case.Genitive, Number.Plural)
-                    : (phraseCase, Number.Plural),
-                _ => (head.Case, head.Number)
-            };
+            (head.Case, head.Number) = numeralService.ResolveCountedForm(agreement, phraseCase, isCountable);
 
             var modifiers = element.Modifiers.ToList();
             modifiers[index.Value] = numeral;
