@@ -45,12 +45,12 @@ namespace Grammar.Czech.Services
             var preVerbal = constituents
                 .Where(element => element.Status == InformationStatus.Contrastive)
                 .Concat(constituents.Where(element => element.Status == InformationStatus.Given))
-                .Select(element => composer.GetFullForm(element.Word).Form)
+                .Select(Realize)
                 .ToList();
 
             var postVerbal = constituents
                 .Where(element => element.Status == InformationStatus.New)
-                .Select(element => composer.GetFullForm(element.Word).Form)
+                .Select(Realize)
                 .ToList();
 
             var (verbRest, clitics) = SplitOffClitics(predicate);
@@ -59,6 +59,29 @@ namespace Grammar.Czech.Services
             var words = BuildLinearOrder(preVerbal, verbRest, particleService.ContractCluster(clitics), postVerbal);
 
             return Capitalize(string.Join(' ', words)) + clause.Terminator;
+        }
+
+        // One constituent, however many words. The whole phrase counts as a single unit for second position,
+        // so the string returned here is what the cluster attaches after.
+        private string Realize(ClauseElement element)
+        {
+            var words = element.Modifiers
+                .Select(modifier => composer.GetFullForm(AgreeWithHead(modifier, element.Word)).Form)
+                .Append(composer.GetFullForm(element.Word).Form);
+
+            return string.Join(' ', words);
+        }
+
+        // The head governs the attribute. Only unset categories are filled in, so an attribute that carries
+        // its own case — a genitive one, say — keeps it.
+        private static CzechWordRequest AgreeWithHead(CzechWordRequest modifier, CzechWordRequest head)
+        {
+            modifier.Gender ??= head.Gender;
+            modifier.Number ??= head.Number;
+            modifier.Case ??= head.Case;
+            modifier.IsAnimate ??= head.IsAnimate;
+
+            return modifier;
         }
 
         // Ranks 4 and 5 of the cluster: dative short pronouns, then accusative ones.
@@ -76,14 +99,16 @@ namespace Grammar.Czech.Services
                 .ToList();
 
         // A personal pronoun in the dative or accusative is prosodically weak and belongs in the cluster.
-        // Three things keep one out: a preposition, which forces the prepositional form inside its own phrase;
+        // Four things keep one out: a preposition, which forces the prepositional form inside its own phrase;
         // contrastive status, which needs the stressed long form left where it stands (Mně to dal, ne tobě);
-        // and any other case, which is never clitic.
+        // a modifier, which makes the pronoun the head of a full phrase rather than a weak word; and any
+        // other case, which is never clitic.
         private bool IsCliticPronoun(ClauseElement element) =>
             element.Word.WordCategory == WordCategory.Pronoun
             && element.Word.Case is Case.Dative or Case.Accusative
             && element.Status != InformationStatus.Contrastive
             && !element.Word.IsAfterPreposition
+            && element.Modifiers.Count == 0
             && pronounService.GetPronounType(element.Word.Lemma) == PronounType.Personal;
 
         // The clitic cluster attaches to the first constituent of the clause, whatever that constituent is.

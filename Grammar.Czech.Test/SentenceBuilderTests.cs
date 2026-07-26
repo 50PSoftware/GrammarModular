@@ -473,6 +473,144 @@ namespace Grammar.Czech.Test
 
         #endregion Short pronouns
 
+        #region Phrasal constituents
+
+        private static CzechWordRequest Attribute(string lemma, string pattern) => new()
+        {
+            Lemma = lemma,
+            Pattern = pattern,
+            WordCategory = WordCategory.Adjective,
+            Degree = Degree.Positive
+        };
+
+        /// <summary>
+        /// The bug this feature exists for: second position falls after the whole phrase,
+        /// not after its first word.
+        /// </summary>
+        [TestMethod]
+        public void Build_ModifiedSubject_PlacesClusterAfterTheWholePhrase()
+        {
+            var subject = ClauseElement.Of(
+                Subject().Word,
+                [Attribute("mladý", "mladý")],
+                FgdFunctor.ACT,
+                InformationStatus.Given);
+
+            var clause = new CzechClause
+            {
+                Predicate = Verb(ReflexiveType.ReflexivumTantum_Se, tense: Tense.Past),
+                Elements = [subject]
+            };
+
+            Assert.AreEqual("Mladý student se dělal.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// The attribute inherits gender, number, case and animacy from the head.
+        /// </summary>
+        /// <param name="lemma">The head noun lemma.</param>
+        /// <param name="pattern">The head noun pattern.</param>
+        /// <param name="gender">The head noun gender.</param>
+        /// <param name="case">The case of the whole phrase.</param>
+        /// <param name="expected">The expected phrase.</param>
+        [DataTestMethod]
+        [DataRow("student", "pán", "Masculine", "Nominative", "Mladý student")]
+        [DataRow("žena", "žena", "Feminine", "Nominative", "Mladá žena")]
+        [DataRow("město", "město", "Neuter", "Nominative", "Mladé město")]
+        [DataRow("student", "pán", "Masculine", "Dative", "Mladému studentovi")]
+        public void Build_ModifiedConstituent_AgreesTheAttributeWithTheHead(
+            string lemma, string pattern, string gender, string @case, string expected)
+        {
+            var head = new CzechWordRequest
+            {
+                Lemma = lemma,
+                Pattern = pattern,
+                WordCategory = WordCategory.Noun,
+                Gender = Enum.Parse<Gender>(gender),
+                Number = Number.Singular,
+                IsAnimate = gender == "Masculine",
+                Case = Enum.Parse<Case>(@case)
+            };
+
+            var predicate = Verb();
+            predicate.Person = Person.Third;
+
+            var clause = new CzechClause
+            {
+                Predicate = predicate,
+                Elements = [ClauseElement.Of(head, [Attribute("mladý", "mladý")], FgdFunctor.PAT, InformationStatus.Contrastive)]
+            };
+
+            // The phrase is fronted, so it opens the sentence and can be read off the front.
+            StringAssert.StartsWith(builder.Build(clause), expected);
+        }
+
+        /// <summary>
+        /// An attribute that carries its own case keeps it rather than inheriting the head's.
+        /// </summary>
+        [TestMethod]
+        public void Build_AttributeWithExplicitCase_KeepsIt()
+        {
+            var attribute = Attribute("mladý", "mladý");
+            attribute.Case = Case.Genitive;
+            attribute.Gender = Gender.Masculine;
+            attribute.Number = Number.Singular;
+            attribute.IsAnimate = true;
+
+            var head = new CzechWordRequest
+            {
+                Lemma = "student",
+                Pattern = "pán",
+                WordCategory = WordCategory.Noun,
+                Gender = Gender.Masculine,
+                Number = Number.Singular,
+                IsAnimate = true,
+                Case = Case.Nominative
+            };
+
+            var predicate = Verb();
+            predicate.Person = Person.Third;
+
+            var clause = new CzechClause
+            {
+                Predicate = predicate,
+                Elements = [ClauseElement.Of(head, [attribute], FgdFunctor.ACT, InformationStatus.Given)]
+            };
+
+            Assert.AreEqual("Mladého student dělá.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// A pronoun that heads a phrase is no longer a weak word, so it stays out of the cluster.
+        /// </summary>
+        [TestMethod]
+        public void Build_ModifiedPronoun_StaysOutOfTheCluster()
+        {
+            var pronoun = new CzechWordRequest
+            {
+                Lemma = "on",
+                WordCategory = WordCategory.Pronoun,
+                Case = Case.Accusative,
+                Gender = Gender.Masculine,
+                Number = Number.Singular,
+                IsAnimate = true
+            };
+
+            var clause = new CzechClause
+            {
+                Predicate = Verb(tense: Tense.Past),
+                Elements =
+                [
+                    Pronoun("já", Number.Singular),
+                    ClauseElement.Of(pronoun, [Attribute("mladý", "mladý")], FgdFunctor.PAT, InformationStatus.New)
+                ]
+            };
+
+            Assert.AreEqual("Já jsem dělal mladého jeho.", builder.Build(clause));
+        }
+
+        #endregion Phrasal constituents
+
         #region Agreement
 
         /// <summary>

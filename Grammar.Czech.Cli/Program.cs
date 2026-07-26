@@ -453,6 +453,20 @@
                 Predicate = ucitSe with { Tense = Tense.Past },
                 Elements = [subject, ClauseElement.Of(jeho, FgdFunctor.PAT, InformationStatus.New)]
             }));
+
+            // Víceslovný konstituent: přívlastek se shoduje s řídícím slovem a klastr jde až za celou frázi.
+            var mlada = new CzechWordRequest
+            {
+                Lemma = "mladý",
+                Pattern = "mladý",
+                WordCategory = WordCategory.Adjective,
+                Degree = Degree.Positive
+            };
+
+            Console.WriteLine(sentenceBuilder.Build(clause with
+            {
+                Elements = [ClauseElement.Of(klara, [mlada], FgdFunctor.ACT, InformationStatus.Given), @object]
+            }));
         }
 
         private static void PrintWordInfo(CzechWordRequest request)
