@@ -16,6 +16,7 @@ namespace Grammar.Czech.Services
         private readonly ICzechParticleService particleService;
         private readonly ICzechPronounService pronounService;
         private readonly ICzechPrepositionService prepositionService;
+        private readonly ICzechConjunctionService conjunctionService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechSentenceBuilder"/> type.
@@ -24,12 +25,14 @@ namespace Grammar.Czech.Services
             CzechWordFormComposer composer,
             ICzechParticleService particleService,
             ICzechPronounService pronounService,
-            ICzechPrepositionService prepositionService)
+            ICzechPrepositionService prepositionService,
+            ICzechConjunctionService conjunctionService)
         {
             this.composer = composer;
             this.particleService = particleService;
             this.pronounService = pronounService;
             this.prepositionService = prepositionService;
+            this.conjunctionService = conjunctionService;
         }
 
         /// <summary>
@@ -37,7 +40,72 @@ namespace Grammar.Czech.Services
         /// </summary>
         /// <param name="clause">The clause to linearize.</param>
         /// <returns>The assembled sentence, capitalized and terminated.</returns>
-        public string Build(CzechClause clause)
+        public string Build(CzechClause clause) => Build(new SimpleSentence(clause));
+
+        /// <summary>
+        /// Builds the surface sentence for the supplied sentence tree.
+        /// </summary>
+        /// <param name="sentence">The sentence to linearize.</param>
+        /// <returns>The assembled sentence, capitalized and terminated.</returns>
+        public string Build(SentenceNode sentence)
+        {
+            // Capitalization and the final mark belong to the sentence, not to any one clause, so they are
+            // applied once here — a dependent clause must get neither.
+            return Capitalize(Render(sentence, firstPositionTaken: false)) + FindTerminator(sentence);
+        }
+
+        private string Render(SentenceNode sentence, bool firstPositionTaken) => sentence switch
+        {
+            SimpleSentence simple => RenderClause(simple.Clause, firstPositionTaken),
+            Coordination coordination => RenderCoordination(coordination, firstPositionTaken),
+            Subordination subordination => RenderSubordination(subordination),
+            _ => throw new NotSupportedException($"Neznámý typ větného uzlu: {sentence.GetType().Name}.")
+        };
+
+        // The conjunction stands between the conjuncts and outside the clause that follows it, so that
+        // clause keeps its own first position: "Petr přišel a umyl se".
+        // An inherited first position — a subordinator above this coordination — reaches the first conjunct
+        // only. Every later conjunct is a clause of its own and opens its own second position.
+        private string RenderCoordination(Coordination coordination, bool firstPositionTaken)
+        {
+            if (coordination.Conjuncts.Count == 0)
+            {
+                throw new InvalidOperationException("Souřadné souvětí musí mít alespoň jednu klauzi.");
+            }
+
+            var separator = conjunctionService.RequiresComma(coordination.Conjunction)
+                ? $", {coordination.Conjunction} "
+                : $" {coordination.Conjunction} ";
+
+            var rendered = coordination.Conjuncts
+                .Select((conjunct, index) => Render(conjunct, firstPositionTaken && index == 0));
+
+            return string.Join(separator, rendered);
+        }
+
+        // The conjunction belongs to the dependent clause and fills its first position, which is why the
+        // cluster follows the conjunction and not the verb: "Petr přišel, protože se bál".
+        private string RenderSubordination(Subordination subordination)
+        {
+            var main = Render(subordination.Main, firstPositionTaken: false);
+            var occupiesFirstPosition = conjunctionService.OccupiesFirstPosition(subordination.Conjunction);
+            var subordinate = Render(subordination.Subordinate, occupiesFirstPosition);
+
+            var separator = conjunctionService.RequiresComma(subordination.Conjunction) ? ", " : " ";
+
+            return $"{main}{separator}{subordination.Conjunction} {subordinate}";
+        }
+
+        // The mark closing the sentence comes from the clause that opens it.
+        private static string FindTerminator(SentenceNode sentence) => sentence switch
+        {
+            SimpleSentence simple => simple.Clause.Terminator,
+            Coordination coordination => FindTerminator(coordination.Conjuncts[0]),
+            Subordination subordination => FindTerminator(subordination.Main),
+            _ => "."
+        };
+
+        private string RenderClause(CzechClause clause, bool firstPositionTaken)
         {
             var predicate = ApplySubjectAgreement(clause);
 
@@ -62,9 +130,9 @@ namespace Grammar.Czech.Services
             var (verbRest, clitics) = SplitOffClitics(predicate);
             clitics.AddRange(BuildPronounClitics(pronounClitics));
 
-            var words = BuildLinearOrder(preVerbal, verbRest, particleService.ContractCluster(clitics), postVerbal);
+            var words = BuildLinearOrder(preVerbal, verbRest, particleService.ContractCluster(clitics), postVerbal, firstPositionTaken);
 
-            return Capitalize(string.Join(' ', words)) + clause.Terminator;
+            return string.Join(' ', words);
         }
 
         // One constituent, however many words. The whole phrase counts as a single unit for second position,
@@ -162,12 +230,24 @@ namespace Grammar.Czech.Services
         // (Budu se dělat); otherwise it follows the first constituent only, not all of them — which is why
         // "Petr včera se myl" is wrong and "Petr se včera myl" is right.
         private static List<string> BuildLinearOrder(
-            List<string> preVerbal, List<string> verbRest, IReadOnlyList<string> clitics, List<string> postVerbal)
+            List<string> preVerbal, List<string> verbRest, IReadOnlyList<string> clitics, List<string> postVerbal,
+            bool firstPositionTaken)
         {
             var words = new List<string>();
 
             if (clitics.Count == 0)
             {
+                words.AddRange(preVerbal);
+                words.AddRange(verbRest);
+                words.AddRange(postVerbal);
+                return words;
+            }
+
+            // A subordinating conjunction already fills first position, so the cluster opens the clause
+            // proper — ahead of the subject: "protože se Petr umyl", not "protože Petr se umyl".
+            if (firstPositionTaken)
+            {
+                words.AddRange(clitics);
                 words.AddRange(preVerbal);
                 words.AddRange(verbRest);
                 words.AddRange(postVerbal);

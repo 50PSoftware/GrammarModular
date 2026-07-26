@@ -27,6 +27,7 @@ namespace Grammar.Czech
             services.AddSingleton<IPrefixDataProvider>(new JsonPrefixDataProvider());
             services.AddSingleton<IParticleDataProvider>(new JsonParticlesDataProvider());
             services.AddSingleton<IPrepositionDataProvider>(new JsonPrepositionsDataProvider());
+            services.AddSingleton<IConjunctionDataProvider>(new JsonConjunctionDataProvider());
             services.AddSingleton<IPronounDataProvider>(new JsonPronounDataProvider());
 
             // ── Valency & lexical dictionary ─────────────────────────────────────────
@@ -72,6 +73,7 @@ namespace Grammar.Czech
                 sp.GetRequiredService<CzechParticleService>());
 
             services.AddSingleton<ICzechPrepositionService, CzechPrepositionService>();
+            services.AddSingleton<ICzechConjunctionService, CzechConjunctionService>();
 
             services.AddSingleton<CzechAuxiliaryVerbService>();
             services.AddSingleton<CzechVerbPhraseBuilderService>();

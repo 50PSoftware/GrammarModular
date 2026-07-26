@@ -488,6 +488,19 @@
             {
                 Elements = [veSkole with { Status = InformationStatus.Given }, @object]
             }));
+
+            // Souřadicí spojka stojí mimo klauzi, takže si ta druhá drží vlastní druhou pozici.
+            Console.WriteLine(sentenceBuilder.Build(new Coordination("a",
+            [
+                clause with { Elements = [subject, @object] },
+                clause with { Predicate = ucitSe with { Tense = Tense.Past }, Elements = [veSkole] }
+            ])));
+
+            // Podřadicí spojka první pozici obsazuje — klitikum jde hned za ni, před podmět.
+            Console.WriteLine(sentenceBuilder.Build(new Subordination(
+                clause with { Predicate = ucitSe with { ReflexiveType = ReflexiveType.None }, Elements = [subject, @object] },
+                "protože",
+                clause with { Elements = [veSkole] })));
         }
 
         private static void PrintWordInfo(CzechWordRequest request)

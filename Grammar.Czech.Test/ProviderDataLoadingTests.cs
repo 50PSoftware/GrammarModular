@@ -130,6 +130,21 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Conjunctions load with both their type and their comma rule.
+        /// </summary>
+        [TestMethod]
+        public void ConjunctionDataProvider_LoadsConjunctions()
+        {
+            var conjunctions = provider.GetRequiredService<IConjunctionDataProvider>().GetConjunctions();
+
+            Assert.IsTrue(conjunctions.Count > 0, "Spojky se nenačetly.");
+            Assert.AreEqual(ConjunctionType.Coordinating, conjunctions["a"].Type);
+            Assert.IsFalse(conjunctions["a"].RequiresComma);
+            Assert.AreEqual(ConjunctionType.Subordinating, conjunctions["protože"].Type);
+            Assert.IsTrue(conjunctions["protože"].RequiresComma);
+        }
+
+        /// <summary>
         /// The lexicon and the valency frames load — both pointed at a folder that never existed.
         /// </summary>
         [TestMethod]
