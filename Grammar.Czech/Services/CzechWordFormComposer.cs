@@ -63,6 +63,11 @@ namespace Grammar.Czech.Services
                     verbForm = verbPhraseBuilderService.BuildConditionalPhrase(verbForm, request.Number, request.Person, request.HasPrecedingConstituent.GetValueOrDefault(), request.IsNegative);
                     verbNegationApplied = request.IsNegative;
                 }
+                else if (request.Tense == Tense.Past)
+                {
+                    verbForm = verbPhraseBuilderService.BuildPastPhrase(verbForm, request.Number, request.Person, request.HasPrecedingConstituent.GetValueOrDefault(), request.IsNegative);
+                    verbNegationApplied = request.IsNegative;
+                }
 
                 if (request.ReflexiveType != ReflexiveType.None)
                 {

@@ -1,6 +1,7 @@
 using Grammar.Core.Enums;
 using Grammar.Czech.Enums;
 using Grammar.Czech.Interfaces;
+using Grammar.Czech.Models;
 
 namespace Grammar.Czech.Services
 {
@@ -63,16 +64,74 @@ namespace Grammar.Czech.Services
         /// <param name="word">The single word to classify.</param>
         /// <returns><see langword="true"/> when the word is a clitic auxiliary; otherwise, <see langword="false"/>.</returns>
         /// <remarks>
-        /// Only the conditional particles for now. The past-tense auxiliaries jsem/jsi/jsme/jste belong to the
-        /// same cluster rank, but BuildPastForm does not emit them yet; once it does they have to be added here.
-        /// The future auxiliary budu/budeš/… is deliberately absent — it carries stress, so it counts as a
+        /// Conditional particles and past-tense auxiliaries — both sit at rank 2, ahead of the reflexive.
+        /// The future auxiliary budu/budeš/… is deliberately absent: it carries stress, so it counts as a
         /// first constituent rather than as part of the cluster.
         /// </remarks>
         public bool IsCliticAuxiliary(string word)
         {
-            var conditional = dataProvider.GetParticles().Conditional;
-            return conditional.Singular.Values.Contains(word)
-                || conditional.Plural.Values.Contains(word);
+            var particles = dataProvider.GetParticles();
+            return Contains(particles.Conditional, word) || Contains(particles.PastAuxiliary, word);
         }
+
+        /// <summary>
+        /// Gets the past-tense auxiliary for the requested grammatical number and person.
+        /// </summary>
+        /// <param name="number">The requested grammatical number.</param>
+        /// <param name="person">The requested grammatical person.</param>
+        /// <returns>The auxiliary form, or <see langword="null"/> in the third person, which takes none.</returns>
+        public string? GetPastAuxiliary(Number? number, Person? person)
+        {
+            if (number is null || person is null)
+            {
+                return null;
+            }
+
+            var pastAuxiliary = dataProvider.GetParticles().PastAuxiliary;
+            var section = number == Number.Singular ? pastAuxiliary.Singular : pastAuxiliary.Plural;
+
+            // Third person is absent from the data on purpose: the Czech past has no auxiliary there.
+            return section.TryGetValue(person.Value.ToString(), out var auxiliary) ? auxiliary : null;
+        }
+
+        /// <summary>
+        /// Applies the contractions that fuse the second-person auxiliary with a following reflexive.
+        /// </summary>
+        /// <param name="clitics">The clitic cluster in its canonical order.</param>
+        /// <returns>The cluster with jsi se and jsi si contracted to ses and sis.</returns>
+        /// <remarks>
+        /// Applied to the assembled cluster rather than while building it, so that the two tokens are still
+        /// separable while the cluster is being moved into second position.
+        /// </remarks>
+        public IReadOnlyList<string> ContractCluster(IReadOnlyList<string> clitics)
+        {
+            var secondPersonSingular = GetPastAuxiliary(Number.Singular, Person.Second);
+            var index = clitics.ToList().IndexOf(secondPersonSingular!);
+
+            if (secondPersonSingular is null || index < 0 || index + 1 >= clitics.Count)
+            {
+                return clitics;
+            }
+
+            var reflexive = dataProvider.GetParticles().Reflexive;
+            var following = clitics[index + 1];
+
+            var contracted = following == reflexive.Accusative ? "ses"
+                : following == reflexive.Dative ? "sis"
+                : null;
+
+            if (contracted is null)
+            {
+                return clitics;
+            }
+
+            var result = clitics.ToList();
+            result[index] = contracted;
+            result.RemoveAt(index + 1);
+            return result;
+        }
+
+        private static bool Contains(PersonParticles particles, string word) =>
+            particles.Singular.Values.Contains(word) || particles.Plural.Values.Contains(word);
     }
 }

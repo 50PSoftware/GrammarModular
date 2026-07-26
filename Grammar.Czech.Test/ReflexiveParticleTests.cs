@@ -216,6 +216,69 @@ namespace Grammar.Czech.Test
             Assert.AreEqual(expected, result.Form);
         }
 
+        /// <summary>
+        /// The compound past auxiliary sits at the same cluster rank as the conditional particle,
+        /// so the reflexive follows it. The third person takes no auxiliary at all.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow("First", "Singular", false, "ReflexivumTantum_Se", "dělal jsem se", DisplayName = "min. 1sg – dělal jsem se")]
+        [DataRow("First", "Singular", true, "ReflexivumTantum_Se", "jsem se dělal", DisplayName = "min. 1sg s předchozím konstituentem – jsem se dělal")]
+        [DataRow("First", "Plural", false, "ReflexivumTantum_Se", "dělali jsme se", DisplayName = "min. 1pl – dělali jsme se")]
+        [DataRow("Second", "Plural", false, "ReflexivumTantum_Se", "dělali jste se", DisplayName = "min. 2pl – dělali jste se")]
+        [DataRow("Third", "Singular", false, "ReflexivumTantum_Se", "dělal se", DisplayName = "min. 3sg bez pomocného slovesa – dělal se")]
+        // jsi + se → ses, jsi + si → sis
+        [DataRow("Second", "Singular", false, "ReflexivumTantum_Se", "dělal ses", DisplayName = "min. 2sg stažení – dělal ses")]
+        [DataRow("Second", "Singular", true, "ReflexivumTantum_Se", "ses dělal", DisplayName = "min. 2sg stažení s předchozím konstituentem – ses dělal")]
+        [DataRow("Second", "Singular", false, "DerivedBenefactive_Si", "dělal sis", DisplayName = "min. 2sg stažení dativu – dělal sis")]
+        public void GetFullForm_PastWithAuxiliaryAndReflexive_PlacesParticleAfterTheAuxiliary(
+            string person, string number, bool hasPrecedingConstituent, string reflexiveType, string expected)
+        {
+            var request = new CzechWordRequest
+            {
+                Lemma = "dělat",
+                Pattern = "dělá",
+                WordCategory = WordCategory.Verb,
+                Tense = Tense.Past,
+                Modus = Modus.Indicative,
+                Voice = Voice.Active,
+                Person = Enum.Parse<Person>(person),
+                Number = Enum.Parse<Number>(number),
+                Gender = Gender.Masculine,
+                HasPrecedingConstituent = hasPrecedingConstituent,
+                ReflexiveType = Enum.Parse<ReflexiveType>(reflexiveType),
+            };
+
+            Assert.AreEqual(expected, composer.GetFullForm(request).Form);
+        }
+
+        /// <summary>
+        /// Negation attaches to the participle, never to the auxiliary.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow("First", "Singular", false, "nedělal jsem", DisplayName = "záporný min. 1sg – nedělal jsem")]
+        [DataRow("First", "Singular", true, "jsem nedělal", DisplayName = "záporný min. 1sg s předchozím konstituentem – jsem nedělal")]
+        [DataRow("Third", "Singular", false, "nedělal", DisplayName = "záporný min. 3sg – nedělal")]
+        public void GetFullForm_NegatedPast_KeepsNegationOnTheParticiple(
+            string person, string number, bool hasPrecedingConstituent, string expected)
+        {
+            var request = new CzechWordRequest
+            {
+                Lemma = "dělat",
+                Pattern = "dělá",
+                WordCategory = WordCategory.Verb,
+                Tense = Tense.Past,
+                Modus = Modus.Indicative,
+                Voice = Voice.Active,
+                Person = Enum.Parse<Person>(person),
+                Number = Enum.Parse<Number>(number),
+                Gender = Gender.Masculine,
+                HasPrecedingConstituent = hasPrecedingConstituent,
+                IsNegative = true,
+            };
+
+            Assert.AreEqual(expected, composer.GetFullForm(request).Form);
+        }
+
         #endregion Clitic cluster
     }
 }

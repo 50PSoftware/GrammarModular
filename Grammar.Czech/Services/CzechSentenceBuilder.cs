@@ -88,33 +88,31 @@ namespace Grammar.Czech.Services
             return words;
         }
 
-        // The composer places the clitics for a verb-initial clause, which is the one configuration where they
-        // are guaranteed to sit inside the verb phrase in their cluster order. We take them back out from there
-        // and re-seat the whole cluster, preserving that order.
+        // The builder owns the whole cluster, so it asks the composer for a phrase without the reflexive and
+        // adds the particle itself. Letting the composer place it first and lifting it back out would break on
+        // the contracted forms, where the auxiliary and the reflexive fuse into a single token (jsi se → ses).
         private (List<string> VerbRest, List<string> Clitics) SplitOffClitics(CzechWordRequest predicate)
         {
-            predicate.HasPrecedingConstituent = false;
+            var reflexiveType = predicate.ReflexiveType;
 
-            var reflexive = predicate.ReflexiveType == ReflexiveType.None
-                ? null
-                : particleService.GetReflexive(predicate.ReflexiveType);
+            predicate.HasPrecedingConstituent = false;
+            predicate.ReflexiveType = ReflexiveType.None;
 
             var verbRest = new List<string>();
             var clitics = new List<string>();
 
             foreach (var word in composer.GetFullForm(predicate).Form.Split(' '))
             {
-                if (word == reflexive || particleService.IsCliticAuxiliary(word))
-                {
-                    clitics.Add(word);
-                }
-                else
-                {
-                    verbRest.Add(word);
-                }
+                (particleService.IsCliticAuxiliary(word) ? clitics : verbRest).Add(word);
             }
 
-            return (verbRest, clitics);
+            // Rank 3: the reflexive follows any auxiliary already in the cluster.
+            if (reflexiveType != ReflexiveType.None)
+            {
+                clitics.Add(particleService.GetReflexive(reflexiveType));
+            }
+
+            return (verbRest, particleService.ContractCluster(clitics).ToList());
         }
 
         // Person, number and gender of the predicate follow the nominative actor. Without an actor the clause

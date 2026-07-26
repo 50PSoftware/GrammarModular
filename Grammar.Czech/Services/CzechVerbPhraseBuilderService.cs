@@ -44,6 +44,34 @@ namespace Grammar.Czech.Services
         }
 
         /// <summary>
+        /// Builds a Czech compound past verb phrase from an l-participle and the auxiliary.
+        /// </summary>
+        /// <param name="verbForm">The l-participle to combine into a phrase.</param>
+        /// <param name="number">The requested grammatical number.</param>
+        /// <param name="person">The requested grammatical person.</param>
+        /// <param name="hasPrecedingConstituent">True when some constituent already occupies first position in the clause.</param>
+        /// <param name="isNegative">True when the generated phrase should be negated; otherwise, false.</param>
+        /// <returns>The assembled past verb phrase.</returns>
+        /// <remarks>
+        /// The third person takes no auxiliary, which leaves the bare participle. Negation attaches to the
+        /// participle, never to the auxiliary: nedělal jsem, not nejsem dělal.
+        /// </remarks>
+        public string BuildPastPhrase(string verbForm, Number? number, Person? person, bool hasPrecedingConstituent, bool isNegative)
+        {
+            var negation = isNegative ? prefixService.GetNegativePrefix() : string.Empty;
+            var auxiliary = particleService.GetPastAuxiliary(number, person);
+
+            if (auxiliary is null)
+            {
+                return $"{negation}{verbForm}";
+            }
+
+            return hasPrecedingConstituent
+                ? $"{auxiliary} {negation}{verbForm}"
+                : $"{negation}{verbForm} {auxiliary}";
+        }
+
+        /// <summary>
         /// Builds a Czech passive conditional verb phrase.
         /// </summary>
         /// <param name="verbForm">The finite or participial verb form to combine into a phrase.</param>
@@ -106,14 +134,18 @@ namespace Grammar.Czech.Services
             {
                 if (particleService.IsCliticAuxiliary(words[index]))
                 {
-                    return string.Join(' ', words[..(index + 1)].Append(reflexive).Concat(words[(index + 1)..]));
+                    return Join(words[..(index + 1)].Append(reflexive).Concat(words[(index + 1)..]));
                 }
             }
 
             return hasPrecedingConstituent
                 ? $"{reflexive} {verbForm}"
-                : string.Join(' ', words[..1].Append(reflexive).Concat(words[1..]));
+                : Join(words[..1].Append(reflexive).Concat(words[1..]));
         }
+
+        // jsi + se → ses, jsi + si → sis.
+        private string Join(IEnumerable<string> words) =>
+            string.Join(' ', particleService.ContractCluster(words.ToList()));
 
         /// <summary>
         /// Builds the periphrastic future phrase for imperfective Czech verbs.

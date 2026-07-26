@@ -422,6 +422,20 @@
                 Predicate = ucitSe with { Modus = Modus.Conditional },
                 Elements = [subject, @object]
             }));
+
+            // Minulý čas ve 3. osobě pomocné sloveso nemá.
+            Console.WriteLine(sentenceBuilder.Build(clause with
+            {
+                Predicate = ucitSe with { Tense = Tense.Past },
+                Elements = [subject, @object]
+            }));
+
+            // Ve 2. osobě se pomocné sloveso s reflexivem stahuje: jsi + se → ses.
+            Console.WriteLine(sentenceBuilder.Build(clause with
+            {
+                Predicate = ucitSe with { Tense = Tense.Past, Person = Person.Second },
+                Elements = [@object]
+            }));
         }
 
         private static void PrintWordInfo(CzechWordRequest request)

@@ -64,6 +64,19 @@ namespace Grammar.Czech.Test
                 functor,
                 status);
 
+        private static ClauseElement Pronoun(string lemma, Number number) =>
+            ClauseElement.Of(
+                new CzechWordRequest
+                {
+                    Lemma = lemma,
+                    WordCategory = WordCategory.Pronoun,
+                    Case = Case.Nominative,
+                    Gender = Gender.Masculine,
+                    Number = number
+                },
+                FgdFunctor.ACT,
+                InformationStatus.Given);
+
         private static ClauseElement Subject(string lemma = "student", InformationStatus status = InformationStatus.Given) =>
             Noun(lemma, "pán", Case.Nominative, Gender.Masculine, status, FgdFunctor.ACT);
 
@@ -236,6 +249,82 @@ namespace Grammar.Czech.Test
             };
 
             Assert.AreEqual("Student by se nedělal.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// The compound past auxiliary joins the cluster at the same rank as the conditional particle,
+        /// and the whole cluster moves into second position together.
+        /// </summary>
+        [TestMethod]
+        public void Build_PastWithAuxiliaryAndReflexive_MovesTheWholeClusterIntoSecondPosition()
+        {
+            var clause = new CzechClause
+            {
+                Predicate = Verb(ReflexiveType.ReflexivumTantum_Se, tense: Tense.Past),
+                Elements = [Pronoun("já", Number.Singular)]
+            };
+
+            Assert.AreEqual("Já jsem se dělal.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// Verb-initial past keeps the cluster after the participle.
+        /// </summary>
+        [TestMethod]
+        public void Build_VerbInitialPastWithReflexive_PlacesClusterAfterTheParticiple()
+        {
+            var predicate = Verb(ReflexiveType.ReflexivumTantum_Se, tense: Tense.Past);
+            predicate.Person = Person.First;
+
+            Assert.AreEqual("Dělal jsem se.", builder.Build(new CzechClause { Predicate = predicate }));
+        }
+
+        /// <summary>
+        /// The second-person auxiliary fuses with the reflexive after the cluster has been seated.
+        /// </summary>
+        [TestMethod]
+        public void Build_SecondPersonPastWithReflexive_ContractsTheAuxiliary()
+        {
+            var clause = new CzechClause
+            {
+                Predicate = Verb(ReflexiveType.ReflexivumTantum_Se, tense: Tense.Past),
+                Elements = [Pronoun("ty", Number.Singular)]
+            };
+
+            Assert.AreEqual("Ty ses dělal.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// A fronted non-subject takes the auxiliary cluster too, not just the reflexive.
+        /// </summary>
+        [TestMethod]
+        public void Build_FrontedNonSubjectWithPastAuxiliary_PlacesClusterAfterIt()
+        {
+            var predicate = Verb(ReflexiveType.ReflexivumTantum_Se, tense: Tense.Past);
+            predicate.Person = Person.First;
+
+            var clause = new CzechClause
+            {
+                Predicate = predicate,
+                Elements = [Noun("večer", "hrad", Case.Nominative, Gender.Masculine, InformationStatus.Given, FgdFunctor.TWHEN)]
+            };
+
+            Assert.AreEqual("Večer jsem se dělal.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// The third person takes no auxiliary, so the cluster holds the reflexive alone.
+        /// </summary>
+        [TestMethod]
+        public void Build_ThirdPersonPast_HasNoAuxiliaryInTheCluster()
+        {
+            var clause = new CzechClause
+            {
+                Predicate = Verb(ReflexiveType.ReflexivumTantum_Se, tense: Tense.Past),
+                Elements = [Subject()]
+            };
+
+            Assert.AreEqual("Student se dělal.", builder.Build(clause));
         }
 
         #endregion Wackernagel position

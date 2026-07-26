@@ -1,9 +1,13 @@
 namespace Grammar.Czech.Models
 {
     /// <summary>
-    /// Represents conditional particle forms grouped by grammatical number.
+    /// Represents particle forms keyed by grammatical number and then by person.
     /// </summary>
-    public sealed record ConditionalParticles
+    /// <remarks>
+    /// A person may be absent, which means the paradigm has no form there rather than an empty one:
+    /// the Czech past tense takes no third-person auxiliary at all ("dělal", not "dělal je").
+    /// </remarks>
+    public sealed record PersonParticles
     {
         /// <summary>
         /// Gets or sets plural.
@@ -23,7 +27,12 @@ namespace Grammar.Czech.Models
         /// <summary>
         /// Gets or sets conditional.
         /// </summary>
-        public ConditionalParticles Conditional { get; init; }
+        public PersonParticles Conditional { get; init; }
+
+        /// <summary>
+        /// Gets or sets the past-tense auxiliary forms of "být" that join the clitic cluster.
+        /// </summary>
+        public PersonParticles PastAuxiliary { get; init; }
         /// <summary>
         /// Gets or sets reflexive.
         /// </summary>

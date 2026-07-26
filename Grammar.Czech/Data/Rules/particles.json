@@ -11,6 +11,16 @@
       "Third": "by"
     }
   },
+  "pastAuxiliary": {
+    "singular": {
+      "First": "jsem",
+      "Second": "jsi"
+    },
+    "plural": {
+      "First": "jsme",
+      "Second": "jste"
+    }
+  },
   "reflexive": {
     "dative": "si",
     "accusative": "se"

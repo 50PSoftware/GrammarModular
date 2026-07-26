@@ -24,11 +24,26 @@ namespace Grammar.Czech.Interfaces
         string GetReflexive(ReflexiveType reflexiveType);
 
         /// <summary>
+        /// Gets the past-tense auxiliary for the requested grammatical number and person.
+        /// </summary>
+        /// <param name="number">The requested grammatical number.</param>
+        /// <param name="person">The requested grammatical person.</param>
+        /// <returns>The auxiliary form, or <see langword="null"/> in the third person, which takes none.</returns>
+        string? GetPastAuxiliary(Number? number, Person? person);
+
+        /// <summary>
         /// Determines whether the supplied word is a clitic auxiliary that precedes the reflexive particle
         /// inside the Wackernagel clitic cluster.
         /// </summary>
         /// <param name="word">The single word to classify.</param>
         /// <returns><see langword="true"/> when the word is a clitic auxiliary; otherwise, <see langword="false"/>.</returns>
         bool IsCliticAuxiliary(string word);
+
+        /// <summary>
+        /// Applies the contractions that fuse the second-person auxiliary with a following reflexive.
+        /// </summary>
+        /// <param name="clitics">The clitic cluster in its canonical order.</param>
+        /// <returns>The cluster with jsi se and jsi si contracted to ses and sis.</returns>
+        IReadOnlyList<string> ContractCluster(IReadOnlyList<string> clitics);
     }
 }
