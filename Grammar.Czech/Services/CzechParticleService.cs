@@ -105,10 +105,12 @@ namespace Grammar.Czech.Services
         /// </remarks>
         public IReadOnlyList<string> ContractCluster(IReadOnlyList<string> clitics)
         {
-            var secondPersonSingular = GetPastAuxiliary(Number.Singular, Person.Second);
-            var index = clitics.ToList().IndexOf(secondPersonSingular!);
+            var pastSecond = GetPastAuxiliary(Number.Singular, Person.Second);
+            var conditionalSecond = GetConditionalParticle(Number.Singular, Person.Second);
 
-            if (secondPersonSingular is null || index < 0 || index + 1 >= clitics.Count)
+            var index = clitics.ToList().FindIndex(word => word == pastSecond || word == conditionalSecond);
+
+            if (index < 0 || index + 1 >= clitics.Count)
             {
                 return clitics;
             }
@@ -128,6 +130,14 @@ namespace Grammar.Czech.Services
             var result = clitics.ToList();
             result[index] = contracted;
             result.RemoveAt(index + 1);
+
+            // The conditional keeps its particle and only sheds the -s onto the reflexive: by ses, by sis.
+            // The past auxiliary disappears into it entirely: ses, sis.
+            if (clitics[index] == conditionalSecond)
+            {
+                result.Insert(index, GetConditionalParticle(Number.Singular, Person.Third));
+            }
+
             return result;
         }
 
