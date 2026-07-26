@@ -7,7 +7,7 @@
 
 **Generativní morfologická knihovna pro češtinu na platformě .NET 8.**
 
-Projekt generuje české slovní tvary z lemmatu, gramatických kategorií, vzoru a JSON pravidel. Není to obecný slovník hotových tvarů ani hotové NLG pro skládání vět. Volající musí u většiny slov dodat explicitní metadata, hlavně slovní druh, vzor, rod/číslo/pád nebo slovesné kategorie.
+Projekt generuje české slovní tvary z lemmatu, gramatických kategorií, vzoru a JSON pravidel, a nad nimi skládá věty a souvětí. Není to obecný slovník hotových tvarů. Volající musí u většiny slov dodat explicitní metadata, hlavně slovní druh, vzor, rod/číslo/pád nebo slovesné kategorie; na větné úrovni popisuje klauzi jako predikát a konstituenty s funktory, ne hotový slovosled.
 
 ## Co projekt teď umí
 
@@ -24,7 +24,7 @@ Podporované vzory:
 | ženský | `žena`, `růže`, `píseň`, `kost` |
 | střední | `město`, `moře`, `kuře`, `stavení` |
 
-Vzory mohou dědit koncovky přes `inheritsFrom`; například `les` dědí z `hrad` a přepisuje jen odlišné pády. Nepravidelnosti a vybraná vlastní jména jsou v `Grammar.Czech/Data/Rules/Nouns/irregulars.json` a `Grammar.Czech/Data/Rules/Nouns/propers.json`.
+Vzory mohou dědit koncovky přes `inheritsFrom`; například `les` dědí z `hrad` a přepisuje jen odlišné pády. Nepravidelnosti jsou v `Grammar.Czech/Data/Rules/Nouns/irregulars.json`. Soubor `Grammar.Czech/Data/Rules/Nouns/propers.json` je zatím prázdný — mechanismus pro vlastní jména existuje, data v něm nejsou žádná.
 
 ### Přídavná jména
 
@@ -99,6 +99,29 @@ Mezi veřejně používané části patří:
 
 Lexikon slouží hlavně jako provider metadat pro vybrané resolvery, není to úplný český slovník.
 
+Valenční rámec říká, jak se realizují argumenty daného slovesa, a `CzechSentenceBuilder` z něj bere pád i předložku: u `vidět` je `PAT` akuzativ, u `dávat` je `ADDR` dativ a `PAT` akuzativ, u `jít` je `DIR3` předložka `do` s genitivem. Pád zadaný explicitně zůstává — rámec doplňuje mezery. Sloveso s víc rámci se vybírá přes `CzechClause.FrameLabel`, protože `jít` má jiné argumenty jako pohyb a jiné jako proces.
+
+Vnitřní participanty (`ACT`, `PAT`, `ADDR`, `ORIG`, `EFF` — aktanty FGP) může licencovat jen rámec, takže `vidět` s adresátem skončí výjimkou. Volná doplnění se pojí s kterýmkoli slovesem a pád si u nich zadává volající.
+
+### Věty a souvětí
+
+`CzechSentenceBuilder` skládá z klauzí povrchovou větu. Klauze (`CzechClause`) je predikát plus konstituenty (`ClauseElement`) s funktorem a komunikačním statusem; **nenese slovosled** — ten se odvozuje.
+
+Builder řeší:
+
+- **shodu** predikátu s aktorem v nominativu,
+- **aktuální členění** — kontrastivní dopředu, téma před sloveso, réma za něj,
+- **Wackernagelovu pozici** klitického klastru: pomocné sloveso, reflexivum, krátký dativ, krátký akuzativ, usazené za první konstituent klauze. Klastr se stěhuje celý a jde za **první** konstituent, ne za všechny předslovesné (*Klára se večer učí*),
+- **stažené tvary** `ses`, `sis` a kondicionálové `by ses`, `by sis`,
+- **frázové konstituenty** — přívlastek dědí od řídícího slova rod, číslo, pád a životnost všude, kde je nechal nevyplněné,
+- **předložkové fráze** včetně vokalizace a kontroly rekce; celá fráze je jeden konstituent,
+- **souvětí** — `Coordination` a `Subordination` nad `SentenceNode`, libovolně vnořitelné, s interpunkcí podle spojky,
+- **vztažné věty** — zájmeno se shoduje s řídícím jménem v rodě, čísle a životnosti, pád si bere ze své role ve vedlejší větě.
+
+Podřadicí spojka a vztažné zájmeno obsazují první pozici své klauze, takže za nimi jde klastr: *protože se student učil*, *muž, kterého jsem viděl*. Souřadicí spojka stojí mimo klauzi a první pozici jí nechává.
+
+Spojky jsou uzavřená třída v `Grammar.Czech/Data/Rules/conjunctions.json`; neznámá spojka skončí výjimkou, protože na jejím druhu závisí čárka i pozice klitika.
+
 ## Architektura
 
 ```text
@@ -106,13 +129,14 @@ Grammar.sln
 |-- Grammar.Core/        jazykově nezávislé enumy, rozhraní a modely
 |-- Grammar.Czech/       česká implementace, servisy, providery a embedded JSON data
 |-- Grammar.Czech.Cli/   konzolové demo s hardcodovanými příklady
-`-- Grammar.Czech.Test/  MSTest testy pro skloňování, časování a fonologická pravidla
+`-- Grammar.Czech.Test/  MSTest testy pro skloňování, časování, fonologii a stavbu vět
 ```
 
 Hlavní registrace pro DI je `AddCzechGrammarServices()` v `Grammar.Czech/CzechGrammarServiceFactory.cs`.
 
 Hlavní vstupy:
 
+- `CzechSentenceBuilder` pro větu nebo souvětí z klauzí,
 - `CzechWordFormComposer` pro plný tvar slova nebo slovesné fráze,
 - `MorphologyEngine` pro přímé směrování na substantiva, adjektiva, zájmena, číslovky a základní slovesné tvary,
 - specializované servisy jako `CzechNounDeclensionService`, `CzechAdjectiveDeclensionService`, `CzechPronounService`, `CzechNumeralService` a `CzechVerbConjugationService`.
@@ -183,7 +207,7 @@ dotnet run --project Grammar.Czech.Cli
 dotnet test Grammar.Czech.Test
 ```
 
-Testy jsou v MSTest a pokrývají hlavně substantiva, adjektiva, zájmena, číslovky, slovesa a vybrané fonologické evaluátory/služby.
+Testy jsou v MSTest a pokrývají substantiva, adjektiva, zájmena, číslovky, slovesa, vybrané fonologické evaluátory/služby, stavbu vět a souvětí, a načítání všech JSON providerů včetně referenční integrity mezi soubory.
 
 ## Datová vrstva
 
@@ -202,8 +226,9 @@ Všechna gramatická data v projektu `Grammar.Czech` jsou embedded JSON resource
 | `Data/Rules/Verbs/patterns.json` | obecné slovesné třídy a vzory |
 | `Data/Rules/Verbs/irregulars.json` | nepravidelná slovesa |
 | `Data/Rules/prefixes.json` | prefixy |
-| `Data/Rules/particles.json` | partikule |
-| `Data/Rules/prepositions.json` | předložky a pády |
+| `Data/Rules/particles.json` | kondicionálové částice, minulá pomocná slovesa, reflexiva |
+| `Data/Rules/prepositions.json` | předložky, jejich rekce a vokalizace |
+| `Data/Rules/conjunctions.json` | spojky, jejich druh a pravidlo čárky |
 | `Data/Lexicon/lexicon.json` | lexikální metadata |
 | `Data/Lexicon/valency.json` | valenční rámce |
 
@@ -217,6 +242,15 @@ Všechna gramatická data v projektu `Grammar.Czech` jsou embedded JSON resource
 - Číslovky nepodporují ustrnulou variantu úhrnných číslovek (*bez patero ponožek*), kterou IJP id=792 uvádí vedle skloňované jako rovněž spisovnou; generuje se vždy skloňovaná.
 - Ukazovací zájmeno před číslovkou (*těch pět studentů*) se shoduje s hlavou fráze, ne s celou frází.
 - `CzechNumeralComposer.ComposeOrdinal` a `ComposeOfType` skládají jen z lemmat ve slovníku; hodnota vyžadující chybějící složku (např. *dvoutisící*) selže s výjimkou, místo aby si tvar vymyslela.
+- `valency.json` obsahuje rámce jen pro hrstku sloves. Mechanismus je hotový, data ne — u slovesa bez rámce si pády zadává volající jako dřív.
+- Klitický klastr nezná volný dativ (*To ti byla legrace*), který podle NESČ stojí mezi pomocným slovesem a reflexivem. Ostatní pozice pořadí odpovídají.
+- Spojky `aby` a `kdyby` podporované nejsou — splývají s kondicionálovým pomocným slovesem a časují se podle osoby (*abych*, *abys*, *abychom*). Stejně tak `však`, které je samo druhopozicové, ne uvozovací.
+- Čárka u `nebo` a `či` závisí na poměru vět, ne na spojce. Data nesou jen běžnější čtení; vylučovací poměr se musí říct přes `Coordination.RequiresComma`.
+- Vokalizace předložek není podle IJP ustálený jev a rozhoduje úzus. Pravidla pokrývají uváděné tendence, zbytek je výčtem v `vocalizeBefore`.
+- Aktuální členění se promítá jen do slovosledu. NESČ ho nese i intonací a dvě čtení lišící se prozodií považuje za dvě různé věty; to modelované není.
+- Že se vnitřní participant pojí se slovesem nejvýš jednou, se nevynucuje — dva `PAT` konstituenty v jedné klauzi nic nezastaví.
+- Vztažná věta musí být jedna klauze; souvětí uvnitř vztažné věty podporované není.
+- U vzoru `sto` se generuje skloněná varianta s genitivem (*ke stu korun*); nesklonná se shodou (*ke sto korunám*), kterou IJP uvádí vedle ní, vyjádřit nejde.
 
 ## Licence
 
