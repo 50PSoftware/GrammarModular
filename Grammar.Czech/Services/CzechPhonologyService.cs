@@ -77,6 +77,13 @@ namespace Grammar.Czech.Services
                 return stem;
             }
 
+            // Only ever delete an actual e/ě. Without this guard a wrong flag silently removes whatever
+            // letter happens to sit in that slot (doktor → doktr, Mendominátor → Mendominátr).
+            if (stem.Length < 2 || (stem[^2] != 'e' && stem[^2] != 'ě'))
+            {
+                return stem;
+            }
+
             return stem[..^2] + stem[^1];
         }
 

@@ -117,6 +117,126 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies vocative singular formation for masculine animate nouns.
+        /// </summary>
+        /// <param name="lemma">The dictionary form to inflect.</param>
+        /// <param name="expected">The expected vocative singular form.</param>
+        /// <param name="pattern">The declension pattern of the lemma.</param>
+        [TestMethod]
+        [MasculineVocativeSingularData]
+        public void GetForm_MasculineVocativeSg_ReturnsExpected(string lemma, string expected, string pattern)
+        {
+            var request = new CzechWordRequest
+            {
+                Lemma = lemma,
+                WordCategory = WordCategory.Noun,
+                Pattern = pattern,
+                Gender = Gender.Masculine,
+                IsAnimate = true,
+                Number = Number.Singular,
+                Case = Case.Vocative
+            };
+
+            var result = nounDeclensionService.GetForm(request).Form;
+            Assert.AreEqual(expected, result, $"Vokativ sg. lemmatu '{lemma}'.");
+        }
+
+        /// <summary>
+        /// Verifies that latinate -or agent nouns keep their full stem across the oblique cases.
+        /// </summary>
+        /// <param name="lemma">The dictionary form to inflect.</param>
+        /// <remarks>
+        /// The mobile-e fallback used to match any vowel-consonant-vowel-consonant tail and stripped the
+        /// o out of -or, yielding doktrovi and Mendominátre.
+        /// </remarks>
+        [TestMethod]
+        [DataRow("doktor")]
+        [DataRow("profesor")]
+        [DataRow("Mendominátor")]
+        public void GetForm_LatinateOrNounObliqueCases_KeepsFullStem(string lemma)
+        {
+            var expectedByCase = new Dictionary<Case, string>
+            {
+                [Case.Genitive] = lemma + "a",
+                [Case.Dative] = lemma + "ovi",
+                [Case.Accusative] = lemma + "a",
+                [Case.Vocative] = lemma + "e",
+                [Case.Locative] = lemma + "ovi",
+                [Case.Instrumental] = lemma + "em"
+            };
+
+            foreach (var (@case, expected) in expectedByCase)
+            {
+                var request = new CzechWordRequest
+                {
+                    Lemma = lemma,
+                    WordCategory = WordCategory.Noun,
+                    Pattern = "pán",
+                    Gender = Gender.Masculine,
+                    IsAnimate = true,
+                    Number = Number.Singular,
+                    Case = @case
+                };
+
+                var result = nounDeclensionService.GetForm(request).Form;
+                Assert.AreEqual(expected, result, $"Pro pád {@case} lemmatu '{lemma}'.");
+            }
+        }
+
+        /// <summary>
+        /// Verifies the metathesized švec stem, which is supplied by the irregulars data rather than derived.
+        /// </summary>
+        /// <param name="case">The case to inflect into.</param>
+        /// <param name="expected">The expected singular form.</param>
+        [TestMethod]
+        [DataRow(Case.Genitive, "ševce")]
+        [DataRow(Case.Dative, "ševci")]
+        [DataRow(Case.Vocative, "ševče")]
+        [DataRow(Case.Instrumental, "ševcem")]
+        public void GetForm_ŠvecSg_UsesMetathesizedStem(Case @case, string expected)
+        {
+            var request = new CzechWordRequest
+            {
+                Lemma = "švec",
+                WordCategory = WordCategory.Noun,
+                Pattern = "muž",
+                Gender = Gender.Masculine,
+                IsAnimate = true,
+                Number = Number.Singular,
+                Case = @case
+            };
+
+            var result = nounDeclensionService.GetForm(request).Form;
+            Assert.AreEqual(expected, result);
+        }
+
+        /// <summary>
+        /// Verifies that the irregulars' inheritsFrom overrides the pattern supplied by the caller,
+        /// including the endings, not just the rules that run afterwards.
+        /// </summary>
+        /// <remarks>
+        /// Švec inherits from muž. Asking for the hard pán pattern used to yield the hard genitive
+        /// ševca, because the pattern was resolved before inheritsFrom was applied.
+        /// </remarks>
+        [TestMethod]
+        public void GetForm_IrregularWithInheritsFrom_OverridesCallerPattern()
+        {
+            var request = new CzechWordRequest
+            {
+                Lemma = "švec",
+                WordCategory = WordCategory.Noun,
+                Pattern = "pán",
+                Gender = Gender.Masculine,
+                IsAnimate = true,
+                Number = Number.Singular,
+                Case = Case.Genitive
+            };
+
+            var result = nounDeclensionService.GetForm(request).Form;
+            Assert.AreEqual("ševce", result);
+        }
+
+        /// <summary>
         /// Verifies that GetForm sg nom returns expected.
         /// </summary>
         /// <param name="lemma">The dictionary form to resolve or analyze.</param>
@@ -188,6 +308,43 @@ namespace Grammar.Czech.Test
                     new[] { "moucha", "mouše" },
                     new[] { "Praha", "Praze" },
                     new[] { "droga", "droze" },
+                };
+            }
+        }
+
+        /// <summary>
+        /// Provides vocative singular test cases for masculine animate nouns.
+        /// </summary>
+        private class MasculineVocativeSingularDataAttribute : NounDeclensionTestAttribue
+        {
+            /// <summary>
+            /// Provides data rows for a parameterized MSTest method.
+            /// </summary>
+            /// <param name="methodInfo">The test method requesting data.</param>
+            /// <returns>The test data rows for the requested method.</returns>
+            public override IEnumerable<object?[]> GetData(MethodInfo methodInfo)
+            {
+                return new List<object[]>
+                {
+                    // pán — plain -e
+                    new[] { "pán", "pane", "pán" },
+                    new[] { "student", "studente", "pán" },
+                    // latinate -or: vowel before the r, so no palatalization
+                    new[] { "doktor", "doktore", "pán" },
+                    new[] { "profesor", "profesore", "pán" },
+                    new[] { "Mendominátor", "Mendominátore", "pán" },
+                    // consonant before the r: 1st palatalization r → ř
+                    new[] { "bratr", "bratře", "pán" },
+                    new[] { "Petr", "Petře", "pán" },
+                    new[] { "ministr", "ministře", "pán" },
+                    // velar stems take -u with no palatalization
+                    new[] { "voják", "vojáku", "pán" },
+                    new[] { "hoch", "hochu", "pán" },
+                    new[] { "vrah", "vrahu", "pán" },
+                    // soft and -a patterns
+                    new[] { "muž", "muži", "muž" },
+                    new[] { "chlapec", "chlapče", "muž" },
+                    new[] { "předseda", "předsedo", "předseda" },
                 };
             }
         }

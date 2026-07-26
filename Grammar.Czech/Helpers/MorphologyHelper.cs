@@ -60,6 +60,29 @@ namespace Grammar.Czech.Helpers
         }
 
         /// <summary>
+        /// Determines whether the lemma is likely to carry a mobile -e- that drops in the oblique cases.
+        /// </summary>
+        /// <param name="lemma">The dictionary form to resolve or analyze.</param>
+        /// <returns><see langword="true"/> when the lemma ends with a productive mobile-e suffix; otherwise, <see langword="false"/>.</returns>
+        public static bool HasLikelyMobileE(string lemma)
+        {
+            // Only -ec, -ek and -ev are regular enough to decide by rule: otec → otc-, domek → domk-,
+            // větev → větv-. Closed-class stems (pes, den, sen, ves) and the -ev nouns that keep the
+            // vowel (jev, zjev) belong in the lexicon via CzechWordRequest.HasMobileE, which wins here.
+            // A looser shape test also matched latinate -or nouns (doktor, Mendominátor) and words like
+            // sever or kmen, and stripped a letter that was never a mobile e.
+            // Ordinal comparison: cs-CZ collation would not report "…ec" reliably against multigraph tails.
+            if (lemma.Length < 3)
+            {
+                return false;
+            }
+
+            return lemma.EndsWith("ec", StringComparison.Ordinal)
+                || lemma.EndsWith("ek", StringComparison.Ordinal)
+                || lemma.EndsWith("ev", StringComparison.Ordinal);
+        }
+
+        /// <summary>
         /// Determines whether the supplied character is not one of the Czech vowels known to the helper.
         /// </summary>
         /// <param name="c">The character to classify.</param>

@@ -12,16 +12,18 @@ namespace Grammar.Czech.Interfaces
         /// Determines whether Czech softening should apply to the request.
         /// </summary>
         /// <param name="wordRequest">The word request to analyze or inflect.</param>
+        /// <param name="stem">The resolved stem the ending will attach to, after mobile-vowel removal and irregular stem overrides.</param>
         /// <param name="context">The palatalization context used to choose the softening target.</param>
         /// <returns>True when the condition is met; otherwise, false.</returns>
-        bool ShouldApplySoftening(TWord wordRequest, out PalatalizationContext context);
+        bool ShouldApplySoftening(TWord wordRequest, string stem, out PalatalizationContext context);
 
         /// <summary>
         /// Gets an ending transformation required by Czech softening rules.
         /// </summary>
         /// <param name="wordRequest">The word request to analyze or inflect.</param>
+        /// <param name="stem">The resolved stem the ending will attach to, after mobile-vowel removal and irregular stem overrides.</param>
         /// <param name="applied">The consonant alternation that was applied.</param>
         /// <returns>The transformed ending, or null when no transformation applies.</returns>
-        string? GetEndingTransformation(TWord wordRequest, out bool applied);
+        string? GetEndingTransformation(TWord wordRequest, string stem, out bool applied);
     }
 }

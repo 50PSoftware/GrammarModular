@@ -145,6 +145,20 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that a stem whose penultimate character is not a mobile e is left untouched
+        /// even when the caller claims a mobile vowel is present.
+        /// </summary>
+        /// <param name="stem">The stem to pass through the removal.</param>
+        [TestMethod]
+        [DataRow("doktor")]
+        [DataRow("Mendominátor")]
+        [DataRow("hrad")]
+        public void RemoveMobileVowel_StemWithoutMobileE_ReturnsOriginal(string stem)
+        {
+            Assert.AreEqual(stem, service.RemoveMobileE(stem, true));
+        }
+
+        /// <summary>
         /// Verifies that insert mobile vowel ps returns pes.
         /// </summary>
         [TestMethod]

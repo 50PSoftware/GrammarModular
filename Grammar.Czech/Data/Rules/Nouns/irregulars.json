@@ -78,8 +78,17 @@
     "inheritsFrom": "hrad",
     "stem": "stol"
   },
-  "Bůh": {
+  "bůh": {
     "inheritsFrom": "pán",
-    "stem": "Boh"
+    "stem": "Boh",
+    "overrides": {
+      "singular": {
+        "Vocative": "Bože"
+      }
+    }
+  },
+  "švec": {
+    "inheritsFrom": "muž",
+    "stem": "ševc"
   }
 }

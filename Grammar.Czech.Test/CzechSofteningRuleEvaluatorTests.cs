@@ -11,6 +11,11 @@ namespace Grammar.Czech.Test
     [TestClass]
     public class CzechSofteningRuleEvaluatorTests
     {
+        /// <summary>
+        /// The resolved stem of the lemma "holka" that every case below is built on.
+        /// </summary>
+        private const string HolkaStem = "holk";
+
         private ISofteningRuleEvaluator<CzechWordRequest> softeningRuleEvaluator;
 
         /// <summary>
@@ -20,6 +25,34 @@ namespace Grammar.Czech.Test
         public void Setup()
         {
             softeningRuleEvaluator = new CzechSofteningRuleEvaluator();
+        }
+
+        /// <summary>
+        /// Verifies that a rule keyed on the surface shape follows the resolved stem, not the lemma.
+        /// </summary>
+        /// <remarks>
+        /// The lemma "doktor" ends in a vowel plus r, which on its own would not trigger the vocative
+        /// palatalization. The stem passed in ends in a consonant plus r, and that is what decides.
+        /// No noun currently declines this way — the pair is synthetic and exists to pin the contract,
+        /// so a future alternation that reshapes the stem cannot silently bypass the rule.
+        /// </remarks>
+        [TestMethod]
+        public void ShouldApplySoftening_VocativeSg_FollowsStemNotLemma()
+        {
+            var request = new CzechWordRequest
+            {
+                Lemma = "doktor",
+                Pattern = "pán",
+                WordCategory = WordCategory.Noun,
+                Number = Number.Singular,
+                Case = Case.Vocative
+            };
+
+            Assert.IsTrue(softeningRuleEvaluator.ShouldApplySoftening(request, "doktr", out _), "Kmen na souhlásku + r má změkčovat.");
+            Assert.AreEqual("-e", softeningRuleEvaluator.GetEndingTransformation(request, "doktr", out _));
+
+            Assert.IsFalse(softeningRuleEvaluator.ShouldApplySoftening(request, "doktor", out _), "Kmen na samohlásku + r měkčit nemá.");
+            Assert.IsNull(softeningRuleEvaluator.GetEndingTransformation(request, "doktor", out _));
         }
 
         /// <summary>
@@ -36,7 +69,7 @@ namespace Grammar.Czech.Test
                 Number = Number.Singular,
                 Case = Case.Dative
             };
-            var result = softeningRuleEvaluator.GetEndingTransformation(request, out _);
+            var result = softeningRuleEvaluator.GetEndingTransformation(request, HolkaStem, out _);
             Assert.AreEqual("-e", result);
         }
 
@@ -54,7 +87,7 @@ namespace Grammar.Czech.Test
                 Number = Number.Singular,
                 Case = Case.Locative
             };
-            var result = softeningRuleEvaluator.GetEndingTransformation(request, out _);
+            var result = softeningRuleEvaluator.GetEndingTransformation(request, HolkaStem, out _);
             Assert.AreEqual("-e", result);
         }
 
@@ -72,7 +105,7 @@ namespace Grammar.Czech.Test
                 Number = Number.Plural,
                 Case = Case.Genitive
             };
-            var result = softeningRuleEvaluator.ShouldApplySoftening(request, out _);
+            var result = softeningRuleEvaluator.ShouldApplySoftening(request, HolkaStem, out _);
             Assert.IsFalse(result);
         }
 
@@ -90,7 +123,7 @@ namespace Grammar.Czech.Test
                 Number = Number.Singular,
                 Case = Case.Nominative
             };
-            var result = softeningRuleEvaluator.GetEndingTransformation(request, out _);
+            var result = softeningRuleEvaluator.GetEndingTransformation(request, HolkaStem, out _);
             Assert.IsNull(result);
         }
 
@@ -108,7 +141,7 @@ namespace Grammar.Czech.Test
                 Number = Number.Singular,
                 Case = Case.Nominative
             };
-            var result = softeningRuleEvaluator.ShouldApplySoftening(request, out _);
+            var result = softeningRuleEvaluator.ShouldApplySoftening(request, HolkaStem, out _);
             Assert.IsFalse(result);
         }
 
@@ -126,7 +159,7 @@ namespace Grammar.Czech.Test
                 Number = Number.Singular,
                 Case = Case.Dative
             };
-            var result = softeningRuleEvaluator.ShouldApplySoftening(request, out _);
+            var result = softeningRuleEvaluator.ShouldApplySoftening(request, HolkaStem, out _);
             Assert.IsTrue(result);
         }
     }

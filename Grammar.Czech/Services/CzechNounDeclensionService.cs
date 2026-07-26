@@ -51,11 +51,6 @@ namespace Grammar.Czech.Services
                 return new WordForm(word.Lemma);
             }
 
-            if (!_dataProvider.GetPatterns().TryGetValue(word.Pattern.ToLower(), out var pattern))
-            {
-                throw new NotSupportedException($"Noun pattern '{word.Pattern}' not found.");
-            }
-
             if (word.IsPluralOnly.HasValue && word.IsPluralOnly.Value && word.Number == Number.Singular)
             {
                 throw new InvalidOperationException($"{word.Lemma} se nevyskytuje v jednotném čísle.");
@@ -67,6 +62,7 @@ namespace Grammar.Czech.Services
                 return new WordForm(word.Lemma);
             }
 
+            // Vyhodnoceno proti vzoru, který zadal volající — InheritsFrom níže ho může přepsat.
             var isBaseWordPattern = word.Lemma == word.Pattern;
 
             var numberKey = word.Number == Number.Singular ? "singular" : "plural";
@@ -74,6 +70,8 @@ namespace Grammar.Czech.Services
 
             NounPattern? irregular = null;
 
+            // Nepravidelná slova se řeší před výběrem vzoru: InheritsFrom musí ovlivnit i koncovky,
+            // ne jen pravidla, která se ptají na word.Pattern později.
             if (_dataProvider.GetIrregulars().TryGetValue(word.Lemma.ToLower(), out irregular))
             {
                 if (irregular.Overrides != null &&
@@ -87,6 +85,11 @@ namespace Grammar.Czech.Services
                 {
                     word.Pattern = irregular.InheritsFrom;
                 }
+            }
+
+            if (!_dataProvider.GetPatterns().TryGetValue(word.Pattern.ToLower(), out var pattern))
+            {
+                throw new NotSupportedException($"Noun pattern '{word.Pattern}' not found.");
             }
 
             if (!pattern.Endings.TryGetValue(numberKey, out var caseDict) ||
@@ -125,14 +128,18 @@ namespace Grammar.Czech.Services
                 stem = pattern.Stem!;
             }
 
-            if (_softeningRuleEvaluator.ShouldApplySoftening(word, out var palatalizationContext))
+            // Softening rules see the resolved stem, not just the lemma: the ending attaches to the stem
+            // and the two diverge whenever an alternation fired above (nůž → noz-, dům → dom-, otec → otc-).
+            var resolvedStem = stem;
+
+            if (_softeningRuleEvaluator.ShouldApplySoftening(word, resolvedStem, out var palatalizationContext))
             {
                 stem = _phonologyService.ApplyOrthographicSoftening(stem, palatalizationContext);
             }
 
-            var hasMobileERemoval = word.HasMobileE ?? MorphologyHelper.EndsWithVowelConsonantVowelConsonant(word.Lemma);
+            var hasMobileERemoval = word.HasMobileE ?? MorphologyHelper.HasLikelyMobileE(word.Lemma);
 
-            var finalEnding = _softeningRuleEvaluator.GetEndingTransformation(word, out var endingTransformationApplied) ?? ending;
+            var finalEnding = _softeningRuleEvaluator.GetEndingTransformation(word, resolvedStem, out var endingTransformationApplied) ?? ending;
 
             if (_jotationRuleEvaluator.ShouldApplyJotation(word, stem, finalEnding, hasMobileERemoval))
             {

@@ -138,7 +138,7 @@ namespace Grammar.Czech.Services
 
             // Lexikon má přednost před heuristikou
             bool hasMobileE = request.HasMobileE
-                ?? MorphologyHelper.EndsWithVowelConsonantVowelConsonant(lemma); // fallback
+                ?? MorphologyHelper.HasLikelyMobileE(lemma); // fallback
 
             if (hasMobileE && !(request.Case == Case.Nominative && request.Number == Number.Singular))
             {
