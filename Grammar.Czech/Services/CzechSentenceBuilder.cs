@@ -15,15 +15,21 @@ namespace Grammar.Czech.Services
         private readonly CzechWordFormComposer composer;
         private readonly ICzechParticleService particleService;
         private readonly ICzechPronounService pronounService;
+        private readonly ICzechPrepositionService prepositionService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechSentenceBuilder"/> type.
         /// </summary>
-        public CzechSentenceBuilder(CzechWordFormComposer composer, ICzechParticleService particleService, ICzechPronounService pronounService)
+        public CzechSentenceBuilder(
+            CzechWordFormComposer composer,
+            ICzechParticleService particleService,
+            ICzechPronounService pronounService,
+            ICzechPrepositionService prepositionService)
         {
             this.composer = composer;
             this.particleService = particleService;
             this.pronounService = pronounService;
+            this.prepositionService = prepositionService;
         }
 
         /// <summary>
@@ -65,21 +71,60 @@ namespace Grammar.Czech.Services
         // so the string returned here is what the cluster attaches after.
         private string Realize(ClauseElement element)
         {
+            var head = element.Word;
+            var afterPreposition = element.Preposition is not null;
+
+            if (afterPreposition)
+            {
+                head.IsAfterPreposition = true;
+            }
+
             var words = element.Modifiers
-                .Select(modifier => composer.GetFullForm(AgreeWithHead(modifier, element.Word)).Form)
-                .Append(composer.GetFullForm(element.Word).Form);
+                .Select(modifier => AgreeWithHead(modifier, element.Word, afterPreposition))
+                .Select(modifier => composer.GetFullForm(modifier).Form)
+                .Append(composer.GetFullForm(head).Form)
+                .ToList();
+
+            if (!afterPreposition)
+            {
+                return string.Join(' ', words);
+            }
+
+            ValidateGovernment(element);
+
+            // Vocalization looks at whatever actually comes next, which is the first modifier when there is one.
+            words.Insert(0, prepositionService.Vocalize(element.Preposition!, words[0]));
 
             return string.Join(' ', words);
         }
 
+        private void ValidateGovernment(ClauseElement element)
+        {
+            var preposition = element.Preposition!;
+            var governed = element.Word.Case;
+
+            if (governed is null || !prepositionService.GetAllowedCases(preposition).Any())
+            {
+                return;
+            }
+
+            if (!prepositionService.IsAllowed(preposition, governed.Value))
+            {
+                throw new InvalidOperationException(
+                    $"Předložka '{preposition}' neřídí pád {governed.Value}. Povolené pády: "
+                    + string.Join(", ", prepositionService.GetAllowedCases(preposition)) + ".");
+            }
+        }
+
         // The head governs the attribute. Only unset categories are filled in, so an attribute that carries
         // its own case — a genitive one, say — keeps it.
-        private static CzechWordRequest AgreeWithHead(CzechWordRequest modifier, CzechWordRequest head)
+        private static CzechWordRequest AgreeWithHead(CzechWordRequest modifier, CzechWordRequest head, bool afterPreposition)
         {
             modifier.Gender ??= head.Gender;
             modifier.Number ??= head.Number;
             modifier.Case ??= head.Case;
             modifier.IsAnimate ??= head.IsAnimate;
+            modifier.IsAfterPreposition = afterPreposition;
 
             return modifier;
         }
@@ -107,6 +152,7 @@ namespace Grammar.Czech.Services
             element.Word.WordCategory == WordCategory.Pronoun
             && element.Word.Case is Case.Dative or Case.Accusative
             && element.Status != InformationStatus.Contrastive
+            && element.Preposition is null
             && !element.Word.IsAfterPreposition
             && element.Modifiers.Count == 0
             && pronounService.GetPronounType(element.Word.Lemma) == PronounType.Personal;

@@ -611,6 +611,135 @@ namespace Grammar.Czech.Test
 
         #endregion Phrasal constituents
 
+        #region Prepositional phrases
+
+        private static CzechWordRequest Skola(Case @case) => new()
+        {
+            Lemma = "škola",
+            Pattern = "žena",
+            WordCategory = WordCategory.Noun,
+            Gender = Gender.Feminine,
+            Number = Number.Singular,
+            Case = @case
+        };
+
+        /// <summary>
+        /// A prepositional phrase is one constituent, and the preposition vocalizes against what follows it.
+        /// </summary>
+        [TestMethod]
+        public void Build_PrepositionalPhrase_EmitsVocalizedPrepositionAsOneConstituent()
+        {
+            var predicate = Verb(tense: Tense.Past);
+            predicate.Person = Person.Third;
+
+            var clause = new CzechClause
+            {
+                Predicate = predicate,
+                Elements =
+                [
+                    Subject(),
+                    ClauseElement.Of("v", Skola(Case.Locative), FgdFunctor.LOC, InformationStatus.New)
+                ]
+            };
+
+            Assert.AreEqual("Student dělal ve škole.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// Second position falls after the whole prepositional phrase, not after the preposition.
+        /// </summary>
+        [TestMethod]
+        public void Build_FrontedPrepositionalPhrase_PlacesClusterAfterTheWholePhrase()
+        {
+            var predicate = Verb(ReflexiveType.ReflexivumTantum_Se, tense: Tense.Past);
+            predicate.Person = Person.Third;
+
+            var clause = new CzechClause
+            {
+                Predicate = predicate,
+                Elements = [ClauseElement.Of("v", Skola(Case.Locative), FgdFunctor.LOC, InformationStatus.Given)]
+            };
+
+            Assert.AreEqual("Ve škole se dělal.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// A modifier inside the phrase agrees with the head and the preposition vocalizes against the
+        /// modifier, since that is the word actually following it.
+        /// </summary>
+        [TestMethod]
+        public void Build_ModifiedPrepositionalPhrase_VocalizesAgainstTheModifier()
+        {
+            var predicate = Verb(tense: Tense.Past);
+            predicate.Person = Person.Third;
+
+            var phrase = new ClauseElement
+            {
+                Preposition = "v",
+                Word = Skola(Case.Locative),
+                Modifiers = [Attribute("mladý", "mladý")],
+                Functor = FgdFunctor.LOC,
+                Status = InformationStatus.New
+            };
+
+            Assert.AreEqual("Student dělal v mladé škole.", builder.Build(new CzechClause
+            {
+                Predicate = predicate,
+                Elements = [Subject(), phrase]
+            }));
+        }
+
+        /// <summary>
+        /// A pronoun governed by a preposition takes the prepositional form and stays in the phrase,
+        /// without the caller having to set IsAfterPreposition.
+        /// </summary>
+        [TestMethod]
+        public void Build_PronounInPrepositionalPhrase_StaysOutOfTheClusterAndTakesTheLongForm()
+        {
+            var pronoun = new CzechWordRequest
+            {
+                Lemma = "on",
+                WordCategory = WordCategory.Pronoun,
+                Case = Case.Accusative,
+                Gender = Gender.Masculine,
+                Number = Number.Singular,
+                IsAnimate = true
+            };
+
+            var clause = new CzechClause
+            {
+                Predicate = Verb(tense: Tense.Past),
+                Elements =
+                [
+                    Pronoun("já", Number.Singular),
+                    ClauseElement.Of("na", pronoun, FgdFunctor.PAT, InformationStatus.New)
+                ]
+            };
+
+            Assert.AreEqual("Já jsem dělal na něj.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// A case the preposition does not govern is reported rather than silently emitted.
+        /// </summary>
+        [TestMethod]
+        public void Build_PrepositionWithUngovernedCase_Throws()
+        {
+            var predicate = Verb(tense: Tense.Past);
+            predicate.Person = Person.Third;
+
+            var clause = new CzechClause
+            {
+                Predicate = predicate,
+                Elements = [ClauseElement.Of("v", Skola(Case.Genitive), FgdFunctor.LOC, InformationStatus.New)]
+            };
+
+            var exception = Assert.ThrowsException<InvalidOperationException>(() => builder.Build(clause));
+            StringAssert.Contains(exception.Message, "Genitive");
+        }
+
+        #endregion Prepositional phrases
+
         #region Agreement
 
         /// <summary>

@@ -1,50 +1,114 @@
 {
   "na": {
-    "OriginType": "Original",
-    "Variants": [
+    "originType": "Original",
+    "variants": [
       {
-        "Case": "Accusative",
-        "SemanticGroup": "Direction"
+        "case": "Accusative",
+        "semanticGroup": "Direction"
       },
       {
-        "Case": "Locative",
-        "SemanticGroup": "Location"
+        "case": "Locative",
+        "semanticGroup": "Location"
       }
     ]
   },
   "v": {
-    "OriginType": "Original",
-    "Variants": [
+    "originType": "Original",
+    "vocalized": "ve",
+    "variants": [
       {
-        "Case": "Locative",
-        "SemanticGroup": "Location"
+        "case": "Locative",
+        "semanticGroup": "Location"
+      }
+    ]
+  },
+  "s": {
+    "originType": "Original",
+    "vocalized": "se",
+    "variants": [
+      {
+        "case": "Instrumental",
+        "semanticGroup": "Instrument"
+      }
+    ]
+  },
+  "z": {
+    "originType": "Original",
+    "vocalized": "ze",
+    "variants": [
+      {
+        "case": "Genitive",
+        "semanticGroup": "Direction"
+      }
+    ]
+  },
+  "k": {
+    "originType": "Original",
+    "vocalized": "ke",
+    "variants": [
+      {
+        "case": "Dative",
+        "semanticGroup": "Direction"
+      }
+    ]
+  },
+  "od": {
+    "originType": "Original",
+    "vocalized": "ode",
+    "variants": [
+      {
+        "case": "Genitive",
+        "semanticGroup": "Direction"
+      }
+    ]
+  },
+  "bez": {
+    "originType": "Original",
+    "vocalized": "beze",
+    "variants": [
+      {
+        "case": "Genitive",
+        "semanticGroup": "Other"
       }
     ]
   },
   "do": {
-    "OriginType": "Original",
-    "Variants": [
+    "originType": "Original",
+    "variants": [
       {
-        "Case": "Genitive",
-        "SemanticGroup": "Direction"
+        "case": "Genitive",
+        "semanticGroup": "Direction"
+      }
+    ]
+  },
+  "o": {
+    "originType": "Original",
+    "variants": [
+      {
+        "case": "Accusative",
+        "semanticGroup": "Direction"
+      },
+      {
+        "case": "Locative",
+        "semanticGroup": "Location"
       }
     ]
   },
   "kvůli": {
-    "OriginType": "Derived",
-    "Variants": [
+    "originType": "Derived",
+    "variants": [
       {
-        "Case": "Dative",
-        "SemanticGroup": "Cause"
+        "case": "Dative",
+        "semanticGroup": "Cause"
       }
     ]
   },
   "v rámci": {
-    "OriginType": "Compound",
-    "Variants": [
+    "originType": "Compound",
+    "variants": [
       {
-        "Case": "Genitive",
-        "SemanticGroup": "Location"
+        "case": "Genitive",
+        "semanticGroup": "Location"
       }
     ]
   }

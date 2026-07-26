@@ -467,6 +467,27 @@
             {
                 Elements = [ClauseElement.Of(klara, [mlada], FgdFunctor.ACT, InformationStatus.Given), @object]
             }));
+
+            // Předložková fráze je jeden konstituent a předložka se vokalizuje podle následujícího slova.
+            var skola = new CzechWordRequest
+            {
+                Lemma = "škola",
+                WordCategory = WordCategory.Noun,
+                Gender = Gender.Feminine,
+                Number = Number.Singular,
+                Case = Case.Locative,
+                Pattern = "žena"
+            };
+
+            var veSkole = ClauseElement.Of("v", skola, FgdFunctor.LOC, InformationStatus.New);
+
+            Console.WriteLine(sentenceBuilder.Build(clause with { Elements = [subject, veSkole] }));
+
+            // Fronting celé fráze — klastr jde až za ni, ne za předložku.
+            Console.WriteLine(sentenceBuilder.Build(clause with
+            {
+                Elements = [veSkole with { Status = InformationStatus.Given }, @object]
+            }));
         }
 
         private static void PrintWordInfo(CzechWordRequest request)

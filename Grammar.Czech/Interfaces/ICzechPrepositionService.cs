@@ -23,6 +23,14 @@ namespace Grammar.Czech.Interfaces
         PrepositionSemanticGroup? GetSemanticGroup(string preposition, Case kase);
 
         /// <summary>
+        /// Gets the surface form of the preposition before the supplied word, vocalized where required.
+        /// </summary>
+        /// <param name="preposition">The preposition text to look up.</param>
+        /// <param name="followingWord">The word that immediately follows the preposition.</param>
+        /// <returns>The vocalized variant when the following word requires it; otherwise, the preposition unchanged.</returns>
+        string Vocalize(string preposition, string followingWord);
+
+        /// <summary>
         /// Determines whether the supplied preposition can govern the requested case.
         /// </summary>
         /// <param name="preposition">The preposition text to look up.</param>
