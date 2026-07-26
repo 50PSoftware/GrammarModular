@@ -436,6 +436,23 @@
                 Predicate = ucitSe with { Tense = Tense.Past, Person = Person.Second },
                 Elements = [@object]
             }));
+
+            // Krátké zájmeno opouští pořadí konstituentů a řadí se do klastru za reflexivum.
+            var jeho = new CzechWordRequest
+            {
+                Lemma = "on",
+                WordCategory = WordCategory.Pronoun,
+                Case = Case.Accusative,
+                Gender = Gender.Masculine,
+                Number = Number.Singular,
+                IsAnimate = true
+            };
+
+            Console.WriteLine(sentenceBuilder.Build(clause with
+            {
+                Predicate = ucitSe with { Tense = Tense.Past },
+                Elements = [subject, ClauseElement.Of(jeho, FgdFunctor.PAT, InformationStatus.New)]
+            }));
         }
 
         private static void PrintWordInfo(CzechWordRequest request)

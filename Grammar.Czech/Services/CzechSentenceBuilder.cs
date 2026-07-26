@@ -14,14 +14,16 @@ namespace Grammar.Czech.Services
     {
         private readonly CzechWordFormComposer composer;
         private readonly ICzechParticleService particleService;
+        private readonly ICzechPronounService pronounService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechSentenceBuilder"/> type.
         /// </summary>
-        public CzechSentenceBuilder(CzechWordFormComposer composer, ICzechParticleService particleService)
+        public CzechSentenceBuilder(CzechWordFormComposer composer, ICzechParticleService particleService, ICzechPronounService pronounService)
         {
             this.composer = composer;
             this.particleService = particleService;
+            this.pronounService = pronounService;
         }
 
         /// <summary>
@@ -33,32 +35,63 @@ namespace Grammar.Czech.Services
         {
             var predicate = ApplySubjectAgreement(clause);
 
+            // Short pronouns leave the constituent order entirely and join the cluster, so they have to be
+            // taken out before the remaining elements are linearized.
+            var pronounClitics = clause.Elements.Where(IsCliticPronoun).ToList();
+            var constituents = clause.Elements.Except(pronounClitics).ToList();
+
             // FSP: contrastive material is fronted, given material forms the theme before the verb,
             // new material forms the rheme after it. Order inside one status is the caller's.
-            var preVerbal = clause.Elements
+            var preVerbal = constituents
                 .Where(element => element.Status == InformationStatus.Contrastive)
-                .Concat(clause.Elements.Where(element => element.Status == InformationStatus.Given))
+                .Concat(constituents.Where(element => element.Status == InformationStatus.Given))
                 .Select(element => composer.GetFullForm(element.Word).Form)
                 .ToList();
 
-            var postVerbal = clause.Elements
+            var postVerbal = constituents
                 .Where(element => element.Status == InformationStatus.New)
                 .Select(element => composer.GetFullForm(element.Word).Form)
                 .ToList();
 
             var (verbRest, clitics) = SplitOffClitics(predicate);
+            clitics.AddRange(BuildPronounClitics(pronounClitics));
 
-            var words = BuildLinearOrder(preVerbal, verbRest, clitics, postVerbal);
+            var words = BuildLinearOrder(preVerbal, verbRest, particleService.ContractCluster(clitics), postVerbal);
 
             return Capitalize(string.Join(' ', words)) + clause.Terminator;
         }
+
+        // Ranks 4 and 5 of the cluster: dative short pronouns, then accusative ones.
+        // Dal jsem mu ho, never Dal jsem ho mu.
+        private IReadOnlyList<string> BuildPronounClitics(IEnumerable<ClauseElement> elements) =>
+            elements
+                .OrderBy(element => element.Word.Case == Case.Dative ? 0 : 1)
+                .Select(element => pronounService.TryGetForm(
+                    element.Word.Lemma,
+                    element.Word.Case!.Value,
+                    element.Word.Gender,
+                    element.Word.Number,
+                    element.Word.IsAnimate,
+                    new PronounFormOptions { PreferClitic = true }) ?? element.Word.Lemma)
+                .ToList();
+
+        // A personal pronoun in the dative or accusative is prosodically weak and belongs in the cluster.
+        // Three things keep one out: a preposition, which forces the prepositional form inside its own phrase;
+        // contrastive status, which needs the stressed long form left where it stands (Mně to dal, ne tobě);
+        // and any other case, which is never clitic.
+        private bool IsCliticPronoun(ClauseElement element) =>
+            element.Word.WordCategory == WordCategory.Pronoun
+            && element.Word.Case is Case.Dative or Case.Accusative
+            && element.Status != InformationStatus.Contrastive
+            && !element.Word.IsAfterPreposition
+            && pronounService.GetPronounType(element.Word.Lemma) == PronounType.Personal;
 
         // The clitic cluster attaches to the first constituent of the clause, whatever that constituent is.
         // With no pre-verbal constituent the verb itself opens the clause and the cluster follows its first word
         // (Budu se dělat); otherwise it follows the first constituent only, not all of them — which is why
         // "Petr včera se myl" is wrong and "Petr se včera myl" is right.
         private static List<string> BuildLinearOrder(
-            List<string> preVerbal, List<string> verbRest, List<string> clitics, List<string> postVerbal)
+            List<string> preVerbal, List<string> verbRest, IReadOnlyList<string> clitics, List<string> postVerbal)
         {
             var words = new List<string>();
 
@@ -112,7 +145,7 @@ namespace Grammar.Czech.Services
                 clitics.Add(particleService.GetReflexive(reflexiveType));
             }
 
-            return (verbRest, particleService.ContractCluster(clitics).ToList());
+            return (verbRest, clitics);
         }
 
         // Person, number and gender of the predicate follow the nominative actor. Without an actor the clause

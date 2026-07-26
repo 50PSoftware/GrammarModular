@@ -329,6 +329,150 @@ namespace Grammar.Czech.Test
 
         #endregion Wackernagel position
 
+        #region Short pronouns
+
+        private static ClauseElement ObjectPronoun(string lemma, Case @case, InformationStatus status = InformationStatus.Given) =>
+            ClauseElement.Of(
+                new CzechWordRequest
+                {
+                    Lemma = lemma,
+                    WordCategory = WordCategory.Pronoun,
+                    Case = @case,
+                    Gender = Gender.Masculine,
+                    Number = Number.Singular,
+                    IsAnimate = true
+                },
+                @case == Case.Dative ? FgdFunctor.ADDR : FgdFunctor.PAT,
+                status);
+
+        /// <summary>
+        /// A short pronoun object leaves the constituent order and joins the cluster in its clitic form.
+        /// </summary>
+        [TestMethod]
+        public void Build_AccusativePronounObject_JoinsTheClusterAsAClitic()
+        {
+            var clause = new CzechClause
+            {
+                Predicate = Verb(tense: Tense.Past),
+                Elements = [Pronoun("já", Number.Singular), ObjectPronoun("on", Case.Accusative)]
+            };
+
+            Assert.AreEqual("Já jsem ho dělal.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// Dative precedes accusative inside the cluster.
+        /// </summary>
+        [TestMethod]
+        public void Build_DativeAndAccusativePronouns_OrdersDativeFirst()
+        {
+            var clause = new CzechClause
+            {
+                Predicate = Verb(tense: Tense.Past),
+                Elements =
+                [
+                    Pronoun("já", Number.Singular),
+                    ObjectPronoun("on", Case.Accusative),
+                    ObjectPronoun("ona", Case.Dative)
+                ]
+            };
+
+            Assert.AreEqual("Já jsem jí ho dělal.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// The reflexive outranks both pronoun slots.
+        /// </summary>
+        [TestMethod]
+        public void Build_ReflexiveAndAccusativePronoun_KeepsTheReflexiveFirst()
+        {
+            var clause = new CzechClause
+            {
+                Predicate = Verb(ReflexiveType.DerivedBenefactive_Si, tense: Tense.Past),
+                Elements = [Pronoun("já", Number.Singular), ObjectPronoun("on", Case.Accusative)]
+            };
+
+            Assert.AreEqual("Já jsem si ho dělal.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// The cluster moves as a whole, so a pronoun clitic follows a fronted non-subject too.
+        /// </summary>
+        [TestMethod]
+        public void Build_FrontedNonSubjectWithPronounClitic_PlacesTheWholeClusterAfterIt()
+        {
+            var predicate = Verb(tense: Tense.Past);
+            predicate.Person = Person.First;
+
+            var clause = new CzechClause
+            {
+                Predicate = predicate,
+                Elements =
+                [
+                    Noun("večer", "hrad", Case.Nominative, Gender.Masculine, InformationStatus.Given, FgdFunctor.TWHEN),
+                    ObjectPronoun("on", Case.Accusative)
+                ]
+            };
+
+            Assert.AreEqual("Večer jsem ho dělal.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// A contrastive pronoun is stressed, so it keeps its long form and its place in the constituent order.
+        /// Being fronted, it also becomes the first constituent, and the cluster lands right after it —
+        /// ahead of the subject, which second position requires.
+        /// </summary>
+        [TestMethod]
+        public void Build_ContrastivePronoun_StaysOutOfTheCluster()
+        {
+            var clause = new CzechClause
+            {
+                Predicate = Verb(tense: Tense.Past),
+                Elements =
+                [
+                    Pronoun("já", Number.Singular),
+                    ObjectPronoun("on", Case.Dative, InformationStatus.Contrastive)
+                ]
+            };
+
+            Assert.AreEqual("Jemu jsem já dělal.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// A pronoun inside a prepositional phrase belongs to that phrase and cannot be extracted;
+        /// it also takes the prepositional form něj rather than the clitic ho.
+        /// The clause model has no preposition of its own yet, so the expected string is the pronoun
+        /// alone — this pins the extraction rule, not a well-formed sentence.
+        /// </summary>
+        [TestMethod]
+        public void Build_PronounAfterPreposition_StaysOutOfTheCluster()
+        {
+            var pronoun = new CzechWordRequest
+            {
+                Lemma = "on",
+                WordCategory = WordCategory.Pronoun,
+                Case = Case.Accusative,
+                Gender = Gender.Masculine,
+                Number = Number.Singular,
+                IsAnimate = true,
+                IsAfterPreposition = true
+            };
+
+            var clause = new CzechClause
+            {
+                Predicate = Verb(tense: Tense.Past),
+                Elements =
+                [
+                    Pronoun("já", Number.Singular),
+                    ClauseElement.Of(pronoun, FgdFunctor.PAT, InformationStatus.New)
+                ]
+            };
+
+            Assert.AreEqual("Já jsem dělal něj.", builder.Build(clause));
+        }
+
+        #endregion Short pronouns
+
         #region Agreement
 
         /// <summary>
