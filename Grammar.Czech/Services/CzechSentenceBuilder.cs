@@ -137,10 +137,14 @@ namespace Grammar.Czech.Services
             var pronounClitics = clause.Elements.Where(IsCliticPronoun).ToList();
             var constituents = clause.Elements.Except(pronounClitics).ToList();
 
-            // FSP: contrastive material is fronted, given material forms the theme before the verb,
-            // new material forms the rheme after it. Order inside one status is the caller's.
+            ValidateSentenceType(clause, constituents, firstPositionTaken);
+
+            // FSP: the interrogative focus opens the clause, contrastive material is fronted behind it,
+            // given material forms the theme before the verb, new material forms the rheme after it.
+            // Order inside one status is the caller's.
             var preVerbal = constituents
-                .Where(element => element.Status == InformationStatus.Contrastive)
+                .Where(element => element.Status == InformationStatus.Interrogative)
+                .Concat(constituents.Where(element => element.Status == InformationStatus.Contrastive))
                 .Concat(constituents.Where(element => element.Status == InformationStatus.Given))
                 .Select(Realize)
                 .ToList();
@@ -149,6 +153,15 @@ namespace Grammar.Czech.Services
                 .Where(element => element.Status == InformationStatus.New)
                 .Select(Realize)
                 .ToList();
+
+            // The buckets select by status rather than sorting, so an unhandled status would drop its
+            // element from the output instead of failing. Cheaper to notice here than in the surface string.
+            if (preVerbal.Count + postVerbal.Count != constituents.Count)
+            {
+                throw new NotSupportedException(
+                    "Některý konstituent nemá v linearizaci místo — jeho InformationStatus není zařazen "
+                    + "ani před sloveso, ani za něj.");
+            }
 
             var (verbRest, clitics) = SplitOffClitics(predicate);
             clitics.AddRange(BuildPronounClitics(pronounClitics));
@@ -259,6 +272,41 @@ namespace Grammar.Czech.Services
                 PhraseCase = phraseCase,
                 Agreement = effective
             };
+        }
+
+        // A wh-question fronts exactly one element, and the caller says which. Getting this wrong produces a
+        // grammatical sentence with the wrong force rather than a visible failure, so it is checked.
+        private static void ValidateSentenceType(
+            CzechClause clause, IReadOnlyList<ClauseElement> constituents, bool firstPositionTaken)
+        {
+            var interrogativeCount = constituents.Count(element => element.Status == InformationStatus.Interrogative);
+
+            if (interrogativeCount > 1)
+            {
+                throw new NotSupportedException(
+                    "Víc tázacích elementů v jedné klauzi podporováno není (Kdo komu co dal?). "
+                    + "Ponech tázací status na jednom z nich.");
+            }
+
+            // Two claims on one first position. In Czech an indirect question is introduced by the wh-word
+            // itself — "Zeptal se, koho jsem viděl" — not by a conjunction with a wh-word behind it, so the
+            // combination does not describe a real sentence. Refused rather than linearized into
+            // "protože jsi koho viděl".
+            if (interrogativeCount == 1 && firstPositionTaken)
+            {
+                throw new NotSupportedException(
+                    "Tázací element ve vedlejší větě uvozené spojkou podporován není. Nepřímou otázku "
+                    + "uvozuje samo tázací slovo, ne spojka — tuhle vazbu zatím model neumí vyjádřit.");
+            }
+
+            // The reverse — an interrogative clause with no fronted element — is a yes/no question,
+            // which Czech marks by intonation and punctuation alone. That is valid and needs nothing here.
+            if (interrogativeCount == 1 && clause.SentenceType != SentenceType.Interrogative)
+            {
+                throw new InvalidOperationException(
+                    "Element má InformationStatus.Interrogative, ale klauze má SentenceType.Declarative. "
+                    + "Nastav SentenceType.Interrogative, nebo tázací status odeber.");
+            }
         }
 
         // One constituent, however many words. The whole phrase counts as a single unit for second position,
@@ -381,6 +429,8 @@ namespace Grammar.Czech.Services
             element.Word.WordCategory == WordCategory.Pronoun
             && element.Word.Case is Case.Dative or Case.Accusative
             && element.Status != InformationStatus.Contrastive
+            // An interrogative focus has to open its clause, so it can never be pulled into the cluster.
+            && element.Status != InformationStatus.Interrogative
             && element.Preposition is null
             && !element.Word.IsAfterPreposition
             && element.Modifiers.Count == 0

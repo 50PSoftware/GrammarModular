@@ -30,6 +30,18 @@ namespace Grammar.Core.Enums
         /// <summary>
         /// Material set against an alternative. Fronted ahead of the theme.
         /// </summary>
-        Contrastive
+        Contrastive,
+
+        /// <summary>
+        /// The interrogative focus of a wh-question — the tázací slovo itself.
+        /// </summary>
+        /// <remarks>
+        /// Fronted ahead of contrastive and given material. Unlike those, this is not a pragmatic default
+        /// the caller can override by ordering: the wh-word opens its clause, and the clitic cluster
+        /// follows it, which is what makes "Jak se máš?" come out rather than "Se jak máš?".
+        /// Valid only on a clause whose <see cref="SentenceType"/> is
+        /// <see cref="SentenceType.Interrogative"/>, and on at most one element of it.
+        /// </remarks>
+        Interrogative
     }
 }

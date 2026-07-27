@@ -1,3 +1,5 @@
+using Grammar.Core.Enums;
+
 namespace Grammar.Czech.Models.Syntax
 {
     /// <summary>
@@ -28,6 +30,16 @@ namespace Grammar.Czech.Models.Syntax
         /// arguments. A verb with a single frame needs nothing here.
         /// </remarks>
         public string? FrameLabel { get; init; }
+
+        /// <summary>
+        /// Gets the communicative force of the clause.
+        /// </summary>
+        /// <remarks>
+        /// Governs word order — an interrogative-focus element is fronted — and nothing else. It does not
+        /// touch <see cref="Terminator"/>, which the caller sets independently, so a rhetorical question
+        /// stays declarative while still ending in a question mark.
+        /// </remarks>
+        public SentenceType SentenceType { get; init; } = SentenceType.Declarative;
 
         /// <summary>
         /// Gets the punctuation mark that closes the sentence.
