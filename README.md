@@ -2,7 +2,6 @@
 
 ![Status](https://img.shields.io/badge/status-active%20development-orange)
 ![.NET](https://img.shields.io/badge/.NET-8.0-purple)
-![Version](https://img.shields.io/badge/version-1.0.0--preview.18-blue)
 ![License](https://img.shields.io/badge/license-Proprietary-red)
 
 **English** | [Čeština](README.cs.md)
