@@ -95,6 +95,50 @@ namespace Grammar.Czech.Test
 
         #endregion Present Tense
 
+        #region Prefixes
+
+        /// <summary>
+        /// Verifies that the prefix of a named pattern's stems is only prepended for a lemma that really
+        /// is a prefixed derivative. A lemma that merely opens with the letters of some prefix — vidět,
+        /// prosit, spát, vědět — must keep the pattern's stems as they are, and not double the prefix.
+        /// </summary>
+        /// <param name="lemma">The dictionary form to resolve or analyze.</param>
+        /// <param name="pattern">The inflection pattern used to choose the rule.</param>
+        /// <param name="expected">The expected surface form asserted by the test.</param>
+        [DataTestMethod]
+        // Lemma opens with a prefix but is the pattern's own verb — nothing to prepend.
+        [DataRow("vidět", "vidět", "vidí", DisplayName = "vidět – vzor vidět, prefix v se nepřidává")]
+        [DataRow("prosit", "prosí", "prosí", DisplayName = "prosit – vzor prosí, prefix pro se nepřidává")]
+        [DataRow("spát", "spát", "spí", DisplayName = "spát – vzor spát, prefix s se nepřidává")]
+        [DataRow("vědět", "vědět", "ví", DisplayName = "vědět – vzor vědět, prefix v se nepřidává")]
+        // Genuinely prefixed derivatives — the prefix has to survive.
+        [DataRow("odnést", "nese", "odnese", DisplayName = "odnést – vzor nese, prefix od zůstává")]
+        [DataRow("vyprosit", "prosí", "vyprosí", DisplayName = "vyprosit – vzor prosí, prefix vy zůstává")]
+        [DataRow("napsat", "psát", "napíše", DisplayName = "napsat – vzor psát, prefix na zůstává")]
+        // The class patterns derive from the stripped lemma, so they were never affected.
+        [DataRow("vidět", "trida4", "vidí", DisplayName = "vidět – trida4 beze změny")]
+        public void GetBasicForm_NamedPatternWithPrefixLikeLemma_DoesNotDoubleThePrefix(
+            string lemma, string pattern, string expected)
+        {
+            var request = new CzechWordRequest
+            {
+                Lemma = lemma,
+                Pattern = pattern,
+                WordCategory = WordCategory.Verb,
+                Tense = Tense.Present,
+                Modus = Modus.Indicative,
+                Voice = Voice.Active,
+                Person = Person.Third,
+                Number = Number.Singular,
+            };
+
+            var result = service.GetBasicForm(request);
+
+            Assert.AreEqual(expected, result.Form);
+        }
+
+        #endregion Prefixes
+
         #region Past Tense
 
         /// <summary>

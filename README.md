@@ -2,146 +2,201 @@
 
 ![Status](https://img.shields.io/badge/status-active%20development-orange)
 ![.NET](https://img.shields.io/badge/.NET-8.0-purple)
-![Version](https://img.shields.io/badge/version-1.0.0--preview.13-blue)
+![Version](https://img.shields.io/badge/version-1.0.0--preview.18-blue)
 ![License](https://img.shields.io/badge/license-Proprietary-red)
 
-**Generativní morfologická knihovna pro češtinu na platformě .NET 8.**
+**English** | [Čeština](README.cs.md)
 
-Projekt generuje české slovní tvary z lemmatu, gramatických kategorií, vzoru a JSON pravidel, a nad nimi skládá věty a souvětí. Není to obecný slovník hotových tvarů. Volající musí u většiny slov dodat explicitní metadata, hlavně slovní druh, vzor, rod/číslo/pád nebo slovesné kategorie; na větné úrovni popisuje klauzi jako predikát a konstituenty s funktory, ne hotový slovosled.
+**A generative morphology library for Czech, on .NET 8.**
 
-## Co projekt teď umí
+The project generates Czech word forms from a lemma, grammatical categories, a pattern and JSON rules, and builds sentences and complex sentences on top of them. It is not a general dictionary of ready-made forms. For most words the caller has to supply explicit metadata — word class, pattern, gender/number/case or the verbal categories; at sentence level a clause is described as a predicate plus constituents with functors, not as a finished word order.
 
-### Podstatná jména
+## Table of contents
 
-`Grammar.Czech` umí skloňovat podstatná jména podle vzorů uložených v `Grammar.Czech/Data/Rules/Nouns/patterns.json`.
+- [Requirements and installation](#requirements-and-installation)
+- [What the project does today](#what-the-project-does-today)
+  - [Nouns](#nouns)
+  - [Adjectives](#adjectives)
+  - [Pronouns](#pronouns)
+  - [Numerals](#numerals)
+  - [Verbs](#verbs)
+  - [Phonology and orthography](#phonology-and-orthography)
+  - [Lexicon and valency](#lexicon-and-valency)
+  - [Sentences and complex sentences](#sentences-and-complex-sentences)
+- [Architecture](#architecture)
+- [Quick start](#quick-start)
+- [Examples](#examples)
+- [CLI](#cli)
+- [Tests](#tests)
+- [Data layer](#data-layer)
+- [Known limitations](#known-limitations)
+- [License](#license)
 
-Podporované vzory:
+## Requirements and installation
 
-| Rod / skupina | Vzory |
+- **.NET 8 SDK** — every project targets `net8.0`.
+- `Grammar.Czech` depends on `Microsoft.Extensions.DependencyInjection.Abstractions` and `Microsoft.Extensions.Logging`.
+
+There is no published NuGet package. The library is consumed through a project reference:
+
+```bash
+dotnet build Grammar.sln
+```
+
+```bash
+dotnet add reference ../Grammar/Grammar.Czech/Grammar.Czech.csproj
+```
+
+All grammatical data ships as embedded resources inside `Grammar.Czech`, so no data files need to be copied next to the assembly.
+
+## What the project does today
+
+### Nouns
+
+`Grammar.Czech` declines nouns by the patterns stored in `Grammar.Czech/Data/Rules/Nouns/patterns.json`.
+
+Supported patterns:
+
+| Gender / group | Patterns |
 |---|---|
-| mužský životný | `pán`, `muž`, `předseda`, `soudce` |
-| mužský neživotný | `hrad`, `les`, `stroj` |
-| ženský | `žena`, `růže`, `píseň`, `kost` |
-| střední | `město`, `moře`, `kuře`, `stavení` |
+| masculine animate | `pán`, `muž`, `předseda`, `soudce` |
+| masculine inanimate | `hrad`, `les`, `stroj` |
+| feminine | `žena`, `růže`, `píseň`, `kost` |
+| neuter | `město`, `moře`, `kuře`, `stavení` |
 
-Vzory mohou dědit koncovky přes `inheritsFrom`; například `les` dědí z `hrad` a přepisuje jen odlišné pády. Nepravidelnosti jsou v `Grammar.Czech/Data/Rules/Nouns/irregulars.json`. Soubor `Grammar.Czech/Data/Rules/Nouns/propers.json` je zatím prázdný — mechanismus pro vlastní jména existuje, data v něm nejsou žádná.
+Patterns can inherit endings through `inheritsFrom`; `les`, for instance, inherits from `hrad` and overrides only the cases that differ. Irregular nouns live in `Grammar.Czech/Data/Rules/Nouns/irregulars.json` (18 lemmas, e.g. *oko*, *dům*, *ruka*, *noha*, *ucho*). The file `Grammar.Czech/Data/Rules/Nouns/propers.json` is empty — the mechanism for proper names exists, the data does not.
 
-### Přídavná jména
+### Adjectives
 
-Podporované jsou vzory `mladý`, `jarní`, `otcův` a `matčin` z `Grammar.Czech/Data/Rules/Adjectives/patterns.json`.
+The supported patterns are `mladý`, `jarní`, `otcův` and `matčin`, from `Grammar.Czech/Data/Rules/Adjectives/patterns.json`.
 
-`CzechAdjectiveDeclensionService` umí:
+`CzechAdjectiveDeclensionService` handles:
 
-- skloňování podle rodu, čísla, pádu a animátnosti,
-- odhad vzoru pomocí `GuessAdjectivePattern`,
-- komparativ a superlativ přes `Degree`,
-- supletivní komparativy pro `dobrý`, `malý`, `velký`, `zlý`, `špatný` a `dlouhý`.
+- declension by gender, number, case and animacy,
+- pattern guessing through `GuessAdjectivePattern`,
+- comparative and superlative through `Degree`,
+- suppletive comparatives for `dobrý`, `malý`, `velký`, `zlý`, `špatný` and `dlouhý`.
 
-### Zájmena
+### Pronouns
 
-Zájmena se čtou z `Grammar.Czech/Data/Rules/Pronouns/patterns.json` a paradigmata z `Grammar.Czech/Data/Rules/Pronouns/paradigms.json`.
+Pronouns are read from `Grammar.Czech/Data/Rules/Pronouns/patterns.json`, their paradigms from `Grammar.Czech/Data/Rules/Pronouns/paradigms.json`.
 
-Data pokrývají osobní, přivlastňovací, zvratná, ukazovací, tázací, vztažná, záporná a neurčitá zájmena. Service podporuje pevné tabulkové tvary, paradigmata, nesklonná zájmena a vybrané zájmenné tvary delegované na adjektivní skloňování.
+The data covers personal, possessive, reflexive, demonstrative, interrogative, relative, negative and indefinite pronouns. The service supports fixed tabulated forms, paradigms, indeclinable pronouns, and selected pronominal forms delegated to adjectival declension.
 
-Volitelně se rozlišuje varianta po předložce přes `CzechWordRequest.IsAfterPreposition`.
+The post-preposition variant is available through `CzechWordRequest.IsAfterPreposition`.
 
-### Číslovky
+### Numerals
 
-Číslovky se čtou z `Grammar.Czech/Data/Rules/Numerals/patterns.json` a paradigmata z `Grammar.Czech/Data/Rules/Numerals/paradigms.json`. Data pokrývají všech devět druhů — základní, řadové, druhové, souborové, úhrnné, násobné, dílové, skupinové a neurčité napříč druhy. Podílné číslovky (*po dvou*) jsou konstrukce, ne lexikální položky, a skládá je `CzechNumeralComposer`.
+Numerals are read from `Grammar.Czech/Data/Rules/Numerals/patterns.json`, their paradigms from `Grammar.Czech/Data/Rules/Numerals/paradigms.json`. The data covers all nine kinds — cardinal, ordinal, sortal, set, aggregate, multiplicative, fractional, group, and the indefinite numerals across kinds. Distributive numerals (*po dvou*) are a construction rather than a lexical entry, and `CzechNumeralComposer` builds them.
 
-`CzechNumeralService` vybírá strategii podle `NumeralMorphology`: sdílená paradigmata (*jeden*, *dva*, *oba*, *tři*, *čtyři*), pravidlo pro dvoutvarové paradigma 5–99, delegaci na adjektivní i substantivní skloňování a nesklonné položky. Dublety (*tří/třech*, *tisíc/tisíců*) i duálové tvary párových částí těla (*třema rukama*) se vybírají přes `NumeralFormOptions`.
+`CzechNumeralService` picks a strategy by `NumeralMorphology`: shared paradigms (*jeden*, *dva*, *oba*, *tři*, *čtyři*), the rule for the two-form 5–99 paradigm, delegation to adjectival and to nominal declension, and indeclinable entries. Doublets (*tří/třech*, *tisíc/tisíců*) and the dual forms of paired body parts (*třema rukama*) are selected through `NumeralFormOptions`.
 
-`CzechNumeralComposer` vypíše číslo slovy se skloňováním všech částí — `365` v instrumentálu dá *třemi sty šedesáti pěti* — a zvládá nepravidelné násobky sta (*dvě stě*, *tři sta*, *pět set*). Složené číslovky 21–99 mají všechny tři varianty z IJP id=792 přes `CompoundVariant`: *dvacet jedna žáků* (výchozí), *dvacet jeden žák* a spřežku *jedenadvacet*. `ComposeOfType` pojmenuje hodnotu číslovkou kteréhokoli druhu — z `5` udělá *pět*, *pátý*, *paterý*, *patery*, *patero* i *pětkrát*.
+`CzechNumeralComposer` spells a number out with every part declined — `365` in the instrumental gives *třemi sty šedesáti pěti* — and handles the irregular multiples of a hundred (*dvě stě*, *tři sta*, *pět set*). Compound numerals 21–99 offer all three variants listed by IJP id=792 through `CompoundVariant`: *dvacet jedna žáků* (the default), *dvacet jeden žák*, and the contracted *jedenadvacet*. `ComposeOfType` names a value with a numeral of any kind — `5` becomes *pět*, *pátý*, *paterý*, *patery*, *patero* or *pětkrát*.
 
-Kongruenci počítaného předmětu nese `CardinalAgreement` a uplatňuje ji `CzechSentenceBuilder`: *pět studentů bylo* proti *tři studenti byli*. Je to jediné místo, kde shoda míří od přívlastku k řídícímu jménu, a ne naopak.
+Agreement of the counted noun is carried by `CardinalAgreement` and applied by `CzechSentenceBuilder`: *pět studentů bylo* against *tři studenti byli*. This is the one place where agreement runs from the attribute to its head noun rather than the other way round.
 
-Spřežky mají i řadové číslovky: `ComposeOrdinal` s `CompoundVariant.Contracted` dá *pětadvacátý* a *stopadesátý*, a kde spřežka neexistuje, vrátí nestažený tvar místo chyby.
+Ordinals have contracted forms too: `ComposeOrdinal` with `CompoundVariant.Contracted` gives *pětadvacátý* and *stopadesátý*, and where no contracted form exists it returns the uncontracted one instead of failing.
 
-Necelá čísla se vypisují slovy taky — `ComposeFraction` udělá ze `3/4` *tři čtvrtiny* a z `5/8` *pět osmin*, `ComposeDecimal` z `3,14` *tři celé čtrnáct setin*. Slovo *celá* i jmenovatel jsou počítaná jména, takže se řídí číslovkou před sebou: *jedna celá*, ale *pět celých*.
+Non-integers are spelled out as well — `ComposeFraction` turns `3/4` into *tři čtvrtiny* and `5/8` into *pět osmin*, `ComposeDecimal` turns `3.14` into *tři celé čtrnáct setin*. Both the word *celá* and the denominator are counted nouns, so they follow the numeral in front of them: *jedna celá*, but *pět celých*.
 
-Číslovku lze zadat i číslicemi. Nesklonná zůstane, ale kongruenci si odvodí z hodnoty — a desetinné číslo se řídí zlomkem, takže bere genitiv singuláru: *1,5 metru*, *14,25 sekundy*.
+A numeral can also be given in digits. It stays indeclinable, but its agreement is derived from the value — and a decimal follows the fraction, so it takes the genitive singular: *1,5 metru*, *14,25 sekundy*.
 
-Číslovka nemusí být jen přívlastkem; jako řídící člen konstituentu se normálně skloňuje a nic neřídí (*Pět bylo.*).
+A numeral need not be an attribute; as the head of a constituent it declines normally and governs nothing (*Pět bylo.*).
 
-Zápis číslovek číslicemi kontroluje `ICzechNumeralOrthographyService` — odmítne *5tý*, *10ti* i *20-krát* a umí je opravit.
+Numerals written in digits are checked by `ICzechNumeralOrthographyService` — it rejects *5tý*, *10ti* and *20-krát*, and can correct them.
 
-### Slovesa
+### Verbs
 
-Slovesa se generují z pravidel v:
+Verbs are generated from the rules in:
 
-- `Grammar.Czech/Data/Rules/Verbs/patterns.json` pro obecné třídy `trida1` až `trida5` a další vzory,
-- `Grammar.Czech/Data/Rules/Verbs/irregulars.json` pro nepravidelná slovesa jako `být`, `mít`, `chtít`, `moci` a `vědět`.
+- `Grammar.Czech/Data/Rules/Verbs/patterns.json` — the general classes `trida1` through `trida5`, whose stems are derived from the infinitive, plus the named pattern `dojme`,
+- `Grammar.Czech/Data/Rules/Verbs/irregulars.json` — 37 entries with explicitly listed stems. These are not only irregular verbs such as `být`, `mít`, `chtít`, `moci` and `vědět`; the classic named patterns `nese`, `bere`, `maže`, `peče`, `umře`, `tiskne`, `mine`, `kryje`, `kupuje`, `prosí` and `dělá` live here too.
 
-`CzechVerbConjugationService` umí generovat základní tvary pro indikativ, kondicionál, imperativ, minulý čas, přítomný/budoucí čas a pasivní participium. `CzechWordFormComposer` nad tím skládá některé slovesné fráze: opisné futurum u imperfektiv, pasivum s pomocným slovesem, kondicionál, negaci a reflexivní `se`/`si`.
+`CzechVerbConjugationService` generates the basic forms for the indicative, the conditional, the imperative, the past tense, the present/future tense and the passive participle. On top of that, `CzechWordFormComposer` assembles some verb phrases: the periphrastic future of imperfectives, the passive with an auxiliary, the conditional, negation, and the reflexive `se`/`si`.
 
-Slovesný vzor se předává přes `Pattern`; alternativně lze někdy předat `VerbClass`, která se namapuje na `trida1` až `trida5`. `GuessVerbClass` umí jednoduchou heuristiku podle infinitivní koncovky, ale není spolehlivá pro všechna česká slovesa.
+The verb pattern is passed through `Pattern` — either a class (`trida1`–`trida5`) or a pattern name from `irregulars.json`. Alternatively `VerbClass` can sometimes be passed, and it maps onto `trida1`–`trida5`. `GuessVerbClass` implements a simple heuristic based on the infinitive ending, but it is not reliable for every Czech verb.
 
-### Fonologie a pravopis
+### Phonology and orthography
 
-Projekt obsahuje fonologickou vrstvu pro změkčení, epentezi, jotaci a kvantitu samohlásek. Rozhodování je oddělené do evaluátorů a transformace provádí `CzechPhonologyService` a `CzechOrtographyService`.
+The project contains a phonological layer for softening, epenthesis, jotation and vowel quantity. The decisions are separated into evaluators; the transformations are carried out by `CzechPhonologyService` and `CzechOrtographyService`.
 
-Mezi veřejně používané části patří:
+The parts in public use include:
 
 - `IPhonemeRegistry` / `CzechPhonemeRegistry`,
 - `ISofteningRuleEvaluator<CzechWordRequest>`,
 - `IEpenthesisRuleEvaluator<CzechWordRequest>`,
 - `IJotationRuleEvaluator<CzechWordRequest>`,
+- `ISyncretismRuleEvaluator<CzechWordRequest>`,
 - `ICzechOrtographyService`.
 
-`CzechAlternationRuleEvaluator` pro krácení genitivu plurálu existuje, ale aktuálně není registrovaný v `AddCzechGrammarServices()` a není zapojený v `CzechNounDeclensionService`.
+`CzechAlternationRuleEvaluator`, for genitive-plural shortening, exists but is currently not registered in `AddCzechGrammarServices()` and is not wired into `CzechNounDeclensionService`.
 
-### Lexikon a valence
+### Lexicon and valency
 
-`JsonValencyProvider` načítá embedded JSON z `Grammar.Czech/Data/Lexicon/`:
+`JsonValencyProvider` loads embedded JSON from `Grammar.Czech/Data/Lexicon/`:
 
-- `lexicon.json` obsahuje morfologická metadata lemmat, např. rod, vzor, vid, animátnost, pohybné `e` nebo příznak krácení genitivu plurálu,
-- `valency.json` obsahuje valenční rámce.
+- `lexicon.json` holds morphological metadata per lemma — gender, pattern, aspect, animacy, the mobile `e`, or the genitive-plural shortening flag,
+- `valency.json` holds valency frames.
 
-Lexikon slouží hlavně jako provider metadat pro vybrané resolvery, není to úplný český slovník.
+The lexicon serves mainly as a metadata provider for selected resolvers; it is not a complete dictionary of Czech.
 
-Valenční rámec říká, jak se realizují argumenty daného slovesa, a `CzechSentenceBuilder` z něj bere pád i předložku: u `vidět` je `PAT` akuzativ, u `dávat` je `ADDR` dativ a `PAT` akuzativ, u `jít` je `DIR3` předložka `do` s genitivem. Pád zadaný explicitně zůstává — rámec doplňuje mezery. Sloveso s víc rámci se vybírá přes `CzechClause.FrameLabel`, protože `jít` má jiné argumenty jako pohyb a jiné jako proces.
+A valency frame states how a given verb's arguments are realized, and `CzechSentenceBuilder` takes both case and preposition from it: for `vidět` the `PAT` is accusative, for `dávat` the `ADDR` is dative and the `PAT` accusative, for `jít` the `DIR3` is the preposition `do` with the genitive. A case set explicitly is left alone — the frame only fills the gaps. A verb with several frames is disambiguated through `CzechClause.FrameLabel`, because `jít` takes different arguments as motion than as a process.
 
-Vnitřní participanty (`ACT`, `PAT`, `ADDR`, `ORIG`, `EFF` — aktanty FGP) může licencovat jen rámec, takže `vidět` s adresátem skončí výjimkou. Volná doplnění se pojí s kterýmkoli slovesem a pád si u nich zadává volající.
+Inner participants (`ACT`, `PAT`, `ADDR`, `ORIG`, `EFF` — the FGD actants) can only be licensed by a frame, so `vidět` with an addressee throws. Free modifications combine with any verb, and there the caller supplies the case.
 
-### Věty a souvětí
+### Sentences and complex sentences
 
-`CzechSentenceBuilder` skládá z klauzí povrchovou větu. Klauze (`CzechClause`) je predikát plus konstituenty (`ClauseElement`) s funktorem a komunikačním statusem; **nenese slovosled** — ten se odvozuje.
+`CzechSentenceBuilder` composes a surface sentence out of clauses. A clause (`CzechClause`) is a predicate plus constituents (`ClauseElement`) with a functor and a communicative status; it **carries no word order** — that is derived.
 
-Builder řeší:
+The builder handles:
 
-- **shodu** predikátu s aktorem v nominativu,
-- **aktuální členění** — kontrastivní dopředu, téma před sloveso, réma za něj,
-- **Wackernagelovu pozici** klitického klastru: pomocné sloveso, reflexivum, krátký dativ, krátký akuzativ, usazené za první konstituent klauze. Klastr se stěhuje celý a jde za **první** konstituent, ne za všechny předslovesné (*Klára se večer učí*),
-- **stažené tvary** `ses`, `sis` a kondicionálové `by ses`, `by sis`,
-- **frázové konstituenty** — přívlastek dědí od řídícího slova rod, číslo, pád a životnost všude, kde je nechal nevyplněné,
-- **předložkové fráze** včetně vokalizace a kontroly rekce; celá fráze je jeden konstituent,
-- **souvětí** — `Coordination` a `Subordination` nad `SentenceNode`, libovolně vnořitelné, s interpunkcí podle spojky,
-- **vztažné věty** — zájmeno se shoduje s řídícím jménem v rodě, čísle a životnosti, pád si bere ze své role ve vedlejší větě.
+- **agreement** of the predicate with a nominative actor,
+- **information structure** — contrastive to the front, theme before the verb, rheme after it,
+- the **Wackernagel position** of the clitic cluster: auxiliary, reflexive, short dative, short accusative, seated after the first constituent of the clause. The cluster moves as a whole and follows the **first** constituent, not all preverbal ones (*Klára se večer učí*),
+- the **contracted forms** `ses`, `sis` and the conditional `by ses`, `by sis`,
+- **phrasal constituents** — an attribute inherits gender, number, case and animacy from its head wherever it left them unset,
+- **prepositional phrases**, including vocalization and a government check; the whole phrase is one constituent,
+- **complex sentences** — `Coordination` and `Subordination` over `SentenceNode`, nestable to any depth, punctuated by the conjunction,
+- **relative clauses** — the pronoun agrees with the head noun in gender, number and animacy, and takes its case from its own role in the dependent clause.
 
-Podřadicí spojka a vztažné zájmeno obsazují první pozici své klauze, takže za nimi jde klastr: *protože se student učil*, *muž, kterého jsem viděl*. Souřadicí spojka stojí mimo klauzi a první pozici jí nechává.
+A subordinating conjunction and a relative pronoun occupy the first position of their clause, so the cluster follows them: *protože se student učil*, *muž, kterého jsem viděl*. A coordinating conjunction stands outside the clause and leaves the first position to it.
 
-Spojky jsou uzavřená třída v `Grammar.Czech/Data/Rules/conjunctions.json`; neznámá spojka skončí výjimkou, protože na jejím druhu závisí čárka i pozice klitika.
+Conjunctions are a closed class in `Grammar.Czech/Data/Rules/conjunctions.json`; an unknown conjunction throws, because both the comma and the clitic position depend on its type.
 
-## Architektura
+## Architecture
 
 ```text
 Grammar.sln
-|-- Grammar.Core/        jazykově nezávislé enumy, rozhraní a modely
-|-- Grammar.Czech/       česká implementace, servisy, providery a embedded JSON data
-|-- Grammar.Czech.Cli/   konzolové demo s hardcodovanými příklady
-`-- Grammar.Czech.Test/  MSTest testy pro skloňování, časování, fonologii a stavbu vět
+|-- Grammar.Core/        language-independent enums, interfaces and models
+|-- Grammar.Czech/       the Czech implementation: services, providers and embedded JSON data
+|-- Grammar.Czech.Cli/   console demo with hard-coded examples
+`-- Grammar.Czech.Test/  MSTest tests for declension, conjugation, phonology and sentence building
 ```
 
-Hlavní registrace pro DI je `AddCzechGrammarServices()` v `Grammar.Czech/CzechGrammarServiceFactory.cs`.
+The main DI registration is `AddCzechGrammarServices()` in `Grammar.Czech/CzechGrammarServiceFactory.cs`.
 
-Hlavní vstupy:
+The main entry points:
 
-- `CzechSentenceBuilder` pro větu nebo souvětí z klauzí,
-- `CzechWordFormComposer` pro plný tvar slova nebo slovesné fráze,
-- `MorphologyEngine` pro přímé směrování na substantiva, adjektiva, zájmena, číslovky a základní slovesné tvary,
-- specializované servisy jako `CzechNounDeclensionService`, `CzechAdjectiveDeclensionService`, `CzechPronounService`, `CzechNumeralService` a `CzechVerbConjugationService`.
+- `CzechSentenceBuilder` for a sentence or a complex sentence built from clauses,
+- `CzechWordFormComposer` for the full form of a word or a verb phrase,
+- `MorphologyEngine` for direct dispatch to nouns, adjectives, pronouns, numerals and the basic verb forms,
+- the specialized services `CzechNounDeclensionService`, `CzechAdjectiveDeclensionService`, `CzechPronounService`, `CzechNumeralService` and `CzechVerbConjugationService`.
 
-## Rychlý start
+Alongside them, supporting services are registered and can be resolved from the container directly:
+
+| Service | What it is for |
+|---|---|
+| `ICzechPrepositionService` | preposition government and vocalization |
+| `ICzechConjunctionService` | conjunction type and comma rule |
+| `ICzechValencyService` | valency frame lookup for a verb |
+| `ICzechNumeralOrthographyService` | checking and correcting numerals written in digits |
+| `CzechNumeralComposer` | numbers spelled out, including fractions and decimals |
+| `CzechAuxiliaryVerbService`, `CzechVerbPhraseBuilderService` | auxiliaries and compound verb forms |
+| `INegationService<CzechWordRequest>` | negation |
+| `ICzechParticleService`, `ICzechPrefixService` | particles and prefixes |
+| `CzechWordStructureResolver` | splitting a lemma into prefix and stems |
+
+## Quick start
 
 ```csharp
 using Grammar.Core.Enums;
@@ -173,7 +228,7 @@ var form = composer.GetFullForm(request);
 Console.WriteLine(form.Form); // studenta
 ```
 
-Příklad slovesa:
+A verb:
 
 ```csharp
 var request = new CzechWordRequest
@@ -193,65 +248,278 @@ var form = composer.GetFullForm(request);
 Console.WriteLine(form.Form); // dělám
 ```
 
+## Examples
+
+Every output below has been verified against the current code.
+
+### A sentence from a clause
+
+A clause carries a predicate and constituents; the builder derives the word order itself from the communicative status. The reflexive settles into second position, right after the first constituent.
+
+```csharp
+using Grammar.Czech.Enums;
+using Grammar.Czech.Models.Syntax;
+
+var builder = provider.GetRequiredService<CzechSentenceBuilder>();
+
+var predicate = new CzechWordRequest
+{
+    Lemma = "učit",
+    Pattern = "trida4",
+    WordCategory = WordCategory.Verb,
+    Modus = Modus.Indicative,
+    Tense = Tense.Present,
+    Aspect = VerbAspect.Imperfective,
+    Voice = Voice.Active,
+    Person = Person.Third,
+    Number = Number.Singular,
+    Gender = Gender.Feminine,
+    ReflexiveType = ReflexiveType.DerivedReflexive_Se,
+};
+
+var subject = ClauseElement.Of(
+    new CzechWordRequest
+    {
+        Lemma = "studentka",
+        Pattern = "žena",
+        WordCategory = WordCategory.Noun,
+        Gender = Gender.Feminine,
+        Number = Number.Singular,
+        Case = Case.Nominative,
+    },
+    FgdFunctor.ACT,
+    InformationStatus.Given);
+
+var time = ClauseElement.Of(
+    new CzechWordRequest
+    {
+        Lemma = "večer",
+        Pattern = "hrad",
+        WordCategory = WordCategory.Noun,
+        Gender = Gender.Masculine,
+        Number = Number.Singular,
+        Case = Case.Accusative,
+        IsAnimate = false,
+    },
+    FgdFunctor.TWHEN);
+
+Console.WriteLine(builder.Build(new CzechClause
+{
+    Predicate = predicate,
+    Elements = [subject, time],
+}));
+// Studentka se učí večer.
+```
+
+A prepositional phrase is a single constituent; the preposition is vocalized against the word that follows, and its government is checked.
+
+```csharp
+var atSchool = ClauseElement.Of(
+    "v",
+    new CzechWordRequest
+    {
+        Lemma = "škola",
+        Pattern = "žena",
+        WordCategory = WordCategory.Noun,
+        Gender = Gender.Feminine,
+        Number = Number.Singular,
+        Case = Case.Locative,
+    },
+    FgdFunctor.LOC);
+
+Console.WriteLine(builder.Build(new CzechClause
+{
+    Predicate = predicate,
+    Elements = [subject, atSchool],
+}));
+// Studentka se učí ve škole.
+```
+
+### Complex sentences
+
+A subordinating conjunction occupies the first position of the dependent clause, so the clitic follows it. A coordinating conjunction stands outside the clause and leaves the first position to the first constituent.
+
+```csharp
+var mainClause = new CzechClause { Predicate = works, Elements = [student] };
+var subClause = new CzechClause { Predicate = studied };
+
+Console.WriteLine(builder.Build(new Subordination(mainClause, "protože", subClause)));
+// Student dělal, protože se učil.
+
+Console.WriteLine(builder.Build(new Coordination("ale", [mainClause, subClause])));
+// Student dělal, ale učil se.
+```
+
+### Numerals spelled out
+
+```csharp
+var numerals = provider.GetRequiredService<CzechNumeralComposer>();
+
+numerals.Compose(365, Case.Instrumental);                    // třemi sty šedesáti pěti
+numerals.Compose(21, Case.Nominative, CompoundVariant.Contracted); // jedenadvacet
+numerals.ComposeOrdinal(25, Case.Nominative, CompoundVariant.Contracted,
+                        Gender.Masculine, isAnimate: true);  // pětadvacátý
+numerals.ComposeFraction(3, 4);                              // tři čtvrtiny
+numerals.ComposeDecimal(3.14m);                              // tři celé čtrnáct setin
+numerals.ComposeOfType(5, NumeralType.Ordinal, Case.Nominative,
+                       Gender.Masculine, isAnimate: true);   // pátý
+numerals.ComposeOfType(5, NumeralType.Multiplicative, Case.Nominative); // pětkrát
+numerals.ComposeDistributive(2);                             // po dvou
+```
+
+Checking numerals written in digits:
+
+```csharp
+var orthography = provider.GetRequiredService<ICzechNumeralOrthographyService>();
+
+orthography.IsValid("5tý", out var reason); // false; reason explains why, in Czech
+orthography.Normalize("5tý");               // 5.
+orthography.Normalize("20-krát");           // 20krát
+```
+
+Agreement of the counted noun propagates all the way to the predicate:
+
+```csharp
+var five = new CzechWordRequest { Lemma = "pět", WordCategory = WordCategory.Numerale };
+
+var countedSubject = ClauseElement.Of(
+    new CzechWordRequest
+    {
+        Lemma = "student",
+        Pattern = "pán",
+        WordCategory = WordCategory.Noun,
+        Gender = Gender.Masculine,
+        IsAnimate = true,
+        Case = Case.Nominative,
+    },
+    [five],
+    FgdFunctor.ACT);
+
+// predicate: být, 3rd person singular, past tense
+Console.WriteLine(builder.Build(new CzechClause
+{
+    Predicate = wasPredicate,
+    Elements = [countedSubject],
+}));
+// Bylo pět studentů.
+```
+
+### Valency
+
+A constituent with no case takes one from the predicate's valency frame — for `vidět` the `PAT` is accusative:
+
+```csharp
+var patient = ClauseElement.Of(
+    new CzechWordRequest
+    {
+        Lemma = "student",
+        Pattern = "pán",
+        WordCategory = WordCategory.Noun,
+        Gender = Gender.Masculine,
+        IsAnimate = true,
+        Number = Number.Singular,
+        // no Case — the frame fills it in
+    },
+    FgdFunctor.PAT);
+
+Console.WriteLine(builder.Build(new CzechClause
+{
+    Predicate = sees,
+    Elements = [subject, patient],
+}));
+// Studentka vidí studenta.
+```
+
+A verb with several frames asks for a choice by throwing; the frame is then named through `FrameLabel`:
+
+```csharp
+new CzechClause
+{
+    Predicate = goes,          // jít — frames motion and process
+    Elements = [subject, toSchool],
+    FrameLabel = "motion",
+};
+```
+
+### An adjective with degree
+
+```csharp
+var adjectives = provider.GetRequiredService<CzechAdjectiveDeclensionService>();
+
+adjectives.GetForm(new CzechWordRequest
+{
+    Lemma = "dobrý",
+    WordCategory = WordCategory.Adjective,
+    Pattern = "mladý",
+    Gender = Gender.Masculine,
+    IsAnimate = true,
+    Number = Number.Singular,
+    Case = Case.Nominative,
+    Degree = Degree.Comparative,
+}).Form; // lepší
+```
+
 ## CLI
 
-`Grammar.Czech.Cli` je zatím demo aplikace. Nemá obecné zpracování argumentů; po spuštění vypíše tvary několika pevně zapsaných příkladů z `Program.cs`.
+`Grammar.Czech.Cli` is still a demo application. It has no general argument handling; on start it prints the forms of a few hard-coded examples from `Program.cs`.
 
 ```bash
 dotnet run --project Grammar.Czech.Cli
 ```
 
-## Testy
+## Tests
 
 ```bash
 dotnet test Grammar.Czech.Test
 ```
 
-Testy jsou v MSTest a pokrývají substantiva, adjektiva, zájmena, číslovky, slovesa, vybrané fonologické evaluátory/služby, stavbu vět a souvětí, a načítání všech JSON providerů včetně referenční integrity mezi soubory.
+The tests are MSTest and cover nouns, adjectives, pronouns, numerals, verbs, selected phonological evaluators and services, sentence and complex-sentence building, and the loading of every JSON provider, including referential integrity between the files.
 
-## Datová vrstva
+## Data layer
 
-Všechna gramatická data v projektu `Grammar.Czech` jsou embedded JSON resources:
+All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 
-| Cesta | Obsah |
+| Path | Contents |
 |---|---|
-| `Data/Rules/Nouns/patterns.json` | substantivní vzory |
-| `Data/Rules/Nouns/irregulars.json` | nepravidelná substantiva |
-| `Data/Rules/Nouns/propers.json` | vybraná vlastní jména |
-| `Data/Rules/Adjectives/patterns.json` | adjektivní vzory |
-| `Data/Rules/Pronouns/patterns.json` | data zájmen |
-| `Data/Rules/Pronouns/paradigms.json` | zájmenná paradigmata |
-| `Data/Rules/Numerals/patterns.json` | data číslovek |
-| `Data/Rules/Numerals/paradigms.json` | paradigmata číslovek |
-| `Data/Rules/Verbs/patterns.json` | obecné slovesné třídy a vzory |
-| `Data/Rules/Verbs/irregulars.json` | nepravidelná slovesa |
-| `Data/Rules/prefixes.json` | prefixy |
-| `Data/Rules/particles.json` | kondicionálové částice, minulá pomocná slovesa, reflexiva |
-| `Data/Rules/prepositions.json` | předložky, jejich rekce a vokalizace |
-| `Data/Rules/conjunctions.json` | spojky, jejich druh a pravidlo čárky |
-| `Data/Lexicon/lexicon.json` | lexikální metadata |
-| `Data/Lexicon/valency.json` | valenční rámce |
+| `Data/Rules/Nouns/patterns.json` | noun patterns (15) |
+| `Data/Rules/Nouns/irregulars.json` | irregular nouns (18) |
+| `Data/Rules/Nouns/propers.json` | proper names — empty so far |
+| `Data/Rules/Adjectives/patterns.json` | adjective patterns (4) |
+| `Data/Rules/Pronouns/patterns.json` | pronoun data |
+| `Data/Rules/Pronouns/paradigms.json` | pronoun paradigms |
+| `Data/Rules/Numerals/patterns.json` | numeral data |
+| `Data/Rules/Numerals/paradigms.json` | numeral paradigms |
+| `Data/Rules/Verbs/patterns.json` | the general verb classes `trida1`–`trida5` and the `dojme` pattern |
+| `Data/Rules/Verbs/irregulars.json` | irregular verbs and named patterns with explicit stems (37) |
+| `Data/Rules/prefixes.json` | prefixes |
+| `Data/Rules/particles.json` | conditional particles, past auxiliaries, reflexives |
+| `Data/Rules/prepositions.json` | prepositions, their government and vocalization |
+| `Data/Rules/conjunctions.json` | conjunctions, their type and comma rule |
+| `Data/Lexicon/lexicon.json` | lexical metadata |
+| `Data/Lexicon/valency.json` | valency frames (`dát`, `dávat`, `jít`, `vidět`) |
 
-## Známá omezení
+## Known limitations
 
-- Volající často musí dodat `Pattern`, `Gender`, `Number`, `Case`, `Person`, `Tense`, `Aspect`, `Modus` a `Voice`; projekt zatím není analyzátor přirozeného textu.
-- `MorphologyEngine.GetForm` podporuje jen `Noun`, `Adjective`, `Pronoun` a `Numerale`; slovesa jdou přes `GetBasicForm` nebo přes `CzechWordFormComposer.GetFullForm`.
-- `CzechAlternationRuleEvaluator` není registrovaný v DI a krácení genitivu plurálu není aktivně napojené ve skloňování substantiv.
-- Lexikon není úplný slovník češtiny; `ResolveGenderAndPattern` a `ResolveVerbAspect` fungují jen pro lemmata obsažená v `lexicon.json`.
-- CLI je demo, ne uživatelský nástroj pro obecné dotazování.
-- Číslovky nepodporují ustrnulou variantu úhrnných číslovek (*bez patero ponožek*), kterou IJP id=792 uvádí vedle skloňované jako rovněž spisovnou; generuje se vždy skloňovaná.
-- Ukazovací zájmeno před číslovkou (*těch pět studentů*) se shoduje s hlavou fráze, ne s celou frází.
-- `CzechNumeralComposer.ComposeOrdinal` a `ComposeOfType` skládají jen z lemmat ve slovníku; hodnota vyžadující chybějící složku (např. *dvoutisící*) selže s výjimkou, místo aby si tvar vymyslela.
-- `valency.json` obsahuje rámce jen pro hrstku sloves. Mechanismus je hotový, data ne — u slovesa bez rámce si pády zadává volající jako dřív.
-- Klitický klastr nezná volný dativ (*To ti byla legrace*), který podle NESČ stojí mezi pomocným slovesem a reflexivem. Ostatní pozice pořadí odpovídají.
-- Spojky `aby` a `kdyby` podporované nejsou — splývají s kondicionálovým pomocným slovesem a časují se podle osoby (*abych*, *abys*, *abychom*). Stejně tak `však`, které je samo druhopozicové, ne uvozovací.
-- Čárka u `nebo` a `či` závisí na poměru vět, ne na spojce. Data nesou jen běžnější čtení; vylučovací poměr se musí říct přes `Coordination.RequiresComma`.
-- Vokalizace předložek není podle IJP ustálený jev a rozhoduje úzus. Pravidla pokrývají uváděné tendence, zbytek je výčtem v `vocalizeBefore`.
-- Aktuální členění se promítá jen do slovosledu. NESČ ho nese i intonací a dvě čtení lišící se prozodií považuje za dvě různé věty; to modelované není.
-- Že se vnitřní participant pojí se slovesem nejvýš jednou, se nevynucuje — dva `PAT` konstituenty v jedné klauzi nic nezastaví.
-- Vztažná věta musí být jedna klauze; souvětí uvnitř vztažné věty podporované není.
-- U vzoru `sto` se generuje skloněná varianta s genitivem (*ke stu korun*); nesklonná se shodou (*ke sto korunám*), kterou IJP uvádí vedle ní, vyjádřit nejde.
+- The caller often has to supply `Pattern`, `Gender`, `Number`, `Case`, `Person`, `Tense`, `Aspect`, `Modus` and `Voice`; the project is not yet an analyzer of natural text.
+- `MorphologyEngine.GetForm` supports only `Noun`, `Adjective`, `Pronoun` and `Numerale`; verbs go through `GetBasicForm` or through `CzechWordFormComposer.GetFullForm`.
+- A named pattern from `irregulars.json` carries the stems literally, so it fits the pattern's own verb and its prefixed derivatives — `nese` covers *nést* and *odnést*, `dělá` covers *dělat* and *dodělat*. An unrelated verb needs a class pattern: *prodávat* with `dělá` returns *dělá*, with `trida5` the correct *prodává*.
+- `CzechAlternationRuleEvaluator` is not registered in DI, and genitive-plural shortening is not actively wired into noun declension.
+- The lexicon is not a complete dictionary of Czech; `ResolveGenderAndPattern` and `ResolveVerbAspect` only work for lemmas present in `lexicon.json`.
+- The CLI is a demo, not a general-purpose query tool.
+- Numerals do not support the frozen variant of aggregate numerals (*bez patero ponožek*), which IJP id=792 lists as standard alongside the declined one; the declined form is always generated.
+- A demonstrative in front of a numeral (*těch pět studentů*) agrees with the head of the phrase, not with the phrase as a whole.
+- `CzechNumeralComposer.ComposeOrdinal` and `ComposeOfType` build only from lemmas present in the dictionary; a value that needs a missing component (e.g. *dvoutisící*) throws rather than inventing a form.
+- `valency.json` contains frames for four verbs only. The mechanism is finished, the data is not — for a verb without a frame the caller supplies the cases as before.
+- The clitic cluster does not know the free dative (*To ti byla legrace*), which per NESČ stands between the auxiliary and the reflexive. The remaining positions match the described order.
+- The conjunctions `aby` and `kdyby` are not supported — they fuse with the conditional auxiliary and inflect by person (*abych*, *abys*, *abychom*). Nor is `však`, which is itself second-position rather than clause-initial.
+- The comma before `nebo` and `či` depends on the relation between the clauses, not on the conjunction. The data carries only the commoner reading; the exclusive one has to be stated through `Coordination.RequiresComma`.
+- Preposition vocalization is, per IJP, not a settled phenomenon and usage decides. The rules cover the documented tendencies; the rest is an enumeration in `vocalizeBefore`.
+- Information structure is reflected in word order only. NESČ carries it in intonation too, and treats two readings differing in prosody as two different sentences; that is not modelled.
+- The rule that an inner participant combines with a verb at most once is not enforced — nothing stops two `PAT` constituents in one clause.
+- A relative clause must be a single clause; a complex sentence inside a relative clause is not supported.
+- For the pattern `sto`, the declined variant with the genitive is generated (*ke stu korun*); the indeclinable one with agreement (*ke sto korunám*), which IJP lists alongside it, cannot be expressed.
+- The type `CzechOrtographyService` and its interface `ICzechOrtographyService` carry a typo in the name (*Ortography*). This documentation repeats it deliberately so the name stays searchable; renaming is still open.
 
-## Licence
+## License
 
-Copyright (c) 50PSoftware. Všechna práva vyhrazena.
+Copyright (c) 50PSoftware. All rights reserved.

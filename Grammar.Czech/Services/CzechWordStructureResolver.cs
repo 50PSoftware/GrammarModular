@@ -187,7 +187,15 @@ namespace Grammar.Czech.Services
             if (verbDataProvider.GetIrregulars().TryGetValue(request.Pattern!.ToLower(), out var namedPattern)
                 && namedPattern.Stem != null)
             {
-                return BuildFromExplicitStems(prefix, namedPattern);
+                // The stems here belong to the unprefixed verb, so a prefix carried by the lemma is
+                // prepended to them. Only a prefix that was actually stripped off a derivative may be:
+                // vidět opens with the prefix v, but what is left is idět, no form of the pattern —
+                // prepending there would double the prefix into vvidí.
+                var derivedFrom = IsPrefixedDerivative(lemmaBase, request.Pattern!.ToLower(), namedPattern)
+                    ? prefix
+                    : null;
+
+                return BuildFromExplicitStems(derivedFrom, namedPattern);
             }
 
             if (prefix != null
@@ -206,6 +214,32 @@ namespace Grammar.Czech.Services
             throw new NotSupportedException(
                 $"Verb pattern '{request.Pattern}' not found in data. " +
                 $"Add it to irregulars.json or use a trida1–trida5 class pattern.");
+        }
+
+        /// <summary>
+        /// Determines whether the lemma is a prefixed derivative of the named pattern rather than the
+        /// pattern's own verb, whose lemma merely opens with the same letters as some prefix.
+        /// </summary>
+        /// <param name="lemmaBase">The lemma with the candidate prefix already stripped.</param>
+        /// <param name="patternKey">The key the pattern is stored under, which is its infinitive for most entries.</param>
+        /// <param name="pattern">The named pattern the request asked for.</param>
+        /// <returns><see langword="true"/> when the prefix belongs to the lemma; otherwise, <see langword="false"/>.</returns>
+        /// <remarks>
+        /// A derivative keeps the base verb right behind the prefix, so what remains after stripping opens
+        /// with one of the pattern's own forms: odnést leaves nést, vyprosit leaves prosit. A lemma that
+        /// only looks prefixed leaves a fragment instead: prosit leaves sit, spát leaves pát.
+        /// </remarks>
+        private static bool IsPrefixedDerivative(string lemmaBase, string patternKey, VerbPattern pattern)
+        {
+            // Ordinal comparison for the same reason as in AnalyzeNoun: cs-CZ collation treats digraphs
+            // as one unit, so a culture-aware StartsWith answers on collation units, not on characters.
+            bool OpensWith(string? candidate) =>
+                !string.IsNullOrEmpty(candidate) && lemmaBase.StartsWith(candidate, StringComparison.Ordinal);
+
+            return OpensWith(pattern.Infinitive)
+                || OpensWith(patternKey)
+                || OpensWith(pattern.Stem)
+                || OpensWith(pattern.PresentStem);
         }
 
         private VerbStructure BuildFromExplicitStems(string? prefix, VerbPattern pattern) =>
