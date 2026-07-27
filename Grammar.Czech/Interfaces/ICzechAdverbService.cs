@@ -21,5 +21,16 @@ namespace Grammar.Czech.Interfaces
         /// <param name="lemma">The dictionary form to look up.</param>
         /// <returns><see langword="true"/> when a comparative is registered for the lemma; otherwise, <see langword="false"/>.</returns>
         bool IsComparable(string lemma);
+
+        /// <summary>
+        /// Gets every comparative usage accepts for the adverb, the generated one first.
+        /// </summary>
+        /// <param name="lemma">The dictionary form to look up.</param>
+        /// <returns>The comparatives, or an empty sequence when the adverb is unregistered or not compared.</returns>
+        /// <remarks>
+        /// Generation has to pick one form, but several adverbs have more than one correct comparative —
+        /// snadno takes snáze and snadněji alike. This is how a caller sees the others.
+        /// </remarks>
+        IReadOnlyList<string> GetComparativeVariants(string lemma);
     }
 }

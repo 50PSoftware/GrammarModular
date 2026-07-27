@@ -57,6 +57,30 @@ namespace Grammar.Czech.Services
         public bool IsComparable(string lemma)
             => _adverbs.TryGetValue(lemma, out var data) && data.Comparative is not null;
 
+        /// <summary>
+        /// Gets every comparative usage accepts for the adverb, the generated one first.
+        /// </summary>
+        /// <param name="lemma">The dictionary form to look up.</param>
+        /// <returns>The comparatives, or an empty sequence when the adverb is unregistered or not compared.</returns>
+        public IReadOnlyList<string> GetComparativeVariants(string lemma)
+        {
+            if (!_adverbs.TryGetValue(lemma, out var data) || data.Comparative is null)
+            {
+                return [];
+            }
+
+            var variants = new List<string> { data.Comparative };
+
+            if (data.ComparativeShort is not null)
+            {
+                variants.Add(data.ComparativeShort);
+            }
+
+            variants.AddRange(data.ComparativeAlternatives);
+
+            return variants;
+        }
+
         private string ResolveComparative(CzechWordRequest request)
         {
             if (!_adverbs.TryGetValue(request.Lemma, out var data))

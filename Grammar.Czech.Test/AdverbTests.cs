@@ -142,6 +142,64 @@ namespace Grammar.Czech.Test
                 () => composer.GetFullForm(Adverb("dnes", Degree.Comparative)));
         }
 
+        /// <summary>
+        /// The two members of a pair formed from one adjective are separate adverbs, and both are registered.
+        /// </summary>
+        /// <param name="first">The -o member.</param>
+        /// <param name="second">The -e/-ě member.</param>
+        /// <param name="comparative">The comparative they share.</param>
+        [DataTestMethod]
+        [DataRow("dlouho", "dlouze", "déle")]
+        [DataRow("vysoko", "vysoce", "výše")]
+        [DataRow("těžko", "těžce", "tíže")]
+        [DataRow("široko", "široce", "šíře")]
+        [DataRow("úzko", "úzce", "úže")]
+        public void GetFullForm_BothMembersOfAPair_AreRegisteredAndShareTheComparative(
+            string first, string second, string comparative)
+        {
+            Assert.AreEqual(first, composer.GetFullForm(Adverb(first)).Form);
+            Assert.AreEqual(second, composer.GetFullForm(Adverb(second)).Form);
+            Assert.AreEqual(comparative, composer.GetFullForm(Adverb(first, Degree.Comparative)).Form);
+            Assert.AreEqual(comparative, composer.GetFullForm(Adverb(second, Degree.Comparative)).Form);
+        }
+
+        /// <summary>
+        /// A comparative built a different way is an alternative, not a short variant of the primary —
+        /// snadněji is not a clipping of snáze the way hůř is of hůře.
+        /// </summary>
+        /// <param name="lemma">The adverb lemma.</param>
+        /// <param name="alternative">The competing comparative.</param>
+        [DataTestMethod]
+        [DataRow("snadno", "snadněji")]
+        [DataRow("hluboko", "hloub")]
+        [DataRow("široko", "šířeji")]
+        [DataRow("úzko", "úžeji")]
+        public void GetComparativeVariants_CompetingFormation_IsKeptAsAnAlternative(string lemma, string alternative)
+        {
+            CollectionAssert.Contains(adverbs.GetComparativeVariants(lemma).ToList(), alternative);
+        }
+
+        /// <summary>
+        /// The clipped doublet and the competing formation are told apart: asking for the short form of
+        /// hluboko gives the primary back, because hloub is not a clipping of hlouběji.
+        /// </summary>
+        [TestMethod]
+        public void GetFullForm_CompetingFormationIsNotTreatedAsAShortVariant()
+        {
+            Assert.AreEqual("hlouběji", composer.GetFullForm(Adverb("hluboko", Degree.Comparative, preferShort: true)).Form);
+            Assert.AreEqual("hůř", composer.GetFullForm(Adverb("špatně", Degree.Comparative, preferShort: true)).Form);
+        }
+
+        /// <summary>
+        /// An unregistered or uncompared adverb has no variants rather than an exception — this is a query.
+        /// </summary>
+        [TestMethod]
+        public void GetComparativeVariants_UnregisteredOrUncompared_IsEmpty()
+        {
+            Assert.AreEqual(0, adverbs.GetComparativeVariants("nesmyslně").Count);
+            Assert.AreEqual(0, adverbs.GetComparativeVariants("dnes").Count);
+        }
+
         #endregion Comparison is data, not a rule
 
         #region In a clause

@@ -114,6 +114,8 @@ The comparative, though, is read from `Grammar.Czech/Data/Rules/adverbs.json` ra
 
 The superlative is `nej-` on the comparative. Several irregulars carry a doublet whose shorter member is the colloquial one (*hůř* beside *hůře*, *dřív* beside *dříve*); it is selected with `CzechWordRequest.PrefersShortForm`. Comparing an unregistered adverb throws rather than guessing.
 
+A comparative built a different way is not the same thing as a clipping, and the data keeps them apart: *snadno* takes both *snáze* and *snadněji*, *hluboko* both *hlouběji* and *hloub*. Generation picks the primary; `ICzechAdverbService.GetComparativeVariants` shows the rest. One adjective can also yield two adverbs that are separate lemmas sharing a comparative — *dlouho* and *dlouze*, *vysoko* and *vysoce*, *těžko* and *těžce*, *široko* and *široce*, *úzko* and *úzce* — and both members are registered.
+
 ### Verbs
 
 Verbs are generated from the rules in:

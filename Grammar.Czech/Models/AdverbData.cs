@@ -23,12 +23,23 @@ namespace Grammar.Czech.Models
         public string? Comparative { get; init; }
 
         /// <summary>
-        /// Gets the shorter variant of the comparative where usage has one, or null.
+        /// Gets the clipped variant of <see cref="Comparative"/> where usage has one, or null.
         /// </summary>
         /// <remarks>
-        /// Several irregulars carry a doublet — hůře and hůř, dříve and dřív, výše and výš — with the short
-        /// form the more colloquial of the two.
+        /// The same word shortened, with the clipped form the more colloquial of the two: hůře and hůř,
+        /// dříve and dřív, výše and výš, lépe and líp. This is not the place for a comparative built a
+        /// different way — that goes in <see cref="ComparativeAlternatives"/>.
         /// </remarks>
         public string? ComparativeShort { get; init; }
+
+        /// <summary>
+        /// Gets comparatives formed differently from <see cref="Comparative"/> that usage accepts alongside it.
+        /// </summary>
+        /// <remarks>
+        /// Some adverbs have two competing comparatives that are not variants of one word: snadno takes both
+        /// snáze and snadněji, hluboko both hloub and hlouběji, široko both šíře and šířeji. Generation picks
+        /// the primary; this records that the others are equally correct rather than losing them.
+        /// </remarks>
+        public IReadOnlyList<string> ComparativeAlternatives { get; init; } = [];
     }
 }
