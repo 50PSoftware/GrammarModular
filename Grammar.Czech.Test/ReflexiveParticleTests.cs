@@ -37,15 +37,15 @@ namespace Grammar.Czech.Test
         /// </summary>
         [DataTestMethod]
         // se — accusative types
-        [DataRow("dělat",    "dělá",    "Second", "Singular", "ReflexivumTantum_Se",  "dělej se!",   DisplayName = "dělat imp 2sg – ReflexivumTantum_Se")]
-        [DataRow("dělat",    "dělá",    "First",  "Plural",   "DerivedReflexive_Se",  "dělejme se!", DisplayName = "dělat imp 1pl – DerivedReflexive_Se")]
-        [DataRow("dělat",    "dělá",    "Second", "Plural",   "Reciprocal_Se",        "dělejte se!", DisplayName = "dělat imp 2pl – Reciprocal_Se")]
-        [DataRow("nést",     "nese",    "Second", "Singular", "DeagentivePassive_Se", "nes se!",     DisplayName = "nést imp 2sg – DeagentivePassive_Se")]
-        [DataRow("tisknout", "trida2",  "Second", "Singular", "DerivedReflexive_Se",  "tiskni se!",  DisplayName = "tisknout imp 2sg – DerivedReflexive_Se")]
+        [DataRow("dělat",    "dělá",    "Second", "Singular", "ReflexivumTantum_Se",  "dělej se",   DisplayName = "dělat imp 2sg – ReflexivumTantum_Se")]
+        [DataRow("dělat",    "dělá",    "First",  "Plural",   "DerivedReflexive_Se",  "dělejme se", DisplayName = "dělat imp 1pl – DerivedReflexive_Se")]
+        [DataRow("dělat",    "dělá",    "Second", "Plural",   "Reciprocal_Se",        "dělejte se", DisplayName = "dělat imp 2pl – Reciprocal_Se")]
+        [DataRow("nést",     "nese",    "Second", "Singular", "DeagentivePassive_Se", "nes se",     DisplayName = "nést imp 2sg – DeagentivePassive_Se")]
+        [DataRow("tisknout", "trida2",  "Second", "Singular", "DerivedReflexive_Se",  "tiskni se",  DisplayName = "tisknout imp 2sg – DerivedReflexive_Se")]
         // si — dative types
-        [DataRow("dělat",    "dělá",    "Second", "Singular", "ReflexivumTantum_Si",  "dělej si!",   DisplayName = "dělat imp 2sg – ReflexivumTantum_Si")]
-        [DataRow("dělat",    "dělá",    "First",  "Plural",   "DerivedBenefactive_Si","dělejme si!", DisplayName = "dělat imp 1pl – DerivedBenefactive_Si")]
-        [DataRow("nést",     "nese",    "Second", "Plural",   "DerivedBenefactive_Si","neste si!",   DisplayName = "nést imp 2pl – DerivedBenefactive_Si")]
+        [DataRow("dělat",    "dělá",    "Second", "Singular", "ReflexivumTantum_Si",  "dělej si",   DisplayName = "dělat imp 2sg – ReflexivumTantum_Si")]
+        [DataRow("dělat",    "dělá",    "First",  "Plural",   "DerivedBenefactive_Si","dělejme si", DisplayName = "dělat imp 1pl – DerivedBenefactive_Si")]
+        [DataRow("nést",     "nese",    "Second", "Plural",   "DerivedBenefactive_Si","neste si",   DisplayName = "nést imp 2pl – DerivedBenefactive_Si")]
         public void GetFullForm_ImperativeWithReflexive_ReturnsCorrectPhrase(
             string lemma, string pattern, string person, string number,
             string reflexiveType, string expected)

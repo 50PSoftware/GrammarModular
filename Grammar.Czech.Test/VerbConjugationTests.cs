@@ -1,4 +1,4 @@
-using Grammar.Core.Enums;
+﻿using Grammar.Core.Enums;
 using Grammar.Czech.Models;
 using Grammar.Czech.Providers;
 using Grammar.Czech.Providers.JsonProviders;
@@ -246,29 +246,29 @@ namespace Grammar.Czech.Test
         /// </summary>
         [DataTestMethod]
         // být
-        [DataRow("být", "být", "Second", "Singular", "buď!", DisplayName = "být – imp. 2sg")]
-        [DataRow("být", "být", "First", "Plural", "buďme!", DisplayName = "být – imp. 1pl")]
-        [DataRow("být", "být", "Second", "Plural", "buďte!", DisplayName = "být – imp. 2pl")]
+        [DataRow("být", "být", "Second", "Singular", "buď", DisplayName = "být – imp. 2sg")]
+        [DataRow("být", "být", "First", "Plural", "buďme", DisplayName = "být – imp. 1pl")]
+        [DataRow("být", "být", "Second", "Plural", "buďte", DisplayName = "být – imp. 2pl")]
         // nést (trida1 / named pattern nese)
-        [DataRow("nést", "nese", "Second", "Singular", "nes!", DisplayName = "nést – imp. 2sg")]
-        [DataRow("nést", "nese", "First", "Plural", "nesme!", DisplayName = "nést – imp. 1pl")]
-        [DataRow("nést", "nese", "Second", "Plural", "neste!", DisplayName = "nést – imp. 2pl")]
+        [DataRow("nést", "nese", "Second", "Singular", "nes", DisplayName = "nést – imp. 2sg")]
+        [DataRow("nést", "nese", "First", "Plural", "nesme", DisplayName = "nést – imp. 1pl")]
+        [DataRow("nést", "nese", "Second", "Plural", "neste", DisplayName = "nést – imp. 2pl")]
         // prosit (trida4)
-        [DataRow("prosit", "trida4", "Second", "Singular", "pros!", DisplayName = "prosit – imp. 2sg")]
-        [DataRow("prosit", "trida4", "First", "Plural", "prosme!", DisplayName = "prosit – imp. 1pl")]
-        [DataRow("prosit", "trida4", "Second", "Plural", "proste!", DisplayName = "prosit – imp. 2pl")]
+        [DataRow("prosit", "trida4", "Second", "Singular", "pros", DisplayName = "prosit – imp. 2sg")]
+        [DataRow("prosit", "trida4", "First", "Plural", "prosme", DisplayName = "prosit – imp. 1pl")]
+        [DataRow("prosit", "trida4", "Second", "Plural", "proste", DisplayName = "prosit – imp. 2pl")]
         // tisknout (trida2) — dvě souhlásky, finální n je DTN
-        [DataRow("tisknout", "trida2", "Second", "Singular", "tiskni!", DisplayName = "tisknout – imp. 2sg")]
-        [DataRow("tisknout", "trida2", "First", "Plural", "tiskněme!", DisplayName = "tisknout – imp. 1pl")]
-        [DataRow("tisknout", "trida2", "Second", "Plural", "tiskněte!", DisplayName = "tisknout – imp. 2pl")]
+        [DataRow("tisknout", "trida2", "Second", "Singular", "tiskni", DisplayName = "tisknout – imp. 2sg")]
+        [DataRow("tisknout", "trida2", "First", "Plural", "tiskněme", DisplayName = "tisknout – imp. 1pl")]
+        [DataRow("tisknout", "trida2", "Second", "Plural", "tiskněte", DisplayName = "tisknout – imp. 2pl")]
         // kupovat (trida3) — ImperativeStem="kupuj", končí vokálem
-        [DataRow("kupovat", "trida3", "Second", "Singular", "kupuj!", DisplayName = "kupovat – imp. 2sg")]
-        [DataRow("kupovat", "trida3", "First", "Plural", "kupujme!", DisplayName = "kupovat – imp. 1pl")]
-        [DataRow("kupovat", "trida3", "Second", "Plural", "kupujte!", DisplayName = "kupovat – imp. 2pl")]
+        [DataRow("kupovat", "trida3", "Second", "Singular", "kupuj", DisplayName = "kupovat – imp. 2sg")]
+        [DataRow("kupovat", "trida3", "First", "Plural", "kupujme", DisplayName = "kupovat – imp. 1pl")]
+        [DataRow("kupovat", "trida3", "Second", "Plural", "kupujte", DisplayName = "kupovat – imp. 2pl")]
         // dělat (trida5) — ImperativeStem="dělej", končí vokálem
-        [DataRow("dělat", "dělá", "Second", "Singular", "dělej!", DisplayName = "dělat – imp. 2sg")]
-        [DataRow("dělat", "dělá", "First", "Plural", "dělejme!", DisplayName = "dělat – imp. 1pl")]
-        [DataRow("dělat", "dělá", "Second", "Plural", "dělejte!", DisplayName = "dělat – imp. 2pl")]
+        [DataRow("dělat", "dělá", "Second", "Singular", "dělej", DisplayName = "dělat – imp. 2sg")]
+        [DataRow("dělat", "dělá", "First", "Plural", "dělejme", DisplayName = "dělat – imp. 1pl")]
+        [DataRow("dělat", "dělá", "Second", "Plural", "dělejte", DisplayName = "dělat – imp. 2pl")]
         public void GetBasicForm_Imperative_ReturnsCorrectForm(
             string lemma, string pattern, string person, string number, string expected)
         {
