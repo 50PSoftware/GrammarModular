@@ -28,10 +28,10 @@ namespace Grammar.Czech.Test
             var phonologyService = new CzechPhonologyService(registry);
             var epenthesisRule = new CzechEpenthesisRuleEvaluator(registry);
             var wordStructureResolver = new CzechWordStructureResolver(verbDataProvider, nounDataProvider, prefixService, phonologyService, registry, epenthesisRule);
-            var ortographyService = new CzechOrtographyService(registry);
+            var orthographyService = new CzechOrthographyService(registry);
 
             var adjectiveDataProvider = new JsonAdjectiveDataProvider();
-            adjectiveDeclensionService = new CzechAdjectiveDeclensionService(adjectiveDataProvider, wordStructureResolver, phonologyService, ortographyService);
+            adjectiveDeclensionService = new CzechAdjectiveDeclensionService(adjectiveDataProvider, wordStructureResolver, phonologyService, orthographyService);
         }
 
         /// <summary>

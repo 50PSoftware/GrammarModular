@@ -37,7 +37,7 @@ Projekt generuje české slovní tvary z lemmatu, gramatických kategorií, vzor
 - **.NET 8 SDK** — všechny projekty cílí na `net8.0`.
 - Závislosti knihovny `Grammar.Czech`: `Microsoft.Extensions.DependencyInjection.Abstractions` a `Microsoft.Extensions.Logging`.
 
-Balíček na NuGetu publikovaný není. Knihovna se zapojuje projektovou referencí:
+Projekt se balí sám: `GeneratePackageOnBuild` je zapnutý a build vedle sestavení vytvoří `50PSoftware.GrammarModular.Czech.<verze>.nupkg`. Na nuget.org balíček není — bere se z privátního nebo lokálního feedu, případně projektovou referencí:
 
 ```bash
 dotnet build Grammar.sln
@@ -46,6 +46,8 @@ dotnet build Grammar.sln
 ```bash
 dotnet add reference ../Grammar/Grammar.Czech/Grammar.Czech.csproj
 ```
+
+Verze je pořád `-preview`, takže package reference musí povolit předběžné verze.
 
 Gramatická data jsou vložená jako embedded resources přímo v `Grammar.Czech`, takže se vedle sestavení nekopírují žádné datové soubory.
 
@@ -118,7 +120,7 @@ Slovesný vzor se předává přes `Pattern` — buď třídou (`trida1`–`trid
 
 ### Fonologie a pravopis
 
-Projekt obsahuje fonologickou vrstvu pro změkčení, epentezi, jotaci a kvantitu samohlásek. Rozhodování je oddělené do evaluátorů a transformace provádí `CzechPhonologyService` a `CzechOrtographyService`.
+Projekt obsahuje fonologickou vrstvu pro změkčení, epentezi, jotaci a kvantitu samohlásek. Rozhodování je oddělené do evaluátorů a transformace provádí `CzechPhonologyService` a `CzechOrthographyService`.
 
 Mezi veřejně používané části patří:
 
@@ -127,7 +129,7 @@ Mezi veřejně používané části patří:
 - `IEpenthesisRuleEvaluator<CzechWordRequest>`,
 - `IJotationRuleEvaluator<CzechWordRequest>`,
 - `ISyncretismRuleEvaluator<CzechWordRequest>`,
-- `ICzechOrtographyService`.
+- `ICzechOrthographyService`.
 
 `CzechAlternationRuleEvaluator` pro krácení genitivu plurálu existuje, ale aktuálně není registrovaný v `AddCzechGrammarServices()` a není zapojený v `CzechNounDeclensionService`.
 
@@ -517,7 +519,6 @@ Všechna gramatická data v projektu `Grammar.Czech` jsou embedded JSON resource
 - Že se vnitřní participant pojí se slovesem nejvýš jednou, se nevynucuje — dva `PAT` konstituenty v jedné klauzi nic nezastaví.
 - Vztažná věta musí být jedna klauze; souvětí uvnitř vztažné věty podporované není.
 - U vzoru `sto` se generuje skloněná varianta s genitivem (*ke stu korun*); nesklonná se shodou (*ke sto korunám*), kterou IJP uvádí vedle ní, vyjádřit nejde.
-- Typ `CzechOrtographyService` a jeho rozhraní `ICzechOrtographyService` mají v názvu překlep (*Ortography*). Dokumentace ho úmyslně opakuje, aby jméno šlo najít; přejmenování je zatím nedořešené.
 
 ## Licence
 

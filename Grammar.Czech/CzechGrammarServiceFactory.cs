@@ -52,7 +52,7 @@ namespace Grammar.Czech
             services.AddSingleton<IEpenthesisRuleEvaluator<CzechWordRequest>, CzechEpenthesisRuleEvaluator>();
             services.AddSingleton<IJotationRuleEvaluator<CzechWordRequest>, CzechJotationRuleEvaluator>();
             services.AddSingleton<ISyncretismRuleEvaluator<CzechWordRequest>, CzechSyncretismRuleEvaluator>();
-            services.AddSingleton<ICzechOrtographyService, CzechOrtographyService>();
+            services.AddSingleton<ICzechOrthographyService, CzechOrthographyService>();
 
             // ── Inflection services ──────────────────────────────────────────────────
             services.AddSingleton<CzechVerbConjugationService>();

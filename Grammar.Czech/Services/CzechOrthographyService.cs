@@ -7,14 +7,14 @@ namespace Grammar.Czech.Services
     /// <summary>
     /// Provides Czech orthography adjustments for endings and jotation.
     /// </summary>
-    public class CzechOrtographyService : ICzechOrtographyService
+    public class CzechOrthographyService : ICzechOrthographyService
     {
         private readonly IPhonemeRegistry _registry;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CzechOrtographyService"/> type.
+        /// Initializes a new instance of the <see cref="CzechOrthographyService"/> type.
         /// </summary>
-        public CzechOrtographyService(IPhonemeRegistry registry)
+        public CzechOrthographyService(IPhonemeRegistry registry)
         {
             this._registry = registry;
         }

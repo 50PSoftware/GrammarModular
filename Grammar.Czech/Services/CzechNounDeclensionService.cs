@@ -20,13 +20,13 @@ namespace Grammar.Czech.Services
         private readonly IEpenthesisRuleEvaluator<CzechWordRequest> _epenthesisRuleEvaluator;
         private readonly IJotationRuleEvaluator<CzechWordRequest> _jotationRuleEvaluator;
         private readonly ISyncretismRuleEvaluator<CzechWordRequest> _syncretismRuleEvaluator;
-        private readonly ICzechOrtographyService _ortographyService;
+        private readonly ICzechOrthographyService _orthographyService;
         private readonly IValencyProvider<CzechLexicalEntry> _valencyProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechNounDeclensionService"/> type.
         /// </summary>
-        public CzechNounDeclensionService(INounDataProvider dataProvider, IWordStructureResolver<CzechWordRequest> wordStructureResolver, ICzechPhonologyService phonologyService, ISofteningRuleEvaluator<CzechWordRequest> softeningRuleEvaluator, IEpenthesisRuleEvaluator<CzechWordRequest> epenthesisRuleEvaluator, IJotationRuleEvaluator<CzechWordRequest> jotationRuleEvaluator, ISyncretismRuleEvaluator<CzechWordRequest> syncretismRuleEvaluator, ICzechOrtographyService ortographyService, IValencyProvider<CzechLexicalEntry> valencyProvider)
+        public CzechNounDeclensionService(INounDataProvider dataProvider, IWordStructureResolver<CzechWordRequest> wordStructureResolver, ICzechPhonologyService phonologyService, ISofteningRuleEvaluator<CzechWordRequest> softeningRuleEvaluator, IEpenthesisRuleEvaluator<CzechWordRequest> epenthesisRuleEvaluator, IJotationRuleEvaluator<CzechWordRequest> jotationRuleEvaluator, ISyncretismRuleEvaluator<CzechWordRequest> syncretismRuleEvaluator, ICzechOrthographyService orthographyService, IValencyProvider<CzechLexicalEntry> valencyProvider)
         {
             this._dataProvider = dataProvider;
             this._wordStructureResolver = wordStructureResolver;
@@ -35,7 +35,7 @@ namespace Grammar.Czech.Services
             this._epenthesisRuleEvaluator = epenthesisRuleEvaluator;
             this._jotationRuleEvaluator = jotationRuleEvaluator;
             this._syncretismRuleEvaluator = syncretismRuleEvaluator;
-            this._ortographyService = ortographyService;
+            this._orthographyService = orthographyService;
             this._valencyProvider = valencyProvider;
         }
 
@@ -143,11 +143,11 @@ namespace Grammar.Czech.Services
 
             if (_jotationRuleEvaluator.ShouldApplyJotation(word, stem, finalEnding, hasMobileERemoval))
             {
-                finalEnding = _ortographyService.ApplyJotationOrthography(finalEnding);
+                finalEnding = _orthographyService.ApplyJotationOrthography(finalEnding);
             }
             else if (!endingTransformationApplied)
             {
-                finalEnding = _ortographyService.NormalizeEndingOrthography(stem, finalEnding, word.Pattern);
+                finalEnding = _orthographyService.NormalizeEndingOrthography(stem, finalEnding, word.Pattern);
             }
 
             return new WordForm(MorphologyHelper.ApplyFormEnding(stem, finalEnding));

@@ -37,7 +37,7 @@ The project generates Czech word forms from a lemma, grammatical categories, a p
 - **.NET 8 SDK** — every project targets `net8.0`.
 - `Grammar.Czech` depends on `Microsoft.Extensions.DependencyInjection.Abstractions` and `Microsoft.Extensions.Logging`.
 
-There is no published NuGet package. The library is consumed through a project reference:
+The project packs itself: `GeneratePackageOnBuild` is on, and a build drops `50PSoftware.GrammarModular.Czech.<version>.nupkg` next to the assembly. The package is not on nuget.org — it is consumed from a private or local feed, or through a project reference:
 
 ```bash
 dotnet build Grammar.sln
@@ -46,6 +46,8 @@ dotnet build Grammar.sln
 ```bash
 dotnet add reference ../Grammar/Grammar.Czech/Grammar.Czech.csproj
 ```
+
+The version is still a `-preview`, so a package reference needs to allow prerelease versions.
 
 All grammatical data ships as embedded resources inside `Grammar.Czech`, so no data files need to be copied next to the assembly.
 
@@ -118,7 +120,7 @@ The verb pattern is passed through `Pattern` — either a class (`trida1`–`tri
 
 ### Phonology and orthography
 
-The project contains a phonological layer for softening, epenthesis, jotation and vowel quantity. The decisions are separated into evaluators; the transformations are carried out by `CzechPhonologyService` and `CzechOrtographyService`.
+The project contains a phonological layer for softening, epenthesis, jotation and vowel quantity. The decisions are separated into evaluators; the transformations are carried out by `CzechPhonologyService` and `CzechOrthographyService`.
 
 The parts in public use include:
 
@@ -127,7 +129,7 @@ The parts in public use include:
 - `IEpenthesisRuleEvaluator<CzechWordRequest>`,
 - `IJotationRuleEvaluator<CzechWordRequest>`,
 - `ISyncretismRuleEvaluator<CzechWordRequest>`,
-- `ICzechOrtographyService`.
+- `ICzechOrthographyService`.
 
 `CzechAlternationRuleEvaluator`, for genitive-plural shortening, exists but is currently not registered in `AddCzechGrammarServices()` and is not wired into `CzechNounDeclensionService`.
 
@@ -518,7 +520,6 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 - The rule that an inner participant combines with a verb at most once is not enforced — nothing stops two `PAT` constituents in one clause.
 - A relative clause must be a single clause; a complex sentence inside a relative clause is not supported.
 - For the pattern `sto`, the declined variant with the genitive is generated (*ke stu korun*); the indeclinable one with agreement (*ke sto korunám*), which IJP lists alongside it, cannot be expressed.
-- The type `CzechOrtographyService` and its interface `ICzechOrtographyService` carry a typo in the name (*Ortography*). This documentation repeats it deliberately so the name stays searchable; renaming is still open.
 
 ## License
 

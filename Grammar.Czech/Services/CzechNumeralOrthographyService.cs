@@ -13,7 +13,7 @@ namespace Grammar.Czech.Services
     /// 5. patro, 28. října — and the one place a hyphen belongs is after a placeholder letter: x-stupňový,
     /// n-tá.
     /// <para>
-    /// Deliberately separate from <see cref="ICzechOrtographyService"/>, which is about the morphonology of
+    /// Deliberately separate from <see cref="ICzechOrthographyService"/>, which is about the morphonology of
     /// endings — jotation, ě against e — and has nothing to do with how digits are spelled out.
     /// </para>
     /// </remarks>

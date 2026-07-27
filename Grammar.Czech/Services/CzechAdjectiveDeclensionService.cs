@@ -16,17 +16,17 @@ namespace Grammar.Czech.Services
         private readonly IAdjectiveDataProvider dataProvider;
         private readonly IWordStructureResolver<CzechWordRequest> wordStructureResolver;
         private readonly ICzechPhonologyService czechPhonologyService;
-        private readonly ICzechOrtographyService ortographyService;
+        private readonly ICzechOrthographyService orthographyService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechAdjectiveDeclensionService"/> type.
         /// </summary>
-        public CzechAdjectiveDeclensionService(IAdjectiveDataProvider dataProvider, IWordStructureResolver<CzechWordRequest> wordStructureResolver, ICzechPhonologyService czechPhonologyService, ICzechOrtographyService ortographyService)
+        public CzechAdjectiveDeclensionService(IAdjectiveDataProvider dataProvider, IWordStructureResolver<CzechWordRequest> wordStructureResolver, ICzechPhonologyService czechPhonologyService, ICzechOrthographyService orthographyService)
         {
             this.dataProvider = dataProvider;
             this.wordStructureResolver = wordStructureResolver;
             this.czechPhonologyService = czechPhonologyService;
-            this.ortographyService = ortographyService;
+            this.orthographyService = orthographyService;
         }
 
         /// <summary>
@@ -113,7 +113,7 @@ namespace Grammar.Czech.Services
             {
                 //return czechPhonologyService.ApplySoftConsonantBeforeE(baseStem) + "jš";
 
-                var ortographicVowel = ortographyService.ApplyJotationOrthography("-e").TrimStart('-');
+                var ortographicVowel = orthographyService.ApplyJotationOrthography("-e").TrimStart('-');
 
                 return baseStem + ortographicVowel + "jš";
             }

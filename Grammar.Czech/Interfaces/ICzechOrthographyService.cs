@@ -1,9 +1,9 @@
 namespace Grammar.Czech.Interfaces
 {
     /// <summary>
-    /// Defines operations for czech Ortography behavior.
+    /// Defines operations for czech orthography behavior.
     /// </summary>
-    public interface ICzechOrtographyService
+    public interface ICzechOrthographyService
     {
         /// <summary>
         /// Ortografická konverze výsledku jotace: e→ě v koncovce.

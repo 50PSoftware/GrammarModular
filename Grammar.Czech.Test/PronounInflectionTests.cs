@@ -27,9 +27,9 @@ namespace Grammar.Czech.Test
             var prefixService = new CzechPrefixService(new JsonPrefixDataProvider());
             var epenthesisRule = new CzechEpenthesisRuleEvaluator(registry);
             var wordStructureResolver = new CzechWordStructureResolver(verbDataProvider, nounDataProvider, prefixService, phonologyService, registry, epenthesisRule);
-            var ortographyService = new CzechOrtographyService(registry);
+            var orthographyService = new CzechOrthographyService(registry);
             var adjectiveDataProvider = new JsonAdjectiveDataProvider();
-            var adjectiveService = new CzechAdjectiveDeclensionService(adjectiveDataProvider, wordStructureResolver, phonologyService, ortographyService);
+            var adjectiveService = new CzechAdjectiveDeclensionService(adjectiveDataProvider, wordStructureResolver, phonologyService, orthographyService);
             var pronounDataProvider = new JsonPronounDataProvider();
 
             service = new CzechPronounService(pronounDataProvider, adjectiveService);
