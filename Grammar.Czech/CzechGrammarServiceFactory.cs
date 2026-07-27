@@ -28,6 +28,7 @@ namespace Grammar.Czech
             services.AddSingleton<IParticleDataProvider>(new JsonParticlesDataProvider());
             services.AddSingleton<IPrepositionDataProvider>(new JsonPrepositionsDataProvider());
             services.AddSingleton<IConjunctionDataProvider>(new JsonConjunctionDataProvider());
+            services.AddSingleton<IAdverbDataProvider>(new JsonAdverbDataProvider());
             services.AddSingleton<IPronounDataProvider>(new JsonPronounDataProvider());
             services.AddSingleton<INumeralDataProvider>(new JsonNumeralDataProvider());
 
@@ -58,6 +59,9 @@ namespace Grammar.Czech
             services.AddSingleton<CzechVerbConjugationService>();
             services.AddSingleton<CzechNounDeclensionService>();
             services.AddSingleton<CzechAdjectiveDeclensionService>();
+            services.AddSingleton<CzechAdverbService>();
+            services.AddSingleton<ICzechAdverbService>(sp =>
+                sp.GetRequiredService<CzechAdverbService>());
             services.AddSingleton<CzechPronounService>();
             services.AddSingleton<ICzechPronounService>(sp =>
                 sp.GetRequiredService<CzechPronounService>());

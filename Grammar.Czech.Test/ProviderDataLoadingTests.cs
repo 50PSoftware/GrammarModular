@@ -275,6 +275,20 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Adverbs load, both the compared and the uncompared ones.
+        /// </summary>
+        [TestMethod]
+        public void AdverbDataProvider_LoadsAdverbs()
+        {
+            var adverbs = provider.GetRequiredService<IAdverbDataProvider>().GetAdverbs();
+
+            Assert.IsTrue(adverbs.Count > 0, "Příslovce se nenačetla.");
+            Assert.AreEqual("lépe", adverbs["dobře"].Comparative);
+            Assert.AreEqual("líp", adverbs["dobře"].ComparativeShort);
+            Assert.IsNull(adverbs["dnes"].Comparative, "Nestupňovatelné příslovce nesmí mít komparativ.");
+        }
+
+        /// <summary>
         /// Conjunctions load with both their type and their comma rule.
         /// </summary>
         [TestMethod]

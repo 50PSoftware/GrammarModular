@@ -24,6 +24,10 @@ namespace Grammar.Core.Enums
         /// <summary>
         /// Represents the verb value.
         /// </summary>
-        Verb
+        Verb,
+        /// <summary>
+        /// Represents the adverb value. Uninflected — comparison is the only morphology it has.
+        /// </summary>
+        Adverb
     }
 }

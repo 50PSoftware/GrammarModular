@@ -36,6 +36,14 @@ namespace Grammar.Czech.Models
         /// </summary>
         public Degree? Degree { get; set; }
         /// <summary>
+        /// Gets or sets a value indicating whether the shorter of two competing forms is preferred.
+        /// </summary>
+        /// <remarks>
+        /// Used by adverb comparison, where several irregulars carry a doublet and the short form is the
+        /// more colloquial: hůř against hůře, dřív against dříve, výš against výše.
+        /// </remarks>
+        public bool? PrefersShortForm { get; set; }
+        /// <summary>
         /// Gets or sets the reflexive type, which determines the reflexive particle (se/si) for the verb phrase.
         /// </summary>
         public ReflexiveType ReflexiveType { get; set; }

@@ -106,6 +106,14 @@ A numeral need not be an attribute; as the head of a constituent it declines nor
 
 Numerals written in digits are checked by `ICzechNumeralOrthographyService` — it rejects *5tý*, *10ti* and *20-krát*, and can correct them.
 
+### Adverbs
+
+NESČ classifies adverbs as an uninflected word class, so the positive degree is the lemma itself and comparison is the only morphology they have. An unregistered adverb therefore passes through unchanged in the positive degree — it does not have to be in the data to be usable in a sentence.
+
+The comparative, though, is read from `Grammar.Czech/Data/Rules/adverbs.json` rather than derived. Deadjectival adverbs take three different suffixes — `-o`, `-e/-ě` and `-y` (*nízko*, *krásně*, *česky*) — the choice between them is not fully predictable, and one adjective can yield two adverbs that compare differently (*dlouho* and *dlouze*, *vysoko* and *vysoce*). Comparison itself is irregular in the frequent adverbs (*dobře → lépe*, *špatně → hůře*, *brzy → dříve*), and the regular `-eji/-ěji` suffix interacts with palatalization in some stems (*hladce → hladčeji*) but not others (*hustě → hustěji*). A rule would be wrong quietly and often.
+
+The superlative is `nej-` on the comparative. Several irregulars carry a doublet whose shorter member is the colloquial one (*hůř* beside *hůře*, *dřív* beside *dříve*); it is selected with `CzechWordRequest.PrefersShortForm`. Comparing an unregistered adverb throws rather than guessing.
+
 ### Verbs
 
 Verbs are generated from the rules in:
@@ -180,7 +188,7 @@ The main entry points:
 
 - `CzechSentenceBuilder` for a sentence or a complex sentence built from clauses,
 - `CzechWordFormComposer` for the full form of a word or a verb phrase,
-- `MorphologyEngine` for direct dispatch by word class — nouns, adjectives, pronouns, numerals and the basic verb forms. This is what `IInflectionService<CzechWordRequest>` and `IVerbInflectionService<CzechWordRequest>` resolve to, being the only implementation that accepts a request of any word class,
+- `MorphologyEngine` for direct dispatch by word class — nouns, adjectives, pronouns, numerals, adverbs and the basic verb forms. This is what `IInflectionService<CzechWordRequest>` and `IVerbInflectionService<CzechWordRequest>` resolve to, being the only implementation that accepts a request of any word class,
 - the specialized services `CzechNounDeclensionService`, `CzechAdjectiveDeclensionService`, `CzechPronounService`, `CzechNumeralService` and `CzechVerbConjugationService`.
 
 Alongside them, supporting services are registered and can be resolved from the container directly:
@@ -496,6 +504,7 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 | `Data/Rules/particles.json` | conditional particles, past auxiliaries, reflexives |
 | `Data/Rules/prepositions.json` | prepositions, their government and vocalization |
 | `Data/Rules/conjunctions.json` | conjunctions, their type and comma rule |
+| `Data/Rules/adverbs.json` | adverbs and their comparison |
 | `Data/Lexicon/lexicon.json` | lexical metadata |
 | `Data/Lexicon/valency.json` | valency frames (`dát`, `dávat`, `jít`, `vidět`) |
 
