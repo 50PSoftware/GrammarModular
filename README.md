@@ -181,7 +181,7 @@ The main entry points:
 
 - `CzechSentenceBuilder` for a sentence or a complex sentence built from clauses,
 - `CzechWordFormComposer` for the full form of a word or a verb phrase,
-- `MorphologyEngine` for direct dispatch to nouns, adjectives, pronouns, numerals and the basic verb forms,
+- `MorphologyEngine` for direct dispatch by word class — nouns, adjectives, pronouns, numerals and the basic verb forms. This is what `IInflectionService<CzechWordRequest>` and `IVerbInflectionService<CzechWordRequest>` resolve to, being the only implementation that accepts a request of any word class,
 - the specialized services `CzechNounDeclensionService`, `CzechAdjectiveDeclensionService`, `CzechPronounService`, `CzechNumeralService` and `CzechVerbConjugationService`.
 
 Alongside them, supporting services are registered and can be resolved from the container directly:
@@ -503,7 +503,7 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 ## Known limitations
 
 - The caller often has to supply `Pattern`, `Gender`, `Number`, `Case`, `Person`, `Tense`, `Aspect`, `Modus` and `Voice`; the project is not yet an analyzer of natural text.
-- `MorphologyEngine.GetForm` supports only `Noun`, `Adjective`, `Pronoun` and `Numerale`; verbs go through `GetBasicForm` or through `CzechWordFormComposer.GetFullForm`.
+- `MorphologyEngine.GetForm` returns a single word, so for a verb it gives the basic form only. The verb forms that are several words — the periphrastic future, the passive with an auxiliary, the conditional, negation, the reflexive — need `CzechWordFormComposer.GetFullForm`.
 - A named pattern from `irregulars.json` carries the stems literally, so it fits the pattern's own verb and its prefixed derivatives — `nese` covers *nést* and *odnést*, `dělá` covers *dělat* and *dodělat*. An unrelated verb needs a class pattern: *prodávat* with `dělá` returns *dělá*, with `trida5` the correct *prodává*.
 - `CzechAlternationRuleEvaluator` is not registered in DI, and genitive-plural shortening is not actively wired into noun declension.
 - The lexicon is not a complete dictionary of Czech; `ResolveGenderAndPattern` and `ResolveVerbAspect` only work for lemmas present in `lexicon.json`.

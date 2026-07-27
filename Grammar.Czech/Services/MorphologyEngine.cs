@@ -8,6 +8,11 @@ namespace Grammar.Czech.Services
     /// <summary>
     /// Dispatches Czech word requests to the matching inflection service.
     /// </summary>
+    /// <remarks>
+    /// This is what <see cref="IInflectionService{TWord}"/> resolves to, because it is the only inflection
+    /// service that accepts a request of any word class. The per-class services are registered under their
+    /// own concrete types for a caller who already knows which one it needs.
+    /// </remarks>
     public class MorphologyEngine : IInflectionService<CzechWordRequest>, IVerbInflectionService<CzechWordRequest>
     {
         private readonly CzechNounDeclensionService nounDeclensionService;
@@ -43,10 +48,16 @@ namespace Grammar.Czech.Services
         }
 
         /// <summary>
-        /// Builds the requested inflected form.
+        /// Builds the requested inflected form for any word class the engine covers.
         /// </summary>
         /// <param name="word">The Czech word request containing the lemma and requested grammatical categories.</param>
         /// <returns>The generated inflected word form.</returns>
+        /// <remarks>
+        /// A verb is routed to <see cref="GetBasicForm"/>, so this returns a single word for it. The verb
+        /// forms that are several words — the periphrastic future, the passive with an auxiliary, the
+        /// conditional, negation, the reflexive — are assembled by
+        /// <see cref="CzechWordFormComposer.GetFullForm"/>, which is what a caller building a phrase wants.
+        /// </remarks>
         public WordForm GetForm(CzechWordRequest word)
         {
             return word.WordCategory switch
@@ -55,6 +66,7 @@ namespace Grammar.Czech.Services
                 WordCategory.Adjective => adjectiveDeclensionService.GetForm(word),
                 WordCategory.Pronoun => pronounService.GetForm(word),
                 WordCategory.Numerale => numeralService.GetForm(word),
+                WordCategory.Verb => verbConjugationService.GetBasicForm(word),
                 _ => throw new NotSupportedException($"Unsupported category: {word.WordCategory}")
             };
         }

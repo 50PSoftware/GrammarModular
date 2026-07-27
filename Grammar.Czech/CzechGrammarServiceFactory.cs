@@ -61,12 +61,7 @@ namespace Grammar.Czech
             services.AddSingleton<CzechPronounService>();
             services.AddSingleton<ICzechPronounService>(sp =>
                 sp.GetRequiredService<CzechPronounService>());
-            services.AddSingleton<IInflectionService<CzechWordRequest>>(sp =>
-                sp.GetRequiredService<CzechPronounService>());
 
-            // Deliberately not bound to IInflectionService<CzechWordRequest>: that key is already taken by
-            // the pronoun service above, and the last registration would silently win. Numerals are reached
-            // through MorphologyEngine, which takes the concrete services.
             services.AddSingleton<CzechNumeralService>();
             services.AddSingleton<ICzechNumeralService>(sp =>
                 sp.GetRequiredService<CzechNumeralService>());
@@ -94,6 +89,16 @@ namespace Grammar.Czech
             services.AddSingleton<MorphologyEngine>();
             services.AddSingleton<CzechWordFormComposer>();
             services.AddSingleton<CzechSentenceBuilder>();
+
+            // Several services implement IInflectionService<CzechWordRequest>, but the container holds one
+            // registration per key and the last one silently wins. It is bound here, after all of them, and
+            // to the engine: it is the only implementation that takes a request of any word class, whereas
+            // a per-class service would throw on everything outside its own class. A caller that wants one
+            // particular class asks for its concrete type.
+            services.AddSingleton<IInflectionService<CzechWordRequest>>(sp =>
+                sp.GetRequiredService<MorphologyEngine>());
+            services.AddSingleton<IVerbInflectionService<CzechWordRequest>>(sp =>
+                sp.GetRequiredService<MorphologyEngine>());
 
             return services;
         }
