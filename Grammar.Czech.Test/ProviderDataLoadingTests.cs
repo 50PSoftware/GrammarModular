@@ -289,6 +289,22 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Particles load with their function, and the optative ones with the mood they call for.
+        /// </summary>
+        [TestMethod]
+        public void ParticleDataProvider_LoadsParticles()
+        {
+            var particles = provider.GetRequiredService<IParticleDataProvider>().GetParticles();
+
+            Assert.IsTrue(particles.Count > 0, "Částice se nenačetly.");
+            Assert.AreEqual(ParticleType.Modal, particles["asi"].Type);
+            Assert.AreEqual(ParticleType.Optative, particles["kéž"].Type);
+            Assert.IsTrue(particles["kéž"].IsClauseInitial, "Přací částice uvozuje klauzi.");
+            Assert.AreEqual(Modus.Conditional, particles["kéž"].RequiresModus);
+            Assert.IsFalse(particles["jen"].IsClauseInitial, "Vytýkací částice se klade volně.");
+        }
+
+        /// <summary>
         /// Conjunctions load with both their type and their comma rule.
         /// </summary>
         [TestMethod]
