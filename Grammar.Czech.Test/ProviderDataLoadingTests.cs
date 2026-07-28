@@ -305,6 +305,22 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Interjections load with their type, and the predicative ones with the verb they form.
+        /// </summary>
+        [TestMethod]
+        public void InterjectionDataProvider_LoadsInterjections()
+        {
+            var interjections = provider.GetRequiredService<IInterjectionDataProvider>().GetInterjections();
+
+            Assert.IsTrue(interjections.Count > 0, "Citoslovce se nenačetla.");
+            Assert.AreEqual(InterjectionType.Emotional, interjections["ach"].Type);
+            Assert.AreEqual(InterjectionType.Onomatopoeic, interjections["žbluňk"].Type);
+            Assert.IsTrue(interjections["žbluňk"].CanBePredicate, "Zvukomalebné citoslovce může být přísudkem.");
+            Assert.AreEqual("žbluňknout", interjections["žbluňk"].DerivedVerb);
+            Assert.AreEqual(Reduplication.Required, interjections["bubu"].Reduplication);
+        }
+
+        /// <summary>
         /// Conjunctions load with both their type and their comma rule.
         /// </summary>
         [TestMethod]
