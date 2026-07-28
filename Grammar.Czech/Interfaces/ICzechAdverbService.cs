@@ -32,5 +32,16 @@ namespace Grammar.Czech.Interfaces
         /// snadno takes snáze and snadněji alike. This is how a caller sees the others.
         /// </remarks>
         IReadOnlyList<string> GetComparativeVariants(string lemma);
+
+        /// <summary>
+        /// Gets the adverbs derived from the supplied adjective.
+        /// </summary>
+        /// <param name="adjectiveLemma">The adjective lemma.</param>
+        /// <returns>The adverbs derived from it, or an empty sequence when none is registered.</returns>
+        /// <remarks>
+        /// More than one can come back: dlouhý yields dlouho and dlouze, vysoký yields vysoko and vysoce.
+        /// Which of them a sentence wants is a lexical choice, not something the pair itself settles.
+        /// </remarks>
+        IReadOnlyList<string> GetAdverbsFor(string adjectiveLemma);
     }
 }

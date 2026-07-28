@@ -18,6 +18,17 @@ namespace Grammar.Czech.Models
     public sealed record AdverbData
     {
         /// <summary>
+        /// Gets the adjective this adverb is derived from, or null when it is not deadjectival.
+        /// </summary>
+        /// <remarks>
+        /// Recorded rather than computed, for the same reason as the comparative: which of -o, -e/-ě and -y
+        /// an adjective takes is not predictable, and one adjective can yield two adverbs at once
+        /// (dlouhý → dlouho and dlouze). Stating the base here gives the mapping in both directions without
+        /// a rule that would have to guess.
+        /// </remarks>
+        public string? DerivedFrom { get; init; }
+
+        /// <summary>
         /// Gets the comparative form, or null when the adverb is not compared.
         /// </summary>
         public string? Comparative { get; init; }

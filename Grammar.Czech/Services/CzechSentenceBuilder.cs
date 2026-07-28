@@ -397,6 +397,13 @@ namespace Grammar.Czech.Services
         // its own case — a genitive one, say — keeps it.
         private static CzechWordRequest AgreeWithHead(CzechWordRequest modifier, CzechWordRequest head, bool afterPreposition)
         {
+            // An adverb has no categories to agree in. Handing it a case would be harmless today, because
+            // the adverb service reads only the lemma and the degree, but it would be a lie in the request.
+            if (modifier.WordCategory == WordCategory.Adverb)
+            {
+                return modifier;
+            }
+
             modifier.Gender ??= head.Gender;
             modifier.Number ??= head.Number;
             modifier.Case ??= head.Case;

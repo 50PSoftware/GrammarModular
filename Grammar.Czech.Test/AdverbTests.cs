@@ -200,6 +200,53 @@ namespace Grammar.Czech.Test
             Assert.AreEqual(0, adverbs.GetComparativeVariants("dnes").Count);
         }
 
+        /// <summary>
+        /// The adjective an adverb comes from is recorded, so the mapping works in both directions.
+        /// </summary>
+        /// <param name="adjective">The base adjective.</param>
+        /// <param name="adverb">The adverb expected from it.</param>
+        [DataTestMethod]
+        [DataRow("rychlý", "rychle")]
+        [DataRow("dobrý", "dobře")]
+        [DataRow("hezký", "hezky")]
+        [DataRow("nízký", "nízko")]
+        [DataRow("jednoduchý", "jednoduše")]
+        public void GetAdverbsFor_Adjective_ReturnsItsAdverb(string adjective, string adverb)
+        {
+            CollectionAssert.Contains(adverbs.GetAdverbsFor(adjective).ToList(), adverb);
+        }
+
+        /// <summary>
+        /// One adjective can yield two adverbs, which is why the mapping is a lookup and not a dictionary —
+        /// and why deriving it by rule was never going to work.
+        /// </summary>
+        /// <param name="adjective">The base adjective.</param>
+        /// <param name="first">One derived adverb.</param>
+        /// <param name="second">The other.</param>
+        [DataTestMethod]
+        [DataRow("dlouhý", "dlouho", "dlouze")]
+        [DataRow("vysoký", "vysoko", "vysoce")]
+        [DataRow("těžký", "těžko", "těžce")]
+        [DataRow("široký", "široko", "široce")]
+        [DataRow("lehký", "lehko", "lehce")]
+        public void GetAdverbsFor_AdjectiveWithTwoAdverbs_ReturnsBoth(string adjective, string first, string second)
+        {
+            var derived = adverbs.GetAdverbsFor(adjective).ToList();
+
+            Assert.AreEqual(2, derived.Count, $"Od '{adjective}' se očekávala dvě příslovce.");
+            CollectionAssert.Contains(derived, first);
+            CollectionAssert.Contains(derived, second);
+        }
+
+        /// <summary>
+        /// An adjective with no registered adverb comes back empty rather than throwing — this is a query.
+        /// </summary>
+        [TestMethod]
+        public void GetAdverbsFor_UnregisteredAdjective_IsEmpty()
+        {
+            Assert.AreEqual(0, adverbs.GetAdverbsFor("nesmyslný").Count);
+        }
+
         #endregion Comparison is data, not a rule
 
         #region In a clause
@@ -264,6 +311,97 @@ namespace Grammar.Czech.Test
             };
 
             Assert.AreEqual("Dnes se dělá.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// A degree adverb modifying another adverb — the constituent's head is itself an adverb.
+        /// </summary>
+        [TestMethod]
+        public void Build_DegreeAdverbModifyingAnAdverb_Composes()
+        {
+            var clause = new CzechClause
+            {
+                Predicate = Verb("dělat", "dělá", Person.Third),
+                Elements =
+                [
+                    ClauseElement.Of(Adverb("rychle"), [Adverb("velmi")], FgdFunctor.MANN, InformationStatus.New)
+                ]
+            };
+
+            Assert.AreEqual("Dělá velmi rychle.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// A degree adverb modifying an adjective inside a noun phrase.
+        /// </summary>
+        [TestMethod]
+        public void Build_DegreeAdverbInsideANounPhrase_Composes()
+        {
+            var student = new CzechWordRequest
+            {
+                Lemma = "student",
+                Pattern = "pán",
+                WordCategory = WordCategory.Noun,
+                Gender = Gender.Masculine,
+                IsAnimate = true,
+                Number = Number.Singular,
+                Case = Case.Nominative
+            };
+
+            var adjective = new CzechWordRequest
+            {
+                Lemma = "rychlý",
+                Pattern = "mladý",
+                WordCategory = WordCategory.Adjective,
+                Degree = Degree.Positive
+            };
+
+            var clause = new CzechClause
+            {
+                Predicate = Verb("dělat", "dělá", Person.Third),
+                Elements =
+                [
+                    ClauseElement.Of(student, [Adverb("velmi"), adjective], FgdFunctor.ACT, InformationStatus.Given)
+                ]
+            };
+
+            Assert.AreEqual("Velmi rychlý student dělá.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// An adverb inside a prepositional phrase must not be marked as standing after the preposition —
+        /// it has no form that could vary by it, and the flag is meaningless on an uninflected word.
+        /// </summary>
+        [TestMethod]
+        public void Build_AdverbModifierInsidePrepositionalPhrase_IsNotGivenNominalCategories()
+        {
+            var skola = new CzechWordRequest
+            {
+                Lemma = "škola",
+                Pattern = "žena",
+                WordCategory = WordCategory.Noun,
+                Gender = Gender.Feminine,
+                Number = Number.Singular,
+                Case = Case.Locative
+            };
+
+            var clause = new CzechClause
+            {
+                Predicate = Verb("dělat", "dělá", Person.Third),
+                Elements =
+                [
+                    new ClauseElement
+                    {
+                        Preposition = "v",
+                        Word = skola,
+                        Modifiers = [Adverb("velmi")],
+                        Functor = FgdFunctor.LOC,
+                        Status = InformationStatus.New
+                    }
+                ]
+            };
+
+            Assert.AreEqual("Dělá ve velmi škole.", builder.Build(clause));
         }
 
         #endregion In a clause

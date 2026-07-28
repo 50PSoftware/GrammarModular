@@ -19,6 +19,7 @@ namespace Grammar.Czech.Services
         private const string SuperlativePrefix = "nej";
 
         private readonly Dictionary<string, AdverbData> _adverbs;
+        private readonly Lazy<ILookup<string, string>> _byAdjective;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechAdverbService"/> type.
@@ -26,6 +27,13 @@ namespace Grammar.Czech.Services
         public CzechAdverbService(IAdverbDataProvider dataProvider)
         {
             _adverbs = dataProvider.GetAdverbs();
+
+            // A lookup rather than a dictionary: one adjective can yield two adverbs.
+            _byAdjective = new Lazy<ILookup<string, string>>(
+                () => _adverbs
+                    .Where(entry => entry.Value.DerivedFrom is not null)
+                    .ToLookup(entry => entry.Value.DerivedFrom!, entry => entry.Key),
+                LazyThreadSafetyMode.ExecutionAndPublication);
         }
 
         /// <summary>
@@ -80,6 +88,14 @@ namespace Grammar.Czech.Services
 
             return variants;
         }
+
+        /// <summary>
+        /// Gets the adverbs derived from the supplied adjective.
+        /// </summary>
+        /// <param name="adjectiveLemma">The adjective lemma.</param>
+        /// <returns>The adverbs derived from it, or an empty sequence when none is registered.</returns>
+        public IReadOnlyList<string> GetAdverbsFor(string adjectiveLemma)
+            => _byAdjective.Value[adjectiveLemma].ToList();
 
         private string ResolveComparative(CzechWordRequest request)
         {
