@@ -62,20 +62,32 @@ namespace Grammar.Czech.Services
         /// <param name="followingWord">The word that immediately follows the preposition.</param>
         /// <returns>The vocalized variant when the following word requires it; otherwise, the preposition unchanged.</returns>
         /// <remarks>
-        /// Vocalization is not a settled rule — the IJP is explicit that usage decides and the forms vary —
-        /// so this covers the tendencies it states and no more:
+        /// Vocalization is not a settled rule — the ÚJČ reference is explicit that usage decides and the
+        /// forms vary — so this follows the conditions it states, in its order:
         /// <list type="bullet">
-        /// <item>before mn-, whatever the preposition: se mnou, ke mně, beze mne, ode mne;</item>
-        /// <item>the same consonant or its voicing counterpart: ve vodě, se sestrou, ze země, ke gauči;</item>
-        /// <item>the second consonant of the cluster repeats the preposition's: ve dveřích, ve svém,
-        /// ke skoku, ve dvou;</item>
+        /// <item>never before a vowel: k ústavě, s ementálem, v okolí, z Asie;</item>
+        /// <item>always before the same consonant: ke kořenům, se sestrou, ve vejci, ze země;</item>
+        /// <item>before a similar consonant — s before z/ž/š, z before s/š/ž, v before f, k before g:
+        /// se ženou, ze stromu, ve Francii, ke gauči;</item>
         /// <item>three or more consonants: ke středu, se vstupem, ve skladišti, ze vzpomínek;</item>
+        /// <item>two consonants whose second is r, ř or l do <em>not</em> vocalize — s prací, z Prahy,
+        /// v trávě, k bráně — except for the clusters tř, dř, sl, zr and zl, which do: ve třech, ze dřeva,
+        /// ke slibu, se zrádcem, ze zlata;</item>
+        /// <item>the second consonant of the cluster repeating the preposition's: ve dveřích, ve svém,
+        /// ke skoku;</item>
         /// <item>for v and z, a sibilant-initial cluster: ve škole, ve smyslu.</item>
         /// </list>
-        /// Syllabic prepositions are excluded from all of it except mn-, because they mostly do not vocalize
-        /// even before the same consonant: bez zákona, not beze zákona.
-        /// Genuinely lexicalized forms are out of reach of any rule and are listed per preposition in
-        /// <see cref="PrepositionData.VocalizeBefore"/> instead: se dvěma, se třemi, se čtyřmi.
+        /// Syllabic prepositions mostly do not vocalize at all — bez zákona, not beze zákona — and are
+        /// excluded from the cluster conditions. They vocalize only before forms of "všechen" and "já"
+        /// (beze všeho, nade vše, přede všemi, pode mnou, beze mne), which is a rule rather than a list,
+        /// and in a few settled cases registered per preposition: ode dveří, ode dneška, beze studu.
+        /// <para>
+        /// Two things stay out of reach. The archaic ku survives only in fixed expressions before a labial
+        /// (ku příkladu, ku prospěchu) and in ratios, so it is not generated. And "s sebou" resists the
+        /// same-consonant rule; it is registered in <see cref="PrepositionData.DoNotVocalizeBefore"/>
+        /// rather than ruled, with the caveat that reflexive "se sebou" — spokojený sám se sebou — is a
+        /// different construction the service cannot tell apart from the string alone.
+        /// </para>
         /// </remarks>
         public string Vocalize(string preposition, string followingWord)
         {
@@ -89,14 +101,27 @@ namespace Grammar.Czech.Services
             return RequiresVocalization(data, preposition, followingWord.ToLowerInvariant()) ? data.Vocalized : preposition;
         }
 
+        // The clusters that vocalize even though their second member is r, ř or l, which otherwise blocks it.
+        // A closed list stated by the ÚJČ reference: ve třech, ze dřeva, ke slibu, se zrádcem, ze zlata.
+        private static readonly string[] VocalizingClusters = ["tř", "dř", "sl", "zr", "zl"];
+
         private bool RequiresVocalization(PrepositionData data, string preposition, string next)
         {
-            if (next.StartsWith("mn", StringComparison.Ordinal))
+            // Settled spellings that override the rules the other way: s sebou keeps its bare preposition
+            // despite the same consonant.
+            if (data.DoNotVocalizeBefore.Any(word => next.StartsWith(word, StringComparison.Ordinal)))
+            {
+                return false;
+            }
+
+            // Forms of "já" and "všechen" vocalize whatever the preposition, syllabic or not: se mnou,
+            // ke mně, pode mnou, beze všeho, nade vše, přede všemi.
+            if (next.StartsWith("mn", StringComparison.Ordinal) || next.StartsWith("vš", StringComparison.Ordinal))
             {
                 return true;
             }
 
-            // Lexicalized combinations no cluster rule reaches, listed in the data for this preposition.
+            // Settled combinations no cluster rule reaches, listed in the data for this preposition.
             if (data.VocalizeBefore.Any(prefix => next.StartsWith(prefix, StringComparison.Ordinal)))
             {
                 return true;
@@ -115,21 +140,36 @@ namespace Grammar.Czech.Services
                 return true;
             }
 
-            if (LeadingConsonants(next) < 2)
+            var leading = LeadingConsonants(next);
+
+            // Nothing before a vowel: k ústavě, v okolí. A single consonant is no harder: k řece, v zimě.
+            if (leading < 2)
             {
                 return false;
             }
 
-            // The second consonant of the cluster repeating the preposition's: ve dveřích, ke skoku, ve dvou.
+            // Three consonants running are awkward enough on their own: ke středu, ve skladišti.
+            if (leading >= 3)
+            {
+                return true;
+            }
+
+            // The second consonant of the cluster repeating the preposition's: ve dveřích, ke skoku.
             if (next[1] == final)
             {
                 return true;
             }
 
-            // Three consonants running are awkward enough on their own: ke středu, ve skladišti.
-            if (LeadingConsonants(next) >= 3)
+            if (VocalizingClusters.Any(cluster => next.StartsWith(cluster, StringComparison.Ordinal)))
             {
                 return true;
+            }
+
+            // A two-consonant cluster closing on r, ř or l is easy to say and blocks vocalization:
+            // s prací, z Prahy, v trávě, k bráně.
+            if (next[1] is 'r' or 'ř' or 'l')
+            {
+                return false;
             }
 
             // v and z also vocalize before a cluster that opens with a sibilant: ve škole, ve smyslu.

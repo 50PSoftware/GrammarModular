@@ -2,7 +2,7 @@
   "bez": {
     "originType": "Original",
     "vocalized": "beze",
-    "vocalizeBefore": [ "vš" ],
+    "vocalizeBefore": [ "studu" ],
     "variants": [
       { "case": "Genitive", "semanticGroup": "Other" }
     ]
@@ -16,7 +16,7 @@
   "k": {
     "originType": "Original",
     "vocalized": "ke",
-    "vocalizeBefore": [ "dn", "dv", "dř", "dl" ],
+    "vocalizeBefore": [ "dnu", "dnům" ],
     "variants": [
       { "case": "Dative", "semanticGroup": "Direction" }
     ]
@@ -59,7 +59,7 @@
   "od": {
     "originType": "Original",
     "vocalized": "ode",
-    "vocalizeBefore": [ "dne" ],
+    "vocalizeBefore": [ "dne", "dveří" ],
     "variants": [
       { "case": "Genitive", "semanticGroup": "Direction" }
     ]
@@ -115,14 +115,15 @@
   "s": {
     "originType": "Original",
     "vocalized": "se",
-    "vocalizeBefore": [ "dvěma", "třemi", "čtyřmi", "dvěmi", "dn", "dř", "dl" ],
+    "vocalizeBefore": [ "dvěma", "dvěmi", "čtyřmi" ],
+    "doNotVocalizeBefore": [ "sebou" ],
     "variants": [
       { "case": "Instrumental", "semanticGroup": "Instrument" },
       { "case": "Genitive", "semanticGroup": "Direction" }
     ]
   },
   "skrz": {
-    "originType": "Original",
+    "originType": "Derived",
     "variants": [
       { "case": "Accusative", "semanticGroup": "Direction" }
     ]
@@ -136,7 +137,7 @@
   "v": {
     "originType": "Original",
     "vocalized": "ve",
-    "vocalizeBefore": [ "třech", "čtyřech", "dne" ],
+    "vocalizeBefore": [ "čtyřech", "dne" ],
     "variants": [
       { "case": "Locative", "semanticGroup": "Location" },
       { "case": "Accusative", "semanticGroup": "Time" }
@@ -145,7 +146,7 @@
   "z": {
     "originType": "Original",
     "vocalized": "ze",
-    "vocalizeBefore": [ "třech", "čtyř", "dn", "dv", "dř", "dl" ],
+    "vocalizeBefore": [ "čtyř", "dvou", "dveří" ],
     "variants": [
       { "case": "Genitive", "semanticGroup": "Direction" }
     ]

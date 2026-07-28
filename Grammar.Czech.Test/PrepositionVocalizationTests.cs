@@ -81,7 +81,7 @@ namespace Grammar.Czech.Test
         [DataRow("s", "bratrem")]
         // a syllabic preposition keeps its own vowel, even before the same consonant
         [DataRow("bez", "zákona")]
-        [DataRow("od", "dveří")]
+        [DataRow("od", "domu")]
         // no vocalized variant at all
         [DataRow("na", "stole")]
         [DataRow("do", "domu")]
@@ -136,34 +136,45 @@ namespace Grammar.Czech.Test
         // two tests below measure the cluster rules against.
         private static readonly (string Preposition, string Word, string Expected)[] Corpus =
         [
-            // the same consonant or its voicing counterpart
-            ("v", "vodě", "ve"), ("v", "fázi", "ve"), ("s", "sestrou", "se"), ("s", "zahradou", "se"),
-            ("s", "ženou", "se"), ("z", "země", "ze"), ("z", "školy", "ze"), ("k", "kamarádovi", "ke"),
-            ("k", "gauči", "ke"),
-            // the mn- cluster, which reaches even the syllabic prepositions
+            // never before a vowel
+            ("k", "ústavě", "k"), ("s", "ementálem", "s"), ("v", "okolí", "v"), ("z", "Asie", "z"),
+            // always before the same consonant
+            ("k", "kořenům", "ke"), ("s", "sestrou", "se"), ("v", "vejci", "ve"), ("z", "země", "ze"),
+            // before a similar consonant: s before z/ž/š, z before s/š/ž, v before f, k before g
+            ("k", "groši", "ke"), ("k", "gauči", "ke"), ("k", "Grónsku", "ke"),
+            ("s", "zemí", "se"), ("s", "ženou", "se"), ("s", "švestkou", "se"),
+            ("v", "Finsku", "ve"), ("v", "Francii", "ve"), ("v", "fasciklu", "ve"),
+            ("z", "stromu", "ze"), ("z", "šuplete", "ze"), ("z", "železa", "ze"),
+            // forms of já and všechen, which reach the syllabic prepositions too
             ("s", "mnou", "se"), ("k", "mně", "ke"), ("v", "mně", "ve"), ("bez", "mne", "beze"),
             ("nad", "mnou", "nade"), ("pod", "mnou", "pode"), ("před", "mnou", "přede"),
             ("od", "mne", "ode"), ("přes", "mne", "přese"),
-            // a sibilant-initial cluster after v and z
-            ("v", "škole", "ve"), ("v", "smyslu", "ve"), ("z", "zpěvu", "ze"),
+            ("bez", "všeho", "beze"), ("nad", "vše", "nade"), ("před", "všemi", "přede"),
+            // a single consonant is no harder than a vowel
+            ("k", "řece", "k"), ("s", "pentličkami", "s"), ("v", "zimě", "v"), ("z", "vesnic", "z"),
+            // two consonants closing on r, ř or l do not vocalize
+            ("s", "prací", "s"), ("z", "Prahy", "z"), ("v", "trávě", "v"), ("k", "bráně", "k"),
+            ("s", "bratrem", "s"), ("k", "Praze", "k"),
+            // except for tř, dř, sl, zr and zl, which do
+            ("v", "třech", "ve"), ("k", "třem", "ke"), ("z", "třídy", "ze"), ("z", "dřeva", "ze"),
+            ("v", "sluji", "ve"), ("k", "slibu", "ke"), ("z", "slamníku", "ze"), ("s", "zrádcem", "se"),
+            ("z", "zlata", "ze"),
             // the second consonant of the cluster repeating the preposition's
             ("v", "dveřích", "ve"), ("v", "svém", "ve"), ("k", "skoku", "ke"),
             // three consonants running
             ("k", "středu", "ke"), ("s", "vstupem", "se"), ("v", "skladišti", "ve"),
             ("z", "vzpomínek", "ze"),
-            // lexicalized: the numerals and a few settled phrases
-            ("v", "třech", "ve"), ("s", "dvěma", "se"), ("s", "třemi", "se"),
-            ("bez", "všeho", "beze"), ("od", "dneška", "ode"),
-            // a cluster opening with d after a one-consonant preposition
-            ("v", "dne", "ve"), ("z", "dřeva", "ze"), ("z", "dveří", "ze"), ("k", "dnu", "ke"),
-            ("s", "dřevem", "se"),
-            // and the ones that stay unvocalized
-            ("v", "lese", "v"), ("v", "domě", "v"), ("v", "Praze", "v"), ("v", "autě", "v"),
-            ("z", "lesa", "z"), ("k", "domu", "k"), ("s", "bratrem", "s"), ("k", "Praze", "k"),
-            ("z", "Prahy", "z"),
+            // a sibilant-initial cluster after v and z
+            ("v", "škole", "ve"), ("v", "smyslu", "ve"),
+            // settled combinations the rules do not reach
+            ("s", "dvěma", "se"), ("v", "dvou", "ve"), ("v", "čtyřech", "ve"), ("s", "čtyřmi", "se"),
+            ("z", "dveří", "ze"), ("v", "dne", "ve"), ("k", "dnu", "ke"),
+            ("od", "dneška", "ode"), ("od", "dveří", "ode"), ("bez", "studu", "beze"),
+            // s sebou keeps the bare preposition against the same-consonant rule
+            ("s", "sebou", "s"),
             // a syllabic preposition keeps its own vowel, even before the same consonant
-            ("bez", "zákona", "bez"), ("od", "dveří", "od"), ("nad", "domem", "nad"),
-            ("pod", "postelí", "pod"), ("před", "domem", "před"), ("přes", "silnici", "přes"),
+            ("bez", "zákona", "bez"), ("nad", "domem", "nad"), ("pod", "postelí", "pod"),
+            ("před", "domem", "před"), ("přes", "silnici", "přes"),
         ];
 
         /// <summary>
@@ -194,15 +205,15 @@ namespace Grammar.Czech.Test
         [TestMethod]
         public void ClusterRules_MissOnlyTheLexicalizedCombinations()
         {
-            var missedByRules = Corpus
-                .Where(entry => entry.Expected != entry.Preposition)
-                .Where(entry => !RequiresVocalizationByRule(entry.Preposition, entry.Word))
+            var vocalized = Corpus.Where(entry => entry.Expected != entry.Preposition).ToList();
+
+            var missedByRules = vocalized
+                .Where(entry => !RequiresVocalizationByRule(entry.Preposition, entry.Word.ToLowerInvariant()))
                 .Select(entry => $"{entry.Preposition}+{entry.Word}")
                 .ToList();
 
-            var registered = Corpus
-                .Where(entry => entry.Expected != entry.Preposition)
-                .Where(entry => IsRegisteredAsLexicalized(entry.Preposition, entry.Word))
+            var registered = vocalized
+                .Where(entry => IsRegisteredAsLexicalized(entry.Preposition, entry.Word.ToLowerInvariant()))
                 .Select(entry => $"{entry.Preposition}+{entry.Word}")
                 .ToList();
 
@@ -214,10 +225,9 @@ namespace Grammar.Czech.Test
                 + $"Zapsáno ve vocalizeBefore: {string.Join(", ", registered)}.");
 
             // The rules carry the bulk of the work; the list is the remainder, not the mechanism.
-            var vocalizing = Corpus.Count(entry => entry.Expected != entry.Preposition);
             Assert.IsTrue(
-                vocalizing - missedByRules.Count >= 20,
-                $"Pravidlo pokrývá jen {vocalizing - missedByRules.Count} z {vocalizing} vokalizací.");
+                vocalized.Count - missedByRules.Count >= 40,
+                $"Pravidlo pokrývá jen {vocalized.Count - missedByRules.Count} z {vocalized.Count} vokalizací.");
         }
 
         // Whether the combination is reached by the lexicalized list rather than by any cluster rule.
@@ -228,12 +238,12 @@ namespace Grammar.Czech.Test
         // test is to compare the data against an independent statement of it.
         private static readonly Dictionary<string, string[]> LexicalizedPrefixes = new()
         {
-            ["v"] = ["třech", "čtyřech", "dne"],
-            ["s"] = ["dvěma", "třemi", "čtyřmi", "dvěmi", "dn", "dř", "dl"],
-            ["z"] = ["třech", "čtyř", "dn", "dv", "dř", "dl"],
-            ["k"] = ["dn", "dv", "dř", "dl"],
-            ["bez"] = ["vš"],
-            ["od"] = ["dne"],
+            ["v"] = ["čtyřech", "dne"],
+            ["s"] = ["dvěma", "dvěmi", "čtyřmi"],
+            ["z"] = ["čtyř", "dvou", "dveří"],
+            ["k"] = ["dnu", "dnům"],
+            ["bez"] = ["studu"],
+            ["od"] = ["dne", "dveří"],
             ["nad"] = [],
             ["pod"] = [],
             ["před"] = [],
@@ -244,7 +254,7 @@ namespace Grammar.Czech.Test
         // escape hatch, which is exactly what the test is measuring the rules against.
         private static bool RequiresVocalizationByRule(string preposition, string next)
         {
-            if (next.StartsWith("mn", StringComparison.Ordinal))
+            if (next.StartsWith("mn", StringComparison.Ordinal) || next.StartsWith("vš", StringComparison.Ordinal))
             {
                 return true;
             }
@@ -268,9 +278,24 @@ namespace Grammar.Czech.Test
                 return false;
             }
 
-            return next[1] == final
-                || leading >= 3
-                || (final is 'v' or 'z' && "szšž".Contains(next[0]));
+            if (leading >= 3 || next[1] == final)
+            {
+                return true;
+            }
+
+            if (next.StartsWith("tř", StringComparison.Ordinal) || next.StartsWith("dř", StringComparison.Ordinal)
+                || next.StartsWith("sl", StringComparison.Ordinal) || next.StartsWith("zr", StringComparison.Ordinal)
+                || next.StartsWith("zl", StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            if (next[1] is 'r' or 'ř' or 'l')
+            {
+                return false;
+            }
+
+            return final is 'v' or 'z' && "szšž".Contains(next[0]);
         }
 
         private static int LeadingConsonants(string word)

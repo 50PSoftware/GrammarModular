@@ -33,20 +33,33 @@ namespace Grammar.Czech.Models
         /// Gets the word beginnings that take the vocalized form regardless of what the cluster rules say.
         /// </summary>
         /// <remarks>
-        /// Two kinds of entry live here, both out of reach of the cluster rules in the preposition service.
+        /// What is left once the rules have had their turn: the numerals se dvěma, se čtyřmi, ve dvou,
+        /// ve čtyřech, and the settled ode dveří, ode dneška, beze studu. Their clusters are two consonants
+        /// deep, close on something other than r, ř or l, and share nothing with the preposition, so none of
+        /// the cluster conditions reaches them.
         /// <para>
-        /// Lexicalized combinations: the numerals se dvěma, se třemi, se čtyřmi, ve dvou, ve třech, and
-        /// beze všeho, ode dneška. Their clusters are only two consonants deep and share nothing with the
-        /// preposition, so no rule about sibilants or three-consonant runs reaches them.
-        /// </para>
-        /// <para>
-        /// Clusters opening with d after a one-consonant preposition: ve dne, ze dřeva, ke dnu, se dřevem.
-        /// These look regular enough to be a rule and may well become one, but the boundary is not settled —
-        /// ze dřeva vocalizes while z Drážďan does not, on the same dr/dř shape — so they are enumerated
-        /// until the condition can be checked against the ÚJČ reference rather than guessed at.
+        /// The tř, dř, sl, zr and zl clusters used to be listed here and are not any more — the ÚJČ
+        /// reference states them as a closed exception to the r/ř/l condition, so they are a rule and the
+        /// service applies them. Forms of "všechen" left for the same reason: beze všeho and nade vše hold
+        /// for every syllabic preposition rather than for the ones that happened to be enumerated.
         /// </para>
         /// </remarks>
         public List<string> VocalizeBefore { get; init; } = new();
+        /// <summary>
+        /// Gets the words before which the preposition keeps its bare form whatever the rules say.
+        /// </summary>
+        /// <remarks>
+        /// The rules run one way; this is the other. "s sebou" keeps the bare s even though the following
+        /// word opens on the preposition's own consonant, which would otherwise vocalize it without
+        /// exception — brát s sebou, vzít s sebou, jídlo s sebou.
+        /// <para>
+        /// It is worth being honest about the limit: reflexive "se sebou" — spokojený sám se sebou — is a
+        /// different construction with the same two words, and nothing in the string tells them apart. The
+        /// prepositional reading is the one the ÚJČ reference singles out and the far more frequent one, so
+        /// that is what the service produces.
+        /// </para>
+        /// </remarks>
+        public List<string> DoNotVocalizeBefore { get; init; } = new();
         /// <summary>
         /// Gets the case and semantic variants supported by the preposition.
         /// </summary>
