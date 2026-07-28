@@ -70,6 +70,17 @@ namespace Grammar.Czech.Services
                 WordCategory.Numerale => numeralService.GetForm(word),
                 WordCategory.Adverb => adverbService.GetForm(word),
                 WordCategory.Verb => verbConjugationService.GetBasicForm(word),
+
+                // The uninflected classes. Handing back the lemma is not a stub here — it is the whole of
+                // their morphology, and saying so is what lets them travel through a word request like any
+                // other word. What they do in a sentence is a different question, answered by their own
+                // services: government by the preposition service, comma and clause position by the
+                // conjunction and particle ones, punctuation by the interjection one.
+                WordCategory.Preposition
+                    or WordCategory.Conjunction
+                    or WordCategory.Particle
+                    or WordCategory.Interjection => new WordForm(word.Lemma),
+
                 _ => throw new NotSupportedException($"Unsupported category: {word.WordCategory}")
             };
         }

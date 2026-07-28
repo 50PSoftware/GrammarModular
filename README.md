@@ -176,7 +176,35 @@ The builder handles:
 
 A subordinating conjunction and a relative pronoun occupy the first position of their clause, so the cluster follows them: *protože se student učil*, *muž, kterého jsem viděl*. A coordinating conjunction stands outside the clause and leaves the first position to it.
 
-Conjunctions are a closed class in `Grammar.Czech/Data/Rules/conjunctions.json`; an unknown conjunction throws, because both the comma and the clitic position depend on its type.
+Conjunctions are a closed class in `Grammar.Czech/Data/Rules/conjunctions.json`; an unknown conjunction throws, because both the comma and the clitic position depend on its type. Each entry also carries the relation it marks, in the NESČ groups — *slučovací*, *odporovací*, *stupňovací*, *vylučovací*, *příčinné*, *důsledkové* on the coordinating side, and *časové*, *příčinné*, *přípustkové*, *podmínkové*, *účelové*, *obsahové*, *srovnávací* on the subordinating one — and the second member where the conjunction is paired (*buď – nebo*, *nejen – ale i*). Doubles exist only among coordinators.
+
+`aby` and `kdyby` are not stored as paradigms. NESČ analyses them as containing the conditional auxiliary and agreeing with the subject through it, so the twelve forms are composed from a stem and the particles already in `clitics.json`: *abych*, *abys*, *aby*, *abychom*, *abyste* and the *kdyby* row beside it. The builder takes the person from the dependent clause and suppresses the conditional particle there, since the auxiliary moved into the conjunction rather than being copied. Composing rather than storing also rules out the widespread \*aby jsi and \*aby jste for free — the conditional has no *jsi* to contribute.
+
+`však` is placed after the first constituent and behind the clitic cluster, while *avšak* stays clause-initial. How far behind is where the sources stop being definite: NESČ counts *však* among the *nestálá klitika* rather than the *klitika tantum*, so it holds no rank in the obligatory cluster, and no test claims the other order is wrong.
+
+`requiresComma` is a default rather than a fact about the word. For *a*, *i*, *ani*, *nebo* and *či* the comma follows from the relation between the conjuncts and not from the conjunction, so `Coordination.RequiresComma` is the real answer where the caller knows it.
+
+### Particles
+
+The word class *částice*, in `Grammar.Czech/Data/Rules/particles.json` — not the clitics, which live in `clitics.json`. A particle is uninflected and is not compared, so there is nothing to build: the lemma is the form and the service answers what the particle does and where it may stand.
+
+NESČ carries three competing classifications rather than one settled inventory. The types here follow the functional-semantic one it attributes to Nekula in PMČ — *modální*, *intenzifikační*, *vytýkací*, *modifikační*, *odpověďové*, *negační*, *přací* — with *strukturující* and *emocionální* from the MČ 2 scheme for what that one leaves out.
+
+One rule comes out of it: a modifying particle cannot stand in the rheme, which NESČ states of the whole group. `ClauseElement.Status` is what says which constituent is the rheme, so the builder checks it rather than merely documenting it. What the optative particles demand of the predicate is deliberately *not* recorded — *ať přijde* is a plain third-person present, Czech having no third-person imperative, and the source states no mood government for the group.
+
+A clause-initial particle (*ať*, *kéž*, *nechť*, *nuže*) fills the first position of its clause like a subordinating conjunction, so the cluster follows it: *Ať se student dělá*. A particle scoping over one constituent goes on that constituent instead and opens it from outside any preposition: *jen pro studenta*.
+
+Homonymy with the adverbs and the conjunctions is expected rather than a fault in the data. The boundary is drawn by function in context — *klidně* is a particle in *Klidně seď* and an adverb in *Seď klidně, nevrť se* — so *ať* stands in both this file and `conjunctions.json`, and *bohužel* in this one and `adverbs.json`. A test asserts it, so it is not tidied away later as duplication.
+
+### Interjections
+
+Sixty-nine lemmas in `Grammar.Czech/Data/Rules/interjections.json`, in the four NESČ types — *emocionální*, *kontaktová*, *apelová*, *zvukomalebná* — with the line that source draws across them: the first three are subjective and the fourth objective. No morphology; an interjection is uninflected and forms, in that description, the most primitive sentence type there is.
+
+The punctuation is a rule and not data. An interjection is set off by a comma except where it stands in for a clause member, so the same word goes both ways — *Kamarádi, hurá, vyhráli jsme* against *Palicí buch ho po hlavě* — and `ICzechInterjectionService.RequiresComma` takes the use rather than only the word. What *is* recorded per word is which interjections can be a predicate at all, because it does not follow from the type: *hop* is *apelové* and predicative all the same. Those also carry the verb they form (*žbluňk → žbluňknout*), which NESČ notes as their entering word formation directly.
+
+The class is more open than any other here — onomatopoeia is coined on the spot — so an unregistered lemma passes through instead of being reported, the opposite of the closed conjunction inventory. Reduplication is recorded only where the source names it (*oj oj oj*, *ťuk(y) ťuk* as optional, *bubu* as obligatory); unmarked means unrecorded, not known not to repeat.
+
+`CzechClause.Interjection` places one outside the clause behind its comma, leaving the first position alone. The terminator stays the caller's: an emotional interjection tends towards an exclamation mark, but tending is not a rule.
 
 ## Architecture
 
@@ -194,7 +222,7 @@ The main entry points:
 
 - `CzechSentenceBuilder` for a sentence or a complex sentence built from clauses,
 - `CzechWordFormComposer` for the full form of a word or a verb phrase,
-- `MorphologyEngine` for direct dispatch by word class — nouns, adjectives, pronouns, numerals, adverbs and the basic verb forms. This is what `IInflectionService<CzechWordRequest>` and `IVerbInflectionService<CzechWordRequest>` resolve to, being the only implementation that accepts a request of any word class,
+- `MorphologyEngine` for direct dispatch by word class — all ten of them. Nouns, adjectives, pronouns, numerals, adverbs and the basic verb forms are built; prepositions, conjunctions, particles and interjections come back as their lemma, which is the whole of their morphology rather than a stub. What those four *do* in a sentence is answered by their own services, which the sentence builder consults directly. This is what `IInflectionService<CzechWordRequest>` and `IVerbInflectionService<CzechWordRequest>` resolve to, being the only implementation that accepts a request of any word class,
 - the specialized services `CzechNounDeclensionService`, `CzechAdjectiveDeclensionService`, `CzechPronounService`, `CzechNumeralService` and `CzechVerbConjugationService`.
 
 Alongside them, supporting services are registered and can be resolved from the container directly:
@@ -507,10 +535,12 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 | `Data/Rules/Verbs/patterns.json` | the general verb classes `trida1`–`trida5` and the `dojme` pattern |
 | `Data/Rules/Verbs/irregulars.json` | irregular verbs and named patterns with explicit stems (37) |
 | `Data/Rules/prefixes.json` | prefixes |
-| `Data/Rules/particles.json` | conditional particles, past auxiliaries, reflexives |
+| `Data/Rules/clitics.json` | conditional particles, past auxiliaries, reflexives |
 | `Data/Rules/prepositions.json` | prepositions, their government and vocalization |
-| `Data/Rules/conjunctions.json` | conjunctions, their type and comma rule |
+| `Data/Rules/conjunctions.json` | conjunctions, their type, relation, pairing and comma rule |
 | `Data/Rules/adverbs.json` | adverbs and their comparison |
+| `Data/Rules/particles.json` | particles and their function |
+| `Data/Rules/interjections.json` | interjections, their type and predicative use |
 | `Data/Lexicon/lexicon.json` | lexical metadata |
 | `Data/Lexicon/valency.json` | valency frames (`dát`, `dávat`, `jít`, `vidět`) |
 

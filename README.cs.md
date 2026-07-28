@@ -162,7 +162,35 @@ Builder řeší:
 
 Podřadicí spojka a vztažné zájmeno obsazují první pozici své klauze, takže za nimi jde klastr: *protože se student učil*, *muž, kterého jsem viděl*. Souřadicí spojka stojí mimo klauzi a první pozici jí nechává.
 
-Spojky jsou uzavřená třída v `Grammar.Czech/Data/Rules/conjunctions.json`; neznámá spojka skončí výjimkou, protože na jejím druhu závisí čárka i pozice klitika.
+Spojky jsou uzavřená třída v `Grammar.Czech/Data/Rules/conjunctions.json`; neznámá spojka skončí výjimkou, protože na jejím druhu závisí čárka i pozice klitika. Každé heslo navíc nese vztah, který vyjadřuje, ve skupinách podle NESČ — *slučovací*, *odporovací*, *stupňovací*, *vylučovací*, *příčinné*, *důsledkové* u souřadicích a *časové*, *příčinné*, *přípustkové*, *podmínkové*, *účelové*, *obsahové*, *srovnávací* u podřadicích — a druhý člen tam, kde je spojka párová (*buď – nebo*, *nejen – ale i*). Dvojité spojky existují jen mezi souřadicími.
+
+`aby` a `kdyby` se neukládají jako paradigmata. NESČ je analyzuje jako spojky obsahující kondicionálové pomocné sloveso a shodující se přes ně s podmětem, takže dvanáct tvarů se skládá ze kmene a z částic, které už jsou v `clitics.json`: *abych*, *abys*, *aby*, *abychom*, *abyste* a řada *kdyby* vedle nich. Builder bere osobu z vedlejší věty a kondicionálovou částici v ní potlačí — pomocné sloveso se do spojky přesunulo, nezdvojilo. Skládání místo ukládání zdarma vylučuje i rozšířené \*aby jsi a \*aby jste: kondicionál žádné *jsi* nemá.
+
+`však` se klade až za první větný člen a za klitický shluk, kdežto *avšak* zůstává na začátku klauze. Jak daleko za ním, tam zdroje končí: NESČ řadí *však* mezi *nestálá klitika*, ne mezi *klitika tantum*, takže v povinném shluku nemá pořadí — a žádný test netvrdí, že opačné pořadí je špatně.
+
+`requiresComma` je default, ne fakt o slově. U *a*, *i*, *ani*, *nebo* a *či* plyne čárka z poměru mezi větami, ne ze spojky, takže skutečná odpověď je `Coordination.RequiresComma` od volajícího.
+
+### Částice
+
+Slovní druh *částice* v `Grammar.Czech/Data/Rules/particles.json` — ne klitika, která jsou v `clitics.json`. Částice je neohebná a nestupňuje se, takže není co tvořit: lemma *je* tvar a služba odpovídá na to, co částice dělá a kde smí stát.
+
+NESČ nemá jednu ustálenou klasifikaci, ale tři. Typy tady sledují funkčně-sémantickou, kterou přisuzuje Nekulovi v PMČ — *modální*, *intenzifikační*, *vytýkací*, *modifikační*, *odpověďové*, *negační*, *přací* — doplněnou o *strukturující* a *emocionální* ze schématu MČ 2 pro to, co první nepokrývá.
+
+Jedno pravidlo z toho plyne: modifikační částice nemůže stát v rématu, což NESČ říká o celé skupině. Který konstituent je réma, říká `ClauseElement.Status`, takže to builder kontroluje, ne jen dokumentuje. Co přací částice žádá po predikátu, zapsané záměrně **není** — *ať přijde* je prostý 3. os. prézens, čeština žádný imperativ 3. osoby nemá, a zdroj pro tu skupinu žádnou rekci způsobu neuvádí.
+
+Větná částice (*ať*, *kéž*, *nechť*, *nuže*) obsazuje první pozici své klauze jako podřadicí spojka, takže za ní jde shluk: *Ať se student dělá*. Částice s dosahem na jeden člen jde na ten člen a otevírá ho zvenčí předložky: *jen pro studenta*.
+
+Homonymie s příslovci a spojkami se čeká, není to vada dat. Hranice se kreslí funkcí v kontextu — *klidně* je částice v *Klidně seď* a příslovce v *Seď klidně, nevrť se* — takže *ať* stojí v tomhle souboru i v `conjunctions.json` a *bohužel* v tomhle i v `adverbs.json`. Je na to test, aby to někdo neuklidil jako duplicitu.
+
+### Citoslovce
+
+Devětašedesát lemmat v `Grammar.Czech/Data/Rules/interjections.json` ve čtyřech typech podle NESČ — *emocionální*, *kontaktová*, *apelová*, *zvukomalebná* — s čárou, kterou zdroj napříč nimi vede: první tři jsou subjektivní, čtvrtý objektivní. Žádná morfologie; citoslovce je neohebné a tvoří podle toho popisu nejprimitivnější typ věty.
+
+Interpunkce je pravidlo, ne data. Citoslovce se odděluje čárkou kromě případu, kdy zastupuje větný člen, takže totéž slovo se píše obojím způsobem — *Kamarádi, hurá, vyhráli jsme* proti *Palicí buch ho po hlavě* — a `ICzechInterjectionService.RequiresComma` proto bere užití, ne jen slovo. Po slovech zapsané je to, které citoslovce vůbec může být přísudkem, protože to z typu neplyne: *hop* je *apelové* a přísudkové zároveň. Ta také nesou sloveso, které tvoří (*žbluňk → žbluňknout*), což NESČ zmiňuje jako jejich přímý vstup do slovotvorby.
+
+Třída je otevřenější než všechny ostatní — zvukomalba se tvoří ad hoc — takže neregistrované lemma projde místo hlášení, přesný opak uzavřeného inventáře spojek. Reduplikace je zapsaná jen tam, kde ji zdroj jmenuje (*oj oj oj*, *ťuk(y) ťuk* jako volitelnou, *bubu* jako povinnou); neoznačené znamená nezaznamenané, ne „neopakuje se".
+
+`CzechClause.Interjection` ho klade mimo klauzi za jeho čárku a první pozici nechává být. Koncové znaménko zůstává na volajícím: emocionální citoslovce k vykřičníku tíhne, ale tíhnutí není pravidlo.
 
 ## Architektura
 
@@ -180,7 +208,7 @@ Hlavní vstupy:
 
 - `CzechSentenceBuilder` pro větu nebo souvětí z klauzí,
 - `CzechWordFormComposer` pro plný tvar slova nebo slovesné fráze,
-- `MorphologyEngine` pro přímé směrování podle slovního druhu — substantiva, adjektiva, zájmena, číslovky a základní slovesné tvary. Právě na něj se rozpadnou `IInflectionService<CzechWordRequest>` i `IVerbInflectionService<CzechWordRequest>`, protože je jediná implementace, která bere požadavek kteréhokoli slovního druhu,
+- `MorphologyEngine` pro přímé směrování podle slovního druhu — všech deseti. Substantiva, adjektiva, zájmena, číslovky, příslovce a základní slovesné tvary se tvoří; předložky, spojky, částice a citoslovce se vracejí jako lemma, což je celá jejich morfologie, ne záslepka. Co ty čtyři ve větě *dělají*, odpovídají jejich vlastní služby, na které se builder ptá přímo. Právě na něj se rozpadnou `IInflectionService<CzechWordRequest>` i `IVerbInflectionService<CzechWordRequest>`, protože je jediná implementace, která bere požadavek kteréhokoli slovního druhu,
 - specializované servisy jako `CzechNounDeclensionService`, `CzechAdjectiveDeclensionService`, `CzechPronounService`, `CzechNumeralService` a `CzechVerbConjugationService`.
 
 Vedle nich se registrují i podpůrné služby, které jde brát z kontejneru přímo:
@@ -492,9 +520,11 @@ Všechna gramatická data v projektu `Grammar.Czech` jsou embedded JSON resource
 | `Data/Rules/Verbs/patterns.json` | obecné slovesné třídy `trida1`–`trida5` a vzor `dojme` |
 | `Data/Rules/Verbs/irregulars.json` | nepravidelná slovesa a pojmenované vzory s explicitními kmeny (37) |
 | `Data/Rules/prefixes.json` | prefixy |
-| `Data/Rules/particles.json` | kondicionálové částice, minulá pomocná slovesa, reflexiva |
+| `Data/Rules/clitics.json` | kondicionálové částice, minulá pomocná slovesa, reflexiva |
 | `Data/Rules/prepositions.json` | předložky, jejich rekce a vokalizace |
-| `Data/Rules/conjunctions.json` | spojky, jejich druh a pravidlo čárky |
+| `Data/Rules/conjunctions.json` | spojky, jejich druh, vztah, párovost a pravidlo čárky |
+| `Data/Rules/particles.json` | částice a jejich funkce |
+| `Data/Rules/interjections.json` | citoslovce, jejich druh a přísudkové užití |
 | `Data/Lexicon/lexicon.json` | lexikální metadata |
 | `Data/Lexicon/valency.json` | valenční rámce (`dát`, `dávat`, `jít`, `vidět`) |
 
