@@ -23,12 +23,12 @@ namespace Grammar.Czech.Test
             var verbDataProvider = new JsonVerbDataProvider();
             var nounDataProvider = new JsonNounDataProvider();
             var prefixDataProvider = new JsonPrefixDataProvider();
-            var particleDataProvider = new JsonParticlesDataProvider();
+            var particleDataProvider = new JsonCliticsDataProvider();
 
             var registry = new CzechPhonemeRegistry();
             var phonologyService = new CzechPhonologyService(registry);
             var prefixService = new CzechPrefixService(prefixDataProvider);
-            var particleService = new CzechParticleService(particleDataProvider);
+            var cliticService = new CzechCliticService(particleDataProvider);
             var epenthesisRule = new CzechEpenthesisRuleEvaluator(registry);
 
             var verbStructureResolver = new CzechWordStructureResolver(verbDataProvider, nounDataProvider, prefixService, phonologyService, registry, epenthesisRule);
@@ -38,7 +38,7 @@ namespace Grammar.Czech.Test
             service = new CzechVerbConjugationService(
                 verbDataProvider,
                 verbStructureResolver,
-                particleService,
+                cliticService,
                 prefixService,
                 registry,
                 valencyProvider);

@@ -98,9 +98,9 @@ namespace Grammar.Czech.Test
         /// Particles load, including the past auxiliary section.
         /// </summary>
         [TestMethod]
-        public void ParticlesDataProvider_LoadsConditionalReflexiveAndPastAuxiliary()
+        public void CliticsDataProvider_LoadsConditionalReflexiveAndPastAuxiliary()
         {
-            var particles = provider.GetRequiredService<IParticleDataProvider>().GetParticles();
+            var particles = provider.GetRequiredService<ICliticDataProvider>().GetClitics();
 
             Assert.AreEqual("bych", particles.Conditional.Singular["First"]);
             Assert.AreEqual("jsem", particles.PastAuxiliary.Singular["First"]);

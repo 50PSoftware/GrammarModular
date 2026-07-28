@@ -6,13 +6,13 @@ using Grammar.Czech.Services;
 namespace Grammar.Czech.Test
 {
     /// <summary>
-    /// Verifies that <see cref="CzechParticleService.GetReflexive"/> maps every
+    /// Verifies that <see cref="CzechCliticService.GetReflexive"/> maps every
     /// <see cref="ReflexiveType"/> value to the correct Czech particle.
     /// </summary>
     [TestClass]
-    public sealed class CzechParticleServiceTests
+    public sealed class CzechCliticServiceTests
     {
-        private CzechParticleService service = null!;
+        private CzechCliticService service = null!;
 
         /// <summary>
         /// Creates the service under test with its JSON data provider.
@@ -20,7 +20,7 @@ namespace Grammar.Czech.Test
         [TestInitialize]
         public void Setup()
         {
-            service = new CzechParticleService(new JsonParticlesDataProvider());
+            service = new CzechCliticService(new JsonCliticsDataProvider());
         }
 
         #region Accusative particle — se

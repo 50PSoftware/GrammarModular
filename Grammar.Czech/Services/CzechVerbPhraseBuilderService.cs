@@ -9,12 +9,12 @@ namespace Grammar.Czech.Services
     public class CzechVerbPhraseBuilderService
     {
         private readonly CzechAuxiliaryVerbService auxVerbService;
-        private readonly CzechParticleService particleService;
+        private readonly CzechCliticService cliticService;
         private readonly CzechPrefixService prefixService;
 
         private string BuildConditionalAuxiliary(string verbForm, Number? number, Person? person, bool hasPrecedingConstituent, bool isNegative)
         {
-            var particle = particleService.GetConditionalParticle(number, person);
+            var particle = cliticService.GetConditionalParticle(number, person);
             var negation = isNegative ? prefixService.GetNegativePrefix() : string.Empty;
             return hasPrecedingConstituent ? $"{particle} {negation}{verbForm}" : $"{negation}{verbForm} {particle}";
         }
@@ -22,10 +22,10 @@ namespace Grammar.Czech.Services
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechVerbPhraseBuilderService"/> type.
         /// </summary>
-        public CzechVerbPhraseBuilderService(CzechAuxiliaryVerbService auxiliaryService, CzechParticleService particleService, CzechPrefixService prefixService)
+        public CzechVerbPhraseBuilderService(CzechAuxiliaryVerbService auxiliaryService, CzechCliticService cliticService, CzechPrefixService prefixService)
         {
             this.auxVerbService = auxiliaryService;
-            this.particleService = particleService;
+            this.cliticService = cliticService;
             this.prefixService = prefixService;
         }
 
@@ -59,7 +59,7 @@ namespace Grammar.Czech.Services
         public string BuildPastPhrase(string verbForm, Number? number, Person? person, bool hasPrecedingConstituent, bool isNegative)
         {
             var negation = isNegative ? prefixService.GetNegativePrefix() : string.Empty;
-            var auxiliary = particleService.GetPastAuxiliary(number, person);
+            var auxiliary = cliticService.GetPastAuxiliary(number, person);
 
             if (auxiliary is null)
             {
@@ -127,12 +127,12 @@ namespace Grammar.Czech.Services
         /// </remarks>
         public string BuildReflexivePhrase(string verbForm, ReflexiveType reflexiveType, bool hasPrecedingConstituent)
         {
-            var reflexive = particleService.GetReflexive(reflexiveType);
+            var reflexive = cliticService.GetReflexive(reflexiveType);
             var words = verbForm.Split(' ');
 
             for (int index = 0; index < words.Length; index++)
             {
-                if (particleService.IsCliticAuxiliary(words[index]))
+                if (cliticService.IsCliticAuxiliary(words[index]))
                 {
                     return Join(words[..(index + 1)].Append(reflexive).Concat(words[(index + 1)..]));
                 }
@@ -145,7 +145,7 @@ namespace Grammar.Czech.Services
 
         // jsi + se → ses, jsi + si → sis.
         private string Join(IEnumerable<string> words) =>
-            string.Join(' ', particleService.ContractCluster(words.ToList()));
+            string.Join(' ', cliticService.ContractCluster(words.ToList()));
 
         /// <summary>
         /// Builds the periphrastic future phrase for imperfective Czech verbs.

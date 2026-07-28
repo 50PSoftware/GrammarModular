@@ -15,7 +15,7 @@ namespace Grammar.Czech.Services
     public class CzechSentenceBuilder
     {
         private readonly CzechWordFormComposer composer;
-        private readonly ICzechParticleService particleService;
+        private readonly ICzechCliticService cliticService;
         private readonly ICzechPronounService pronounService;
         private readonly ICzechNumeralService numeralService;
         private readonly ICzechPrepositionService prepositionService;
@@ -28,7 +28,7 @@ namespace Grammar.Czech.Services
         /// </summary>
         public CzechSentenceBuilder(
             CzechWordFormComposer composer,
-            ICzechParticleService particleService,
+            ICzechCliticService cliticService,
             ICzechPronounService pronounService,
             ICzechNumeralService numeralService,
             ICzechPrepositionService prepositionService,
@@ -38,7 +38,7 @@ namespace Grammar.Czech.Services
         {
             this.adverbService = adverbService;
             this.composer = composer;
-            this.particleService = particleService;
+            this.cliticService = cliticService;
             this.pronounService = pronounService;
             this.numeralService = numeralService;
             this.prepositionService = prepositionService;
@@ -220,7 +220,7 @@ namespace Grammar.Czech.Services
             clitics.AddRange(BuildPronounClitics(pronounClitics));
 
             var words = BuildLinearOrder(
-                preVerbal, verbRest, particleService.ContractCluster(clitics), postVerbal,
+                preVerbal, verbRest, cliticService.ContractCluster(clitics), postVerbal,
                 firstPositionTaken, secondPositionConjunction);
 
             return (string.Join(' ', words), predicate);
@@ -584,18 +584,18 @@ namespace Grammar.Czech.Services
             foreach (var word in composer.GetFullForm(predicate).Form.Split(' '))
             {
                 // Dropped, not moved: aby or kdyby above this clause is already carrying it.
-                if (suppressConditional && particleService.IsConditionalParticle(word))
+                if (suppressConditional && cliticService.IsConditionalParticle(word))
                 {
                     continue;
                 }
 
-                (particleService.IsCliticAuxiliary(word) ? clitics : verbRest).Add(word);
+                (cliticService.IsCliticAuxiliary(word) ? clitics : verbRest).Add(word);
             }
 
             // Rank 3: the reflexive follows any auxiliary already in the cluster.
             if (reflexiveType != ReflexiveType.None)
             {
-                clitics.Add(particleService.GetReflexive(reflexiveType));
+                clitics.Add(cliticService.GetReflexive(reflexiveType));
             }
 
             return (verbRest, clitics);

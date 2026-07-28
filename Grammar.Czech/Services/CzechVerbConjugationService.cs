@@ -17,7 +17,7 @@ namespace Grammar.Czech.Services
     {
         private readonly IVerbDataProvider _dataProvider;
         private readonly IVerbStructureResolver<CzechWordRequest> _verbStructureResolver;
-        private readonly ICzechParticleService _czechParticleService;
+        private readonly ICzechCliticService _cliticService;
         private readonly ICzechPrefixService _czechPrefixService;
         private readonly IPhonemeRegistry _phonemeRegistry;
         private readonly IValencyProvider<CzechLexicalEntry> _valencyProvider;
@@ -42,14 +42,14 @@ namespace Grammar.Czech.Services
         public CzechVerbConjugationService(
             IVerbDataProvider dataProvider,
             IVerbStructureResolver<CzechWordRequest> verbStructureResolver,
-            ICzechParticleService czechParticleService,
+            ICzechCliticService cliticService,
             ICzechPrefixService czechPrefixService,
             IPhonemeRegistry phonemeRegistry,
             IValencyProvider<CzechLexicalEntry> valencyProvider)
         {
             this._dataProvider = dataProvider;
             this._verbStructureResolver = verbStructureResolver;
-            this._czechParticleService = czechParticleService;
+            this._cliticService = cliticService;
             this._czechPrefixService = czechPrefixService;
             this._phonemeRegistry = phonemeRegistry;
             this._valencyProvider = valencyProvider;
@@ -295,7 +295,7 @@ namespace Grammar.Czech.Services
             };
 
             if (word.ReflexiveType != ReflexiveType.None)
-                result += $" {_czechParticleService.GetReflexive(word.ReflexiveType)}";
+                result += $" {_cliticService.GetReflexive(word.ReflexiveType)}";
 
             // No exclamation mark: this returns a word form, and the closing punctuation belongs to the
             // sentence — CzechClause.Terminator. Baking it in here produced "Dělej!!" through the clause

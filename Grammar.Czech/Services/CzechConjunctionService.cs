@@ -11,15 +11,15 @@ namespace Grammar.Czech.Services
     public class CzechConjunctionService : ICzechConjunctionService
     {
         private readonly Dictionary<string, ConjunctionData> _conjunctions;
-        private readonly ICzechParticleService _particleService;
+        private readonly ICzechCliticService _cliticService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechConjunctionService"/> type.
         /// </summary>
-        public CzechConjunctionService(IConjunctionDataProvider dataProvider, ICzechParticleService particleService)
+        public CzechConjunctionService(IConjunctionDataProvider dataProvider, ICzechCliticService cliticService)
         {
             _conjunctions = dataProvider.GetConjunctions();
-            _particleService = particleService;
+            _cliticService = cliticService;
         }
 
         /// <summary>
@@ -111,7 +111,7 @@ namespace Grammar.Czech.Services
                 return conjunction;
             }
 
-            return data.Stem + _particleService.GetConditionalParticle(number, person);
+            return data.Stem + _cliticService.GetConditionalParticle(number, person);
         }
 
         // Conjunctions are a closed class, so an unknown one is a mistake worth reporting rather than a

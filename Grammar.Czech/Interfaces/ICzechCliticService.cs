@@ -6,7 +6,7 @@ namespace Grammar.Czech.Interfaces
     /// <summary>
     /// Defines operations for selecting Czech clitic and reflexive particles.
     /// </summary>
-    public interface ICzechParticleService
+    public interface ICzechCliticService
     {
         /// <summary>
         /// Gets the conditional particle for the requested grammatical number and person.

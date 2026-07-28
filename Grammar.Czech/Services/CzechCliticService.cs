@@ -8,14 +8,14 @@ namespace Grammar.Czech.Services
     /// <summary>
     /// Provides Czech clitic and reflexive particle lookup operations.
     /// </summary>
-    public class CzechParticleService : ICzechParticleService
+    public class CzechCliticService : ICzechCliticService
     {
-        private readonly IParticleDataProvider dataProvider;
+        private readonly ICliticDataProvider dataProvider;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CzechParticleService"/> type.
+        /// Initializes a new instance of the <see cref="CzechCliticService"/> type.
         /// </summary>
-        public CzechParticleService(IParticleDataProvider dataProvider)
+        public CzechCliticService(ICliticDataProvider dataProvider)
         {
             this.dataProvider = dataProvider;
         }
@@ -33,10 +33,10 @@ namespace Grammar.Czech.Services
                 throw new ArgumentNullException();
             }
 
-            var conditional = dataProvider.GetParticles().Conditional;
+            var conditional = dataProvider.GetClitics().Conditional;
             var section = number == Number.Singular ? conditional.Singular : conditional.Plural;
 
-            // Klíče v particles.json jsou názvy členů výčtu (First/Second/Third), ne jejich číselné
+            // Klíče v clitics.json jsou názvy členů výčtu (First/Second/Third), ne jejich číselné
             // hodnoty — dictionary klíče se nepřejmenovávají, PropertyNamingPolicy na ně nedopadá.
             return section[person.Value.ToString()];
         }
@@ -51,7 +51,7 @@ namespace Grammar.Czech.Services
             if (reflexiveType == ReflexiveType.None)
                 throw new ArgumentOutOfRangeException(nameof(reflexiveType));
 
-            var reflexive = dataProvider.GetParticles().Reflexive;
+            var reflexive = dataProvider.GetClitics().Reflexive;
             return reflexiveType is ReflexiveType.ReflexivumTantum_Si or ReflexiveType.DerivedBenefactive_Si
                 ? reflexive.Dative
                 : reflexive.Accusative;
@@ -70,8 +70,8 @@ namespace Grammar.Czech.Services
         /// </remarks>
         public bool IsCliticAuxiliary(string word)
         {
-            var particles = dataProvider.GetParticles();
-            return Contains(particles.Conditional, word) || Contains(particles.PastAuxiliary, word);
+            var clitics = dataProvider.GetClitics();
+            return Contains(clitics.Conditional, word) || Contains(clitics.PastAuxiliary, word);
         }
 
         /// <summary>
@@ -80,7 +80,7 @@ namespace Grammar.Czech.Services
         /// <param name="word">The single word to classify.</param>
         /// <returns><see langword="true"/> for bych, bys, by, bychom and byste; otherwise, <see langword="false"/>.</returns>
         public bool IsConditionalParticle(string word)
-            => Contains(dataProvider.GetParticles().Conditional, word);
+            => Contains(dataProvider.GetClitics().Conditional, word);
 
         /// <summary>
         /// Gets the past-tense auxiliary for the requested grammatical number and person.
@@ -95,7 +95,7 @@ namespace Grammar.Czech.Services
                 return null;
             }
 
-            var pastAuxiliary = dataProvider.GetParticles().PastAuxiliary;
+            var pastAuxiliary = dataProvider.GetClitics().PastAuxiliary;
             var section = number == Number.Singular ? pastAuxiliary.Singular : pastAuxiliary.Plural;
 
             // Third person is absent from the data on purpose: the Czech past has no auxiliary there.
@@ -123,7 +123,7 @@ namespace Grammar.Czech.Services
                 return clitics;
             }
 
-            var reflexive = dataProvider.GetParticles().Reflexive;
+            var reflexive = dataProvider.GetClitics().Reflexive;
             var following = clitics[index + 1];
 
             var contracted = following == reflexive.Accusative ? "ses"
@@ -149,7 +149,7 @@ namespace Grammar.Czech.Services
             return result;
         }
 
-        private static bool Contains(PersonParticles particles, string word) =>
-            particles.Singular.Values.Contains(word) || particles.Plural.Values.Contains(word);
+        private static bool Contains(PersonClitics clitics, string word) =>
+            clitics.Singular.Values.Contains(word) || clitics.Plural.Values.Contains(word);
     }
 }
