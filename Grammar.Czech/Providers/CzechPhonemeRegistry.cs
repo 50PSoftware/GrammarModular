@@ -104,8 +104,7 @@ namespace Grammar.Czech.Providers
             ["ou"] = new Phoneme { Symbol = "ou", Backness = VowelBackness.Back },
             ["eu"] = new Phoneme { Symbol = "eu", Backness = VowelBackness.Front },
             ["au"] = new Phoneme { Symbol = "au", Backness = VowelBackness.Central },
-            //["ě"] = new Phoneme { Symbol = "ě", Backness = VowelBackness.Front, Height = VowelHeight.Mid, IsRounded = false },
-            ["ě"] = new Phoneme { Symbol = "ě" },
+            ["ě"] = new Phoneme { Symbol = "ě", Backness = VowelBackness.Front, Height = VowelHeight.Mid, IsRounded = false },
         };
 
         /// <summary>

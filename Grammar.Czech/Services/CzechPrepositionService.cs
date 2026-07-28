@@ -1,4 +1,7 @@
 using Grammar.Core.Enums;
+using Grammar.Core.Enums.PhonologicalFeatures;
+using Grammar.Core.Interfaces;
+using Grammar.Core.Models.Phonology;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
 
@@ -10,13 +13,15 @@ namespace Grammar.Czech.Services
     public class CzechPrepositionService : ICzechPrepositionService
     {
         private readonly Dictionary<string, PrepositionData> _prepositions;
+        private readonly IPhonemeRegistry _phonemes;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechPrepositionService"/> type.
         /// </summary>
-        public CzechPrepositionService(IPrepositionDataProvider dataProvider)
+        public CzechPrepositionService(IPrepositionDataProvider dataProvider, IPhonemeRegistry phonemes)
         {
             _prepositions = dataProvider.GetPrepositions();
+            _phonemes = phonemes;
         }
 
         /// <summary>
@@ -84,7 +89,7 @@ namespace Grammar.Czech.Services
             return RequiresVocalization(data, preposition, followingWord.ToLowerInvariant()) ? data.Vocalized : preposition;
         }
 
-        private static bool RequiresVocalization(PrepositionData data, string preposition, string next)
+        private bool RequiresVocalization(PrepositionData data, string preposition, string next)
         {
             if (next.StartsWith("mn", StringComparison.Ordinal))
             {
@@ -128,10 +133,12 @@ namespace Grammar.Czech.Services
             }
 
             // v and z also vocalize before a cluster that opens with a sibilant: ve škole, ve smyslu.
-            return final is 'v' or 'z' && "szšž".Contains(next[0]);
+            var opening = _phonemes.Get(next[0]);
+
+            return final is 'v' or 'z' && opening is not null && IsSibilant(opening);
         }
 
-        private static int LeadingConsonants(string word)
+        private int LeadingConsonants(string word)
         {
             var count = 0;
             while (count < word.Length && !IsVowel(word[count]))
@@ -142,17 +149,36 @@ namespace Grammar.Czech.Services
             return count;
         }
 
-        // Voicing pairs, plus the sibilant series that s and z share with š and ž.
-        private static bool SameOrPaired(char prepositionFinal, char next) => prepositionFinal switch
+        // The same consonant, its voicing counterpart, or the sibilant series that s and z share with š and
+        // ž. All three come out of the phoneme registry rather than a table here: the voicing pairs v/f, k/g,
+        // s/z and d/t are already stated once on Phoneme, and a sibilant is just a fricative articulated at
+        // the alveolar or palatal place, which the features say directly. Restating them locally is how the
+        // two descriptions drift apart.
+        private bool SameOrPaired(char prepositionFinal, char next)
         {
-            'v' => next is 'v' or 'f',
-            'k' => next is 'k' or 'g',
-            's' or 'z' => next is 's' or 'z' or 'š' or 'ž',
-            'd' => next is 'd' or 't',
-            _ => prepositionFinal == next
-        };
+            if (prepositionFinal == next)
+            {
+                return true;
+            }
 
-        private static bool IsVowel(char c) => "aáeéěiíyýoóuúů".Contains(c);
+            var final = _phonemes.Get(prepositionFinal);
+            var following = _phonemes.Get(next);
+
+            if (final is null || following is null)
+            {
+                return false;
+            }
+
+            return final.VoicedCounterpart == following.Symbol
+                || final.VoicelessCounterpart == following.Symbol
+                || (IsSibilant(final) && IsSibilant(following));
+        }
+
+        private static bool IsSibilant(Phoneme phoneme) =>
+            phoneme.Manner == ArticulationManner.Fricative
+            && phoneme.Place is ArticulationPlace.Alveolar or ArticulationPlace.Palatal;
+
+        private bool IsVowel(char c) => _phonemes.IsVowel(c);
 
         /// <summary>
         /// Determines whether the supplied preposition can govern the requested case.
