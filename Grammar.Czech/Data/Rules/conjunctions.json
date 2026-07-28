@@ -4,6 +4,8 @@
   "ani": { "type": "Coordinating", "semanticGroup": "Copulative", "requiresComma": false, "correlate": "ani" },
   "jak": { "type": "Coordinating", "semanticGroup": "Copulative", "requiresComma": false, "correlate": "tak" },
   "nejen": { "type": "Coordinating", "semanticGroup": "Copulative", "requiresComma": false, "correlate": "ale i" },
+  "nejenže": { "type": "Coordinating", "semanticGroup": "Copulative", "requiresComma": false, "correlate": "ale i" },
+  "jednak": { "type": "Coordinating", "semanticGroup": "Copulative", "requiresComma": false, "correlate": "jednak" },
 
   "nebo": { "type": "Coordinating", "semanticGroup": "Disjunctive", "requiresComma": false },
   "anebo": { "type": "Coordinating", "semanticGroup": "Disjunctive", "requiresComma": false },

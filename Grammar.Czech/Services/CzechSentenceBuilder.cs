@@ -120,11 +120,19 @@ namespace Grammar.Czech.Services
             // constituent instead of standing between the two: "Petr přišel, Pavel však zůstal".
             var secondPosition = conjunctionService.OccupiesSecondPosition(coordination.Conjunction);
 
-            var separator = secondPosition
-                ? ", "
-                : requiresComma
-                    ? $", {coordination.Conjunction} "
-                    : $" {coordination.Conjunction} ";
+            var correlate = coordination.Paired ? ResolveCorrelate(coordination.Conjunction) : null;
+
+            // In the split construction it is the correlate that joins the conjuncts, and it always takes a
+            // comma — the ÚJČ rule is that one is written before the second connective whatever the bare
+            // conjunction would do, so "buď … , nebo …" and "ani … , ani …" are punctuated against the
+            // commaless "nebo" and "ani" that join without splitting.
+            var separator = correlate is not null
+                ? $", {correlate} "
+                : secondPosition
+                    ? ", "
+                    : requiresComma
+                        ? $", {coordination.Conjunction} "
+                        : $" {coordination.Conjunction} ";
 
             // aby above a coordination carries the auxiliary for every conjunct, not only the first:
             // "aby přišel a pomohl" has one by between them.
@@ -136,9 +144,24 @@ namespace Grammar.Czech.Services
                     suppressConditional))
                 .ToList();
 
+            var text = string.Join(separator, rendered.Select(item => item.Text));
+
+            // The opening member stands outside the first conjunct, exactly as an ordinary coordinating
+            // conjunction stands outside the clause it precedes, so it leaves first position alone.
+            if (correlate is not null)
+            {
+                text = $"{coordination.Conjunction} {text}";
+            }
+
             // The leading conjunct is what anything above this coordination agrees with.
-            return (string.Join(separator, rendered.Select(item => item.Text)), rendered[0].Predicate);
+            return (text, rendered[0].Predicate);
         }
+
+        private string ResolveCorrelate(string conjunction)
+            => conjunctionService.GetCorrelate(conjunction)
+                ?? throw new InvalidOperationException(
+                    $"Spojka '{conjunction}' není párová, takže Paired nemá druhý člen, který by položila. "
+                    + "Párové jsou buď, ani, nejen, jak, sice a jednak.");
 
         // The conjunction belongs to the dependent clause and fills its first position, which is why the
         // cluster follows the conjunction and not the verb: "Petr přišel, protože se bál".

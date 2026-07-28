@@ -32,6 +32,10 @@ namespace Grammar.Czech.Models.Syntax
     /// Overrides the conjunction's default comma rule, for the conjunctions where punctuation follows the
     /// relation between the clauses rather than the conjunction itself.
     /// </param>
+    /// <param name="Paired">
+    /// Builds the split construction: the conjunction opens the first conjunct and its correlate joins every
+    /// one after it — buď … nebo, ani … ani, nejen … ale i, jak … tak, sice … ale, jednak … jednak.
+    /// </param>
     /// <remarks>
     /// The conjunction stands outside the clause it precedes, so it does not take that clause's first
     /// position and the clitic cluster is unaffected by it.
@@ -41,11 +45,17 @@ namespace Grammar.Czech.Models.Syntax
     /// each other ("Pospěšte si, nebo vám ujede vlak"). The data can only carry the commoner of the two,
     /// so the exclusive reading is stated here.
     /// </para>
+    /// <para>
+    /// <paramref name="Paired"/> is asked for rather than inferred, because the same conjunction serves both
+    /// constructions: "Petr ani Pavel nepřišli" coordinates with a bare ani, while "Ani nepřišel, ani
+    /// nezavolal" splits it. Only the caller knows which was meant.
+    /// </para>
     /// </remarks>
     public sealed record Coordination(
         string Conjunction,
         IReadOnlyList<SentenceNode> Conjuncts,
-        bool? RequiresComma = null) : SentenceNode;
+        bool? RequiresComma = null,
+        bool Paired = false) : SentenceNode;
 
     /// <summary>
     /// Represents a clause attached to a superordinate one by a subordinating conjunction.

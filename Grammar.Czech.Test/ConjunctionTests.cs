@@ -112,6 +112,8 @@ namespace Grammar.Czech.Test
         [DataRow("buď", "nebo")]
         [DataRow("ani", "ani")]
         [DataRow("nejen", "ale i")]
+        [DataRow("nejenže", "ale i")]
+        [DataRow("jednak", "jednak")]
         [DataRow("jak", "tak")]
         [DataRow("sice", "ale")]
         public void GetCorrelate_PairedConjunction_ReturnsTheSecondMember(string conjunction, string correlate)

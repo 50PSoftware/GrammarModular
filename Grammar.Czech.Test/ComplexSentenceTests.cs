@@ -750,5 +750,105 @@ namespace Grammar.Czech.Test
         }
 
         #endregion však stojí na druhém místě
+
+        #region Párové spojky
+
+        /// <summary>
+        /// The split construction: the conjunction opens the first conjunct and its correlate joins the
+        /// second, rather than one word standing between the two.
+        /// </summary>
+        /// <param name="conjunction">The opening member.</param>
+        /// <param name="expected">The expected sentence.</param>
+        [DataTestMethod]
+        [DataRow("buď", "Buď student dělal, nebo dělal.")]
+        [DataRow("ani", "Ani student dělal, ani dělal.")]
+        [DataRow("nejen", "Nejen student dělal, ale i dělal.")]
+        [DataRow("jednak", "Jednak student dělal, jednak dělal.")]
+        [DataRow("jak", "Jak student dělal, tak dělal.")]
+        [DataRow("sice", "Sice student dělal, ale dělal.")]
+        public void Build_PairedCoordination_SplitsTheConjunction(string conjunction, string expected)
+        {
+            var sentence = new Coordination(conjunction,
+            [
+                Clause(Verb("dělat", "dělá"), Petr()),
+                Clause(Verb("dělat", "dělá"))
+            ], Paired: true);
+
+            Assert.AreEqual(expected, builder.Build(sentence));
+        }
+
+        /// <summary>
+        /// The correlate always takes a comma, even where the bare conjunction takes none. The ÚJČ rule is
+        /// that one is written before the second connective whatever the word would do on its own, so paired
+        /// nebo and ani are punctuated against their commaless plain use.
+        /// </summary>
+        [TestMethod]
+        public void Build_PairedCoordination_PutsACommaBeforeTheCorrelateEvenWhereThePlainWordTakesNone()
+        {
+            var plain = new Coordination("ani",
+            [
+                Clause(Verb("dělat", "dělá"), Petr()),
+                Clause(Verb("dělat", "dělá"))
+            ]);
+
+            Assert.AreEqual("Student dělal ani dělal.", builder.Build(plain));
+
+            var paired = plain with { Paired = true };
+
+            Assert.AreEqual("Ani student dělal, ani dělal.", builder.Build(paired));
+        }
+
+        /// <summary>
+        /// Every conjunct after the first is joined by the correlate, which is what the ÚJČ example
+        /// "ani jídlo, ani stan, ani mapu" shows for more than two.
+        /// </summary>
+        [TestMethod]
+        public void Build_PairedCoordinationOfThree_RepeatsTheCorrelate()
+        {
+            var sentence = new Coordination("ani",
+            [
+                Clause(Verb("dělat", "dělá"), Petr()),
+                Clause(Verb("dělat", "dělá")),
+                Clause(Verb("dělat", "dělá"))
+            ], Paired: true);
+
+            Assert.AreEqual("Ani student dělal, ani dělal, ani dělal.", builder.Build(sentence));
+        }
+
+        /// <summary>
+        /// The opening member stands outside the first conjunct, exactly as an ordinary coordinating
+        /// conjunction does, so it leaves that clause's first position to the cluster.
+        /// </summary>
+        [TestMethod]
+        public void Build_PairedCoordination_LeavesFirstPositionToTheConjunct()
+        {
+            var sentence = new Coordination("buď",
+            [
+                Clause(Verb("učit", "trida4", ReflexiveType.ReflexivumTantum_Se), Petr()),
+                Clause(Verb("dělat", "dělá"))
+            ], Paired: true);
+
+            Assert.AreEqual("Buď student se učil, nebo dělal.", builder.Build(sentence));
+        }
+
+        /// <summary>
+        /// Asking for the split construction from a conjunction that has no second member is reported rather
+        /// than rendered as an ordinary coordination.
+        /// </summary>
+        [TestMethod]
+        public void Build_PairedCoordinationOnAnUnpairedConjunction_Throws()
+        {
+            var sentence = new Coordination("a",
+            [
+                Clause(Verb("dělat", "dělá"), Petr()),
+                Clause(Verb("dělat", "dělá"))
+            ], Paired: true);
+
+            var exception = Assert.ThrowsException<InvalidOperationException>(() => builder.Build(sentence));
+
+            StringAssert.Contains(exception.Message, "není párová");
+        }
+
+        #endregion Párové spojky
     }
 }
