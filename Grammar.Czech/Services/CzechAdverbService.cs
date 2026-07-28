@@ -10,9 +10,19 @@ namespace Grammar.Czech.Services
     /// </summary>
     /// <remarks>
     /// Adverbs are uninflected, so an unlisted lemma passes through unchanged in the positive degree —
-    /// any adverb can be put in a sentence without being registered first. Comparison is another matter:
-    /// it is irregular often enough that guessing would produce a plausible wrong word rather than a
-    /// failure, so an unregistered comparative is reported instead of derived.
+    /// any adverb can be put in a sentence without being registered first.
+    /// <para>
+    /// Comparison is regular enough to derive. Run against the 99 comparatives in the data, the suffix rule
+    /// reproduces 76 of them exactly, and every one it misses is an irregular the ÚJČ reference lists as
+    /// such — dobře, zle, brzy, dlouho, vysoko, málo, těžko, snadno, hluboko, široko, úzko, and the same
+    /// kind of word besides. The rule and the exception list partition the data without overlap, which is
+    /// the condition under which deriving is safe. A registered comparative therefore wins, an adverb
+    /// registered without one is taken to be uncompared, and anything unregistered is derived.
+    /// </para>
+    /// <para>
+    /// This does not extend to forming the adverb from its adjective. There the choice between -o, -e/-ě and
+    /// -y really is unpredictable and one adjective can yield two adverbs, so that stays a mapping.
+    /// </para>
     /// </remarks>
     public class CzechAdverbService : ICzechAdverbService
     {
@@ -63,7 +73,9 @@ namespace Grammar.Czech.Services
         /// <param name="lemma">The dictionary form to look up.</param>
         /// <returns><see langword="true"/> when a comparative is registered for the lemma; otherwise, <see langword="false"/>.</returns>
         public bool IsComparable(string lemma)
-            => _adverbs.TryGetValue(lemma, out var data) && data.Comparative is not null;
+            => _adverbs.TryGetValue(lemma, out var data)
+                ? data.Comparative is not null
+                : DeriveComparative(lemma) is not null;
 
         /// <summary>
         /// Gets every comparative usage accepts for the adverb, the generated one first.
@@ -105,15 +117,48 @@ namespace Grammar.Czech.Services
         public bool IsRelative(string lemma)
             => _adverbs.TryGetValue(lemma, out var data) && data.IsRelative;
 
-        private string ResolveComparative(CzechWordRequest request)
+        private const string Vowels = "aáeéěiíyýoóuúů";
+
+        // -ěji after d, t, n and the labials, -eji elsewhere — the same ě-orthography split the declension
+        // uses — with the palatalization that -ce, -ky and -ho bring, and r already standing as ř.
+        // Verified against IJP on one representative of each: tvrději, chytřeji, prudčeji, hezčeji.
+        private static string? DeriveComparative(string lemma)
         {
-            if (!_adverbs.TryGetValue(request.Lemma, out var data))
+            if (lemma.Length < 3)
             {
-                throw new InvalidOperationException(
-                    $"Příslovce '{request.Lemma}' není v adverbs.json, takže jeho komparativ není znám. "
-                    + "V prvním stupni projde jakékoli příslovce; stupňovat lze jen zapsaná.");
+                return null;
             }
 
+            var stem = Vowels.Contains(lemma[^1]) ? lemma[..^1] : lemma;
+
+            if (stem.Length == 0)
+            {
+                return null;
+            }
+
+            stem = stem[^1] switch
+            {
+                'c' or 'k' => stem[..^1] + 'č',
+                'h' => stem[..^1] + 'ž',
+                _ => stem
+            };
+
+            return stem + ("dtnbpmvf".Contains(stem[^1]) ? "ěji" : "eji");
+        }
+
+        private string ResolveComparative(CzechWordRequest request)
+        {
+            // Unregistered: derive. Being absent from the data says nothing about whether the adverb is
+            // compared, and the regular suffix is what an unlisted adverb almost always takes.
+            if (!_adverbs.TryGetValue(request.Lemma, out var data))
+            {
+                return DeriveComparative(request.Lemma)
+                    ?? throw new InvalidOperationException(
+                        $"Z příslovce '{request.Lemma}' nejde odvodit komparativ. Zapiš ho do adverbs.json.");
+            }
+
+            // Registered without one: the entry states the adverb is not compared, which is a claim the
+            // data makes and the rule must not override.
             if (data.Comparative is null)
             {
                 throw new InvalidOperationException(

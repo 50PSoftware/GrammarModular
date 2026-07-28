@@ -135,16 +135,84 @@ namespace Grammar.Czech.Test
         #region Comparison is data, not a rule
 
         /// <summary>
-        /// Comparison is irregular often enough that deriving it would produce a plausible wrong word
-        /// rather than a failure, so an unregistered comparative is reported.
+        /// An unregistered adverb gets its comparative from the rule, so the dictionary is not a gate on
+        /// comparison — only on the irregulars.
+        /// </summary>
+        /// <param name="lemma">The unregistered adverb.</param>
+        /// <param name="comparative">The comparative the rule should produce.</param>
+        [DataTestMethod]
+        [DataRow("nesmyslně", "nesmyslněji")]
+        [DataRow("bláznivě", "bláznivěji")]
+        [DataRow("mrzutě", "mrzutěji")]
+        [DataRow("ledabyle", "ledabyleji")]
+        public void GetFullForm_ComparativeOfUnregisteredAdverb_IsDerived(string lemma, string comparative)
+        {
+            Assert.AreEqual(comparative, composer.GetFullForm(Adverb(lemma, Degree.Comparative)).Form);
+            Assert.AreEqual("nej" + comparative, composer.GetFullForm(Adverb(lemma, Degree.Superlative)).Form);
+        }
+
+        /// <summary>
+        /// The rule reproduces the regular comparatives in the data, and everything it misses is an
+        /// irregular the reference lists as one. That partition is what makes deriving safe, so it is
+        /// measured rather than assumed — if a regular entry stops matching, the rule and the data have
+        /// drifted apart and one of them is wrong.
         /// </summary>
         [TestMethod]
-        public void GetFullForm_ComparativeOfUnregisteredAdverb_Throws()
+        public void DerivationRule_MissesOnlyTheKnownIrregulars()
         {
-            var exception = Assert.ThrowsException<InvalidOperationException>(
-                () => composer.GetFullForm(Adverb("nesmyslně", Degree.Comparative)));
+            var data = new ServiceCollection()
+                .AddCzechGrammarServices()
+                .BuildServiceProvider()
+                .GetRequiredService<IAdverbDataProvider>()
+                .GetAdverbs();
 
-            StringAssert.Contains(exception.Message, "adverbs.json");
+            // The ÚJČ irregular list, plus the same kind of word it does not name explicitly.
+            var expectedIrregulars = new HashSet<string>
+            {
+                "dobře", "zle", "špatně", "brzy", "dlouho", "dlouze", "vysoko", "vysoce", "málo",
+                "těžko", "těžce", "hluboko", "hluboce", "široko", "široce", "úzko", "úzce",
+                "daleko", "blízko", "nízko", "rád", "hodně",
+
+                // The rule produces snadněji, which IJP gives as correct beside snáze — so this is a
+                // difference in which form the data keeps as primary, not a wrong derivation.
+                "snadno"
+            };
+
+            var compared = data.Where(entry => entry.Value.Comparative is not null).ToList();
+            var missed = compared
+                .Where(entry => !DerivesTo(entry.Key, entry.Value.Comparative!))
+                .Select(entry => entry.Key)
+                .ToList();
+
+            CollectionAssert.AreEquivalent(
+                expectedIrregulars.Intersect(data.Keys).ToList(),
+                missed,
+                "Množina výjimek se rozešla s tím, co pravidlo netrefí.");
+
+            Assert.IsTrue(compared.Count - missed.Count >= 70,
+                "Pravidlo má pokrývat drtivou většinu pravidelných komparativů.");
+        }
+
+        // Mirrors the service's rule; the point of the test is that the data agrees with it.
+        private static bool DerivesTo(string lemma, string comparative)
+        {
+            const string vowels = "aáeéěiíyýoóuúů";
+
+            if (lemma.Length < 3)
+            {
+                return false;
+            }
+
+            var stem = vowels.Contains(lemma[^1]) ? lemma[..^1] : lemma;
+
+            stem = stem[^1] switch
+            {
+                'c' or 'k' => stem[..^1] + 'č',
+                'h' => stem[..^1] + 'ž',
+                _ => stem
+            };
+
+            return comparative == stem + ("dtnbpmvf".Contains(stem[^1]) ? "ěji" : "eji");
         }
 
         /// <summary>
