@@ -1,28 +1,84 @@
 {
-  "a": { "type": "Coordinating", "requiresComma": false },
-  "i": { "type": "Coordinating", "requiresComma": false },
-  "ani": { "type": "Coordinating", "requiresComma": false },
-  "nebo": { "type": "Coordinating", "requiresComma": false },
-  "anebo": { "type": "Coordinating", "requiresComma": false },
-  "či": { "type": "Coordinating", "requiresComma": false },
-  "ale": { "type": "Coordinating", "requiresComma": true },
-  "avšak": { "type": "Coordinating", "requiresComma": true },
-  "nýbrž": { "type": "Coordinating", "requiresComma": true },
-  "jenže": { "type": "Coordinating", "requiresComma": true },
-  "neboť": { "type": "Coordinating", "requiresComma": true },
-  "proto": { "type": "Coordinating", "requiresComma": true },
-  "tedy": { "type": "Coordinating", "requiresComma": true },
-  "že": { "type": "Subordinating", "requiresComma": true },
-  "protože": { "type": "Subordinating", "requiresComma": true },
-  "poněvadž": { "type": "Subordinating", "requiresComma": true },
-  "když": { "type": "Subordinating", "requiresComma": true },
-  "až": { "type": "Subordinating", "requiresComma": true },
-  "dokud": { "type": "Subordinating", "requiresComma": true },
-  "jakmile": { "type": "Subordinating", "requiresComma": true },
-  "jestli": { "type": "Subordinating", "requiresComma": true },
-  "jestliže": { "type": "Subordinating", "requiresComma": true },
-  "zda": { "type": "Subordinating", "requiresComma": true },
-  "ačkoli": { "type": "Subordinating", "requiresComma": true },
-  "přestože": { "type": "Subordinating", "requiresComma": true },
-  "takže": { "type": "Subordinating", "requiresComma": true }
+  "a": { "type": "Coordinating", "semanticGroup": "Copulative", "requiresComma": false },
+  "i": { "type": "Coordinating", "semanticGroup": "Copulative", "requiresComma": false },
+  "ani": { "type": "Coordinating", "semanticGroup": "Copulative", "requiresComma": false, "correlate": "ani" },
+  "jak": { "type": "Coordinating", "semanticGroup": "Copulative", "requiresComma": false, "correlate": "tak" },
+  "nejen": { "type": "Coordinating", "semanticGroup": "Copulative", "requiresComma": false, "correlate": "ale i" },
+
+  "nebo": { "type": "Coordinating", "semanticGroup": "Disjunctive", "requiresComma": false },
+  "anebo": { "type": "Coordinating", "semanticGroup": "Disjunctive", "requiresComma": false },
+  "či": { "type": "Coordinating", "semanticGroup": "Disjunctive", "requiresComma": false },
+  "buď": { "type": "Coordinating", "semanticGroup": "Disjunctive", "requiresComma": false, "correlate": "nebo" },
+  "čili": { "type": "Coordinating", "semanticGroup": "Disjunctive", "requiresComma": false },
+  "neboli": { "type": "Coordinating", "semanticGroup": "Disjunctive", "requiresComma": false },
+
+  "ale": { "type": "Coordinating", "semanticGroup": "Adversative", "requiresComma": true },
+  "avšak": { "type": "Coordinating", "semanticGroup": "Adversative", "requiresComma": true },
+  "však": { "type": "Coordinating", "semanticGroup": "Adversative", "requiresComma": true, "secondPosition": true },
+  "leč": { "type": "Coordinating", "semanticGroup": "Adversative", "requiresComma": true },
+  "nýbrž": { "type": "Coordinating", "semanticGroup": "Adversative", "requiresComma": true },
+  "jenže": { "type": "Coordinating", "semanticGroup": "Adversative", "requiresComma": true },
+  "kdežto": { "type": "Coordinating", "semanticGroup": "Adversative", "requiresComma": true },
+  "sice": { "type": "Coordinating", "semanticGroup": "Adversative", "requiresComma": false, "correlate": "ale" },
+
+  "ba": { "type": "Coordinating", "semanticGroup": "Gradational", "requiresComma": true },
+  "dokonce": { "type": "Coordinating", "semanticGroup": "Gradational", "requiresComma": true },
+
+  "neboť": { "type": "Coordinating", "semanticGroup": "Causal", "requiresComma": true },
+
+  "tedy": { "type": "Coordinating", "semanticGroup": "Consecutive", "requiresComma": true },
+  "tudíž": { "type": "Coordinating", "semanticGroup": "Consecutive", "requiresComma": true },
+  "tak": { "type": "Coordinating", "semanticGroup": "Consecutive", "requiresComma": true },
+  "proto": { "type": "Coordinating", "semanticGroup": "Consecutive", "requiresComma": true },
+  "pročež": { "type": "Coordinating", "semanticGroup": "Consecutive", "requiresComma": true },
+
+  "že": { "type": "Subordinating", "semanticGroup": "Content", "requiresComma": true },
+  "ať": { "type": "Subordinating", "semanticGroup": "Content", "requiresComma": true },
+  "zda": { "type": "Subordinating", "semanticGroup": "Content", "requiresComma": true },
+  "zdali": { "type": "Subordinating", "semanticGroup": "Content", "requiresComma": true },
+  "jestli": { "type": "Subordinating", "semanticGroup": "Content", "requiresComma": true },
+  "aniž": { "type": "Subordinating", "semanticGroup": "Content", "requiresComma": true },
+
+  "protože": { "type": "Subordinating", "semanticGroup": "Causal", "requiresComma": true },
+  "poněvadž": { "type": "Subordinating", "semanticGroup": "Causal", "requiresComma": true },
+  "jelikož": { "type": "Subordinating", "semanticGroup": "Causal", "requiresComma": true },
+  "ježto": { "type": "Subordinating", "semanticGroup": "Causal", "requiresComma": true },
+
+  "když": { "type": "Subordinating", "semanticGroup": "Temporal", "requiresComma": true },
+  "až": { "type": "Subordinating", "semanticGroup": "Temporal", "requiresComma": true },
+  "dokud": { "type": "Subordinating", "semanticGroup": "Temporal", "requiresComma": true },
+  "jakmile": { "type": "Subordinating", "semanticGroup": "Temporal", "requiresComma": true },
+  "zatímco": { "type": "Subordinating", "semanticGroup": "Temporal", "requiresComma": true },
+  "sotva": { "type": "Subordinating", "semanticGroup": "Temporal", "requiresComma": true },
+  "než": { "type": "Subordinating", "semanticGroup": "Temporal", "requiresComma": true },
+
+  "ač": { "type": "Subordinating", "semanticGroup": "Concessive", "requiresComma": true },
+  "ačkoli": { "type": "Subordinating", "semanticGroup": "Concessive", "requiresComma": true },
+  "ačkoliv": { "type": "Subordinating", "semanticGroup": "Concessive", "requiresComma": true },
+  "přestože": { "type": "Subordinating", "semanticGroup": "Concessive", "requiresComma": true },
+  "třebaže": { "type": "Subordinating", "semanticGroup": "Concessive", "requiresComma": true },
+  "byť": { "type": "Subordinating", "semanticGroup": "Concessive", "requiresComma": true },
+
+  "jestliže": { "type": "Subordinating", "semanticGroup": "Conditional", "requiresComma": true },
+  "pokud": { "type": "Subordinating", "semanticGroup": "Conditional", "requiresComma": true },
+  "kdyby": {
+    "type": "Subordinating",
+    "semanticGroup": "Conditional",
+    "requiresComma": true,
+    "fusesWithConditional": true,
+    "stem": "kdy"
+  },
+
+  "aby": {
+    "type": "Subordinating",
+    "semanticGroup": "Purpose",
+    "requiresComma": true,
+    "fusesWithConditional": true,
+    "stem": "a"
+  },
+
+  "takže": { "type": "Subordinating", "semanticGroup": "Consecutive", "requiresComma": true },
+
+  "jako": { "type": "Subordinating", "semanticGroup": "Comparison", "requiresComma": true },
+  "jakoby": { "type": "Subordinating", "semanticGroup": "Comparison", "requiresComma": true }
 }

@@ -75,6 +75,14 @@ namespace Grammar.Czech.Services
         }
 
         /// <summary>
+        /// Determines whether the supplied word is a conditional particle.
+        /// </summary>
+        /// <param name="word">The single word to classify.</param>
+        /// <returns><see langword="true"/> for bych, bys, by, bychom and byste; otherwise, <see langword="false"/>.</returns>
+        public bool IsConditionalParticle(string word)
+            => Contains(dataProvider.GetParticles().Conditional, word);
+
+        /// <summary>
         /// Gets the past-tense auxiliary for the requested grammatical number and person.
         /// </summary>
         /// <param name="number">The requested grammatical number.</param>

@@ -72,9 +72,14 @@ namespace Grammar.Czech.Services
         private static string NormalizePunctuation(string sentence) =>
             Regex.Replace(sentence, @",(\s*,)+", ",").TrimEnd().TrimEnd(',');
 
-        private string Render(SentenceNode sentence, bool firstPositionTaken) => sentence switch
+        private string Render(
+            SentenceNode sentence,
+            bool firstPositionTaken,
+            string? secondPositionConjunction = null,
+            bool suppressConditional = false) => sentence switch
         {
-            SimpleSentence simple => RenderClause(simple.Clause, firstPositionTaken),
+            SimpleSentence simple =>
+                RenderClause(simple.Clause, firstPositionTaken, secondPositionConjunction, suppressConditional),
             Coordination coordination => RenderCoordination(coordination, firstPositionTaken),
             Subordination subordination => RenderSubordination(subordination),
             _ => throw new NotSupportedException($"Neznámý typ větného uzlu: {sentence.GetType().Name}.")
@@ -93,12 +98,21 @@ namespace Grammar.Czech.Services
 
             var requiresComma = coordination.RequiresComma ?? conjunctionService.RequiresComma(coordination.Conjunction);
 
-            var separator = requiresComma
-                ? $", {coordination.Conjunction} "
-                : $" {coordination.Conjunction} ";
+            // však does not open its clause, so it is handed to the conjunct to place after the first
+            // constituent instead of standing between the two: "Petr přišel, Pavel však zůstal".
+            var secondPosition = conjunctionService.OccupiesSecondPosition(coordination.Conjunction);
+
+            var separator = secondPosition
+                ? ", "
+                : requiresComma
+                    ? $", {coordination.Conjunction} "
+                    : $" {coordination.Conjunction} ";
 
             var rendered = coordination.Conjuncts
-                .Select((conjunct, index) => Render(conjunct, firstPositionTaken && index == 0));
+                .Select((conjunct, index) => Render(
+                    conjunct,
+                    firstPositionTaken && index == 0,
+                    secondPosition && index > 0 ? coordination.Conjunction : null));
 
             return string.Join(separator, rendered);
         }
@@ -108,13 +122,62 @@ namespace Grammar.Czech.Services
         private string RenderSubordination(Subordination subordination)
         {
             var main = Render(subordination.Main, firstPositionTaken: false);
-            var occupiesFirstPosition = conjunctionService.OccupiesFirstPosition(subordination.Conjunction);
-            var subordinate = Render(subordination.Subordinate, occupiesFirstPosition);
+            var conjunction = subordination.Conjunction;
+            var fuses = conjunctionService.FusesWithConditional(conjunction);
 
-            var separator = conjunctionService.RequiresComma(subordination.Conjunction) ? ", " : " ";
+            // aby and kdyby carry the conditional auxiliary themselves, so the clause has to be built without
+            // one: the particle moved into the conjunction, it was not duplicated. Rendering both would give
+            // "abych se bych umyl".
+            var (number, person) = fuses ? ResolveConditionalAgreement(subordination.Subordinate) : (null, null);
+            var conjunctionForm = conjunctionService.GetForm(conjunction, number, person);
 
-            return $"{main}{separator}{subordination.Conjunction} {subordinate}";
+            var subordinate = Render(
+                subordination.Subordinate,
+                conjunctionService.OccupiesFirstPosition(conjunction),
+                suppressConditional: fuses);
+
+            var separator = conjunctionService.RequiresComma(conjunction) ? ", " : " ";
+
+            return $"{main}{separator}{conjunctionForm} {subordinate}";
         }
+
+        // Read-only on purpose. The dependent clause has not been through the builder's pipeline yet, and
+        // running subject agreement here to find the person would rewrite cases that ApplyCardinalGovernment
+        // then reads, so this mirrors the resolution instead of performing it.
+        private static (Number? Number, Person? Person) ResolveConditionalAgreement(SentenceNode node)
+        {
+            var clause = FindLeadingClause(node);
+
+            if (clause is null)
+            {
+                return (null, null);
+            }
+
+            var predicate = clause.Predicate;
+
+            // A predicate that already states its person is pro-drop or was set outright, and wins.
+            if (predicate.Person is not null)
+            {
+                return (predicate.Number ?? Number.Singular, predicate.Person);
+            }
+
+            var subject = clause.Elements.FirstOrDefault(element => element.Functor == FgdFunctor.ACT
+                && (element.PhraseCase ?? element.Word.Case) == Case.Nominative);
+
+            return subject is null
+                ? (predicate.Number, predicate.Person)
+                : (subject.Word.Number ?? Number.Singular, ResolvePerson(subject.Word));
+        }
+
+        private static CzechClause? FindLeadingClause(SentenceNode node) => node switch
+        {
+            SimpleSentence simple => simple.Clause,
+            Coordination coordination => coordination.Conjuncts.Count > 0
+                ? FindLeadingClause(coordination.Conjuncts[0])
+                : null,
+            Subordination subordination => FindLeadingClause(subordination.Main),
+            _ => null
+        };
 
         // The mark closing the sentence comes from the clause that opens it.
         private static string FindTerminator(SentenceNode sentence) => sentence switch
@@ -125,7 +188,11 @@ namespace Grammar.Czech.Services
             _ => "."
         };
 
-        private string RenderClause(CzechClause clause, bool firstPositionTaken)
+        private string RenderClause(
+            CzechClause clause,
+            bool firstPositionTaken,
+            string? secondPositionConjunction = null,
+            bool suppressConditional = false)
         {
             clause = ApplyValencyFrame(clause);
 
@@ -166,10 +233,12 @@ namespace Grammar.Czech.Services
                     + "ani před sloveso, ani za něj.");
             }
 
-            var (verbRest, clitics) = SplitOffClitics(predicate);
+            var (verbRest, clitics) = SplitOffClitics(predicate, suppressConditional);
             clitics.AddRange(BuildPronounClitics(pronounClitics));
 
-            var words = BuildLinearOrder(preVerbal, verbRest, particleService.ContractCluster(clitics), postVerbal, firstPositionTaken);
+            var words = BuildLinearOrder(
+                preVerbal, verbRest, particleService.ContractCluster(clitics), postVerbal,
+                firstPositionTaken, secondPositionConjunction);
 
             return string.Join(' ', words);
         }
@@ -464,11 +533,21 @@ namespace Grammar.Czech.Services
         // "Petr včera se myl" is wrong and "Petr se včera myl" is right.
         private static List<string> BuildLinearOrder(
             List<string> preVerbal, List<string> verbRest, IReadOnlyList<string> clitics, List<string> postVerbal,
-            bool firstPositionTaken)
+            bool firstPositionTaken, string? secondPositionConjunction = null)
         {
             var words = new List<string>();
 
-            if (clitics.Count == 0)
+            // však lands in the same slot as the cluster, behind it. It takes no rank inside the obligatory
+            // cluster — NESČ counts it among the nestálá klitika rather than the klitika tantum — so this is
+            // a position the sources permit, not one they prescribe.
+            var second = clitics.ToList();
+
+            if (secondPositionConjunction is not null)
+            {
+                second.Add(secondPositionConjunction);
+            }
+
+            if (second.Count == 0)
             {
                 words.AddRange(preVerbal);
                 words.AddRange(verbRest);
@@ -480,7 +559,7 @@ namespace Grammar.Czech.Services
             // proper — ahead of the subject: "protože se Petr umyl", not "protože Petr se umyl".
             if (firstPositionTaken)
             {
-                words.AddRange(clitics);
+                words.AddRange(second);
                 words.AddRange(preVerbal);
                 words.AddRange(verbRest);
                 words.AddRange(postVerbal);
@@ -490,14 +569,14 @@ namespace Grammar.Czech.Services
             if (preVerbal.Count > 0)
             {
                 words.Add(preVerbal[0]);
-                words.AddRange(clitics);
+                words.AddRange(second);
                 words.AddRange(preVerbal.Skip(1));
                 words.AddRange(verbRest);
             }
             else
             {
                 words.Add(verbRest[0]);
-                words.AddRange(clitics);
+                words.AddRange(second);
                 words.AddRange(verbRest.Skip(1));
             }
 
@@ -508,7 +587,8 @@ namespace Grammar.Czech.Services
         // The builder owns the whole cluster, so it asks the composer for a phrase without the reflexive and
         // adds the particle itself. Letting the composer place it first and lifting it back out would break on
         // the contracted forms, where the auxiliary and the reflexive fuse into a single token (jsi se → ses).
-        private (List<string> VerbRest, List<string> Clitics) SplitOffClitics(CzechWordRequest predicate)
+        private (List<string> VerbRest, List<string> Clitics) SplitOffClitics(
+            CzechWordRequest predicate, bool suppressConditional)
         {
             var reflexiveType = predicate.ReflexiveType;
 
@@ -520,6 +600,12 @@ namespace Grammar.Czech.Services
 
             foreach (var word in composer.GetFullForm(predicate).Form.Split(' '))
             {
+                // Dropped, not moved: aby or kdyby above this clause is already carrying it.
+                if (suppressConditional && particleService.IsConditionalParticle(word))
+                {
+                    continue;
+                }
+
                 (particleService.IsCliticAuxiliary(word) ? clitics : verbRest).Add(word);
             }
 

@@ -40,6 +40,18 @@ namespace Grammar.Czech.Interfaces
         bool IsCliticAuxiliary(string word);
 
         /// <summary>
+        /// Determines whether the supplied word is a conditional particle.
+        /// </summary>
+        /// <param name="word">The single word to classify.</param>
+        /// <returns><see langword="true"/> for bych, bys, by, bychom and byste; otherwise, <see langword="false"/>.</returns>
+        /// <remarks>
+        /// Narrower than <see cref="IsCliticAuxiliary"/>, which also covers the past-tense auxiliary. The
+        /// distinction matters where aby or kdyby has absorbed the conditional auxiliary and the cluster must
+        /// not emit it a second time.
+        /// </remarks>
+        bool IsConditionalParticle(string word);
+
+        /// <summary>
         /// Applies the contractions that fuse the second-person auxiliary with a following reflexive.
         /// </summary>
         /// <param name="clitics">The clitic cluster in its canonical order.</param>

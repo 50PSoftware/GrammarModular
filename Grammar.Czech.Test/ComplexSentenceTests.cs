@@ -553,22 +553,157 @@ namespace Grammar.Czech.Test
             StringAssert.Contains(exception.Message, "jakožto");
         }
 
+        #endregion Inventory
+
+        #region aby a kdyby pohlcují kondicionál
+
+        private static CzechWordRequest Conditional(Person person, Number number) => new()
+        {
+            Lemma = "dělat",
+            Pattern = "dělá",
+            WordCategory = WordCategory.Verb,
+            Modus = Modus.Conditional,
+            Tense = Tense.Present,
+            Aspect = VerbAspect.Imperfective,
+            Voice = Voice.Active,
+            Person = person,
+            Number = number,
+            Gender = Gender.Masculine
+        };
+
         /// <summary>
-        /// aby and kdyby are deliberately absent: they fuse with the conditional auxiliary and inflect for
-        /// person, which placing a fixed string in front of a clause cannot express.
+        /// aby carries the conditional auxiliary and agrees with the subject through it, so the paradigm is
+        /// composed from the stem and the particle rather than stored.
         /// </summary>
-        [TestMethod]
-        public void Build_AbyConjunction_IsReportedAsUnsupported()
+        /// <param name="person">The grammatical person of the dependent clause.</param>
+        /// <param name="number">The grammatical number of the dependent clause.</param>
+        /// <param name="expected">The expected form of the conjunction.</param>
+        [DataTestMethod]
+        [DataRow("First", "Singular", "abych")]
+        [DataRow("Second", "Singular", "abys")]
+        [DataRow("Third", "Singular", "aby")]
+        [DataRow("First", "Plural", "abychom")]
+        [DataRow("Second", "Plural", "abyste")]
+        [DataRow("Third", "Plural", "aby")]
+        public void Build_AbyClause_InflectsWithTheConditionalAuxiliary(string person, string number, string expected)
         {
             var sentence = new Subordination(
                 Clause(Verb("dělat", "dělá"), Petr()),
                 "aby",
-                Clause(Verb("dělat", "dělá")));
+                Clause(Conditional(Enum.Parse<Person>(person), Enum.Parse<Number>(number))));
 
-            var exception = Assert.ThrowsException<InvalidOperationException>(() => builder.Build(sentence));
-            StringAssert.Contains(exception.Message, "abych");
+            StringAssert.Contains(builder.Build(sentence), $", {expected} ");
         }
 
-        #endregion Inventory
+        /// <summary>
+        /// kdyby takes the same auxiliary on a different stem.
+        /// </summary>
+        /// <param name="person">The grammatical person of the dependent clause.</param>
+        /// <param name="number">The grammatical number of the dependent clause.</param>
+        /// <param name="expected">The expected form of the conjunction.</param>
+        [DataTestMethod]
+        [DataRow("First", "Singular", "kdybych")]
+        [DataRow("Second", "Singular", "kdybys")]
+        [DataRow("Third", "Singular", "kdyby")]
+        [DataRow("First", "Plural", "kdybychom")]
+        [DataRow("Second", "Plural", "kdybyste")]
+        public void Build_KdybyClause_InflectsWithTheConditionalAuxiliary(string person, string number, string expected)
+        {
+            var sentence = new Subordination(
+                Clause(Verb("dělat", "dělá"), Petr()),
+                "kdyby",
+                Clause(Conditional(Enum.Parse<Person>(person), Enum.Parse<Number>(number))));
+
+            StringAssert.Contains(builder.Build(sentence), $", {expected} ");
+        }
+
+        /// <summary>
+        /// The auxiliary moved into the conjunction rather than being copied, so the clause itself no longer
+        /// carries one — "abych dělal", never "abych bych dělal".
+        /// </summary>
+        [TestMethod]
+        public void Build_AbyClause_DoesNotRepeatTheConditionalParticle()
+        {
+            var sentence = new Subordination(
+                Clause(Verb("dělat", "dělá"), Petr()),
+                "aby",
+                Clause(Conditional(Person.First, Number.Singular)));
+
+            var built = builder.Build(sentence);
+
+            Assert.AreEqual("Student dělal, abych dělal.", built);
+            Assert.IsFalse(built.Contains(" bych "), $"Kondicionál se zdvojil: {built}");
+        }
+
+        /// <summary>
+        /// The reflexive stays in the cluster behind the conjunction, which fills first position like any
+        /// other subordinator: "abych se učil".
+        /// </summary>
+        [TestMethod]
+        public void Build_AbyClauseWithReflexive_KeepsTheReflexiveAfterTheConjunction()
+        {
+            var predicate = Conditional(Person.First, Number.Singular);
+            predicate.Lemma = "učit";
+            predicate.Pattern = "trida4";
+            predicate.ReflexiveType = ReflexiveType.ReflexivumTantum_Se;
+
+            var sentence = new Subordination(
+                Clause(Verb("dělat", "dělá"), Petr()), "aby", Clause(predicate));
+
+            Assert.AreEqual("Student dělal, abych se učil.", builder.Build(sentence));
+        }
+
+        #endregion aby a kdyby pohlcují kondicionál
+
+        #region však stojí na druhém místě
+
+        /// <summary>
+        /// však does not open its clause — modern Czech has it after the first constituent, unlike avšak,
+        /// which is always clause-initial.
+        /// </summary>
+        [TestMethod]
+        public void Build_VsakCoordination_PlacesTheConjunctionAfterTheFirstConstituent()
+        {
+            var sentence = new Coordination("však",
+            [
+                Clause(Verb("dělat", "dělá")),
+                Clause(Verb("dělat", "dělá"), Petr())
+            ]);
+
+            Assert.AreEqual("Dělal, student však dělal.", builder.Build(sentence));
+        }
+
+        /// <summary>
+        /// The obligatory cluster keeps its slot and však follows it: NESČ counts však among the unstable
+        /// clitics, which take no rank inside the cluster.
+        /// </summary>
+        [TestMethod]
+        public void Build_VsakCoordinationWithClitic_PutsTheClusterFirst()
+        {
+            var sentence = new Coordination("však",
+            [
+                Clause(Verb("dělat", "dělá")),
+                Clause(Verb("učit", "trida4", ReflexiveType.ReflexivumTantum_Se), Petr())
+            ]);
+
+            Assert.AreEqual("Dělal, student se však učil.", builder.Build(sentence));
+        }
+
+        /// <summary>
+        /// avšak is the non-enclitic twin and stays in front of the clause it joins.
+        /// </summary>
+        [TestMethod]
+        public void Build_AvsakCoordination_StaysClauseInitial()
+        {
+            var sentence = new Coordination("avšak",
+            [
+                Clause(Verb("dělat", "dělá")),
+                Clause(Verb("dělat", "dělá"), Petr())
+            ]);
+
+            Assert.AreEqual("Dělal, avšak student dělal.", builder.Build(sentence));
+        }
+
+        #endregion však stojí na druhém místě
     }
 }
