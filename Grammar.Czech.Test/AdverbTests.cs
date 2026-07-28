@@ -263,6 +263,90 @@ namespace Grammar.Czech.Test
             Assert.AreEqual(0, adverbs.GetAdverbsFor("nesmyslný").Count);
         }
 
+        /// <summary>
+        /// Structural checks over the whole adverb file, so a slip in a hand-written entry fails here
+        /// rather than surfacing as a strange word in a sentence.
+        /// </summary>
+        [TestMethod]
+        public void AdverbData_IsStructurallySound()
+        {
+            var data = new ServiceCollection()
+                .AddCzechGrammarServices()
+                .BuildServiceProvider()
+                .GetRequiredService<IAdverbDataProvider>()
+                .GetAdverbs();
+
+            foreach (var (lemma, entry) in data)
+            {
+                Assert.IsFalse(string.IsNullOrWhiteSpace(lemma), "Prázdné lemma.");
+
+                if (entry.Comparative is null)
+                {
+                    Assert.IsNull(entry.ComparativeShort, $"'{lemma}' má krátký komparativ bez komparativu.");
+                    Assert.AreEqual(0, entry.ComparativeAlternatives.Count, $"'{lemma}' má varianty bez komparativu.");
+                    continue;
+                }
+
+                Assert.AreNotEqual(lemma, entry.Comparative, $"'{lemma}' má komparativ shodný s lemmatem.");
+                Assert.IsFalse(entry.Comparative.StartsWith("nej", StringComparison.Ordinal),
+                    $"'{lemma}' má v komparativu superlativní předponu — superlativ se skládá až za běhu.");
+
+                if (entry.ComparativeShort is not null)
+                {
+                    Assert.AreNotEqual(entry.Comparative, entry.ComparativeShort,
+                        $"'{lemma}' má krátký tvar shodný s dlouhým.");
+                    Assert.IsTrue(entry.ComparativeShort.Length < entry.Comparative.Length,
+                        $"'{lemma}': krátký tvar '{entry.ComparativeShort}' není kratší než '{entry.Comparative}'.");
+                }
+
+                CollectionAssert.DoesNotContain(entry.ComparativeAlternatives.ToList(), entry.Comparative,
+                    $"'{lemma}' opakuje primární komparativ mezi variantami.");
+            }
+        }
+
+        /// <summary>
+        /// Every adjective named as a base is named consistently, so the reverse lookup cannot point at a
+        /// lemma that differs only by a typo.
+        /// </summary>
+        [TestMethod]
+        public void AdverbData_EveryBaseAdjectiveResolvesBackToItsAdverbs()
+        {
+            var data = new ServiceCollection()
+                .AddCzechGrammarServices()
+                .BuildServiceProvider()
+                .GetRequiredService<IAdverbDataProvider>()
+                .GetAdverbs();
+
+            foreach (var (lemma, entry) in data.Where(pair => pair.Value.DerivedFrom is not null))
+            {
+                CollectionAssert.Contains(
+                    adverbs.GetAdverbsFor(entry.DerivedFrom!).ToList(),
+                    lemma,
+                    $"'{lemma}' se hlásí k '{entry.DerivedFrom}', ale zpětné vyhledání ho nevrací.");
+            }
+        }
+
+        /// <summary>
+        /// A spot check across the regular pattern: -ěji after d, t, n and the labials, -eji elsewhere,
+        /// which is the same ě-orthography rule the declension already uses.
+        /// </summary>
+        /// <param name="lemma">The adverb lemma.</param>
+        /// <param name="comparative">The expected comparative.</param>
+        [DataTestMethod]
+        [DataRow("tvrdě", "tvrději")]
+        [DataRow("čistě", "čistěji")]
+        [DataRow("pevně", "pevněji")]
+        [DataRow("hloupě", "hloupěji")]
+        [DataRow("zdravě", "zdravěji")]
+        [DataRow("mile", "mileji")]
+        [DataRow("chytře", "chytřeji")]
+        [DataRow("prudce", "prudčeji")]
+        public void GetFullForm_RegularlyComparedAdverbs_FollowTheSuffixRule(string lemma, string comparative)
+        {
+            Assert.AreEqual(comparative, composer.GetFullForm(Adverb(lemma, Degree.Comparative)).Form);
+            Assert.AreEqual("nej" + comparative, composer.GetFullForm(Adverb(lemma, Degree.Superlative)).Form);
+        }
+
         #endregion Comparison is data, not a rule
 
         #region In a clause

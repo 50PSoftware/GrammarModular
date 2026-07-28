@@ -274,5 +274,364 @@
   "nikam": {},
   "nijak": {},
   "odnikud": {},
-  "nikudy": {}
+  "nikudy": {},
+  "bezpečně": {
+    "derivedFrom": "bezpečný",
+    "comparative": "bezpečněji"
+  },
+  "bohatě": {
+    "derivedFrom": "bohatý",
+    "comparative": "bohatěji"
+  },
+  "čistě": {
+    "derivedFrom": "čistý",
+    "comparative": "čistěji"
+  },
+  "divně": {
+    "derivedFrom": "divný",
+    "comparative": "divněji"
+  },
+  "hloupě": {
+    "derivedFrom": "hloupý",
+    "comparative": "hloupěji"
+  },
+  "hrubě": {
+    "derivedFrom": "hrubý",
+    "comparative": "hruběji"
+  },
+  "chladně": {
+    "derivedFrom": "chladný",
+    "comparative": "chladněji"
+  },
+  "chytře": {
+    "derivedFrom": "chytrý",
+    "comparative": "chytřeji"
+  },
+  "kvalitně": {
+    "derivedFrom": "kvalitní",
+    "comparative": "kvalitněji"
+  },
+  "mile": {
+    "derivedFrom": "milý",
+    "comparative": "mileji"
+  },
+  "moderně": {
+    "derivedFrom": "moderní",
+    "comparative": "moderněji"
+  },
+  "nebezpečně": {
+    "derivedFrom": "nebezpečný",
+    "comparative": "nebezpečněji"
+  },
+  "normálně": {
+    "derivedFrom": "normální",
+    "comparative": "normálněji"
+  },
+  "obtížně": {
+    "derivedFrom": "obtížný",
+    "comparative": "obtížněji"
+  },
+  "odborně": {
+    "derivedFrom": "odborný",
+    "comparative": "odborněji"
+  },
+  "ostře": {
+    "derivedFrom": "ostrý",
+    "comparative": "ostřeji"
+  },
+  "pevně": {
+    "derivedFrom": "pevný",
+    "comparative": "pevněji"
+  },
+  "pilně": {
+    "derivedFrom": "pilný",
+    "comparative": "pilněji"
+  },
+  "podrobně": {
+    "derivedFrom": "podrobný",
+    "comparative": "podrobněji"
+  },
+  "prudce": {
+    "derivedFrom": "prudký",
+    "comparative": "prudčeji"
+  },
+  "příjemně": {
+    "derivedFrom": "příjemný",
+    "comparative": "příjemněji"
+  },
+  "pravidelně": {
+    "derivedFrom": "pravidelný",
+    "comparative": "pravidelněji"
+  },
+  "rovně": {
+    "derivedFrom": "rovný",
+    "comparative": "rovněji"
+  },
+  "složitě": {
+    "derivedFrom": "složitý",
+    "comparative": "složitěji"
+  },
+  "spolehlivě": {
+    "derivedFrom": "spolehlivý",
+    "comparative": "spolehlivěji"
+  },
+  "správně": {
+    "derivedFrom": "správný",
+    "comparative": "správněji"
+  },
+  "srozumitelně": {
+    "derivedFrom": "srozumitelný",
+    "comparative": "srozumitelněji"
+  },
+  "statečně": {
+    "derivedFrom": "statečný",
+    "comparative": "statečněji"
+  },
+  "stručně": {
+    "derivedFrom": "stručný",
+    "comparative": "stručněji"
+  },
+  "světle": {
+    "derivedFrom": "světlý",
+    "comparative": "světleji"
+  },
+  "svobodně": {
+    "derivedFrom": "svobodný",
+    "comparative": "svobodněji"
+  },
+  "šťastně": {
+    "derivedFrom": "šťastný",
+    "comparative": "šťastněji"
+  },
+  "štědře": {
+    "derivedFrom": "štědrý",
+    "comparative": "štědřeji"
+  },
+  "temně": {
+    "derivedFrom": "temný",
+    "comparative": "temněji"
+  },
+  "těsně": {
+    "derivedFrom": "těsný",
+    "comparative": "těsněji"
+  },
+  "trpělivě": {
+    "derivedFrom": "trpělivý",
+    "comparative": "trpělivěji"
+  },
+  "tvrdě": {
+    "derivedFrom": "tvrdý",
+    "comparative": "tvrději"
+  },
+  "účinně": {
+    "derivedFrom": "účinný",
+    "comparative": "účinněji"
+  },
+  "upřímně": {
+    "derivedFrom": "upřímný",
+    "comparative": "upřímněji"
+  },
+  "vážně": {
+    "derivedFrom": "vážný",
+    "comparative": "vážněji"
+  },
+  "vhodně": {
+    "derivedFrom": "vhodný",
+    "comparative": "vhodněji"
+  },
+  "výrazně": {
+    "derivedFrom": "výrazný",
+    "comparative": "výrazněji"
+  },
+  "zajímavě": {
+    "derivedFrom": "zajímavý",
+    "comparative": "zajímavěji"
+  },
+  "zdravě": {
+    "derivedFrom": "zdravý",
+    "comparative": "zdravěji"
+  },
+  "zdvořile": {
+    "derivedFrom": "zdvořilý",
+    "comparative": "zdvořileji"
+  },
+  "zvláštně": {
+    "derivedFrom": "zvláštní",
+    "comparative": "zvláštněji"
+  },
+  "živě": {
+    "derivedFrom": "živý",
+    "comparative": "živěji"
+  },
+  "laskavě": {
+    "derivedFrom": "laskavý",
+    "comparative": "laskavěji"
+  },
+  "směle": {
+    "derivedFrom": "smělý",
+    "comparative": "směleji"
+  },
+  "volně": {
+    "derivedFrom": "volný",
+    "comparative": "volněji"
+  },
+  "hluboce": {
+    "derivedFrom": "hluboký",
+    "comparative": "hlouběji",
+    "comparativeAlternatives": [
+      "hloub"
+    ]
+  },
+  "dneska": {},
+  "pozítří": {},
+  "předevčírem": {},
+  "letos": {},
+  "loni": {},
+  "napřesrok": {},
+  "ráno": {},
+  "večer": {},
+  "odpoledne": {},
+  "dopoledne": {},
+  "navždy": {},
+  "dosud": {},
+  "doposud": {},
+  "zatím": {},
+  "mezitím": {},
+  "znovu": {},
+  "opět": {},
+  "zase": {},
+  "konečně": {},
+  "nakonec": {},
+  "nejprve": {},
+  "poté": {},
+  "předtím": {},
+  "tehdy": {},
+  "tenkrát": {},
+  "kdysi": {},
+  "nedávno": {},
+  "brzo": {},
+  "denně": {},
+  "ročně": {},
+  "měsíčně": {},
+  "týdně": {},
+  "zřídka": {},
+  "málokdy": {},
+  "vždycky": {},
+  "pořád": {},
+  "stále": {},
+  "okamžitě": {},
+  "náhle": {},
+  "najednou": {},
+  "postupně": {},
+  "všude": {},
+  "jinde": {},
+  "jinam": {},
+  "odjinud": {},
+  "tudy": {},
+  "onde": {},
+  "nahoru": {},
+  "dolů": {},
+  "dopředu": {},
+  "dozadu": {},
+  "doprava": {},
+  "doleva": {},
+  "ven": {},
+  "dovnitř": {},
+  "uvnitř": {},
+  "pryč": {},
+  "zpět": {},
+  "zpátky": {},
+  "stranou": {},
+  "vedle": {},
+  "naproti": {},
+  "domů": {},
+  "odsud": {},
+  "odtud": {},
+  "opodál": {},
+  "nablízku": {},
+  "opačně": {},
+  "nahlas": {},
+  "potichu": {},
+  "zpaměti": {},
+  "pěšky": {},
+  "naschvál": {},
+  "náhodou": {},
+  "zvlášť": {},
+  "zejména": {},
+  "především": {},
+  "hlavně": {},
+  "obzvláště": {},
+  "obzvlášť": {},
+  "jinak": {},
+  "takto": {},
+  "tak": {},
+  "sotva": {},
+  "stěží": {},
+  "trochu": {},
+  "moc": {},
+  "málem": {},
+  "zhruba": {},
+  "přibližně": {},
+  "maximálně": {},
+  "minimálně": {},
+  "nanejvýš": {},
+  "přinejmenším": {},
+  "dokonce": {},
+  "ještě": {},
+  "už": {},
+  "již": {},
+  "také": {},
+  "taky": {},
+  "jen": {},
+  "jenom": {},
+  "pouze": {},
+  "aspoň": {},
+  "alespoň": {},
+  "celkem": {},
+  "poměrně": {},
+  "relativně": {},
+  "prakticky": {},
+  "teoreticky": {},
+  "vesměs": {},
+  "zčásti": {},
+  "průběžně": {},
+  "snad": {},
+  "asi": {},
+  "možná": {},
+  "jistě": {},
+  "určitě": {},
+  "prý": {},
+  "bohužel": {},
+  "naštěstí": {},
+  "samozřejmě": {},
+  "opravdu": {},
+  "skutečně": {},
+  "vlastně": {},
+  "ovšem": {},
+  "zajisté": {},
+  "patrně": {},
+  "zřejmě": {},
+  "nepochybně": {},
+  "rozhodně": {},
+  "údajně": {},
+  "naopak": {},
+  "někde": {},
+  "někam": {},
+  "odněkud": {},
+  "nějak": {},
+  "kdesi": {},
+  "kamsi": {},
+  "jaksi": {},
+  "všelijak": {},
+  "leckde": {},
+  "leckdy": {},
+  "kudy": {
+    "isRelative": true
+  },
+  "odkdy": {
+    "isRelative": true
+  },
+  "dokdy": {
+    "isRelative": true
+  }
 }
