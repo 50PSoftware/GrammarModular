@@ -27,21 +27,24 @@ namespace Grammar.Czech.Services
         /// </summary>
         /// <param name="conjunction">The conjunction text to look up.</param>
         /// <returns>The conjunction type.</returns>
-        public ConjunctionType GetType(string conjunction) => Lookup(conjunction).Type;
+        public ConjunctionType GetType(string conjunction, ConjunctionType? reading = null)
+            => Lookup(conjunction, reading).Type;
 
         /// <summary>
         /// Gets the relation the supplied conjunction establishes between what it joins.
         /// </summary>
         /// <param name="conjunction">The conjunction text to look up.</param>
         /// <returns>The semantic group of the conjunction.</returns>
-        public ConjunctionSemanticGroup GetSemanticGroup(string conjunction) => Lookup(conjunction).SemanticGroup;
+        public ConjunctionSemanticGroup GetSemanticGroup(string conjunction, ConjunctionType? reading = null)
+            => Lookup(conjunction, reading).SemanticGroup;
 
         /// <summary>
         /// Determines whether a comma is written before the supplied conjunction.
         /// </summary>
         /// <param name="conjunction">The conjunction text to look up.</param>
         /// <returns><see langword="true"/> when a comma precedes the conjunction; otherwise, <see langword="false"/>.</returns>
-        public bool RequiresComma(string conjunction) => Lookup(conjunction).RequiresComma;
+        public bool RequiresComma(string conjunction, ConjunctionType? reading = null)
+            => Lookup(conjunction, reading).RequiresComma;
 
         /// <summary>
         /// Determines whether the conjunction occupies the first position of the clause it introduces,
@@ -63,21 +66,23 @@ namespace Grammar.Czech.Services
         /// </summary>
         /// <param name="conjunction">The conjunction text to look up.</param>
         /// <returns><see langword="true"/> for však; otherwise, <see langword="false"/>.</returns>
-        public bool OccupiesSecondPosition(string conjunction) => Lookup(conjunction).SecondPosition;
+        public bool OccupiesSecondPosition(string conjunction, ConjunctionType? reading = null)
+            => Lookup(conjunction, reading).SecondPosition;
 
         /// <summary>
         /// Gets the second member of a paired conjunction.
         /// </summary>
         /// <param name="conjunction">The opening member to look up.</param>
         /// <returns>The second member, or <see langword="null"/> when the conjunction is not paired.</returns>
-        public string? GetCorrelate(string conjunction) => Lookup(conjunction).Correlate;
+        public string? GetCorrelate(string conjunction, ConjunctionType? reading = null)
+            => Lookup(conjunction, reading).Correlate;
 
         /// <summary>
         /// Determines whether the conjunction absorbs the conditional auxiliary and inflects with it.
         /// </summary>
         /// <param name="conjunction">The conjunction text to look up.</param>
         /// <returns><see langword="true"/> for aby and kdyby; otherwise, <see langword="false"/>.</returns>
-        public bool FusesWithConditional(string conjunction) => Lookup(conjunction).FusesWithConditional;
+        public bool FusesWithConditional(string conjunction) => Lookup(conjunction, null).FusesWithConditional;
 
         /// <summary>
         /// Builds the surface form of the conjunction for the requested grammatical number and person.
@@ -98,7 +103,7 @@ namespace Grammar.Czech.Services
         /// </remarks>
         public string GetForm(string conjunction, Number? number, Person? person)
         {
-            var data = Lookup(conjunction);
+            var data = Lookup(conjunction, null);
 
             if (!data.FusesWithConditional)
             {
@@ -114,17 +119,41 @@ namespace Grammar.Czech.Services
             return data.Stem + _cliticService.GetConditionalParticle(number, person);
         }
 
+        /// <summary>
+        /// Gets every reading the supplied conjunction has, the primary one first.
+        /// </summary>
+        /// <param name="conjunction">The conjunction text to look up.</param>
+        /// <returns>The readings registered for it.</returns>
+        public IReadOnlyList<ConjunctionData> GetReadings(string conjunction)
+        {
+            var primary = Lookup(conjunction, null);
+
+            return new[] { primary }.Concat(primary.AlsoReads).ToList();
+        }
+
         // Conjunctions are a closed class, so an unknown one is a mistake worth reporting rather than a
         // gap to paper over — the punctuation and the clitic position both depend on knowing which it is.
-        private ConjunctionData Lookup(string conjunction)
+        //
+        // A reading asked for by type is answered from the alternatives when the primary one is the other
+        // type: ať subordinates a content clause and coordinates a split one, and the caller building a
+        // coordination knows which it means even though the lemma does not.
+        private ConjunctionData Lookup(string conjunction, ConjunctionType? reading)
         {
-            if (_conjunctions.TryGetValue(conjunction, out var data))
+            if (!_conjunctions.TryGetValue(conjunction, out var data))
+            {
+                throw new InvalidOperationException(
+                    $"Neznámá spojka '{conjunction}'. Doplň ji do conjunctions.json.");
+            }
+
+            if (reading is null || data.Type == reading)
             {
                 return data;
             }
 
-            throw new InvalidOperationException(
-                $"Neznámá spojka '{conjunction}'. Doplň ji do conjunctions.json.");
+            return data.AlsoReads.FirstOrDefault(alternative => alternative.Type == reading)
+                ?? throw new InvalidOperationException(
+                    $"Spojka '{conjunction}' nemá {reading} čtení — je {data.Type}. "
+                    + "Pokud ho má mít, doplň ho do alsoReads v conjunctions.json.");
         }
     }
 }

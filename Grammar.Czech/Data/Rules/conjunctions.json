@@ -2,7 +2,10 @@
   "a": { "type": "Coordinating", "semanticGroup": "Copulative", "requiresComma": false },
   "i": { "type": "Coordinating", "semanticGroup": "Copulative", "requiresComma": false },
   "ani": { "type": "Coordinating", "semanticGroup": "Copulative", "requiresComma": false, "correlate": "ani" },
-  "jak": { "type": "Coordinating", "semanticGroup": "Copulative", "requiresComma": false, "correlate": "tak" },
+  "jak": {
+    "type": "Coordinating", "semanticGroup": "Copulative", "requiresComma": false, "correlate": "tak",
+    "alsoReads": [ { "type": "Subordinating", "semanticGroup": "Comparison", "requiresComma": true } ]
+  },
   "nejen": { "type": "Coordinating", "semanticGroup": "Copulative", "requiresComma": false, "correlate": "ale i" },
   "nejenže": { "type": "Coordinating", "semanticGroup": "Copulative", "requiresComma": false, "correlate": "ale i" },
   "jednak": { "type": "Coordinating", "semanticGroup": "Copulative", "requiresComma": false, "correlate": "jednak" },
@@ -35,7 +38,10 @@
   "pročež": { "type": "Coordinating", "semanticGroup": "Consecutive", "requiresComma": true },
 
   "že": { "type": "Subordinating", "semanticGroup": "Content", "requiresComma": true },
-  "ať": { "type": "Subordinating", "semanticGroup": "Content", "requiresComma": true },
+  "ať": {
+    "type": "Subordinating", "semanticGroup": "Content", "requiresComma": true,
+    "alsoReads": [ { "type": "Coordinating", "semanticGroup": "Disjunctive", "requiresComma": false, "correlate": "nebo" } ]
+  },
   "zda": { "type": "Subordinating", "semanticGroup": "Content", "requiresComma": true },
   "zdali": { "type": "Subordinating", "semanticGroup": "Content", "requiresComma": true },
   "jestli": { "type": "Subordinating", "semanticGroup": "Content", "requiresComma": true },
@@ -52,7 +58,10 @@
   "jakmile": { "type": "Subordinating", "semanticGroup": "Temporal", "requiresComma": true },
   "zatímco": { "type": "Subordinating", "semanticGroup": "Temporal", "requiresComma": true },
   "sotva": { "type": "Subordinating", "semanticGroup": "Temporal", "requiresComma": true },
-  "než": { "type": "Subordinating", "semanticGroup": "Temporal", "requiresComma": true },
+  "než": {
+    "type": "Subordinating", "semanticGroup": "Temporal", "requiresComma": true,
+    "alsoReads": [ { "type": "Subordinating", "semanticGroup": "Comparison", "requiresComma": true } ]
+  },
 
   "ač": { "type": "Subordinating", "semanticGroup": "Concessive", "requiresComma": true },
   "ačkoli": { "type": "Subordinating", "semanticGroup": "Concessive", "requiresComma": true },

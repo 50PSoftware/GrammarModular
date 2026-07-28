@@ -268,5 +268,82 @@ namespace Grammar.Czech.Test
         }
 
         #endregion Inventář
+
+        #region Homonymní spojky
+
+        /// <summary>
+        /// Some conjunctions are two words under one spelling, and the readings differ in the type itself.
+        /// A bare lookup gives the primary reading; a caller that knows the construction asks for the other.
+        /// </summary>
+        [TestMethod]
+        public void Lookup_At_SubordinatesByDefaultAndCoordinatesWhenAsked()
+        {
+            // "Řekni mu, ať přijde" — obsahová věta
+            Assert.AreEqual(ConjunctionType.Subordinating, service.GetType("ať"));
+            Assert.AreEqual(ConjunctionSemanticGroup.Content, service.GetSemanticGroup("ať"));
+            Assert.IsTrue(service.OccupiesFirstPosition("ať"));
+
+            // "ať už přijde osobně, nebo vyšle zástupce" — rozštěpená vylučovací spojka
+            Assert.AreEqual(ConjunctionType.Coordinating, service.GetType("ať", ConjunctionType.Coordinating));
+            Assert.AreEqual(
+                ConjunctionSemanticGroup.Disjunctive,
+                service.GetSemanticGroup("ať", ConjunctionType.Coordinating));
+            Assert.AreEqual("nebo", service.GetCorrelate("ať", ConjunctionType.Coordinating));
+        }
+
+        /// <summary>
+        /// And the other way round for jak, whose primary reading is the paired coordinator.
+        /// </summary>
+        [TestMethod]
+        public void Lookup_Jak_CoordinatesByDefaultAndSubordinatesWhenAsked()
+        {
+            // "jak Petr, tak Pavel"
+            Assert.AreEqual(ConjunctionType.Coordinating, service.GetType("jak"));
+            Assert.AreEqual("tak", service.GetCorrelate("jak"));
+
+            // "udělej to, jak jsem řekl"
+            Assert.AreEqual(
+                ConjunctionSemanticGroup.Comparison,
+                service.GetSemanticGroup("jak", ConjunctionType.Subordinating));
+        }
+
+        /// <summary>
+        /// The subordinating reading of ať is genuinely unpaired, which is what NESČ says of every
+        /// subordinator — the pairing belongs to the coordinating reading and to nothing else.
+        /// </summary>
+        [TestMethod]
+        public void GetCorrelate_SubordinatingReadingOfAHomonym_IsStillNull()
+            => Assert.IsNull(service.GetCorrelate("ať", ConjunctionType.Subordinating));
+
+        /// <summary>
+        /// Readings come back with the primary one first.
+        /// </summary>
+        [TestMethod]
+        public void GetReadings_ReturnsThePrimaryReadingFirst()
+        {
+            var readings = service.GetReadings("ať");
+
+            Assert.AreEqual(2, readings.Count);
+            Assert.AreEqual(ConjunctionType.Subordinating, readings[0].Type);
+            Assert.AreEqual(ConjunctionType.Coordinating, readings[1].Type);
+
+            Assert.AreEqual(1, service.GetReadings("protože").Count);
+        }
+
+        /// <summary>
+        /// Asking for a reading a conjunction does not have is reported rather than answered with the one it
+        /// does have, which would put a subordinator where a coordinator was meant.
+        /// </summary>
+        [TestMethod]
+        public void Lookup_ReadingTheConjunctionDoesNotHave_Throws()
+        {
+            var exception = Assert.ThrowsException<InvalidOperationException>(
+                () => service.GetType("protože", ConjunctionType.Coordinating));
+
+            StringAssert.Contains(exception.Message, "protože");
+            StringAssert.Contains(exception.Message, "alsoReads");
+        }
+
+        #endregion Homonymní spojky
     }
 }

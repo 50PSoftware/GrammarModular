@@ -81,5 +81,31 @@ namespace Grammar.Czech.Models
         /// "a" for aby, "kdy" for kdyby. Only meaningful together with <see cref="FusesWithConditional"/>.
         /// </remarks>
         public string? Stem { get; init; }
+
+        /// <summary>
+        /// Gets the further readings the same conjunction has, or an empty list when it has only this one.
+        /// </summary>
+        /// <remarks>
+        /// Several conjunctions are two words wearing one spelling, and the readings differ in the type
+        /// itself rather than only in shade of meaning:
+        /// <list type="bullet">
+        /// <item>ať subordinates a content clause in "Řekni mu, ať přijde" and coordinates in the split
+        /// "ať už přijde osobně, nebo vyšle zástupce";</item>
+        /// <item>jak coordinates in the paired "jak Petr, tak Pavel" and subordinates a comparison in
+        /// "udělej to, jak jsem řekl";</item>
+        /// <item>než is temporal in "než přišel" and comparative in "vyšší, než jsem čekal".</item>
+        /// </list>
+        /// <para>
+        /// This entry is the primary reading — what a bare lookup returns — and the alternatives hang off it.
+        /// A caller that knows which construction it is building asks for the reading by type, which is what
+        /// the sentence builder does: coordination wants the coordinating reading and subordination the
+        /// subordinating one, and neither has to guess.
+        /// </para>
+        /// <para>
+        /// Nesting rather than a list keyed by lemma keeps the primary reading structurally unambiguous, and
+        /// a reading in here carries no alternatives of its own.
+        /// </para>
+        /// </remarks>
+        public IReadOnlyList<ConjunctionData> AlsoReads { get; init; } = [];
     }
 }

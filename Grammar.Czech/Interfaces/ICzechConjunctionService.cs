@@ -5,6 +5,13 @@ namespace Grammar.Czech.Interfaces
     /// <summary>
     /// Defines operations for resolving Czech conjunction behavior.
     /// </summary>
+    /// <remarks>
+    /// The lookups take an optional reading. Some conjunctions are two words under one spelling and differ
+    /// in type — ať subordinates a content clause and coordinates a split one, jak coordinates the paired
+    /// "jak … tak" and subordinates a comparison — so a caller that knows which construction it is building
+    /// says so and gets that reading. Omitting it gives the primary reading, which is what a lemma with only
+    /// one has anyway.
+    /// </remarks>
     public interface ICzechConjunctionService
     {
         /// <summary>
@@ -13,7 +20,7 @@ namespace Grammar.Czech.Interfaces
         /// <param name="conjunction">The conjunction text to look up.</param>
         /// <returns>The conjunction type.</returns>
         /// <exception cref="System.InvalidOperationException">Thrown when the conjunction is not in the inventory.</exception>
-        ConjunctionType GetType(string conjunction);
+        ConjunctionType GetType(string conjunction, ConjunctionType? reading = null);
 
         /// <summary>
         /// Gets the relation the supplied conjunction establishes between what it joins.
@@ -21,7 +28,7 @@ namespace Grammar.Czech.Interfaces
         /// <param name="conjunction">The conjunction text to look up.</param>
         /// <returns>The semantic group of the conjunction.</returns>
         /// <exception cref="System.InvalidOperationException">Thrown when the conjunction is not in the inventory.</exception>
-        ConjunctionSemanticGroup GetSemanticGroup(string conjunction);
+        ConjunctionSemanticGroup GetSemanticGroup(string conjunction, ConjunctionType? reading = null);
 
         /// <summary>
         /// Determines whether a comma is written before the supplied conjunction.
@@ -29,7 +36,7 @@ namespace Grammar.Czech.Interfaces
         /// <param name="conjunction">The conjunction text to look up.</param>
         /// <returns><see langword="true"/> when a comma precedes the conjunction; otherwise, <see langword="false"/>.</returns>
         /// <exception cref="System.InvalidOperationException">Thrown when the conjunction is not in the inventory.</exception>
-        bool RequiresComma(string conjunction);
+        bool RequiresComma(string conjunction, ConjunctionType? reading = null);
 
         /// <summary>
         /// Determines whether the conjunction occupies the first position of the clause it introduces,
@@ -47,7 +54,7 @@ namespace Grammar.Czech.Interfaces
         /// <param name="conjunction">The conjunction text to look up.</param>
         /// <returns><see langword="true"/> for však; otherwise, <see langword="false"/>.</returns>
         /// <exception cref="System.InvalidOperationException">Thrown when the conjunction is not in the inventory.</exception>
-        bool OccupiesSecondPosition(string conjunction);
+        bool OccupiesSecondPosition(string conjunction, ConjunctionType? reading = null);
 
         /// <summary>
         /// Gets the second member of a paired conjunction.
@@ -55,7 +62,7 @@ namespace Grammar.Czech.Interfaces
         /// <param name="conjunction">The opening member to look up.</param>
         /// <returns>The second member, or <see langword="null"/> when the conjunction is not paired.</returns>
         /// <exception cref="System.InvalidOperationException">Thrown when the conjunction is not in the inventory.</exception>
-        string? GetCorrelate(string conjunction);
+        string? GetCorrelate(string conjunction, ConjunctionType? reading = null);
 
         /// <summary>
         /// Determines whether the conjunction absorbs the conditional auxiliary and inflects with it.
@@ -77,5 +84,13 @@ namespace Grammar.Czech.Interfaces
         /// </returns>
         /// <exception cref="System.InvalidOperationException">Thrown when the conjunction is not in the inventory.</exception>
         string GetForm(string conjunction, Number? number, Person? person);
+
+        /// <summary>
+        /// Gets every reading the supplied conjunction has, the primary one first.
+        /// </summary>
+        /// <param name="conjunction">The conjunction text to look up.</param>
+        /// <returns>The readings registered for it.</returns>
+        /// <exception cref="System.InvalidOperationException">Thrown when the conjunction is not in the inventory.</exception>
+        IReadOnlyList<Models.ConjunctionData> GetReadings(string conjunction);
     }
 }

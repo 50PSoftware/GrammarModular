@@ -849,6 +849,37 @@ namespace Grammar.Czech.Test
             StringAssert.Contains(exception.Message, "není párová");
         }
 
+        /// <summary>
+        /// ať is on the ÚJČ list of split connectives, and it is a different word from the ať that
+        /// subordinates a content clause. The builder knows it is coordinating here, so it gets that reading.
+        /// </summary>
+        [TestMethod]
+        public void Build_PairedAt_UsesTheCoordinatingReading()
+        {
+            var sentence = new Coordination("ať",
+            [
+                Clause(Verb("dělat", "dělá"), Petr()),
+                Clause(Verb("dělat", "dělá"))
+            ], Paired: true);
+
+            Assert.AreEqual("Ať student dělal, nebo dělal.", builder.Build(sentence));
+        }
+
+        /// <summary>
+        /// The same lemma still subordinates a content clause, where the other reading applies — and there
+        /// it fills first position, so the cluster follows it.
+        /// </summary>
+        [TestMethod]
+        public void Build_SubordinatingAt_KeepsTheContentReading()
+        {
+            var sentence = new Subordination(
+                Clause(Verb("dělat", "dělá"), Petr()),
+                "ať",
+                Clause(Verb("učit", "trida4", ReflexiveType.ReflexivumTantum_Se)));
+
+            Assert.AreEqual("Student dělal, ať se učil.", builder.Build(sentence));
+        }
+
         #endregion Párové spojky
     }
 }

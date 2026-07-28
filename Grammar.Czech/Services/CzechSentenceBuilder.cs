@@ -114,11 +114,12 @@ namespace Grammar.Czech.Services
                 throw new InvalidOperationException("Souřadné souvětí musí mít alespoň jednu klauzi.");
             }
 
-            var requiresComma = coordination.RequiresComma ?? conjunctionService.RequiresComma(coordination.Conjunction);
+            var requiresComma = coordination.RequiresComma
+                ?? conjunctionService.RequiresComma(coordination.Conjunction, ConjunctionType.Coordinating);
 
             // však does not open its clause, so it is handed to the conjunct to place after the first
             // constituent instead of standing between the two: "Petr přišel, Pavel však zůstal".
-            var secondPosition = conjunctionService.OccupiesSecondPosition(coordination.Conjunction);
+            var secondPosition = conjunctionService.OccupiesSecondPosition(coordination.Conjunction, ConjunctionType.Coordinating);
 
             var correlate = coordination.Paired ? ResolveCorrelate(coordination.Conjunction) : null;
 
@@ -158,7 +159,7 @@ namespace Grammar.Czech.Services
         }
 
         private string ResolveCorrelate(string conjunction)
-            => conjunctionService.GetCorrelate(conjunction)
+            => conjunctionService.GetCorrelate(conjunction, ConjunctionType.Coordinating)
                 ?? throw new InvalidOperationException(
                     $"Spojka '{conjunction}' není párová, takže Paired nemá druhý člen, který by položila. "
                     + "Párové jsou buď, ani, nejen, jak, sice a jednak.");
@@ -185,7 +186,7 @@ namespace Grammar.Czech.Services
             var conjunctionForm = conjunctionService.GetForm(
                 conjunction, subordinatePredicate?.Number, subordinatePredicate?.Person);
 
-            var separator = conjunctionService.RequiresComma(conjunction) ? ", " : " ";
+            var separator = conjunctionService.RequiresComma(conjunction, ConjunctionType.Subordinating) ? ", " : " ";
 
             // What stands above this sentence agrees with its main clause, not with the dependent one.
             return ($"{main}{separator}{conjunctionForm} {subordinate}", mainPredicate);
