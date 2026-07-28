@@ -327,24 +327,72 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
-        /// A spot check across the regular pattern: -ěji after d, t, n and the labials, -eji elsewhere,
-        /// which is the same ě-orthography rule the declension already uses.
+        /// One representative of every derivation pattern in the data, each checked against IJP.
         /// </summary>
+        /// <remarks>
+        /// The comparatives were written by applying the -ěji/-eji rule by hand, so what is verified here is
+        /// the pattern rather than every entry: -ěji after d, t, n and the labials, -eji elsewhere, r → ř
+        /// before it, and the palatalization that -ce and -ky bring. IJP gives tvrději, chytřeji, prudčeji,
+        /// hezčeji and dál/dále directly; the entries built the same way are only as good as the rule.
+        /// </remarks>
         /// <param name="lemma">The adverb lemma.</param>
         /// <param name="comparative">The expected comparative.</param>
         [DataTestMethod]
+        // d/t/n and the labials keep ě — IJP: tvrdě → tvrději
         [DataRow("tvrdě", "tvrději")]
         [DataRow("čistě", "čistěji")]
         [DataRow("pevně", "pevněji")]
         [DataRow("hloupě", "hloupěji")]
         [DataRow("zdravě", "zdravěji")]
+        // elsewhere plain e
         [DataRow("mile", "mileji")]
+        [DataRow("vesele", "veseleji")]
+        // r softens to ř — IJP: chytře → chytřeji
         [DataRow("chytře", "chytřeji")]
+        [DataRow("ostře", "ostřeji")]
+        // -ce and -ky palatalize — IJP: prudce → prudčeji, hezky → hezčeji, and hladčeji is IJP's own example
         [DataRow("prudce", "prudčeji")]
+        [DataRow("hladce", "hladčeji")]
+        [DataRow("hezky", "hezčeji")]
+        [DataRow("lehce", "lehčeji")]
         public void GetFullForm_RegularlyComparedAdverbs_FollowTheSuffixRule(string lemma, string comparative)
         {
             Assert.AreEqual(comparative, composer.GetFullForm(Adverb(lemma, Degree.Comparative)).Form);
             Assert.AreEqual("nej" + comparative, composer.GetFullForm(Adverb(lemma, Degree.Superlative)).Form);
+        }
+
+        /// <summary>
+        /// The irregular comparatives, checked against the list IJP id=410 gives in full.
+        /// </summary>
+        /// <param name="lemma">The adverb lemma.</param>
+        /// <param name="comparative">The expected comparative.</param>
+        /// <param name="shortForm">The expected clipped variant, or null where the list gives none.</param>
+        [DataTestMethod]
+        [DataRow("dobře", "lépe", "líp")]
+        [DataRow("špatně", "hůře", "hůř")]
+        [DataRow("zle", "hůře", "hůř")]
+        [DataRow("brzy", "dříve", "dřív")]
+        [DataRow("dlouho", "déle", null)]
+        [DataRow("dlouze", "déle", null)]
+        [DataRow("vysoko", "výše", "výš")]
+        [DataRow("vysoce", "výše", "výš")]
+        [DataRow("málo", "méně", "míň")]
+        [DataRow("těžko", "tíže", "tíž")]
+        [DataRow("těžce", "tíže", "tíž")]
+        [DataRow("snadno", "snáze", "snáz")]
+        [DataRow("široko", "šíře", "šíř")]
+        [DataRow("široce", "šíře", "šíř")]
+        [DataRow("úzko", "úže", null)]
+        [DataRow("úzce", "úže", null)]
+        [DataRow("daleko", "dále", "dál")]
+        public void GetFullForm_IrregularComparatives_MatchTheUjcList(string lemma, string comparative, string? shortForm)
+        {
+            Assert.AreEqual(comparative, composer.GetFullForm(Adverb(lemma, Degree.Comparative)).Form);
+
+            Assert.AreEqual(
+                shortForm ?? comparative,
+                composer.GetFullForm(Adverb(lemma, Degree.Comparative, preferShort: true)).Form,
+                $"Krátký tvar '{lemma}'.");
         }
 
         #endregion Comparison is data, not a rule

@@ -633,5 +633,10 @@
   },
   "dokdy": {
     "isRelative": true
+  },
+  "zle": {
+    "derivedFrom": "zlý",
+    "comparative": "hůře",
+    "comparativeShort": "hůř"
   }
 }
