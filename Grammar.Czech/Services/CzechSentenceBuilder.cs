@@ -76,11 +76,22 @@ namespace Grammar.Czech.Services
             SentenceNode sentence,
             bool firstPositionTaken,
             string? secondPositionConjunction = null,
+            bool suppressConditional = false)
+            => RenderNode(sentence, firstPositionTaken, secondPositionConjunction, suppressConditional).Text;
+
+        // Hands back the predicate of the leading clause alongside the text, because a caller above may need
+        // the person it agreed on — aby does. CzechWordRequest is a struct, so the categories subject
+        // agreement fills in cannot be read back off the clause the caller still holds: that copy never saw
+        // them. Returning the resolved one is the only way to see it without resolving it a second time.
+        private (string Text, CzechWordRequest? Predicate) RenderNode(
+            SentenceNode sentence,
+            bool firstPositionTaken,
+            string? secondPositionConjunction = null,
             bool suppressConditional = false) => sentence switch
         {
             SimpleSentence simple =>
                 RenderClause(simple.Clause, firstPositionTaken, secondPositionConjunction, suppressConditional),
-            Coordination coordination => RenderCoordination(coordination, firstPositionTaken),
+            Coordination coordination => RenderCoordination(coordination, firstPositionTaken, suppressConditional),
             Subordination subordination => RenderSubordination(subordination),
             _ => throw new NotSupportedException($"Neznámý typ větného uzlu: {sentence.GetType().Name}.")
         };
@@ -89,7 +100,8 @@ namespace Grammar.Czech.Services
         // clause keeps its own first position: "Petr přišel a umyl se".
         // An inherited first position — a subordinator above this coordination — reaches the first conjunct
         // only. Every later conjunct is a clause of its own and opens its own second position.
-        private string RenderCoordination(Coordination coordination, bool firstPositionTaken)
+        private (string Text, CzechWordRequest? Predicate) RenderCoordination(
+            Coordination coordination, bool firstPositionTaken, bool suppressConditional)
         {
             if (coordination.Conjuncts.Count == 0)
             {
@@ -108,76 +120,47 @@ namespace Grammar.Czech.Services
                     ? $", {coordination.Conjunction} "
                     : $" {coordination.Conjunction} ";
 
+            // aby above a coordination carries the auxiliary for every conjunct, not only the first:
+            // "aby přišel a pomohl" has one by between them.
             var rendered = coordination.Conjuncts
-                .Select((conjunct, index) => Render(
+                .Select((conjunct, index) => RenderNode(
                     conjunct,
                     firstPositionTaken && index == 0,
-                    secondPosition && index > 0 ? coordination.Conjunction : null));
+                    secondPosition && index > 0 ? coordination.Conjunction : null,
+                    suppressConditional))
+                .ToList();
 
-            return string.Join(separator, rendered);
+            // The leading conjunct is what anything above this coordination agrees with.
+            return (string.Join(separator, rendered.Select(item => item.Text)), rendered[0].Predicate);
         }
 
         // The conjunction belongs to the dependent clause and fills its first position, which is why the
         // cluster follows the conjunction and not the verb: "Petr přišel, protože se bál".
-        private string RenderSubordination(Subordination subordination)
+        private (string Text, CzechWordRequest? Predicate) RenderSubordination(Subordination subordination)
         {
-            var main = Render(subordination.Main, firstPositionTaken: false);
+            var (main, mainPredicate) = RenderNode(subordination.Main, firstPositionTaken: false);
             var conjunction = subordination.Conjunction;
             var fuses = conjunctionService.FusesWithConditional(conjunction);
 
-            // aby and kdyby carry the conditional auxiliary themselves, so the clause has to be built without
-            // one: the particle moved into the conjunction, it was not duplicated. Rendering both would give
+            // aby and kdyby carry the conditional auxiliary themselves, so the clause is built without one:
+            // the particle moved into the conjunction, it was not duplicated. Rendering both would give
             // "abych se bych umyl".
-            var (number, person) = fuses ? ResolveConditionalAgreement(subordination.Subordinate) : (null, null);
-            var conjunctionForm = conjunctionService.GetForm(conjunction, number, person);
-
-            var subordinate = Render(
+            var (subordinate, subordinatePredicate) = RenderNode(
                 subordination.Subordinate,
                 conjunctionService.OccupiesFirstPosition(conjunction),
                 suppressConditional: fuses);
 
+            // The person comes back out of the render rather than being worked out ahead of it. Subject
+            // agreement is what resolves it — stated outright, left to pro-drop, or taken off a nominative
+            // subject — and doing that twice would mean keeping a second copy of the rule in step with it.
+            var conjunctionForm = conjunctionService.GetForm(
+                conjunction, subordinatePredicate?.Number, subordinatePredicate?.Person);
+
             var separator = conjunctionService.RequiresComma(conjunction) ? ", " : " ";
 
-            return $"{main}{separator}{conjunctionForm} {subordinate}";
+            // What stands above this sentence agrees with its main clause, not with the dependent one.
+            return ($"{main}{separator}{conjunctionForm} {subordinate}", mainPredicate);
         }
-
-        // Read-only on purpose. The dependent clause has not been through the builder's pipeline yet, and
-        // running subject agreement here to find the person would rewrite cases that ApplyCardinalGovernment
-        // then reads, so this mirrors the resolution instead of performing it.
-        private static (Number? Number, Person? Person) ResolveConditionalAgreement(SentenceNode node)
-        {
-            var clause = FindLeadingClause(node);
-
-            if (clause is null)
-            {
-                return (null, null);
-            }
-
-            var predicate = clause.Predicate;
-
-            // A predicate that already states its person is pro-drop or was set outright, and wins.
-            if (predicate.Person is not null)
-            {
-                return (predicate.Number ?? Number.Singular, predicate.Person);
-            }
-
-            var subject = clause.Elements.FirstOrDefault(element => element.Functor == FgdFunctor.ACT
-                && (element.PhraseCase ?? element.Word.Case) == Case.Nominative);
-
-            return subject is null
-                ? (predicate.Number, predicate.Person)
-                : (subject.Word.Number ?? Number.Singular, ResolvePerson(subject.Word));
-        }
-
-        private static CzechClause? FindLeadingClause(SentenceNode node) => node switch
-        {
-            SimpleSentence simple => simple.Clause,
-            Coordination coordination => coordination.Conjuncts.Count > 0
-                ? FindLeadingClause(coordination.Conjuncts[0])
-                : null,
-            Subordination subordination => FindLeadingClause(subordination.Main),
-            _ => null
-        };
 
         // The mark closing the sentence comes from the clause that opens it.
         private static string FindTerminator(SentenceNode sentence) => sentence switch
@@ -188,7 +171,7 @@ namespace Grammar.Czech.Services
             _ => "."
         };
 
-        private string RenderClause(
+        private (string Text, CzechWordRequest? Predicate) RenderClause(
             CzechClause clause,
             bool firstPositionTaken,
             string? secondPositionConjunction = null,
@@ -240,7 +223,7 @@ namespace Grammar.Czech.Services
                 preVerbal, verbRest, particleService.ContractCluster(clitics), postVerbal,
                 firstPositionTaken, secondPositionConjunction);
 
-            return string.Join(' ', words);
+            return (string.Join(' ', words), predicate);
         }
 
         // The frame says how each argument of this verb is realized, so the caller states the functor and the
@@ -425,7 +408,7 @@ namespace Grammar.Czech.Services
             // the antecedent through it: "dům, kde bydlím" keeps the clause's own person and number.
             if (adverbService.IsRelative(relative.Relativizer))
             {
-                return $"{relative.Relativizer} {RenderClause(relative.Clause, firstPositionTaken: true)},";
+                return $"{relative.Relativizer} {RenderClause(relative.Clause, firstPositionTaken: true).Text},";
             }
 
             if (pronounService.GetPronounType(relative.Relativizer) != PronounType.Relative)
@@ -452,7 +435,7 @@ namespace Grammar.Czech.Services
                 clause = clause with { Predicate = predicate };
             }
 
-            return $"{pronoun} {RenderClause(clause, firstPositionTaken: true)},";
+            return $"{pronoun} {RenderClause(clause, firstPositionTaken: true).Text},";
         }
 
         // The preposition governs the constituent, not its head noun, and the two part company under a

@@ -636,6 +636,51 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// The conjunction agrees through the subject when the predicate does not state a person itself,
+        /// because it is read after subject agreement has run rather than worked out ahead of it.
+        /// </summary>
+        [TestMethod]
+        public void Build_AbyClauseWithNominalSubject_AgreesInTheThirdPerson()
+        {
+            var predicate = Conditional(Person.First, Number.Singular);
+            predicate.Person = null;
+            predicate.Number = null;
+
+            var sentence = new Subordination(
+                Clause(Verb("dělat", "dělá"), Petr()), "aby", Clause(predicate, Petr()));
+
+            Assert.AreEqual("Student dělal, aby student dělal.", builder.Build(sentence));
+        }
+
+        /// <summary>
+        /// And through a pronoun subject it reaches the second person, which the noun above cannot show.
+        /// </summary>
+        [TestMethod]
+        public void Build_AbyClauseWithPronounSubject_AgreesInItsPerson()
+        {
+            var predicate = Conditional(Person.First, Number.Singular);
+            predicate.Person = null;
+            predicate.Number = null;
+
+            var subject = ClauseElement.Of(
+                new CzechWordRequest
+                {
+                    Lemma = "ty",
+                    WordCategory = WordCategory.Pronoun,
+                    Number = Number.Singular,
+                    Gender = Gender.Masculine,
+                    Case = Case.Nominative
+                },
+                FgdFunctor.ACT,
+                InformationStatus.Given);
+
+            var sentence = new Subordination(
+                Clause(Verb("dělat", "dělá"), Petr()), "aby", Clause(predicate, subject));
+
+            StringAssert.Contains(builder.Build(sentence), ", abys ");
+        }
+
+        /// <summary>
         /// The reflexive stays in the cluster behind the conjunction, which fills first position like any
         /// other subordinator: "abych se učil".
         /// </summary>
