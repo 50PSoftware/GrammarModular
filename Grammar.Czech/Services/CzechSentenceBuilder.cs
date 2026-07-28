@@ -386,10 +386,14 @@ namespace Grammar.Czech.Services
             return $"{pronoun} {RenderClause(clause, firstPositionTaken: true)},";
         }
 
+        // The preposition governs the constituent, not its head noun, and the two part company under a
+        // cardinal: in "pro pět studentů" the noun is genitive because the numeral put it there, while the
+        // phrase pro governs is accusative. PhraseCase is what the constituent actually stands in, so that
+        // is what gets checked; it is only filled when a numeral rewrote the head, hence the fallback.
         private void ValidateGovernment(ClauseElement element)
         {
             var preposition = element.Preposition!;
-            var governed = element.Word.Case;
+            var governed = element.PhraseCase ?? element.Word.Case;
 
             if (governed is null || !prepositionService.GetAllowedCases(preposition).Any())
             {

@@ -1,121 +1,427 @@
 {
-  "na": {
-    "originType": "Original",
-    "variants": [
-      {
-        "case": "Accusative",
-        "semanticGroup": "Direction"
-      },
-      {
-        "case": "Locative",
-        "semanticGroup": "Location"
-      }
-    ]
-  },
-  "v": {
-    "originType": "Original",
-    "vocalized": "ve",
-    "vocalizeBefore": [ "dvou", "třech", "čtyřech" ],
-    "variants": [
-      {
-        "case": "Locative",
-        "semanticGroup": "Location"
-      },
-      {
-        "case": "Accusative",
-        "semanticGroup": "Time"
-      }
-    ]
-  },
-  "s": {
-    "originType": "Original",
-    "vocalized": "se",
-    "vocalizeBefore": [ "dvěma", "třemi", "čtyřmi", "dvěmi" ],
-    "variants": [
-      {
-        "case": "Instrumental",
-        "semanticGroup": "Instrument"
-      }
-    ]
-  },
-  "z": {
-    "originType": "Original",
-    "vocalized": "ze",
-    "variants": [
-      {
-        "case": "Genitive",
-        "semanticGroup": "Direction"
-      }
-    ]
-  },
-  "k": {
-    "originType": "Original",
-    "vocalized": "ke",
-    "variants": [
-      {
-        "case": "Dative",
-        "semanticGroup": "Direction"
-      }
-    ]
-  },
-  "od": {
-    "originType": "Original",
-    "vocalized": "ode",
-    "variants": [
-      {
-        "case": "Genitive",
-        "semanticGroup": "Direction"
-      }
-    ]
-  },
   "bez": {
     "originType": "Original",
     "vocalized": "beze",
+    "vocalizeBefore": [ "vš" ],
     "variants": [
-      {
-        "case": "Genitive",
-        "semanticGroup": "Other"
-      }
+      { "case": "Genitive", "semanticGroup": "Other" }
     ]
   },
   "do": {
     "originType": "Original",
     "variants": [
-      {
-        "case": "Genitive",
-        "semanticGroup": "Direction"
-      }
+      { "case": "Genitive", "semanticGroup": "Direction" }
+    ]
+  },
+  "k": {
+    "originType": "Original",
+    "vocalized": "ke",
+    "vocalizeBefore": [ "dn", "dv", "dř", "dl" ],
+    "variants": [
+      { "case": "Dative", "semanticGroup": "Direction" }
+    ]
+  },
+  "mezi": {
+    "originType": "Original",
+    "variants": [
+      { "case": "Accusative", "semanticGroup": "Direction" },
+      { "case": "Instrumental", "semanticGroup": "Location" }
+    ]
+  },
+  "mimo": {
+    "originType": "Original",
+    "variants": [
+      { "case": "Accusative", "semanticGroup": "Location" }
+    ]
+  },
+  "na": {
+    "originType": "Original",
+    "variants": [
+      { "case": "Accusative", "semanticGroup": "Direction" },
+      { "case": "Locative", "semanticGroup": "Location" }
+    ]
+  },
+  "nad": {
+    "originType": "Original",
+    "vocalized": "nade",
+    "variants": [
+      { "case": "Accusative", "semanticGroup": "Direction" },
+      { "case": "Instrumental", "semanticGroup": "Location" }
     ]
   },
   "o": {
     "originType": "Original",
     "variants": [
-      {
-        "case": "Accusative",
-        "semanticGroup": "Direction"
-      },
-      {
-        "case": "Locative",
-        "semanticGroup": "Location"
-      }
+      { "case": "Accusative", "semanticGroup": "Direction" },
+      { "case": "Locative", "semanticGroup": "Location" }
+    ]
+  },
+  "od": {
+    "originType": "Original",
+    "vocalized": "ode",
+    "vocalizeBefore": [ "dne" ],
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Direction" }
+    ]
+  },
+  "po": {
+    "originType": "Original",
+    "variants": [
+      { "case": "Locative", "semanticGroup": "Location" },
+      { "case": "Accusative", "semanticGroup": "Other" }
+    ]
+  },
+  "pod": {
+    "originType": "Original",
+    "vocalized": "pode",
+    "variants": [
+      { "case": "Accusative", "semanticGroup": "Direction" },
+      { "case": "Instrumental", "semanticGroup": "Location" }
+    ]
+  },
+  "pro": {
+    "originType": "Original",
+    "variants": [
+      { "case": "Accusative", "semanticGroup": "Purpose" }
+    ]
+  },
+  "proti": {
+    "originType": "Original",
+    "variants": [
+      { "case": "Dative", "semanticGroup": "Direction" }
+    ]
+  },
+  "před": {
+    "originType": "Original",
+    "vocalized": "přede",
+    "variants": [
+      { "case": "Accusative", "semanticGroup": "Direction" },
+      { "case": "Instrumental", "semanticGroup": "Location" }
+    ]
+  },
+  "přes": {
+    "originType": "Original",
+    "vocalized": "přese",
+    "variants": [
+      { "case": "Accusative", "semanticGroup": "Direction" }
+    ]
+  },
+  "při": {
+    "originType": "Original",
+    "variants": [
+      { "case": "Locative", "semanticGroup": "Time" }
+    ]
+  },
+  "s": {
+    "originType": "Original",
+    "vocalized": "se",
+    "vocalizeBefore": [ "dvěma", "třemi", "čtyřmi", "dvěmi", "dn", "dř", "dl" ],
+    "variants": [
+      { "case": "Instrumental", "semanticGroup": "Instrument" },
+      { "case": "Genitive", "semanticGroup": "Direction" }
+    ]
+  },
+  "skrz": {
+    "originType": "Original",
+    "variants": [
+      { "case": "Accusative", "semanticGroup": "Direction" }
+    ]
+  },
+  "u": {
+    "originType": "Original",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Location" }
+    ]
+  },
+  "v": {
+    "originType": "Original",
+    "vocalized": "ve",
+    "vocalizeBefore": [ "třech", "čtyřech", "dne" ],
+    "variants": [
+      { "case": "Locative", "semanticGroup": "Location" },
+      { "case": "Accusative", "semanticGroup": "Time" }
+    ]
+  },
+  "z": {
+    "originType": "Original",
+    "vocalized": "ze",
+    "vocalizeBefore": [ "třech", "čtyř", "dn", "dv", "dř", "dl" ],
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Direction" }
+    ]
+  },
+  "za": {
+    "originType": "Original",
+    "variants": [
+      { "case": "Accusative", "semanticGroup": "Direction" },
+      { "case": "Instrumental", "semanticGroup": "Location" },
+      { "case": "Genitive", "semanticGroup": "Time" }
+    ]
+  },
+
+  "během": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Time" }
+    ]
+  },
+  "blízko": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Location" }
+    ]
+  },
+  "díky": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Dative", "semanticGroup": "Cause" }
+    ]
+  },
+  "kolem": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Location" }
+    ]
+  },
+  "koncem": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Time" }
+    ]
+  },
+  "krom": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Other" }
+    ]
+  },
+  "kromě": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Other" }
     ]
   },
   "kvůli": {
     "originType": "Derived",
     "variants": [
-      {
-        "case": "Dative",
-        "semanticGroup": "Cause"
-      }
+      { "case": "Dative", "semanticGroup": "Cause" }
+    ]
+  },
+  "místo": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Other" }
+    ]
+  },
+  "namísto": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Other" }
+    ]
+  },
+  "naproti": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Dative", "semanticGroup": "Location" }
+    ]
+  },
+  "následkem": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Cause" }
+    ]
+  },
+  "navzdory": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Dative", "semanticGroup": "Other" }
+    ]
+  },
+  "nehledě na": {
+    "originType": "Compound",
+    "variants": [
+      { "case": "Accusative", "semanticGroup": "Other" }
+    ]
+  },
+  "ohledně": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Other" }
+    ]
+  },
+  "okolo": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Location" }
+    ]
+  },
+  "oproti": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Dative", "semanticGroup": "Comparison" }
+    ]
+  },
+  "poblíž": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Location" }
+    ]
+  },
+  "počátkem": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Time" }
+    ]
+  },
+  "podél": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Location" }
+    ]
+  },
+  "podle": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Other" }
+    ]
+  },
+  "pomocí": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Instrument" }
+    ]
+  },
+  "prostřednictvím": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Instrument" }
+    ]
+  },
+  "stran": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Other" }
+    ]
+  },
+  "uprostřed": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Location" }
+    ]
+  },
+  "uvnitř": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Location" }
+    ]
+  },
+  "včetně": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Other" }
+    ]
+  },
+  "vedle": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Location" }
+    ]
+  },
+  "vinou": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Cause" }
+    ]
+  },
+  "vůči": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Dative", "semanticGroup": "Other" }
+    ]
+  },
+  "vyjma": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Other" }
+    ]
+  },
+  "začátkem": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Time" }
+    ]
+  },
+  "zásluhou": {
+    "originType": "Derived",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Cause" }
+    ]
+  },
+
+  "na základě": {
+    "originType": "Compound",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Cause" }
+    ]
+  },
+  "na rozdíl od": {
+    "originType": "Compound",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Comparison" }
+    ]
+  },
+  "s ohledem na": {
+    "originType": "Compound",
+    "variants": [
+      { "case": "Accusative", "semanticGroup": "Other" }
+    ]
+  },
+  "s výjimkou": {
+    "originType": "Compound",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Other" }
+    ]
+  },
+  "v důsledku": {
+    "originType": "Compound",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Cause" }
+    ]
+  },
+  "v případě": {
+    "originType": "Compound",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Other" }
+    ]
+  },
+  "v průběhu": {
+    "originType": "Compound",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Time" }
     ]
   },
   "v rámci": {
     "originType": "Compound",
     "variants": [
-      {
-        "case": "Genitive",
-        "semanticGroup": "Location"
-      }
+      { "case": "Genitive", "semanticGroup": "Location" }
+    ]
+  },
+  "v souladu s": {
+    "originType": "Compound",
+    "variants": [
+      { "case": "Instrumental", "semanticGroup": "Other" }
+    ]
+  },
+  "vzhledem k": {
+    "originType": "Compound",
+    "variants": [
+      { "case": "Dative", "semanticGroup": "Cause" }
+    ]
+  },
+  "za účelem": {
+    "originType": "Compound",
+    "variants": [
+      { "case": "Genitive", "semanticGroup": "Purpose" }
     ]
   }
 }
