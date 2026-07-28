@@ -31,18 +31,14 @@ namespace Grammar.Czech.Models
         /// True for the optative ať, kéž, nechť and for the structuring openers nuže, inu. Most particles
         /// are placed freely and take whatever position their scope calls for, so this is the exception
         /// rather than a category.
+        /// <para>
+        /// What the particle then demands of the predicate is deliberately not recorded. It is tempting —
+        /// "kéž by přišel" looks like conditional government and "ať přijde" like an imperative — but the
+        /// second is a plain third-person present, Czech having no third-person imperative at all, and NESČ
+        /// states no government for the group. It only observes that the group shades into the conjunctions.
+        /// So there is no mood field here: it would have been my generalization, not the source's.
+        /// </para>
         /// </remarks>
         public bool IsClauseInitial { get; init; }
-
-        /// <summary>
-        /// Gets the mood the particle calls for in the clause it opens, or null when it calls for none.
-        /// </summary>
-        /// <remarks>
-        /// Recorded rather than ruled. "Kéž by přišel" takes the conditional and "Ať přijde" the imperative
-        /// or a plain present, but NESČ does not state the government outright — it only observes that the
-        /// optative group shades into the conjunctions — so this is what the attested usage shows for each
-        /// word, not a generalization over the group.
-        /// </remarks>
-        public Modus? RequiresModus { get; init; }
     }
 }

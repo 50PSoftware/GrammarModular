@@ -22,6 +22,8 @@ namespace Grammar.Czech.Services
         private readonly ICzechConjunctionService conjunctionService;
         private readonly ICzechValencyService valencyService;
         private readonly ICzechAdverbService adverbService;
+        private readonly ICzechParticleService particleService;
+        private readonly ICzechInterjectionService interjectionService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechSentenceBuilder"/> type.
@@ -34,7 +36,9 @@ namespace Grammar.Czech.Services
             ICzechPrepositionService prepositionService,
             ICzechConjunctionService conjunctionService,
             ICzechValencyService valencyService,
-            ICzechAdverbService adverbService)
+            ICzechAdverbService adverbService,
+            ICzechParticleService particleService,
+            ICzechInterjectionService interjectionService)
         {
             this.adverbService = adverbService;
             this.composer = composer;
@@ -44,6 +48,8 @@ namespace Grammar.Czech.Services
             this.prepositionService = prepositionService;
             this.conjunctionService = conjunctionService;
             this.valencyService = valencyService;
+            this.particleService = particleService;
+            this.interjectionService = interjectionService;
         }
 
         /// <summary>
@@ -191,6 +197,12 @@ namespace Grammar.Czech.Services
             var constituents = clause.Elements.Except(pronounClitics).ToList();
 
             ValidateSentenceType(clause, constituents, firstPositionTaken);
+            ValidateParticles(clause, constituents);
+
+            // A clause-initial particle fills first position exactly as a subordinating conjunction does, so
+            // the cluster follows it: "Ať se umyje". An interjection does not — it stands outside the clause
+            // behind its own comma and leaves first position to whatever comes next.
+            firstPositionTaken |= clause.Particle is not null;
 
             // FSP: the interrogative focus opens the clause, contrastive material is fronted behind it,
             // given material forms the theme before the verb, new material forms the rheme after it.
@@ -223,7 +235,60 @@ namespace Grammar.Czech.Services
                 preVerbal, verbRest, cliticService.ContractCluster(clitics), postVerbal,
                 firstPositionTaken, secondPositionConjunction);
 
-            return (string.Join(' ', words), predicate);
+            if (clause.Particle is not null)
+            {
+                words.Insert(0, clause.Particle);
+            }
+
+            var text = string.Join(' ', words);
+
+            // The comma is the ÚJČ rule for an interjection that does not stand in for a clause member, which
+            // is the only use this slot expresses.
+            return (clause.Interjection is null ? text : $"{clause.Interjection}, {text}", predicate);
+        }
+
+        // The two checks the particle data supports and the clause can actually be measured against.
+        private void ValidateParticles(CzechClause clause, IEnumerable<ClauseElement> constituents)
+        {
+            if (clause.Particle is { } particle)
+            {
+                if (!particleService.IsParticle(particle) || !particleService.IsClauseInitial(particle))
+                {
+                    throw new InvalidOperationException(
+                        $"'{particle}' není větná částice, která uvozuje klauzi. Sem patří ať, kéž, nechť "
+                        + "nebo nuže; částici s dosahem na jeden člen dej na ClauseElement.Particle.");
+                }
+
+                // The mood is deliberately not checked. "Ať přijde" is a plain third-person present — Czech
+                // has no third-person imperative — and NESČ states no mood government for the optative group
+                // at all, so any check here would be enforcing a rule of mine rather than one of the
+                // language's.
+            }
+
+            if (clause.Interjection is { } interjection && interjectionService.IsInterjection(interjection)
+                && !interjectionService.RequiresComma(interjection, asPredicate: false))
+            {
+                throw new InvalidOperationException(
+                    $"Citoslovce '{interjection}' se tu neodděluje čárkou, což tenhle slot neumí vyjádřit.");
+            }
+
+            // A modifying particle carries no stress of its own, so it cannot be part of what the utterance
+            // is about. NESČ states it of the whole group, and Status is what says which constituent is the
+            // rheme, so this is checkable rather than merely documented.
+            foreach (var element in constituents)
+            {
+                if (element.Particle is not { } scoped || !particleService.IsParticle(scoped))
+                {
+                    continue;
+                }
+
+                if (element.Status == InformationStatus.New && !particleService.CanStandInRheme(scoped))
+                {
+                    throw new InvalidOperationException(
+                        $"Modifikační částice '{scoped}' nemůže stát v rématu. Buď dej konstituentu jiný "
+                        + "InformationStatus, nebo použij vytýkací částici (jen, právě, dokonce).");
+                }
+            }
         }
 
         // The frame says how each argument of this verb is realized, so the caller states the functor and the
@@ -388,6 +453,13 @@ namespace Grammar.Czech.Services
 
                 // Vocalization looks at whatever actually comes next, which is the first modifier when there is one.
                 words.Insert(0, prepositionService.Vocalize(element.Preposition!, words[0]));
+            }
+
+            // Outside the preposition, not inside it: the particle scopes over the whole constituent —
+            // "jen pro Petra", not "pro jen Petra".
+            if (element.Particle is not null)
+            {
+                words.Insert(0, element.Particle);
             }
 
             var text = string.Join(' ', words);

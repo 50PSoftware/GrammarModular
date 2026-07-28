@@ -40,13 +40,6 @@ namespace Grammar.Czech.Interfaces
         /// <exception cref="System.InvalidOperationException">Thrown when the lemma is not in the inventory.</exception>
         bool IsClauseInitial(string lemma);
 
-        /// <summary>
-        /// Gets the mood the particle calls for in the clause it opens.
-        /// </summary>
-        /// <param name="lemma">The dictionary form to look up.</param>
-        /// <returns>The required mood, or <see langword="null"/> when the particle calls for none.</returns>
-        /// <exception cref="System.InvalidOperationException">Thrown when the lemma is not in the inventory.</exception>
-        Modus? GetRequiredModus(string lemma);
 
         /// <summary>
         /// Determines whether the particle may stand in the rheme.

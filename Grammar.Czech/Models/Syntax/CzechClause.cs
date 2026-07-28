@@ -32,6 +32,37 @@ namespace Grammar.Czech.Models.Syntax
         public string? FrameLabel { get; init; }
 
         /// <summary>
+        /// Gets the particle that opens the clause, or null when there is none.
+        /// </summary>
+        /// <remarks>
+        /// Only the clause-initial ones belong here — ať, kéž, nechť, nuže. Like a subordinating conjunction
+        /// it fills the first position of its clause, so the clitic cluster follows it: "Ať se umyje". A
+        /// particle with scope over a single constituent goes on that constituent instead, in
+        /// <see cref="ClauseElement.Particle"/>.
+        /// <para>
+        /// The builder checks the mood: kéž takes the conditional and ať the imperative, and setting one
+        /// against the other is reported rather than rendered.
+        /// </para>
+        /// </remarks>
+        public string? Particle { get; init; }
+
+        /// <summary>
+        /// Gets the interjection that opens the sentence, or null when there is none.
+        /// </summary>
+        /// <remarks>
+        /// It stands outside the clause and is set off by a comma — "Ach, Petr se umyl" — so unlike
+        /// <see cref="Particle"/> it does not take the clause's first position and the cluster is unaffected.
+        /// That is the ÚJČ rule for an interjection that does not stand in for a clause member; one used as
+        /// the predicate is a different construction and is not expressed here.
+        /// <para>
+        /// The terminator is deliberately left alone. An emotional interjection tends towards an exclamation
+        /// mark, but tending is not a rule, and <see cref="Terminator"/> is the caller's to set — the same
+        /// reason <see cref="SentenceType"/> does not touch it either.
+        /// </para>
+        /// </remarks>
+        public string? Interjection { get; init; }
+
+        /// <summary>
         /// Gets the communicative force of the clause.
         /// </summary>
         /// <remarks>

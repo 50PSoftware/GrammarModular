@@ -112,17 +112,6 @@ namespace Grammar.Czech.Test
             Assert.IsFalse(service.IsClauseInitial("asi"));
         }
 
-        /// <summary>
-        /// The mood each optative particle calls for is recorded per word, because the source describes the
-        /// group as shading into the conjunctions rather than stating a government for it.
-        /// </summary>
-        [TestMethod]
-        public void GetRequiredModus_OptativeParticles_CarryTheirAttestedMood()
-        {
-            Assert.AreEqual(Modus.Conditional, service.GetRequiredModus("kéž"));
-            Assert.AreEqual(Modus.Imperative, service.GetRequiredModus("ať"));
-            Assert.IsNull(service.GetRequiredModus("jen"));
-        }
 
         /// <summary>
         /// A modifying particle cannot stand in the rheme — the one positional restriction NESČ states of a

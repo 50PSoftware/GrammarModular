@@ -77,10 +77,10 @@
   "nikoli": { "type": "Negative" },
   "nikoliv": { "type": "Negative" },
 
-  "ať": { "type": "Optative", "isClauseInitial": true, "requiresModus": "Imperative" },
-  "kéž": { "type": "Optative", "isClauseInitial": true, "requiresModus": "Conditional" },
-  "nechť": { "type": "Optative", "isClauseInitial": true, "requiresModus": "Imperative" },
-  "bodejž": { "type": "Optative", "isClauseInitial": true, "requiresModus": "Conditional" },
+  "ať": { "type": "Optative", "isClauseInitial": true },
+  "kéž": { "type": "Optative", "isClauseInitial": true },
+  "nechť": { "type": "Optative", "isClauseInitial": true },
+  "bodejž": { "type": "Optative", "isClauseInitial": true },
 
   "nuže": { "type": "Structuring", "isClauseInitial": true },
   "dále": { "type": "Structuring" },

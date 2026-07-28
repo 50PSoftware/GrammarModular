@@ -300,7 +300,6 @@ namespace Grammar.Czech.Test
             Assert.AreEqual(ParticleType.Modal, particles["asi"].Type);
             Assert.AreEqual(ParticleType.Optative, particles["kéž"].Type);
             Assert.IsTrue(particles["kéž"].IsClauseInitial, "Přací částice uvozuje klauzi.");
-            Assert.AreEqual(Modus.Conditional, particles["kéž"].RequiresModus);
             Assert.IsFalse(particles["jen"].IsClauseInitial, "Vytýkací částice se klade volně.");
         }
 

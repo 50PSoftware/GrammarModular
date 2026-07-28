@@ -57,12 +57,6 @@ namespace Grammar.Czech.Services
         /// <returns><see langword="true"/> for ať, kéž, nechť and the structuring openers; otherwise, <see langword="false"/>.</returns>
         public bool IsClauseInitial(string lemma) => Lookup(lemma).IsClauseInitial;
 
-        /// <summary>
-        /// Gets the mood the particle calls for in the clause it opens.
-        /// </summary>
-        /// <param name="lemma">The dictionary form to look up.</param>
-        /// <returns>The required mood, or <see langword="null"/> when the particle calls for none.</returns>
-        public Modus? GetRequiredModus(string lemma) => Lookup(lemma).RequiresModus;
 
         /// <summary>
         /// Determines whether the particle may stand in the rheme.

@@ -38,6 +38,21 @@ namespace Grammar.Czech.Models.Syntax
         public string? Preposition { get; init; }
 
         /// <summary>
+        /// Gets the particle scoping over this constituent, or null when there is none.
+        /// </summary>
+        /// <remarks>
+        /// The particle opens the whole constituent, ahead of any preposition: "jen pro Petra", "dokonce
+        /// i studenti". Typically a focusing particle, which is what singling one constituent out against
+        /// the alternatives amounts to.
+        /// <para>
+        /// A modifying particle is refused here when the constituent is the rheme. NESČ states it of the
+        /// group — <em>modifikační částice v rématu stát nemohou</em> — and the constituent's
+        /// <see cref="Status"/> is what says whether it is the rheme, so the builder can tell.
+        /// </para>
+        /// </remarks>
+        public string? Particle { get; init; }
+
+        /// <summary>
         /// Gets the relative clause modifying this constituent, or null when there is none.
         /// </summary>
         /// <remarks>
