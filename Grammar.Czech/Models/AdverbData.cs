@@ -40,6 +40,17 @@ namespace Grammar.Czech.Models
         /// <summary>
         /// Gets the comparative form, or null when the adverb is not compared.
         /// </summary>
+        /// <remarks>
+        /// Most of the stored comparatives are ones the rule in <see cref="Services.CzechAdverbService"/>
+        /// could derive, and they are kept on purpose rather than left over. They are the corpus the
+        /// derivation is measured against: a test derives every one of them and asserts that the set the
+        /// rule misses is exactly the known irregulars. Delete the regular entries and the rule still works,
+        /// but nothing is left to show that it works — the evidence goes with them.
+        /// <para>
+        /// A null here is a claim that the adverb is not compared, which the rule does not override. It is
+        /// not the same as being absent from the file, where the rule does apply.
+        /// </para>
+        /// </remarks>
         public string? Comparative { get; init; }
 
         /// <summary>
