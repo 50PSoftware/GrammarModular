@@ -43,5 +43,12 @@ namespace Grammar.Czech.Interfaces
         /// Which of them a sentence wants is a lexical choice, not something the pair itself settles.
         /// </remarks>
         IReadOnlyList<string> GetAdverbsFor(string adjectiveLemma);
+
+        /// <summary>
+        /// Determines whether the lemma is an adverb that can introduce a relative clause.
+        /// </summary>
+        /// <param name="lemma">The dictionary form to look up.</param>
+        /// <returns><see langword="true"/> for a registered relative adverb; otherwise, <see langword="false"/>.</returns>
+        bool IsRelative(string lemma);
     }
 }

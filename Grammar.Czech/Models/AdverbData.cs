@@ -29,6 +29,15 @@ namespace Grammar.Czech.Models
         public string? DerivedFrom { get; init; }
 
         /// <summary>
+        /// Gets a value indicating whether the adverb can introduce a relative clause.
+        /// </summary>
+        /// <remarks>
+        /// The same words serve as interrogative and relative — kde, kdy, kam, jak — so the flag says the
+        /// adverb is available in that role, not that it is always in it.
+        /// </remarks>
+        public bool IsRelative { get; init; }
+
+        /// <summary>
         /// Gets the comparative form, or null when the adverb is not compared.
         /// </summary>
         public string? Comparative { get; init; }

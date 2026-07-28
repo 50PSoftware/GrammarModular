@@ -114,6 +114,22 @@ namespace Grammar.Czech.Test
             Assert.AreEqual("rychleji", composer.GetFullForm(Adverb("rychle", Degree.Comparative, preferShort: true)).Form);
         }
 
+        /// <summary>
+        /// Negative adverbs are lexical, not the positive ones with a prefix, and they are not compared.
+        /// </summary>
+        /// <param name="lemma">The negative adverb.</param>
+        [DataTestMethod]
+        [DataRow("nikdy")]
+        [DataRow("nikde")]
+        [DataRow("nikam")]
+        [DataRow("nijak")]
+        [DataRow("odnikud")]
+        public void GetFullForm_NegativeAdverb_IsALemmaOfItsOwn(string lemma)
+        {
+            Assert.AreEqual(lemma, composer.GetFullForm(Adverb(lemma)).Form);
+            Assert.IsFalse(adverbs.IsComparable(lemma));
+        }
+
         #endregion Forms
 
         #region Comparison is data, not a rule
@@ -402,6 +418,129 @@ namespace Grammar.Czech.Test
             };
 
             Assert.AreEqual("Dělá ve velmi škole.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// A relative adverb introduces a relative clause. It is uninflected and is not an argument of that
+        /// clause, so nothing agrees with the antecedent through it — the clause keeps its own person.
+        /// </summary>
+        /// <param name="relativizer">The relative adverb.</param>
+        /// <param name="expected">The expected sentence.</param>
+        [DataTestMethod]
+        [DataRow("kde", "Student, kde dělám, dělá.")]
+        [DataRow("kdy", "Student, kdy dělám, dělá.")]
+        [DataRow("jak", "Student, jak dělám, dělá.")]
+        public void Build_RelativeAdverb_IntroducesTheClauseWithoutAgreement(string relativizer, string expected)
+        {
+            var relativePredicate = Verb("dělat", "dělá", Person.First);
+
+            var antecedent = new ClauseElement
+            {
+                Word = new CzechWordRequest
+                {
+                    Lemma = "student",
+                    Pattern = "pán",
+                    WordCategory = WordCategory.Noun,
+                    Gender = Gender.Masculine,
+                    IsAnimate = true,
+                    Number = Number.Singular,
+                    Case = Case.Nominative
+                },
+                Functor = FgdFunctor.ACT,
+                Status = InformationStatus.Given,
+                Relative = new RelativeAttachment
+                {
+                    Relativizer = relativizer,
+                    Clause = new CzechClause { Predicate = relativePredicate }
+                }
+            };
+
+            var clause = new CzechClause
+            {
+                Predicate = Verb("dělat", "dělá", Person.Third),
+                Elements = [antecedent]
+            };
+
+            Assert.AreEqual(expected, builder.Build(clause));
+        }
+
+        /// <summary>
+        /// The relative adverb takes the first position of its clause, so the clitic cluster follows it,
+        /// exactly as it does after a relative pronoun or a subordinating conjunction.
+        /// </summary>
+        [TestMethod]
+        public void Build_RelativeAdverbWithClitic_PlacesTheClusterAfterIt()
+        {
+            var relativePredicate = Verb("dělat", "dělá", Person.First, ReflexiveType.ReflexivumTantum_Se);
+
+            var antecedent = new ClauseElement
+            {
+                Word = new CzechWordRequest
+                {
+                    Lemma = "student",
+                    Pattern = "pán",
+                    WordCategory = WordCategory.Noun,
+                    Gender = Gender.Masculine,
+                    IsAnimate = true,
+                    Number = Number.Singular,
+                    Case = Case.Nominative
+                },
+                Functor = FgdFunctor.ACT,
+                Status = InformationStatus.Given,
+                Relative = new RelativeAttachment
+                {
+                    Relativizer = "kde",
+                    Clause = new CzechClause { Predicate = relativePredicate }
+                }
+            };
+
+            var clause = new CzechClause
+            {
+                Predicate = Verb("dělat", "dělá", Person.Third),
+                Elements = [antecedent]
+            };
+
+            Assert.AreEqual("Student, kde se dělám, dělá.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// An adverb that does not relativize is reported, the same as a pronoun that is not relative.
+        /// </summary>
+        [TestMethod]
+        public void Build_NonRelativeAdverbAsRelativizer_Throws()
+        {
+            Assert.IsFalse(adverbs.IsRelative("dnes"));
+            Assert.IsTrue(adverbs.IsRelative("kde"));
+
+            var antecedent = new ClauseElement
+            {
+                Word = new CzechWordRequest
+                {
+                    Lemma = "student",
+                    Pattern = "pán",
+                    WordCategory = WordCategory.Noun,
+                    Gender = Gender.Masculine,
+                    IsAnimate = true,
+                    Number = Number.Singular,
+                    Case = Case.Nominative
+                },
+                Functor = FgdFunctor.ACT,
+                Status = InformationStatus.Given,
+                Relative = new RelativeAttachment
+                {
+                    Relativizer = "dnes",
+                    Clause = new CzechClause { Predicate = Verb("dělat", "dělá", Person.Third) }
+                }
+            };
+
+            var clause = new CzechClause
+            {
+                Predicate = Verb("dělat", "dělá", Person.Third),
+                Elements = [antecedent]
+            };
+
+            var exception = Assert.ThrowsException<InvalidOperationException>(() => builder.Build(clause));
+            StringAssert.Contains(exception.Message, "vztažné příslovce");
         }
 
         #endregion In a clause

@@ -15,13 +15,21 @@ namespace Grammar.Czech.Models.Syntax
     public sealed record RelativeAttachment
     {
         /// <summary>
-        /// Gets the lemma of the relative pronoun.
+        /// Gets the lemma of the word introducing the relative clause.
         /// </summary>
-        public string Pronoun { get; init; } = "který";
+        /// <remarks>
+        /// A relative pronoun (který, jenž) or a relative adverb (kde, kdy, kam, jak). It was called Pronoun
+        /// while only pronouns were supported; adverbs relativize too — "dům, kde bydlím" — and they behave
+        /// differently enough that the name had to stop implying one of the two.
+        /// </remarks>
+        public string Relativizer { get; init; } = "který";
 
         /// <summary>
-        /// Gets the case the pronoun takes from its role inside the relative clause.
+        /// Gets the case the relativizer takes from its role inside the relative clause.
         /// </summary>
+        /// <remarks>
+        /// Ignored for a relative adverb, which is uninflected and has no role a case could express.
+        /// </remarks>
         public Case Case { get; init; } = Case.Nominative;
 
         /// <summary>

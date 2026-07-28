@@ -507,7 +507,7 @@
             {
                 Relative = new RelativeAttachment
                 {
-                    Pronoun = "který",
+                    Relativizer = "který",
                     Case = Case.Nominative,
                     Clause = new CzechClause { Predicate = ucitSe with { Tense = Tense.Past }, Elements = [veSkole] }
                 }

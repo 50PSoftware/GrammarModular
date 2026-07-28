@@ -280,7 +280,7 @@ namespace Grammar.Czech.Test
                 Status = InformationStatus.Given,
                 Relative = new RelativeAttachment
                 {
-                    Pronoun = "který",
+                    Relativizer = "který",
                     Case = Case.Nominative,
                     Clause = Clause(Verb("dělat", "dělá", ReflexiveType.ReflexivumTantum_Se))
                 }
@@ -315,7 +315,7 @@ namespace Grammar.Czech.Test
                 Status = InformationStatus.New,
                 Relative = new RelativeAttachment
                 {
-                    Pronoun = "který",
+                    Relativizer = "který",
                     Case = Case.Accusative,
                     Clause = Clause(relativePredicate)
                 }
@@ -341,7 +341,7 @@ namespace Grammar.Czech.Test
                 Status = InformationStatus.New,
                 Relative = new RelativeAttachment
                 {
-                    Pronoun = "který",
+                    Relativizer = "který",
                     Case = Case.Genitive,
                     Clause = Clause(relativePredicate)
                 }
@@ -364,7 +364,7 @@ namespace Grammar.Czech.Test
                 Status = InformationStatus.Given,
                 Relative = new RelativeAttachment
                 {
-                    Pronoun = "který",
+                    Relativizer = "který",
                     Case = Case.Nominative,
                     Clause = Clause(Verb("dělat", "dělá"))
                 }
@@ -388,7 +388,7 @@ namespace Grammar.Czech.Test
                 Status = InformationStatus.Given,
                 Relative = new RelativeAttachment
                 {
-                    Pronoun = "jenž",
+                    Relativizer = "jenž",
                     Case = Case.Nominative,
                     Clause = Clause(Verb("dělat", "dělá"))
                 }
@@ -410,7 +410,7 @@ namespace Grammar.Czech.Test
                 Status = InformationStatus.Given,
                 Relative = new RelativeAttachment
                 {
-                    Pronoun = "ten",
+                    Relativizer = "ten",
                     Case = Case.Nominative,
                     Clause = Clause(Verb("dělat", "dělá"))
                 }
@@ -435,7 +435,7 @@ namespace Grammar.Czech.Test
                 Status = InformationStatus.Given,
                 Relative = new RelativeAttachment
                 {
-                    Pronoun = "který",
+                    Relativizer = "který",
                     Case = Case.Nominative,
                     Clause = Clause(Verb("dělat", "dělá"))
                 }
@@ -495,7 +495,7 @@ namespace Grammar.Czech.Test
                 Status = InformationStatus.Given,
                 Relative = new RelativeAttachment
                 {
-                    Pronoun = "který",
+                    Relativizer = "který",
                     Case = Case.Nominative,
                     Clause = new CzechClause
                     {

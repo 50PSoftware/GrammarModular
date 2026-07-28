@@ -97,6 +97,14 @@ namespace Grammar.Czech.Services
         public IReadOnlyList<string> GetAdverbsFor(string adjectiveLemma)
             => _byAdjective.Value[adjectiveLemma].ToList();
 
+        /// <summary>
+        /// Determines whether the lemma is an adverb that can introduce a relative clause.
+        /// </summary>
+        /// <param name="lemma">The dictionary form to look up.</param>
+        /// <returns><see langword="true"/> for a registered relative adverb; otherwise, <see langword="false"/>.</returns>
+        public bool IsRelative(string lemma)
+            => _adverbs.TryGetValue(lemma, out var data) && data.IsRelative;
+
         private string ResolveComparative(CzechWordRequest request)
         {
             if (!_adverbs.TryGetValue(request.Lemma, out var data))

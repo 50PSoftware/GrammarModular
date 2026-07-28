@@ -21,6 +21,7 @@ namespace Grammar.Czech.Services
         private readonly ICzechPrepositionService prepositionService;
         private readonly ICzechConjunctionService conjunctionService;
         private readonly ICzechValencyService valencyService;
+        private readonly ICzechAdverbService adverbService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechSentenceBuilder"/> type.
@@ -32,8 +33,10 @@ namespace Grammar.Czech.Services
             ICzechNumeralService numeralService,
             ICzechPrepositionService prepositionService,
             ICzechConjunctionService conjunctionService,
-            ICzechValencyService valencyService)
+            ICzechValencyService valencyService,
+            ICzechAdverbService adverbService)
         {
+            this.adverbService = adverbService;
             this.composer = composer;
             this.particleService = particleService;
             this.pronounService = pronounService;
@@ -349,15 +352,23 @@ namespace Grammar.Czech.Services
             var relative = element.Relative!;
             var antecedent = element.Word;
 
-            if (pronounService.GetPronounType(relative.Pronoun) != PronounType.Relative)
+            // A relative adverb is uninflected and is not an argument of its clause, so nothing agrees with
+            // the antecedent through it: "dům, kde bydlím" keeps the clause's own person and number.
+            if (adverbService.IsRelative(relative.Relativizer))
             {
-                throw new InvalidOperationException($"'{relative.Pronoun}' není vztažné zájmeno.");
+                return $"{relative.Relativizer} {RenderClause(relative.Clause, firstPositionTaken: true)},";
+            }
+
+            if (pronounService.GetPronounType(relative.Relativizer) != PronounType.Relative)
+            {
+                throw new InvalidOperationException(
+                    $"'{relative.Relativizer}' není vztažné zájmeno ani vztažné příslovce.");
             }
 
             var pronoun = pronounService.TryGetForm(
-                relative.Pronoun, relative.Case, antecedent.Gender, antecedent.Number, antecedent.IsAnimate, null)
+                relative.Relativizer, relative.Case, antecedent.Gender, antecedent.Number, antecedent.IsAnimate, null)
                 ?? throw new InvalidOperationException(
-                    $"Vztažné zájmeno '{relative.Pronoun}' nemá tvar pro pád {relative.Case}.");
+                    $"Vztažné zájmeno '{relative.Relativizer}' nemá tvar pro pád {relative.Case}.");
 
             var clause = relative.Clause;
 
