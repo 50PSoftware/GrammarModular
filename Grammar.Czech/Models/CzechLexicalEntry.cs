@@ -43,5 +43,58 @@ namespace Grammar.Czech.Models
         /// Gets or sets the reflexive type, encoding which particle (se/si) the verb requires.
         /// </summary>
         public ReflexiveType ReflexiveType { get; init; }
+
+        // The properties below are lexical facts that used to be reachable only through
+        // CzechWordRequest, which meant every caller had to know that banka takes an epenthetic e in the
+        // genitive plural and that lyže has no singular. They belong to the word, so the lexicon states
+        // them once and the request keeps its own copies for callers working without an entry.
+
+        /// <summary>
+        /// Gets a value indicating whether genitive plural epenthesis applies, as in banka to bank.
+        /// </summary>
+        public bool? HasEpenthesisInGenitivePlural { get; init; }
+
+        /// <summary>
+        /// Gets a value indicating whether the word is indeclinable.
+        /// </summary>
+        public bool? IsIndeclinable { get; init; }
+
+        /// <summary>
+        /// Gets a value indicating whether the word occurs only in plural forms, as in kamna or lyže.
+        /// </summary>
+        public bool? IsPluralOnly { get; init; }
+
+        /// <summary>
+        /// Gets a value indicating whether the noun denotes something countable.
+        /// </summary>
+        /// <remarks>
+        /// Only the vague quantifiers care: mnoho takes the genitive plural of a countable noun
+        /// (mnoho studentů) and the genitive singular of an uncountable one (mnoho práce).
+        /// </remarks>
+        public bool? IsCountable { get; init; }
+
+        /// <summary>
+        /// Gets a value indicating whether the shorter of two competing forms is preferred.
+        /// </summary>
+        public bool? PrefersShortForm { get; init; }
+
+        /// <summary>
+        /// Gets the Czech verb class, which decides the conjugation pattern.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="Services.CzechVerbConjugationService"/> guesses this from the infinitive suffix, and
+        /// the suffix is not enough on its own — mazat and dělat both end in -at yet belong to different
+        /// classes. A stored class overrules the guess.
+        /// </remarks>
+        public VerbClass? VerbClass { get; init; }
+
+        /// <summary>
+        /// Gets the verb a deverbal noun is derived from, or <see langword="null"/> for a primary noun.
+        /// </summary>
+        /// <remarks>
+        /// příjezd inherits the frame of přijet rather than restating it; the nominal surface rules —
+        /// nominative actor to genitive, accusative patient to genitive — apply on top.
+        /// </remarks>
+        public string? BaseVerbLemma { get; init; }
     }
 }

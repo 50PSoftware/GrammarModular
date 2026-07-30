@@ -1,0 +1,331 @@
+using Grammar.Core.Enums;
+using Grammar.Core.Interfaces;
+using Grammar.Core.Models.Valency;
+using Grammar.Czech.Enums;
+using Grammar.Czech.Models;
+using Microsoft.Data.Sqlite;
+using System.Collections.Concurrent;
+using System.Data.Common;
+
+namespace Grammar.Czech.Providers.SqliteProviders
+{
+    /// <summary>
+    /// Loads Czech lexical entries and valency frames from the SQLite lexicon database.
+    /// </summary>
+    /// <remarks>
+    /// The database is the authored source of the dictionary, not a build artefact of the old JSON. It
+    /// replaced JsonValencyProvider because a hand-written JSON object is an authoring format for tens of
+    /// entries and the lexicon is meant to reach thousands.
+    /// <para>
+    /// Every statement here goes through <see cref="DbConnection"/> and <see cref="DbCommand"/> and every
+    /// value is passed as a parameter, so that moving the lexicon onto MySQL, Microsoft SQL or Firebird
+    /// means handing a different factory to <see cref="SqliteValencyProvider(Func{DbConnection}, string)"/>
+    /// rather than rewriting the queries. The SQL avoids LIMIT and TOP for the same reason: the reader
+    /// stops after the row it wants.
+    /// </para>
+    /// </remarks>
+    public sealed class SqliteValencyProvider : IValencyProvider<CzechLexicalEntry>
+    {
+        /// <summary>
+        /// The default file name of the lexicon database, as copied next to the assembly.
+        /// </summary>
+        public const string DefaultFileName = "grammar.czech.lexicon.db";
+
+        /// <summary>
+        /// The schema version this provider reads, matching PRAGMA user_version in the database.
+        /// </summary>
+        public const int SupportedSchemaVersion = 1;
+
+        private const string EntryQuery = """
+            SELECT lemma, category, gender, pattern, is_animate, has_mobile_e,
+                   has_genitive_plural_shortening, has_epenthesis_in_genitive_plural,
+                   is_indeclinable, is_plural_only, is_countable, prefers_short_form,
+                   verb_class, aspect, aspect_counterpart, reflexive_type, base_verb_lemma
+            FROM lemma_entry
+            WHERE lemma_key = @key
+            ORDER BY homonym_index
+            """;
+
+        private const string FrameQuery = """
+            SELECT f.frame_id, e.lemma, f.lu_id, u.sense_label, f.kind, f.diathesis, f.is_default,
+                   s.slot_id, s.functor, s.canonical_order, s.obligatoriness,
+                   s.can_drop_contextual, s.can_drop_generic, s.control_target,
+                   r.morph_case, r.preposition, r.clause_type, r.takes_infinitive, r.preference
+            FROM lemma_entry e
+            JOIN lexical_unit u ON u.lexeme_id = e.lexeme_id
+            JOIN valency_frame f ON f.lu_id = u.lu_id
+            LEFT JOIN valency_slot s ON s.frame_id = f.frame_id
+            LEFT JOIN slot_realization r ON r.slot_id = s.slot_id
+            WHERE e.lemma_key = @key
+            ORDER BY f.frame_id, s.canonical_order, s.slot_id, r.preference, r.realization_id
+            """;
+
+        // Column ordinals of FrameQuery. Named because the query is wide enough that a bare index says
+        // nothing, and because one column inserted in the middle would otherwise silently shift the rest.
+        private const int FrameId = 0;
+        private const int FrameLemma = 1;
+        private const int FrameLuId = 2;
+        private const int FrameSenseLabel = 3;
+        private const int FrameKind = 4;
+        private const int FrameDiathesis = 5;
+        private const int FrameIsDefault = 6;
+        private const int SlotId = 7;
+        private const int SlotFunctor = 8;
+        private const int SlotCanonicalOrder = 9;
+        private const int SlotObligatoriness = 10;
+        private const int SlotCanDropContextual = 11;
+        private const int SlotCanDropGeneric = 12;
+        private const int SlotControlTarget = 13;
+        private const int RealizationCase = 14;
+        private const int RealizationPreposition = 15;
+        private const int RealizationClauseType = 16;
+        private const int RealizationTakesInfinitive = 17;
+        private const int RealizationPreference = 18;
+
+        private readonly Func<DbConnection> _connectionFactory;
+        private readonly string _sourceDescription;
+        private readonly ConcurrentDictionary<string, CzechLexicalEntry?> _entryCache = new(StringComparer.Ordinal);
+        private readonly ConcurrentDictionary<string, IReadOnlyList<ValencyFrame>> _frameCache = new(StringComparer.Ordinal);
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SqliteValencyProvider"/> type over a lexicon file.
+        /// </summary>
+        /// <param name="databasePath">
+        /// The path to the lexicon database, or <see langword="null"/> to take <see cref="DefaultFileName"/>
+        /// from the directory the assembly runs out of.
+        /// </param>
+        /// <exception cref="FileNotFoundException">The lexicon database does not exist.</exception>
+        public SqliteValencyProvider(string? databasePath = null)
+        {
+            var path = databasePath ?? Path.Combine(AppContext.BaseDirectory, DefaultFileName);
+
+            // A missing file has to fail here rather than at the first lookup. SQLite would otherwise
+            // create an empty database and every lemma would come back as simply absent, which reads as a
+            // gap in the dictionary instead of as a build that failed to copy the file.
+            if (!File.Exists(path))
+            {
+                throw new FileNotFoundException(
+                    $"Lexikon '{path}' neexistuje. Zkontroluj, že se {DefaultFileName} kopíruje do výstupu "
+                    + "(CopyToOutputDirectory), nebo předej cestu konstruktoru.",
+                    path);
+            }
+
+            var connectionString = new SqliteConnectionStringBuilder
+            {
+                DataSource = path,
+                Mode = SqliteOpenMode.ReadOnly,
+                Cache = SqliteCacheMode.Shared,
+                ForeignKeys = true
+            }.ToString();
+
+            _connectionFactory = () => new SqliteConnection(connectionString);
+            _sourceDescription = path;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SqliteValencyProvider"/> type over any ADO.NET
+        /// connection.
+        /// </summary>
+        /// <param name="connectionFactory">Creates a closed connection to the lexicon on each call.</param>
+        /// <param name="sourceDescription">Names the source in error messages.</param>
+        /// <remarks>
+        /// This is the seam for a server-side backend. The factory is called per lookup because a single
+        /// <see cref="SqliteConnection"/> is not safe to use from several threads at once and the provider
+        /// is registered as a singleton; connection pooling makes the repeated open cheap.
+        /// </remarks>
+        public SqliteValencyProvider(Func<DbConnection> connectionFactory, string sourceDescription)
+        {
+            _connectionFactory = connectionFactory;
+            _sourceDescription = sourceDescription;
+        }
+
+        /// <summary>
+        /// Gets the lexical entry registered for the supplied lemma.
+        /// </summary>
+        /// <param name="lemma">The dictionary form to resolve or analyze.</param>
+        /// <returns>The lexical entry for the lemma, or null when the lemma is not present.</returns>
+        /// <remarks>
+        /// A lemma shared by two word classes — stát the building and stát the verb — yields the entry with
+        /// the lowest homonym index. The interface takes a lemma and nothing else, so there is nothing here
+        /// to tell the two apart with.
+        /// </remarks>
+        public CzechLexicalEntry? GetEntry(string lemma)
+            => _entryCache.GetOrAdd(ToKey(lemma), LoadEntry);
+
+        /// <summary>
+        /// Gets valency frames registered for the supplied verb lemma.
+        /// </summary>
+        /// <param name="verbLemma">The verb lemma whose valency frames are requested.</param>
+        /// <returns>The valency frames for the lemma, or an empty sequence when no frames are registered.</returns>
+        public IEnumerable<ValencyFrame> GetFrames(string verbLemma)
+            => _frameCache.GetOrAdd(ToKey(verbLemma), LoadFrames);
+
+        /// <summary>
+        /// Determines whether the lexicon contains an entry for the supplied lemma.
+        /// </summary>
+        /// <param name="lemma">The dictionary form to resolve or analyze.</param>
+        /// <returns><see langword="true"/> when the lemma is present in the lexicon; otherwise, <see langword="false"/>.</returns>
+        public bool HasEntry(string lemma) => GetEntry(lemma) is not null;
+
+        // The key is folded here rather than by a database collation. SQLite NOCASE folds ASCII only, so
+        // DÁT and dát would be two different keys, and a Czech culture collation is the wrong instrument
+        // besides — culture-aware comparison treats ch as a unit and would answer questions about Czech
+        // orthography that a lookup key has no business asking.
+        private static string ToKey(string lemma) => lemma.ToLowerInvariant();
+
+        private CzechLexicalEntry? LoadEntry(string key)
+        {
+            using var connection = OpenConnection();
+            using var command = CreateCommand(connection, EntryQuery, key);
+            using var reader = command.ExecuteReader();
+
+            return reader.Read() ? ReadEntry(reader) : null;
+        }
+
+        private IReadOnlyList<ValencyFrame> LoadFrames(string key)
+        {
+            using var connection = OpenConnection();
+            using var command = CreateCommand(connection, FrameQuery, key);
+            using var reader = command.ExecuteReader();
+
+            // The join flattens frame, slot and realization into one result set, so the rows are folded
+            // back into the nesting they came from. They arrive grouped and ordered by the ORDER BY, which
+            // is what lets a single pass do it. The grouping key is frame_id and not lu_id: one lexical
+            // unit carries a frame per diathesis, so lu_id would collapse the active and the passive of
+            // the same sense into one frame.
+            var frames = new List<(long Id, ValencyFrame Frame)>();
+            var slotIdsByFrame = new Dictionary<long, List<long>>();
+            var slotsById = new Dictionary<long, ValencySlot>();
+            var realizationsBySlot = new Dictionary<long, List<SlotRealization>>();
+
+            while (reader.Read())
+            {
+                var frameId = reader.GetInt64(FrameId);
+
+                if (!slotIdsByFrame.ContainsKey(frameId))
+                {
+                    frames.Add((frameId, new ValencyFrame
+                    {
+                        VerbLemma = reader.GetString(FrameLemma),
+                        LuId = reader.GetInt64(FrameLuId),
+                        FrameLabel = GetNullableString(reader, FrameSenseLabel),
+                        Kind = ParseEnum<ValencyKind>(reader.GetString(FrameKind), "kind"),
+                        Diathesis = ParseEnum<Diathesis>(reader.GetString(FrameDiathesis), "diathesis"),
+                        IsDefault = reader.GetInt64(FrameIsDefault) != 0
+                    }));
+
+                    slotIdsByFrame[frameId] = [];
+                }
+
+                // The outer joins leave these null for a frame with no slots, or a slot with no
+                // realization. Both are data errors the tool's validate command reports; reading them is
+                // not the place to fail on them.
+                if (reader.IsDBNull(SlotId))
+                {
+                    continue;
+                }
+
+                var slotId = reader.GetInt64(SlotId);
+
+                if (!slotsById.ContainsKey(slotId))
+                {
+                    slotsById[slotId] = new ValencySlot
+                    {
+                        Functor = ParseEnum<FgdFunctor>(reader.GetString(SlotFunctor), "functor"),
+                        CanonicalOrder = (int)reader.GetInt64(SlotCanonicalOrder),
+                        Obligatoriness = ParseEnum<Obligatoriness>(reader.GetString(SlotObligatoriness), "obligatoriness"),
+                        CanDropContextual = reader.GetInt64(SlotCanDropContextual) != 0,
+                        CanDropGeneric = reader.GetInt64(SlotCanDropGeneric) != 0,
+                        ControlTarget = reader.IsDBNull(SlotControlTarget)
+                            ? null
+                            : ParseEnum<FgdFunctor>(reader.GetString(SlotControlTarget), "control_target")
+                    };
+
+                    realizationsBySlot[slotId] = [];
+                    slotIdsByFrame[frameId].Add(slotId);
+                }
+
+                if (reader.IsDBNull(RealizationPreference))
+                {
+                    continue;
+                }
+
+                realizationsBySlot[slotId].Add(new SlotRealization
+                {
+                    Case = reader.IsDBNull(RealizationCase)
+                        ? null
+                        : ParseEnum<Case>(reader.GetString(RealizationCase), "morph_case"),
+                    Preposition = GetNullableString(reader, RealizationPreposition),
+                    ClauseType = GetNullableString(reader, RealizationClauseType),
+                    TakesInfinitive = reader.GetInt64(RealizationTakesInfinitive) != 0,
+                    Preference = (int)reader.GetInt64(RealizationPreference)
+                });
+            }
+
+            return frames
+                .Select(entry => entry.Frame with
+                {
+                    Slots = slotIdsByFrame[entry.Id]
+                        .Select(slotId => slotsById[slotId] with { Realizations = realizationsBySlot[slotId] })
+                        .ToList()
+                })
+                .ToList();
+        }
+
+        private CzechLexicalEntry ReadEntry(DbDataReader reader) => new()
+        {
+            Lemma = reader.GetString(0),
+            Category = ParseEnum<WordCategory>(reader.GetString(1), "category"),
+            Gender = reader.IsDBNull(2) ? null : ParseEnum<Gender>(reader.GetString(2), "gender"),
+            Pattern = GetNullableString(reader, 3),
+            IsAnimate = GetNullableBoolean(reader, 4),
+            HasMobileE = GetNullableBoolean(reader, 5),
+            HasGenitivePluralShortening = GetNullableBoolean(reader, 6),
+            HasEpenthesisInGenitivePlural = GetNullableBoolean(reader, 7),
+            IsIndeclinable = GetNullableBoolean(reader, 8),
+            IsPluralOnly = GetNullableBoolean(reader, 9),
+            IsCountable = GetNullableBoolean(reader, 10),
+            PrefersShortForm = GetNullableBoolean(reader, 11),
+            VerbClass = reader.IsDBNull(12) ? null : ParseEnum<VerbClass>(reader.GetString(12), "verb_class"),
+            Aspect = reader.IsDBNull(13) ? null : ParseEnum<VerbAspect>(reader.GetString(13), "aspect"),
+            AspectCounterpart = GetNullableString(reader, 14),
+            ReflexiveType = ParseEnum<ReflexiveType>(reader.GetString(15), "reflexive_type"),
+            BaseVerbLemma = GetNullableString(reader, 16)
+        };
+
+        private DbConnection OpenConnection()
+        {
+            var connection = _connectionFactory();
+            connection.Open();
+
+            return connection;
+        }
+
+        private static DbCommand CreateCommand(DbConnection connection, string sql, string key)
+        {
+            var command = connection.CreateCommand();
+            command.CommandText = sql;
+
+            var parameter = command.CreateParameter();
+            parameter.ParameterName = "@key";
+            parameter.Value = key;
+            command.Parameters.Add(parameter);
+
+            return command;
+        }
+
+        private static string? GetNullableString(DbDataReader reader, int ordinal)
+            => reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);
+
+        private static bool? GetNullableBoolean(DbDataReader reader, int ordinal)
+            => reader.IsDBNull(ordinal) ? null : reader.GetInt64(ordinal) != 0;
+
+        private TEnum ParseEnum<TEnum>(string value, string column) where TEnum : struct, Enum
+            => Enum.TryParse<TEnum>(value, out var parsed)
+                ? parsed
+                : throw new InvalidOperationException(
+                    $"Lexikon '{_sourceDescription}' má ve sloupci {column} hodnotu '{value}', "
+                    + $"kterou {typeof(TEnum).Name} nezná. Povolené hodnoty: "
+                    + string.Join(", ", Enum.GetNames<TEnum>()) + ".");
+    }
+}

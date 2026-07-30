@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
 
     <PackageId>50PSoftware.GrammarModular.Czech</PackageId>
-    <Version>1.0.0-preview.21</Version>
+    <Version>1.0.0-preview.22</Version>
     <Authors>Vojtěch Pchálek</Authors>
     <Company>50PSoftware</Company>
     <Description>Czech morphologial generator for .NET</Description>
@@ -18,6 +18,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.3" />
   </ItemGroup>
@@ -30,8 +31,33 @@
     <EmbeddedResource Include="Data\**\*.json" />
   </ItemGroup>
 
+  <!--
+    The lexicon is a SQLite file and SQLite reads files, not streams, so this one data file is copied
+    next to the assembly rather than embedded like the rule JSONs. contentFiles alone does not reach a
+    PackageReference consumer's output directory, so the targets file below does the copy there; the
+    None item ships it for both consumption styles.
+
+    The Exists condition is what lets the repository bootstrap itself: Grammar.Czech.Lexicon.Tool builds
+    the database and references this project to do it, so requiring the file here would mean the tool
+    could never be built to produce it. A missing file is not silently tolerated at runtime — the
+    provider throws FileNotFoundException naming the path.
+  -->
+  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)Data\Lexicon\grammar.czech.lexicon.db')">
+    <!--
+      Content and not None: only Content items carry CopyToOutputDirectory across a ProjectReference, and
+      the test project resolves the lexicon from its own output directory like any other consumer does.
+    -->
+    <Content Include="Data\Lexicon\grammar.czech.lexicon.db"
+             Link="grammar.czech.lexicon.db"
+             CopyToOutputDirectory="PreserveNewest"
+             Pack="true"
+             PackagePath="contentFiles\any\net8.0\;build\" />
+  </ItemGroup>
+
   <ItemGroup>
-    <Folder Include="Data\Lexicon\" />
+    <None Include="build\50PSoftware.GrammarModular.Czech.targets"
+          Pack="true"
+          PackagePath="build\" />
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>

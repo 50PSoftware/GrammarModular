@@ -348,13 +348,23 @@ namespace Grammar.Czech.Services
                 return element;
             }
 
+            var realization = slot.PreferredRealization;
+
+            // A slot may be realized as a dependent clause or an infinitive instead of a case — říct to
+            // against říct, že přijde. Building those is the clause planner's job and it does not exist
+            // yet, so the frame has nothing to fill in here and the caller's own wording stands.
+            if (realization?.Case is not { } governedCase)
+            {
+                return element;
+            }
+
             var word = element.Word;
-            word.Case = slot.Realization.Case;
+            word.Case = governedCase;
 
             return element with
             {
                 Word = word,
-                Preposition = element.Preposition ?? slot.Realization.Preposition
+                Preposition = element.Preposition ?? realization.Preposition
             };
         }
 

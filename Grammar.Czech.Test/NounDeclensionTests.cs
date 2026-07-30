@@ -2,6 +2,7 @@ using Grammar.Core.Enums;
 using Grammar.Czech.Models;
 using Grammar.Czech.Providers;
 using Grammar.Czech.Providers.JsonProviders;
+using Grammar.Czech.Providers.SqliteProviders;
 using Grammar.Czech.Services;
 using System.Reflection;
 
@@ -33,7 +34,7 @@ namespace Grammar.Czech.Test
             var jotationEvaluator = new CzechJotationRuleEvaluator(registry, wordStructureResolver);
             var syncretismEvaluator = new CzechSyncretismRuleEvaluator();
             var orthographyService = new CzechOrthographyService(registry);
-            var valencyProvider = new JsonValencyProvider();
+            var valencyProvider = new SqliteValencyProvider();
 
             nounDeclensionService = new CzechNounDeclensionService(nounDataPrvider, wordStructureResolver, phonologyService, softeningEvaluator, epenthesisEvaluator, jotationEvaluator, syncretismEvaluator, orthographyService, valencyProvider);
         }

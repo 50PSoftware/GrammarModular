@@ -249,13 +249,21 @@ namespace Grammar.Czech.Test
             {
                 foreach (var frame in provider.GetFrames(lemma))
                 {
-                    foreach (var slot in frame.Slots.Where(slot => slot.Realization.Preposition is not null))
+                    // Every realization is checked, not just the preferred one: a variant nobody generates
+                    // today is still a variant the lexicon claims is grammatical.
+                    foreach (var realization in frame.Slots
+                        .SelectMany(slot => slot.Realizations)
+                        .Where(realization => realization.Preposition is not null))
                     {
-                        var preposition = slot.Realization.Preposition!;
+                        var preposition = realization.Preposition!;
+
+                        Assert.IsNotNull(
+                            realization.Case,
+                            $"Rámec '{lemma}/{frame.FrameLabel}': předložka '{preposition}' bez pádu neřídí nic.");
 
                         Assert.IsTrue(
-                            prepositions.IsAllowed(preposition, slot.Realization.Case),
-                            $"Rámec '{lemma}/{frame.FrameLabel}': předložka '{preposition}' neřídí pád {slot.Realization.Case}.");
+                            prepositions.IsAllowed(preposition, realization.Case.Value),
+                            $"Rámec '{lemma}/{frame.FrameLabel}': předložka '{preposition}' neřídí pád {realization.Case}.");
                     }
                 }
             }

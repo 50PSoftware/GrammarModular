@@ -148,10 +148,21 @@ The parts in public use include:
 
 ### Lexicon and valency
 
-`JsonValencyProvider` loads embedded JSON from `Grammar.Czech/Data/Lexicon/`:
+`SqliteValencyProvider` reads `Grammar.Czech/Data/Lexicon/grammar.czech.lexicon.db`, a SQLite database that is the authored source of the dictionary rather than a build artefact of anything else. It is the one data source here that is not embedded JSON, because it is the part meant to grow into thousands of entries; the rule files under `Data/Rules/` describe closed classes and stay as they are.
 
-- `lexicon.json` holds morphological metadata per lemma — gender, pattern, aspect, animacy, the mobile `e`, or the genitive-plural shortening flag,
-- `valency.json` holds valency frames.
+The database holds three layers, kept apart because one lemma has exactly one morphological identity but a lexeme may have several senses and each sense a frame per diathesis:
+
+- `lemma_entry` — morphological identity per dictionary form: gender, pattern, animacy, the mobile `e`, genitive-plural shortening and epenthesis, indeclinability, plural-only, countability, verb class, aspect and its counterpart, reflexive type, plus provenance columns,
+- `lexeme` and `lexical_unit` — the abstract word and its senses. An aspect pair is one lexeme, so `dát` and `dávat` share a single frame instead of each carrying a copy,
+- `valency_frame`, `valency_slot`, `slot_realization` — the frames themselves. A slot may have several realizations with a generation preference, which is what lets one slot be a bare case in one wording and a `že`-clause or an infinitive in another.
+
+The schema in `Grammar.Czech.Lexicon.Tool/Schema/schema.sql` is deliberately portable SQL — SQLite is the first backend, and MySQL, Microsoft SQL or Firebird are meant to take the same DDL. Everything SQLite-specific sits in `schema.sqlite.sql`.
+
+`Grammar.Czech.Lexicon.Tool` maintains the file: `build` creates it from the schema and the seed, `validate` reports what a hand-written row broke — a frame with no actor, a slot that can never surface, a `lemma_key` that no lookup will match — and `dump` writes it out as portable `INSERT` statements for review.
+
+```bash
+dotnet run --project Grammar.Czech.Lexicon.Tool -- validate
+```
 
 The lexicon serves mainly as a metadata provider for selected resolvers; it is not a complete dictionary of Czech.
 
@@ -214,10 +225,11 @@ The class is more open than any other here — onomatopoeia is coined on the spo
 
 ```text
 Grammar.sln
-|-- Grammar.Core/        language-independent enums, interfaces and models
-|-- Grammar.Czech/       the Czech implementation: services, providers and embedded JSON data
-|-- Grammar.Czech.Cli/   console demo with hard-coded examples
-`-- Grammar.Czech.Test/  MSTest tests for declension, conjugation, phonology and sentence building
+|-- Grammar.Core/               language-independent enums, interfaces and models
+|-- Grammar.Czech/              the Czech implementation: services, providers, embedded JSON rules and the lexicon database
+|-- Grammar.Czech.Cli/          console demo with hard-coded examples
+|-- Grammar.Czech.Lexicon.Tool/ builds, validates and dumps the lexicon database
+`-- Grammar.Czech.Test/         MSTest tests for declension, conjugation, phonology and sentence building
 ```
 
 The main DI registration is `AddCzechGrammarServices()` in `Grammar.Czech/CzechGrammarServiceFactory.cs`.
@@ -545,8 +557,7 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 | `Data/Rules/adverbs.json` | adverbs and their comparison |
 | `Data/Rules/particles.json` | particles and their function |
 | `Data/Rules/interjections.json` | interjections, their type and predicative use |
-| `Data/Lexicon/lexicon.json` | lexical metadata |
-| `Data/Lexicon/valency.json` | valency frames (`dát`, `dávat`, `jít`, `vidět`) |
+| `Data/Lexicon/grammar.czech.lexicon.db` | lexical metadata and valency frames (`dát`/`dávat`, `jít`, `vidět`) — SQLite, not JSON |
 
 ## Known limitations
 
@@ -554,12 +565,15 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 - `MorphologyEngine.GetForm` returns a single word, so for a verb it gives the basic form only. The verb forms that are several words — the periphrastic future, the passive with an auxiliary, the conditional, negation, the reflexive — need `CzechWordFormComposer.GetFullForm`.
 - A named pattern from `irregulars.json` carries the stems literally, so it fits the pattern's own verb and its prefixed derivatives — `nese` covers *nést* and *odnést*, `dělá` covers *dělat* and *dodělat*. An unrelated verb needs a class pattern: *prodávat* with `dělá` returns *dělá*, with `trida5` the correct *prodává*.
 - `CzechAlternationRuleEvaluator` is not registered in DI, and genitive-plural shortening is not actively wired into noun declension.
-- The lexicon is not a complete dictionary of Czech; `ResolveGenderAndPattern` and `ResolveVerbAspect` only work for lemmas present in `lexicon.json`.
+- The lexicon is not a complete dictionary of Czech; `ResolveGenderAndPattern` and `ResolveVerbAspect` only work for lemmas the database holds.
+- `IValencyProvider.GetEntry` takes a lemma and nothing else, so it cannot tell homonyms apart. The schema carries `homonym_index` and the provider returns the lowest one.
 - The CLI is a demo, not a general-purpose query tool.
 - Numerals do not support the frozen variant of aggregate numerals (*bez patero ponožek*), which IJP id=792 lists as standard alongside the declined one; the declined form is always generated.
 - A demonstrative in front of a numeral (*těch pět studentů*) agrees with the head of the phrase, not with the phrase as a whole.
 - `CzechNumeralComposer.ComposeOrdinal` and `ComposeOfType` build only from lemmas present in the dictionary; a value that needs a missing component (e.g. *dvoutisící*) throws rather than inventing a form.
-- `valency.json` contains frames for four verbs only. The mechanism is finished, the data is not — for a verb without a frame the caller supplies the cases as before.
+- The lexicon contains frames for four verbs only. The mechanism is finished, the data is not — for a verb without a frame the caller supplies the cases as before.
+- A slot can be stored as realized by a `že`-clause or an infinitive, but nothing generates one yet: that needs a clause planner, and until it exists `CzechSentenceBuilder` leaves such a constituent to the caller.
+- The database is binary, so git cannot show what changed inside it. `dump` produces the reviewable text form; wiring that into the commit workflow is not done.
 - The clitic cluster does not know the free dative (*To ti byla legrace*), which per NESČ stands between the auxiliary and the reflexive. The remaining positions match the described order.
 - The conjunctions `aby` and `kdyby` are not supported — they fuse with the conditional auxiliary and inflect by person (*abych*, *abys*, *abychom*). Nor is `však`, which is itself second-position rather than clause-initial.
 - The comma before `nebo` and `či` depends on the relation between the clauses, not on the conjunction. The data carries only the commoner reading; the exclusive one has to be stated through `Coordination.RequiresComma`.

@@ -81,6 +81,56 @@
         /// <summary>
         /// Temporal-when (kdy) — the time the event holds.
         /// </summary>
-        TWHEN
+        TWHEN,
+
+        // The members below were added after the first fifteen and are appended rather than sorted into
+        // their groups, because the values are what the lexicon stores. Renumbering ACT through TWHEN to
+        // put the quasi-valency functors next to the inner participants would silently repoint every row
+        // already written.
+
+        /// <summary>
+        /// Difference (o kolik) — the extent by which something changes: zdražilo o pět korun.
+        /// </summary>
+        DIFF,
+
+        /// <summary>
+        /// Obstacle (o co) — what the event stumbles against: zakopl o kámen.
+        /// </summary>
+        OBST,
+
+        /// <summary>
+        /// Intent (za jakým záměrem) — the intended follow-up of a movement: šel nakoupit.
+        /// </summary>
+        INTT,
+
+        /// <summary>
+        /// Material (z čeho, čeho) — the substance or the set something is taken from: skupina studentů.
+        /// </summary>
+        MAT,
+
+        /// <summary>
+        /// Temporal-how-long (jak dlouho) — the duration of the event.
+        /// </summary>
+        THL,
+
+        /// <summary>
+        /// Extent (do jaké míry) — the degree to which the event holds.
+        /// </summary>
+        EXT,
+
+        /// <summary>
+        /// Criterion (podle čeho) — the standard the claim is measured against.
+        /// </summary>
+        CRIT,
+
+        /// <summary>
+        /// Accompaniment (s kým) — the participant taking part alongside the actor.
+        /// </summary>
+        ACMP,
+
+        /// <summary>
+        /// Complement (jako co) — the state a participant holds during the event: pracuje jako učitel.
+        /// </summary>
+        COMPL
     }
 }

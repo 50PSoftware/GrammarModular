@@ -2,6 +2,7 @@
 using Grammar.Czech.Models;
 using Grammar.Czech.Providers;
 using Grammar.Czech.Providers.JsonProviders;
+using Grammar.Czech.Providers.SqliteProviders;
 using Grammar.Czech.Services;
 
 namespace Grammar.Czech.Test
@@ -33,7 +34,7 @@ namespace Grammar.Czech.Test
 
             var verbStructureResolver = new CzechWordStructureResolver(verbDataProvider, nounDataProvider, prefixService, phonologyService, registry, epenthesisRule);
 
-            var valencyProvider = new JsonValencyProvider();
+            var valencyProvider = new SqliteValencyProvider();
 
             service = new CzechVerbConjugationService(
                 verbDataProvider,

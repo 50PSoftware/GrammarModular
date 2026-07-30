@@ -3,6 +3,7 @@ using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
 using Grammar.Czech.Providers;
 using Grammar.Czech.Providers.JsonProviders;
+using Grammar.Czech.Providers.SqliteProviders;
 using Grammar.Czech.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,6 +20,21 @@ namespace Grammar.Czech
         /// <param name="services">The service collection to register Czech grammar services into.</param>
         /// <returns>The same service collection with Czech grammar services registered.</returns>
         public static IServiceCollection AddCzechGrammarServices(this IServiceCollection services)
+            => services.AddCzechGrammarServices(lexiconPath: null);
+
+        /// <summary>
+        /// Registers all Czech grammar providers, services, and composers in dependency injection, reading
+        /// the lexicon from the supplied file.
+        /// </summary>
+        /// <param name="services">The service collection to register Czech grammar services into.</param>
+        /// <param name="lexiconPath">
+        /// The path to the lexicon database, or <see langword="null"/> to take it from the directory the
+        /// application runs out of.
+        /// </param>
+        /// <returns>The same service collection with Czech grammar services registered.</returns>
+        public static IServiceCollection AddCzechGrammarServices(
+            this IServiceCollection services,
+            string? lexiconPath)
         {
             // ── Morphological data providers ────────────────────────────────────────
             services.AddSingleton<IVerbDataProvider>(new JsonVerbDataProvider());
@@ -35,7 +51,10 @@ namespace Grammar.Czech
             services.AddSingleton<INumeralDataProvider>(new JsonNumeralDataProvider());
 
             // ── Valency & lexical dictionary ─────────────────────────────────────────
-            services.AddSingleton<IValencyProvider<CzechLexicalEntry>, JsonValencyProvider>();
+            // The lexicon is the one data source that is a database rather than an embedded JSON: it is
+            // the part meant to grow into thousands of entries, and it is authored directly in the file.
+            services.AddSingleton<IValencyProvider<CzechLexicalEntry>>(
+                _ => new SqliteValencyProvider(lexiconPath));
 
             // ── Phonology ────────────────────────────────────────────────────────────
             services.AddSingleton<IPhonemeRegistry, CzechPhonemeRegistry>();

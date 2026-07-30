@@ -15,8 +15,14 @@ namespace Grammar.Czech.Test
     /// Providers load lazily from embedded resources, so a wrong resource path or a key-casing mismatch
     /// stays invisible until something reads the data — and nothing did, for two of them. prepositions.json
     /// was written in PascalCase against a camelCase naming policy and silently deserialized to nothing;
-    /// JsonValencyProvider pointed at Data.Valency, a folder that never existed. These tests exist so the
+    /// the valency provider pointed at Data.Valency, a folder that never existed. These tests exist so the
     /// next such slip fails here rather than years later.
+    /// <para>
+    /// The lexicon now comes from a SQLite file copied next to the assembly rather than from an embedded
+    /// resource, which does not retire this class so much as give it a second thing to watch: a build that
+    /// fails to copy the database, or a hand edit that empties a table, is the same silent nothing in a
+    /// new form.
+    /// </para>
     /// </remarks>
     [TestClass]
     public sealed class ProviderDataLoadingTests
@@ -349,8 +355,11 @@ namespace Grammar.Czech.Test
             Assert.IsTrue(slots.Count > 0, "Rámec slovesa dát nemá sloty.");
 
             var patient = slots.Single(slot => slot.Functor == FgdFunctor.PAT);
-            Assert.AreEqual(Case.Accusative, patient.Realization.Case, "Realizace slotu se nenačetla.");
-            Assert.IsTrue(patient.IsObligatory);
+            var realization = patient.PreferredRealization;
+
+            Assert.IsNotNull(realization, "Slot PAT nemá žádnou realizaci.");
+            Assert.AreEqual(Case.Accusative, realization.Case, "Realizace slotu se nenačetla.");
+            Assert.AreEqual(Obligatoriness.Obligatory, patient.Obligatoriness);
         }
 
         /// <summary>

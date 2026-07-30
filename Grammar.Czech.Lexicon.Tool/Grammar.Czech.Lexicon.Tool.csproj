@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Grammar.Czech.Lexicon.Tool</RootNamespace>
+
+    <!-- A build utility, not something to publish. -->
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Grammar.Core\Grammar.Core.csproj" />
+    <ProjectReference Include="..\Grammar.Czech\Grammar.Czech.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Schema\*.sql" />
+    <EmbeddedResource Include="Data\*.sql" />
+  </ItemGroup>
+
+</Project>

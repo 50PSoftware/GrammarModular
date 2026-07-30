@@ -1,0 +1,20 @@
+<Project>
+
+  <!--
+    Copies the lexicon database into the consuming project's output directory.
+
+    SqliteValencyProvider resolves the file from AppContext.BaseDirectory, so without this the package
+    restores cleanly and then throws FileNotFoundException at the first lookup. contentFiles does not
+    cover it: that mechanism reaches PackageReference consumers only for compile items and is skipped
+    entirely by projects that set ExcludeAssets or consume the package transitively.
+  -->
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)grammar.czech.lexicon.db"
+          Condition="Exists('$(MSBuildThisFileDirectory)grammar.czech.lexicon.db')">
+      <Link>grammar.czech.lexicon.db</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </None>
+  </ItemGroup>
+
+</Project>
