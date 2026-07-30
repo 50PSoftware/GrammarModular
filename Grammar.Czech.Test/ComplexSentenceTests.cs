@@ -451,6 +451,77 @@ namespace Grammar.Czech.Test
 
         #endregion Relative clauses
 
+        #region Recursion
+
+        /// <summary>
+        /// Coordination and subordination both take sentence nodes rather than clauses, so they nest into
+        /// each other without a ceiling. Four levels mixing the two, checked as one string.
+        /// </summary>
+        [TestMethod]
+        public void Build_DeeplyNestedSentence_ComposesAtEveryLevel()
+        {
+            var sentence = new Subordination(
+                new Coordination("a",
+                [
+                    Clause(Verb("dělat", "dělá"), Petr()),
+                    Clause(Verb("dělat", "dělá", ReflexiveType.ReflexivumTantum_Se))
+                ]),
+                "protože",
+                new Subordination(
+                    Clause(Verb("dělat", "dělá")),
+                    "že",
+                    new Coordination("ale",
+                    [
+                        Clause(Verb("dělat", "dělá", ReflexiveType.ReflexivumTantum_Se)),
+                        Clause(Verb("dělat", "dělá"))
+                    ])));
+
+            Assert.AreEqual(
+                "Student dělal a dělal se, protože dělal, že se dělal, ale dělal.",
+                builder.Build(sentence));
+        }
+
+        /// <summary>
+        /// Nesting has no built-in limit, so the depth it survives is worth knowing rather than assuming.
+        /// A hundred levels is far past anything a real sentence reaches and still costs nothing.
+        /// </summary>
+        [TestMethod]
+        public void Build_HundredLevelsOfSubordination_DoesNotFail()
+        {
+            const int depth = 100;
+
+            SentenceNode sentence = Clause(Verb("dělat", "dělá"), Petr());
+
+            for (var level = 0; level < depth; level++)
+            {
+                sentence = new Subordination(sentence, "protože", Clause(Verb("dělat", "dělá")));
+            }
+
+            var built = builder.Build(sentence);
+
+            Assert.AreEqual(depth, built.Split("protože").Length - 1, "Každá úroveň má přispět jednou spojkou.");
+            Assert.AreEqual(depth, built.Count(character => character == ','), "A jednou čárkou.");
+            StringAssert.StartsWith(built, "Student dělal, protože");
+            StringAssert.EndsWith(built, "dělal.");
+        }
+
+        /// <summary>
+        /// The one place recursion stops: a relative clause is a single clause, not a sentence node, so it
+        /// cannot itself coordinate or subordinate. "muž, který přišel a odešel" is not expressible.
+        /// </summary>
+        [TestMethod]
+        public void RelativeAttachment_TakesAClauseRatherThanASentence_WhichCapsNestingThere()
+        {
+            var attachment = typeof(RelativeAttachment).GetProperty(nameof(RelativeAttachment.Clause))!;
+
+            Assert.AreEqual(
+                typeof(CzechClause),
+                attachment.PropertyType,
+                "Kdyby to byl SentenceNode, tenhle test i dokumentované omezení jsou k přepsání.");
+        }
+
+        #endregion Recursion
+
         #region End to end
 
         /// <summary>
