@@ -131,8 +131,11 @@ namespace Grammar.Czech.Services
             return new[] { primary }.Concat(primary.AlsoReads).ToList();
         }
 
-        // Conjunctions are a closed class, so an unknown one is a mistake worth reporting rather than a
-        // gap to paper over — the punctuation and the clitic position both depend on knowing which it is.
+        // Reported rather than papered over, though not quite because the class is closed. NESČ puts it more
+        // carefully: conjunctions proper are a closed set, but they are the core of an open class of
+        // connective expressions, so an unlisted word is not automatically not a conjunction. The reason to
+        // refuse is narrower and holds anyway — the comma and the clitic position both follow from which
+        // kind it is, and neither can be guessed from the word itself.
         //
         // A reading asked for by type is answered from the alternatives when the primary one is the other
         // type: ať subordinates a content clause and coordinates a split one, and the caller building a

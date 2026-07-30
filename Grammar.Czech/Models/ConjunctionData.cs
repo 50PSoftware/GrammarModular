@@ -6,7 +6,10 @@ namespace Grammar.Czech.Models
     /// Represents Czech conjunction metadata loaded from JSON data.
     /// </summary>
     /// <remarks>
-    /// Conjunctions are a closed class, so the data file is the whole inventory the builder accepts and an
+    /// Conjunctions proper are a closed set — though NESČ notes they are the core of an open class of
+    /// connective expressions, so being unlisted does not by itself mean a word is not one. The data file is
+    /// nonetheless the whole inventory the builder accepts, because the comma and the clitic position follow
+    /// from the type and neither can be guessed. An
     /// unknown conjunction is reported rather than guessed at.
     /// </remarks>
     public sealed record ConjunctionData

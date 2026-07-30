@@ -10,6 +10,13 @@ namespace Grammar.Czech.Services
     /// <summary>
     /// Provides Czech preposition case government and semantic group lookup operations.
     /// </summary>
+    /// <remarks>
+    /// An unlisted preposition passes through rather than being reported, and that leniency is deliberate.
+    /// NESČ splits the word class: the original prepositions are a closed set, while the secondary ones —
+    /// derived and compound, the kvůli and v rámci type — form an open class that cannot be enumerated. So
+    /// an absent preposition is not evidence of a bad request the way an absent pronoun is, and government
+    /// is checked only where the data has something to check against.
+    /// </remarks>
     public class CzechPrepositionService : ICzechPrepositionService
     {
         private readonly Dictionary<string, PrepositionData> _prepositions;
