@@ -98,7 +98,15 @@ namespace Grammar.Czech.Services
         /// Builds the requested inflected form.
         /// </summary>
         /// <param name="request">The Czech word request to process.</param>
-        /// <returns>The generated numeral form, or the lemma when no form is found.</returns>
+        /// <returns>The generated numeral form.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the lemma is not a registered numeral or has no form for the requested categories.
+        /// </exception>
+        /// <remarks>
+        /// Falling back to the lemma here hid the same failure it hid for pronouns: numeral forms look like
+        /// lemmas, so a request for "pěti" or "dvou" — or "tří", which differs from the lemma "tři" by a
+        /// single mark — resolved to nothing and came back unchanged, reading as an answer.
+        /// </remarks>
         public WordForm GetForm(CzechWordRequest request)
         {
             if (request.Case is null)
@@ -112,7 +120,15 @@ namespace Grammar.Czech.Services
                 request.IsAnimate,
                 null);
 
-            return new WordForm(form ?? request.Lemma);
+            if (form is null)
+            {
+                throw new InvalidOperationException(
+                    _numerals.ContainsKey(request.Lemma)
+                        ? $"Číslovka '{request.Lemma}' nemá tvar pro pád {request.Case}, rod {request.Gender} a číslo {request.Number}."
+                        : $"'{request.Lemma}' není lemma číslovky. Zkontroluj, jestli nejde o tvar — 'pěti' je tvar lemmatu 'pět'.");
+            }
+
+            return new WordForm(form);
         }
 
         /// <summary>

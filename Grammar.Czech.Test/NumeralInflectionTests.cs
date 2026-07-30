@@ -16,6 +16,35 @@ namespace Grammar.Czech.Test
     [TestClass]
     public sealed class NumeralInflectionTests
     {
+        /// <summary>
+        /// A form asked for as though it were a lemma is reported rather than passed through. Numeral forms
+        /// read like lemmas — "pěti", "dvou", and "tří" against the lemma "tři" — so the old fallback to the
+        /// request's own lemma returned a real Czech word and hid the mistake behind it.
+        /// </summary>
+        /// <param name="lemma">A form mistaken for a lemma.</param>
+        [DataTestMethod]
+        [DataRow("pěti")]
+        [DataRow("dvou")]
+        [DataRow("tří")]
+        public void GetForm_NumeralFormUsedAsLemma_Throws(string lemma)
+        {
+            var services = new ServiceCollection();
+            services.AddCzechGrammarServices();
+            var numerals = services.BuildServiceProvider().GetRequiredService<CzechNumeralService>();
+
+            var request = new CzechWordRequest
+            {
+                Lemma = lemma,
+                WordCategory = WordCategory.Numerale,
+                Case = Case.Nominative,
+                Gender = Gender.Masculine,
+                Number = Number.Singular
+            };
+
+            var exception = Assert.ThrowsException<InvalidOperationException>(() => numerals.GetForm(request));
+            StringAssert.Contains(exception.Message, "není lemma číslovky");
+        }
+
         private static ServiceProvider provider = null!;
         private static CzechNumeralService service = null!;
 
