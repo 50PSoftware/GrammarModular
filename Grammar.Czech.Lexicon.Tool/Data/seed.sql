@@ -27,28 +27,44 @@ INSERT INTO lexicon_meta (meta_key, meta_value) VALUES ('source', 'Hand-authored
 -- Lexemes
 -- ─────────────────────────────────────────────────────────────────────────────
 INSERT INTO lexeme (lexeme_id, primary_lemma, note) VALUES
-    (1, 'dávat', 'Aspect pair dát / dávat.'),
-    (2, 'jít', NULL),
-    (3, 'vidět', NULL);
+    (1, 'dávat', 'Vidová dvojice dát / dávat.'),
+    (2, 'jít', 'Bez vidového protějšku.'),
+    (3, 'vidět', 'Vidová dvojice vidět / uvidět.');
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Lemma entries
 -- ─────────────────────────────────────────────────────────────────────────────
 INSERT INTO lemma_entry (
     lemma_entry_id, lemma, lemma_key, homonym_index, category, gender, pattern,
-    is_animate, has_mobile_e, aspect, aspect_counterpart, lexeme_id, source, is_verified)
+    is_animate, has_mobile_e, aspect, aspect_counterpart, lexeme_id, source, is_verified, note)
 VALUES
-    (1,  'student',   'student',   1, 'Noun', 'Masculine', 'pán',   1, 0, NULL, NULL, NULL, 'IJP', 1),
-    (2,  'studentka', 'studentka', 1, 'Noun', 'Feminine',  'žena',  1, 0, NULL, NULL, NULL, 'IJP', 1),
-    (3,  'pes',       'pes',       1, 'Noun', 'Masculine', 'pán',   1, 1, NULL, NULL, NULL, 'IJP', 1),
-    (4,  'den',       'den',       1, 'Noun', 'Masculine', 'hrad',  0, 1, NULL, NULL, NULL, 'IJP', 1),
-    (5,  'otec',      'otec',      1, 'Noun', 'Masculine', 'muž',   1, 1, NULL, NULL, NULL, 'IJP', 1),
-    (6,  'město',     'město',     1, 'Noun', 'Neuter',    'město', 0, 0, NULL, NULL, NULL, 'IJP', 1),
-    (7,  'dát',       'dát',       1, 'Verb', NULL, 'trida5', NULL, NULL, 'Perfective',   'dávat', 1, 'IJP', 1),
-    (8,  'dávat',     'dávat',     1, 'Verb', NULL, 'trida5', NULL, NULL, 'Imperfective', 'dát',   1, 'IJP', 1),
-    (9,  'jít',       'jít',       1, 'Verb', NULL, 'jít',    NULL, NULL, 'Imperfective', 'zajít', 2, 'IJP', 1),
-    (10, 'vidět',     'vidět',     1, 'Verb', NULL, 'trida4', NULL, NULL, 'Imperfective', 'uvidět', 3, 'IJP', 1),
-    (11, 'mladý',     'mladý',     1, 'Adjective', NULL, 'mladý', NULL, NULL, NULL, NULL, NULL, 'IJP', 1);
+    (1,  'student',   'student',   1, 'Noun', 'Masculine', 'pán',   1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (2,  'studentka', 'studentka', 1, 'Noun', 'Feminine',  'žena',  1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (3,  'pes',       'pes',       1, 'Noun', 'Masculine', 'pán',   1, 1, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (4,  'den',       'den',       1, 'Noun', 'Masculine', 'hrad',  0, 1, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (5,  'otec',      'otec',      1, 'Noun', 'Masculine', 'muž',   1, 1, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (6,  'město',     'město',     1, 'Noun', 'Neuter',    'město', 0, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+
+    (7,  'dát',       'dát',       1, 'Verb', NULL, 'trida5', NULL, NULL, 'Perfective',   'dávat', 1, 'IJP', 1, NULL),
+    (8,  'dávat',     'dávat',     1, 'Verb', NULL, 'trida5', NULL, NULL, 'Imperfective', 'dát',   1, 'IJP', 1, NULL),
+
+    -- No counterpart, and the NULL is the claim rather than a gap. Verbs of motion perfectivize only by
+    -- prefixation and every prefix adds meaning of its own — zajít is to drop by, přijít to arrive,
+    -- odejít to leave. None of them is jít with nothing changed but the aspect, so none of them is the
+    -- counterpart. (chodit is not one either: that is the indeterminate member, imperfective as well.)
+    (9,  'jít',       'jít',       1, 'Verb', NULL, 'jít', NULL, NULL, 'Imperfective', NULL, 2, 'IJP', 1,
+         'Imperfektivum bez vidového protějšku — prefixace u sloves pohybu mění význam, netvoří vid.'),
+
+    (10, 'vidět',     'vidět',     1, 'Verb', NULL, 'trida4', NULL, NULL, 'Imperfective', 'uvidět', 3, 'IJP', 1, NULL),
+
+    (11, 'mladý',     'mladý',     1, 'Adjective', NULL, 'mladý', NULL, NULL, NULL, NULL, NULL, 'IJP', 1, NULL),
+
+    -- The other half of the vidět pair, added so the reference resolves in both directions. Standard
+    -- lexicography pairs the two and the note records the reservation rather than hiding it: uvidět is
+    -- read ingressively, catching sight of something rather than seeing it through, so the pair is not
+    -- as pure as dát / dávat.
+    (12, 'uvidět',    'uvidět',    1, 'Verb', NULL, 'trida4', NULL, NULL, 'Perfective', 'vidět', 3, 'IJP', 1,
+         'Ingresivní perfektivum (spatřit), nikoli čistě vidový protějšek.');
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Lexical units — the sense labels the old frameLabel named

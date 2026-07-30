@@ -201,8 +201,8 @@ namespace Grammar.Czech.Lexicon.Tool
 
         // These two columns hold a lemma rather than a foreign key, because lemma_entry is unique on
         // (lemma_key, category, homonym_index) and neither reference carries a category. A dangling one is
-        // a warning and not an error: dát points at dávat and both are present, but jít points at zajít,
-        // which is a real Czech verb the dictionary has simply not reached yet.
+        // a warning and not an error: a reference can point at a real Czech word the dictionary has simply
+        // not reached yet, which is a gap to fill rather than a row to reject.
         private static void CheckDanglingLemmaReferences(SqliteConnection connection, List<string> warnings)
         {
             const string dangling = """

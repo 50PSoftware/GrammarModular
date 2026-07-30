@@ -58,8 +58,8 @@ namespace Grammar.Czech.Test
         [DataTestMethod]
         [DataRow("dát", "trida5", VerbAspect.Perfective, "dávat")]
         [DataRow("dávat", "trida5", VerbAspect.Imperfective, "dát")]
-        [DataRow("jít", "jít", VerbAspect.Imperfective, "zajít")]
         [DataRow("vidět", "trida4", VerbAspect.Imperfective, "uvidět")]
+        [DataRow("uvidět", "trida4", VerbAspect.Perfective, "vidět")]
         public void GetEntry_SeededVerb_KeepsItsAspect(
             string lemma,
             string pattern,
@@ -73,6 +73,46 @@ namespace Grammar.Czech.Test
             Assert.AreEqual(pattern, entry.Pattern);
             Assert.AreEqual(aspect, entry.Aspect);
             Assert.AreEqual(counterpart, entry.AspectCounterpart);
+        }
+
+        /// <summary>
+        /// An aspect counterpart, where one is recorded, resolves to an entry of the opposite aspect.
+        /// </summary>
+        /// <remarks>
+        /// A counterpart is a lemma and not a foreign key, so nothing in the schema stops it from naming a
+        /// word that is absent or that has the same aspect as the word pointing at it. Both would surface
+        /// as a wrong future tense rather than as a load error.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("dát")]
+        [DataRow("dávat")]
+        [DataRow("vidět")]
+        [DataRow("uvidět")]
+        public void GetEntry_AspectCounterpart_ResolvesToTheOppositeAspect(string lemma)
+        {
+            var entry = provider.GetEntry(lemma)!;
+            var counterpart = provider.GetEntry(entry.AspectCounterpart!);
+
+            Assert.IsNotNull(counterpart, $"Protějšek '{entry.AspectCounterpart}' v lexikonu není.");
+            Assert.AreNotEqual(entry.Aspect, counterpart.Aspect, "Protějšek má stejný vid.");
+            Assert.AreEqual(lemma, counterpart.AspectCounterpart, "Dvojice není obousměrná.");
+        }
+
+        /// <summary>
+        /// jít records no aspect counterpart, and the absence is a claim rather than a gap.
+        /// </summary>
+        /// <remarks>
+        /// Verbs of motion perfectivize only by prefixation and every prefix adds meaning of its own —
+        /// zajít is to drop by, přijít to arrive. The lexicon used to name zajít here, which would have
+        /// built the future tense from a verb that means something else.
+        /// </remarks>
+        [TestMethod]
+        public void GetEntry_Jít_HasNoAspectCounterpart()
+        {
+            var entry = provider.GetEntry("jít")!;
+
+            Assert.AreEqual(VerbAspect.Imperfective, entry.Aspect);
+            Assert.IsNull(entry.AspectCounterpart);
         }
 
         /// <summary>
@@ -125,20 +165,24 @@ namespace Grammar.Czech.Test
         /// under each lemma and the two copies had already drifted apart — dát listed a directional slot
         /// that dávat did not — which is what a shared row makes impossible.
         /// </remarks>
-        [TestMethod]
-        public void GetFrames_AspectPair_SharesOneFrame()
+        [DataTestMethod]
+        [DataRow("dát", "dávat")]
+        [DataRow("vidět", "uvidět")]
+        public void GetFrames_AspectPair_SharesOneFrame(string first, string second)
         {
-            var perfective = provider.GetFrames("dát").Single();
-            var imperfective = provider.GetFrames("dávat").Single();
+            var one = provider.GetFrames(first).Single();
+            var other = provider.GetFrames(second).Single();
 
-            Assert.AreEqual(perfective.LuId, imperfective.LuId, "Vidová dvojice nesdílí lexikální jednotku.");
+            Assert.AreEqual(one.LuId, other.LuId, "Vidová dvojice nesdílí lexikální jednotku.");
 
             CollectionAssert.AreEqual(
-                perfective.Slots.Select(slot => slot.Functor).ToArray(),
-                imperfective.Slots.Select(slot => slot.Functor).ToArray());
+                one.Slots.Select(slot => slot.Functor).ToArray(),
+                other.Slots.Select(slot => slot.Functor).ToArray());
 
-            Assert.AreEqual("dát", perfective.VerbLemma);
-            Assert.AreEqual("dávat", imperfective.VerbLemma);
+            // The frame is shared but each lemma is told apart by the lemma it was asked for, so the
+            // caller never has to map the perfective back onto the imperfective itself.
+            Assert.AreEqual(first, one.VerbLemma);
+            Assert.AreEqual(second, other.VerbLemma);
         }
 
         /// <summary>
