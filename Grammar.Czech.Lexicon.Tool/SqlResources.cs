@@ -5,7 +5,7 @@ namespace Grammar.Czech.Lexicon.Tool
     /// <summary>
     /// Reads the SQL files shipped with the tool.
     /// </summary>
-    internal static class SqlResources
+    public static class SqlResources
     {
         /// <summary>
         /// The portable data definition, shared by every backend.
@@ -16,6 +16,16 @@ namespace Grammar.Czech.Lexicon.Tool
         /// The SQLite-only settings applied on top of <see cref="Schema"/>.
         /// </summary>
         public const string SqliteSettings = "Schema.schema.sqlite";
+
+        /// <summary>
+        /// The MySQL variant of <see cref="Schema"/>, used by the central editable copy.
+        /// </summary>
+        /// <remarks>
+        /// A separate file rather than a delta, because a table cannot be altered into existence and the
+        /// types differ from the first line. The two are held together by a test comparing the tables,
+        /// columns and constrained values they declare.
+        /// </remarks>
+        public const string MysqlSchema = "Schema.schema.mysql";
 
         /// <summary>
         /// The starting contents of the dictionary.

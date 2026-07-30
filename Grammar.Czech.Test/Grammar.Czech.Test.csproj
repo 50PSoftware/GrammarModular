@@ -19,6 +19,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Grammar.Czech\Grammar.Czech.csproj" />
     <!--<ProjectReference Include="..\Grammar.Core\Grammar.Core.csproj" />-->
+
+    <!-- For the embedded .sql files, so the schema variants can be compared against each other. -->
+    <ProjectReference Include="..\Grammar.Czech.Lexicon.Tool\Grammar.Czech.Lexicon.Tool.csproj" />
   </ItemGroup>
 
   <ItemGroup>
