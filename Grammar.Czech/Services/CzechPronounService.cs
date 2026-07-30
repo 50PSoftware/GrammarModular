@@ -78,7 +78,16 @@ namespace Grammar.Czech.Services
         /// Builds the requested inflected form.
         /// </summary>
         /// <param name="request">The Czech word request to process.</param>
-        /// <returns>The generated pronoun form, or the lemma when no form is found.</returns>
+        /// <returns>The generated pronoun form.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the lemma is not a registered pronoun or has no form for the requested categories.
+        /// </exception>
+        /// <remarks>
+        /// This used to fall back to the lemma when nothing resolved, which hid the failure behind a word
+        /// that often looked plausible: a request for the lemma "to" — a form of "ten", not a lemma —
+        /// resolved to nothing and came back as "to" anyway. Pronouns are a closed class, so not finding one
+        /// is a mistake in the request, and it is reported like the preposition and conjunction lookups are.
+        /// </remarks>
         public WordForm GetForm(CzechWordRequest request)
         {
             if (request.Case is null)
@@ -93,7 +102,15 @@ namespace Grammar.Czech.Services
                 request.IsAnimate,
                 options);
 
-            return new WordForm(form ?? request.Lemma);
+            if (form is null)
+            {
+                throw new InvalidOperationException(
+                    _pronouns.ContainsKey(request.Lemma)
+                        ? $"Zájmeno '{request.Lemma}' nemá tvar pro pád {request.Case}, rod {request.Gender} a číslo {request.Number}."
+                        : $"'{request.Lemma}' není lemma zájmena. Zkontroluj, jestli nejde o tvar — 'to' je tvar lemmatu 'ten'.");
+            }
+
+            return new WordForm(form);
         }
 
         // ── ICzechPronounService helpers ───────────────────────────────

@@ -471,6 +471,66 @@ namespace Grammar.Czech.Test
             Assert.AreEqual("Já jsem dělal něj.", builder.Build(clause));
         }
 
+        /// <summary>
+        /// The cluster takes the obligatory clitics only. NESČ counts the short personal pronoun forms,
+        /// the reflexives and the auxiliaries as klitika tantum, and calls the demonstrative to a
+        /// <em>nestálá klitika</em> — a clitic in some contexts and not in others, shown by the pair
+        /// "Je mi to lhostejné" against "To je mi lhostejné". Something that varies by context cannot be
+        /// decided from the word class, so to is ordered by its communicative status like any constituent.
+        /// </summary>
+        [TestMethod]
+        public void Build_DemonstrativeTo_IsOrderedByStatusRatherThanJoiningTheCluster()
+        {
+            var to = new CzechWordRequest
+            {
+                Lemma = "ten",
+                WordCategory = WordCategory.Pronoun,
+                Case = Case.Accusative,
+                Gender = Gender.Neuter,
+                Number = Number.Singular
+            };
+
+            var clause = new CzechClause
+            {
+                Predicate = Verb(ReflexiveType.ReflexivumTantum_Se, tense: Tense.Past),
+                Elements =
+                [
+                    Subject(),
+                    // Anaphoric, so it is theme rather than rheme — and second position stays the reflexive's.
+                    ClauseElement.Of(to, FgdFunctor.PAT, InformationStatus.Given)
+                ]
+            };
+
+            Assert.AreEqual("Student se to dělal.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// A form asked for as though it were a lemma is reported rather than passed through. "to" is a form
+        /// of "ten"; the lookup used to fail and hand the request's own lemma back, which happened to look
+        /// like a correct word and hid the mistake.
+        /// </summary>
+        [TestMethod]
+        public void Build_PronounFormUsedAsLemma_Throws()
+        {
+            var to = new CzechWordRequest
+            {
+                Lemma = "to",
+                WordCategory = WordCategory.Pronoun,
+                Case = Case.Accusative,
+                Gender = Gender.Neuter,
+                Number = Number.Singular
+            };
+
+            var clause = new CzechClause
+            {
+                Predicate = Verb(tense: Tense.Past),
+                Elements = [ClauseElement.Of(to, FgdFunctor.PAT, InformationStatus.Given)]
+            };
+
+            var exception = Assert.ThrowsException<InvalidOperationException>(() => builder.Build(clause));
+            StringAssert.Contains(exception.Message, "ten");
+        }
+
         #endregion Short pronouns
 
         #region Phrasal constituents

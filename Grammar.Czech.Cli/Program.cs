@@ -193,7 +193,7 @@
             //// PronounHard — paradigm lookup
             //var tenRequest = new CzechWordRequest
             //{
-            //    Lemma = "ten",
+            //    Lemma = "to",
             //    WordCategory = WordCategory.Pronoun,
             //    Case = Case.Genitive,
             //    Gender = Gender.Masculine,
@@ -438,7 +438,7 @@
             }));
 
             // Krátké zájmeno opouští pořadí konstituentů a řadí se do klastru za reflexivum.
-            var jeho = new CzechWordRequest
+            var ho = new CzechWordRequest
             {
                 Lemma = "on",
                 WordCategory = WordCategory.Pronoun,
@@ -451,7 +451,24 @@
             Console.WriteLine(sentenceBuilder.Build(clause with
             {
                 Predicate = ucitSe with { Tense = Tense.Past },
-                Elements = [subject, ClauseElement.Of(jeho, FgdFunctor.PAT, InformationStatus.New)]
+                Elements = [subject, ClauseElement.Of(ho, FgdFunctor.PAT, InformationStatus.New)]
+            }));
+
+            // Ukazovací "to" je podle NESČ nestálá klitika: do povinného klastru nepatří a řadí se podle
+            // aktuálního členění. Odkazuje zpátky, takže je téma — druhá pozice zůstává reflexivu.
+            var to = new CzechWordRequest
+            {
+                Lemma = "ten",
+                WordCategory = WordCategory.Pronoun,
+                Case = Case.Accusative,
+                Gender = Gender.Neuter,
+                Number = Number.Singular
+            };
+
+            Console.WriteLine(sentenceBuilder.Build(clause with
+            {
+                Predicate = ucitSe with { Tense = Tense.Past },
+                Elements = [subject, ClauseElement.Of(to, FgdFunctor.PAT, InformationStatus.Given)]
             }));
 
             // Víceslovný konstituent: přívlastek se shoduje s řídícím slovem a klastr jde až za celou frázi.
