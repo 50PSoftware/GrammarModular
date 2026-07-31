@@ -23,22 +23,22 @@ declare(strict_types=1);
  *
  * Requires PHP 8.1 or newer, for the never return type.
  *
- * Configuration comes from the environment: LEXICON_MYSQL_DSN, LEXICON_MYSQL_USER,
- * LEXICON_MYSQL_PASSWORD, LEXICON_API_TOKEN. Two deployment notes that cost an afternoon each when
- * missed:
+ * Configuration is LEXICON_MYSQL_DSN, LEXICON_MYSQL_USER, LEXICON_MYSQL_PASSWORD and
+ * LEXICON_API_TOKEN, read by env.php from the real environment or from Php/.env. See .env.example.
  *
- *   * Under PHP-FPM, getenv() sees only what the pool passes. Set them with env[NAME] = value in the
- *     pool configuration, not just in the shell that started the service.
+ * Point the vhost at this api/ directory and nothing above it. That keeps .env, the schema and this
+ * source out of reach; a vhost rooted one level up serves .env as plain text to anyone who asks.
  *
- *   * Apache with CGI or FPM strips the Authorization header before PHP sees it, so every request
- *     arrives unauthenticated. Either set CGIPassAuth On for the directory, or restore it in
- *     .htaccess with:
+ * One more deployment note, because it costs an afternoon when missed: Apache with CGI or FPM strips
+ * the Authorization header before PHP sees it, so every request arrives unauthenticated. Either set
+ * CGIPassAuth On for the directory, or restore it with:
  *
- *       RewriteEngine On
- *       RewriteCond %{HTTP:Authorization} .
- *       RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+ *   RewriteEngine On
+ *   RewriteCond %{HTTP:Authorization} .
+ *   RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
  */
 
+require __DIR__ . '/../env.php';
 require __DIR__ . '/../schema-tables.php';
 
 const MAX_LIMIT = 20000;
@@ -122,7 +122,7 @@ function handle(): array
 
 function authorize(): void
 {
-    $expected = getenv('LEXICON_API_TOKEN') ?: '';
+    $expected = lexicon_config('LEXICON_API_TOKEN');
 
     // Fails closed. An unset token is a misconfigured deployment, and treating it as "no auth needed"
     // would publish the whole dictionary the first time someone forgot to set the variable.
@@ -173,14 +173,14 @@ function readAuthorizationHeader(): string
 
 function connect(): PDO
 {
-    $dsn = getenv('LEXICON_MYSQL_DSN') ?: '';
+    $dsn = lexicon_config('LEXICON_MYSQL_DSN');
 
     if ($dsn === '') {
         error_log('lexicon.php: LEXICON_MYSQL_DSN není nastaven.');
         fail(500, 'Server není nastavený.');
     }
 
-    $pdo = new PDO($dsn, getenv('LEXICON_MYSQL_USER') ?: '', getenv('LEXICON_MYSQL_PASSWORD') ?: '', [
+    $pdo = new PDO($dsn, lexicon_config('LEXICON_MYSQL_USER'), lexicon_config('LEXICON_MYSQL_PASSWORD'), [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
 
         // Both matter for the wire format. Without them every value comes back as a string, and the

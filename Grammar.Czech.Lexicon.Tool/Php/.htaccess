@@ -1,0 +1,28 @@
+# Defence in depth for the case this directory ends up web-accessible after all.
+#
+# It should not be: point the vhost at api/ and everything here stays above the document root. But a
+# misconfigured vhost is exactly the situation where the .env leaks, and the cost of a second lock is
+# a file nobody reads.
+#
+# Apache only. nginx ignores .htaccess entirely — there, add to the server block:
+#
+#   location ~ /\.env { deny all; return 404; }
+#
+# and, better, keep the vhost root at Php/api/ so the question never arises.
+
+<FilesMatch "^\.env">
+    Require all denied
+</FilesMatch>
+
+# Nothing here is meant to be requested directly; the endpoint is api/lexicon.php.
+<FilesMatch "\.(php|sql|example)$">
+    Require all denied
+</FilesMatch>
+
+# Apache 2.2 fallback, harmless under 2.4.
+<IfModule !mod_authz_core.c>
+    <FilesMatch "^\.env|\.(php|sql|example)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</IfModule>

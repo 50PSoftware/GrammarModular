@@ -192,6 +192,27 @@ Three choices in there are worth knowing about, because each has a quieter alter
 
 A paged pull is still not a consistent snapshot — nothing stops an edit between one page and the next — and `validate` is what catches the result, as a broken reference rather than as a word that quietly fails to resolve later.
 
+#### Deploying the API
+
+Copy `Php/` to the server and **point the vhost at `Php/api/`, not at `Php/`**. Everything the endpoint needs to keep private — the secrets, the schema map, the source — then sits above the document root.
+
+```
+Php/
+  .env              secrets, git-ignored
+  .env.example      the template, committed
+  .htaccess         denies .env, for when the vhost is pointed here anyway
+  env.php
+  schema-tables.php
+  api/              ← vhost root
+    lexicon.php
+```
+
+Configuration is read from the real environment first and from `Php/.env` second, so a PHP-FPM pool can override any single value with `env[NAME]` without the file being edited. `getenv()` under FPM sees only what the pool passes, which is the reason the file exists at all.
+
+The layout is enforced rather than merely documented: a `.env` inside the document root is served as plain text by any web server that has not been told otherwise — `https://example.com/.env` handing out the database password with nothing logged but an access line — so `env.php` refuses to start when it can tell that has happened.
+
+Authentication is one shared bearer token, compared with `hash_equals` so it cannot be guessed a character at a time, and the API refuses to serve at all when the token is unset rather than serving openly. It rides in a header on every request, so **HTTPS is load-bearing here, not advisory**. Prefer the `LEXICON_API_TOKEN` environment variable over `--token` on the pull side: a command line is visible in `ps` and lands in shell history.
+
 The lexicon serves mainly as a metadata provider for selected resolvers; it is not a complete dictionary of Czech.
 
 A valency frame states how a given verb's arguments are realized, and `CzechSentenceBuilder` takes both case and preposition from it: for `vidět` the `PAT` is accusative, for `dávat` the `ADDR` is dative and the `PAT` accusative, for `jít` the `DIR3` is the preposition `do` with the genitive. A case set explicitly is left alone — the frame only fills the gaps. A verb with several frames is disambiguated through `CzechClause.FrameLabel`, because `jít` takes different arguments as motion than as a process.

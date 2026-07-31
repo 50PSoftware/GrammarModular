@@ -363,3 +363,9 @@ MigrationBackup/
 FodyWeavers.xsd
 /GrammarModular.zip
 /Grammar.Czech.Cli/Properties/launchSettings.json
+
+# Lexicon API secrets. The template (.env.example) is committed; the real file never is.
+# env.php also refuses to run if the .env is somewhere the web server would serve it.
+.env
+*.env
+!.env.example
