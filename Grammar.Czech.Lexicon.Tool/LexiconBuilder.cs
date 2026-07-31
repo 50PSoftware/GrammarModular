@@ -3,20 +3,37 @@ using Microsoft.Data.Sqlite;
 namespace Grammar.Czech.Lexicon.Tool
 {
     /// <summary>
-    /// Creates a lexicon database from the schema and the seed.
+    /// Creates lexicon databases — empty ones for an import to fill, or seeded ones to start from.
     /// </summary>
     internal static class LexiconBuilder
     {
         /// <summary>
-        /// Builds a new lexicon database at the supplied path.
+        /// Builds a new lexicon database holding the seed entries.
         /// </summary>
         /// <param name="path">Where to write the database.</param>
         /// <param name="force">Whether an existing file may be replaced.</param>
-        /// <remarks>
-        /// The database is the authored source of the dictionary, so building over one already holding
-        /// hand-written entries would destroy work rather than regenerate it. That is what force guards.
-        /// </remarks>
         public static void Build(string path, bool force)
+        {
+            using var connection = CreateEmpty(path, force);
+            using var transaction = connection.BeginTransaction();
+
+            Execute(connection, SqlResources.Read(SqlResources.Seed), transaction);
+            transaction.Commit();
+        }
+
+        /// <summary>
+        /// Creates a database holding the schema and nothing else, and returns it open.
+        /// </summary>
+        /// <param name="path">Where to write the database.</param>
+        /// <param name="force">Whether an existing file may be replaced.</param>
+        /// <returns>The open connection, which the caller owns.</returns>
+        /// <exception cref="InvalidOperationException">The file exists and force was not given.</exception>
+        /// <remarks>
+        /// Overwriting is guarded because a lexicon may hold hand-written entries that exist nowhere else,
+        /// and rebuilding over them destroys work rather than regenerating it. An import writes to a
+        /// temporary file and only replaces the real one once it has been validated, so it passes force.
+        /// </remarks>
+        public static SqliteConnection CreateEmpty(string path, bool force)
         {
             if (File.Exists(path))
             {
@@ -43,19 +60,15 @@ namespace Grammar.Czech.Lexicon.Tool
                 Mode = SqliteOpenMode.ReadWriteCreate
             }.ToString();
 
-            using var connection = new SqliteConnection(connectionString);
+            var connection = new SqliteConnection(connectionString);
             connection.Open();
 
-            // The pragmas run first: foreign_keys is per connection and would otherwise not be watching
-            // while the seed inserts, which is the one moment the references are actually written.
+            // The settings run first: page_size only takes effect before the first table exists, and
+            // foreign_keys is per connection, so it has to be on before anything writes a reference.
             Execute(connection, SqlResources.Read(SqlResources.SqliteSettings));
             Execute(connection, SqlResources.Read(SqlResources.Schema));
 
-            using (var transaction = connection.BeginTransaction())
-            {
-                Execute(connection, SqlResources.Read(SqlResources.Seed), transaction);
-                transaction.Commit();
-            }
+            return connection;
         }
 
         private static void Execute(SqliteConnection connection, string sql, SqliteTransaction? transaction = null)

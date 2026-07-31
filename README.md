@@ -148,7 +148,9 @@ The parts in public use include:
 
 ### Lexicon and valency
 
-`SqliteValencyProvider` reads `Grammar.Czech/Data/Lexicon/grammar.czech.lexicon.db`, a SQLite database that is the authored source of the dictionary rather than a build artefact of anything else. It is the one data source here that is not embedded JSON, because it is the part meant to grow into thousands of entries; the rule files under `Data/Rules/` describe closed classes and stay as they are.
+`SqliteValencyProvider` reads `Grammar.Czech/Data/Lexicon/grammar.czech.lexicon.db`, a SQLite database. It is the one data source here that is not embedded JSON, because it is the part meant to grow into thousands of entries; the rule files under `Data/Rules/` describe closed classes and stay as they are.
+
+The dictionary is edited centrally, in MySQL behind a PHP admin, and this file is the local read-only copy pulled from it. Identifiers are assigned by the server and carried over unchanged — a copy that renumbered could never be compared against the server it came from again.
 
 The database holds three layers, kept apart because one lemma has exactly one morphological identity but a lexeme may have several senses and each sense a frame per diathesis:
 
@@ -156,13 +158,39 @@ The database holds three layers, kept apart because one lemma has exactly one mo
 - `lexeme` and `lexical_unit` — the abstract word and its senses. An aspect pair is one lexeme, so `dát` and `dávat` share a single frame instead of each carrying a copy,
 - `valency_frame`, `valency_slot`, `slot_realization` — the frames themselves. A slot may have several realizations with a generation preference, which is what lets one slot be a bare case in one wording and a `že`-clause or an infinitive in another.
 
-The schema in `Grammar.Czech.Lexicon.Tool/Schema/schema.sql` is deliberately portable SQL — SQLite is the first backend, and MySQL, Microsoft SQL or Firebird are meant to take the same DDL. Everything SQLite-specific sits in `schema.sqlite.sql`.
+The schema in `Grammar.Czech.Lexicon.Tool/Schema/schema.sql` is deliberately portable SQL — SQLite is the first backend, and MySQL, Microsoft SQL or Firebird are meant to take the same DDL. Everything SQLite-specific sits in `schema.sqlite.sql`, and `schema.mysql.sql` is the server's variant: the same tables with `AUTO_INCREMENT` and, importantly, binary collation on every column that is matched rather than read — the usual `utf8mb4_0900_ai_ci` is accent-insensitive and would make `dát` and `dat` the same string.
 
-`Grammar.Czech.Lexicon.Tool` maintains the file: `build` creates it from the schema and the seed, `validate` reports what a hand-written row broke — a frame with no actor, a slot that can never surface, a `lemma_key` that no lookup will match — and `dump` writes it out as portable `INSERT` statements for review.
+`Grammar.Czech.Lexicon.Tool` maintains the file:
+
+| command | what it does |
+|---|---|
+| `pull --url <api>` | downloads the dictionary from the API and replaces the local copy |
+| `validate` | reports what a bad row broke — a frame with no actor, a slot that can never surface, a `lemma_key` no lookup will match |
+| `build` | creates a lexicon from the schema and the seed, for working without a server |
+| `dump --out <sql>` | writes the database out as portable `INSERT`s, for review |
+| `export-json --out <dir>` | writes the same JSON the API serves, for seeding the server |
 
 ```bash
-dotnet run --project Grammar.Czech.Lexicon.Tool -- validate
+dotnet run --project Grammar.Czech.Lexicon.Tool -- pull --url https://example.com/api/lexicon.php --token <token>
 ```
+
+A pull writes to a temporary file and only moves it into place once `validate` passes, so a failed or interrupted download leaves the working lexicon untouched.
+
+#### The wire format
+
+`Grammar.Czech.Lexicon.Tool/Php/api/lexicon.php` serves one page of one table per request:
+
+```json
+{"table":"lemma_entry","columns":["lemma_entry_id","lemma",…],"rows":[[1,"student",…]],"next_after":"5000"}
+```
+
+Three choices in there are worth knowing about, because each has a quieter alternative that looks fine:
+
+- **Table-shaped, not nested.** Identifiers come from the server and have to survive the trip; a document nesting slots inside frames inside lemmas would either repeat them anyway or make the importer invent its own.
+- **Rows as arrays, with the column names stated once.** At a hundred thousand lemmas, repeating twenty-four keys per row is most of the payload. The single header is also the contract: the importer refuses a page whose columns are not the ones it expects, in that order, which is what stops a reordered column from importing cleanly into the wrong place.
+- **Keyset paging, not offsets.** An offset shifts when the dictionary is edited mid-pull, silently dropping or repeating rows. The key is compared in its own type on both sides so the primary key index stays usable.
+
+A paged pull is still not a consistent snapshot — nothing stops an edit between one page and the next — and `validate` is what catches the result, as a broken reference rather than as a word that quietly fails to resolve later.
 
 The lexicon serves mainly as a metadata provider for selected resolvers; it is not a complete dictionary of Czech.
 
@@ -228,7 +256,7 @@ Grammar.sln
 |-- Grammar.Core/               language-independent enums, interfaces and models
 |-- Grammar.Czech/              the Czech implementation: services, providers, embedded JSON rules and the lexicon database
 |-- Grammar.Czech.Cli/          console demo with hard-coded examples
-|-- Grammar.Czech.Lexicon.Tool/ builds, validates and dumps the lexicon database
+|-- Grammar.Czech.Lexicon.Tool/ pulls, builds, validates and dumps the lexicon database; holds the schemas and the PHP API
 `-- Grammar.Czech.Test/         MSTest tests for declension, conjugation, phonology and sentence building
 ```
 
@@ -574,6 +602,8 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 - The lexicon contains frames for four verbs only. The mechanism is finished, the data is not — for a verb without a frame the caller supplies the cases as before.
 - A slot can be stored as realized by a `že`-clause or an infinitive, but nothing generates one yet: that needs a clause planner, and until it exists `CzechSentenceBuilder` leaves such a constituent to the caller.
 - The database is binary, so git cannot show what changed inside it. `dump` produces the reviewable text form; wiring that into the commit workflow is not done.
+- A pull downloads the whole dictionary every time. There is no incremental sync, and adding one would need change tracking and tombstones on the server — deletions are invisible to a delta pull otherwise. Rewriting the file handles them for free, which is why it is the starting point.
+- The PHP half has not been run: there is no PHP in this development environment, so `api/lexicon.php` is reviewed code rather than tested code. The C# half of the same contract is covered end to end by exporting the real lexicon, serializing it as the API would, and importing it back.
 - The clitic cluster does not know the free dative (*To ti byla legrace*), which per NESČ stands between the auxiliary and the reflexive. The remaining positions match the described order.
 - The conjunctions `aby` and `kdyby` are not supported — they fuse with the conditional auxiliary and inflect by person (*abych*, *abys*, *abychom*). Nor is `však`, which is itself second-position rather than clause-initial.
 - The comma before `nebo` and `či` depends on the relation between the clauses, not on the conjunction. The data carries only the commoner reading; the exclusive one has to be stated through `Coordination.RequiresComma`.

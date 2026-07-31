@@ -12,7 +12,7 @@ namespace Grammar.Czech.Lexicon.Tool
     /// </summary>
     /// <param name="Errors">Findings that make the lexicon unusable.</param>
     /// <param name="Warnings">Findings worth looking at that still load.</param>
-    internal sealed record ValidationReport(IReadOnlyList<string> Errors, IReadOnlyList<string> Warnings);
+    public sealed record ValidationReport(IReadOnlyList<string> Errors, IReadOnlyList<string> Warnings);
 
     /// <summary>
     /// Checks a lexicon database for the errors hand-editing introduces.
@@ -23,7 +23,7 @@ namespace Grammar.Czech.Lexicon.Tool
     /// can never surface, and they cannot notice that the CHECK list itself has fallen behind the C# enum
     /// it mirrors — which is why the enum columns are re-checked here against the real types.
     /// </remarks>
-    internal static class LexiconValidator
+    public static class LexiconValidator
     {
         private static readonly (string Table, string Column, Type EnumType)[] EnumColumns =
         [
@@ -57,19 +57,29 @@ namespace Grammar.Czech.Lexicon.Tool
                 ForeignKeys = true
             }.ToString();
 
-            using var connection = new SqliteConnection(connectionString);
-            connection.Open();
+            try
+            {
+                using var connection = new SqliteConnection(connectionString);
+                connection.Open();
 
-            CheckSchemaVersion(connection, errors);
-            CheckReferentialIntegrity(connection, errors);
-            CheckEnums(connection, errors);
-            CheckLemmaKeys(connection, errors);
-            CheckFrames(connection, errors);
-            CheckSlots(connection, errors);
-            CheckDanglingLemmaReferences(connection, warnings);
-            CheckEmptyLexemes(connection, warnings);
+                CheckSchemaVersion(connection, errors);
+                CheckReferentialIntegrity(connection, errors);
+                CheckEnums(connection, errors);
+                CheckLemmaKeys(connection, errors);
+                CheckFrames(connection, errors);
+                CheckSlots(connection, errors);
+                CheckDanglingLemmaReferences(connection, warnings);
+                CheckEmptyLexemes(connection, warnings);
 
-            return new ValidationReport(errors, warnings);
+                return new ValidationReport(errors, warnings);
+            }
+            finally
+            {
+                // Disposing the connection returns it to the pool rather than closing it, and a pooled
+                // connection still holds the file. A pull validates the database it has just written and
+                // then renames it into place, which on Windows fails outright while the handle is open.
+                SqliteConnection.ClearAllPools();
+            }
         }
 
         private static void CheckSchemaVersion(SqliteConnection connection, List<string> errors)

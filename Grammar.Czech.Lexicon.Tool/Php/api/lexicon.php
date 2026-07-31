@@ -1,0 +1,182 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * Serves the central MySQL lexicon as the paged JSON that Grammar.Czech.Lexicon.Tool imports.
+ *
+ * One request returns one page of one table:
+ *
+ *   GET lexicon.php?table=lemma_entry&limit=5000[&after=<key>]
+ *   Authorization: Bearer <token>
+ *
+ *   {"table":"lemma_entry","columns":[...],"rows":[[...],[...]],"next_after":"5000"}
+ *
+ * Rows are arrays rather than objects and the column names are stated once. At the size a Czech
+ * dictionary reaches, repeating twenty-four keys per row is most of the payload — and the single
+ * header doubles as the contract: the importer refuses a page whose columns are not the ones its
+ * schema expects, in that order, which is what stops a reordered column from being written into the
+ * wrong place and validating cleanly.
+ *
+ * Paging is by key and not by offset. An offset re-counts the skipped rows on every request and shifts
+ * when the dictionary is edited mid-pull, which drops or repeats rows without saying so.
+ *
+ * Requires PHP 8.1 or newer, for the never return type.
+ *
+ * Configuration comes from the environment: LEXICON_MYSQL_DSN, LEXICON_MYSQL_USER,
+ * LEXICON_MYSQL_PASSWORD, LEXICON_API_TOKEN. Two deployment notes that cost an afternoon each when
+ * missed:
+ *
+ *   * Under PHP-FPM, getenv() sees only what the pool passes. Set them with env[NAME] = value in the
+ *     pool configuration, not just in the shell that started the service.
+ *
+ *   * Apache with CGI or FPM strips the Authorization header before PHP sees it, so every request
+ *     arrives unauthenticated. Either set CGIPassAuth On for the directory, or restore it in
+ *     .htaccess with:
+ *
+ *       RewriteEngine On
+ *       RewriteCond %{HTTP:Authorization} .
+ *       RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+ */
+
+require __DIR__ . '/../schema-tables.php';
+
+const MAX_LIMIT = 20000;
+const DEFAULT_LIMIT = 5000;
+
+header('Content-Type: application/json; charset=utf-8');
+
+try {
+    respond(handle());
+} catch (Throwable $exception) {
+    // The message is deliberately not the exception's own: a PDO failure carries the DSN, the user and
+    // often the statement, none of which belongs in a response to an unauthenticated caller.
+    error_log('lexicon.php: ' . $exception->getMessage());
+    fail(500, 'Interní chyba serveru.');
+}
+
+/**
+ * Reads the request, checks it, and returns the page to send.
+ */
+function handle(): array
+{
+    authorize();
+
+    $table = (string) ($_GET['table'] ?? '');
+
+    if (!array_key_exists($table, LEXICON_TABLES)) {
+        fail(400, "Neznámá tabulka '$table'.");
+    }
+
+    $columns = LEXICON_TABLES[$table];
+    $keyColumn = $columns[0];
+
+    // Clamped rather than trusted. An unbounded limit lets one request ask the server to materialise the
+    // whole dictionary in memory, which is a denial of service dressed as a legitimate parameter.
+    $limit = (int) ($_GET['limit'] ?? DEFAULT_LIMIT);
+    $limit = max(1, min($limit, MAX_LIMIT));
+
+    $after = isset($_GET['after']) ? (string) $_GET['after'] : null;
+
+    $quotedColumns = implode(', ', array_map(fn (string $column): string => "`$column`", $columns));
+
+    // Keyset paging compares the primary key in its own type. The key travels as text because one
+    // parameter has to cover both kinds, and is converted back here rather than cast in SQL: casting the
+    // column — ORDER BY CAST(`id` AS CHAR) — would compare consistently but make the primary key index
+    // unusable, turning every page of a hundred-thousand-row table into a full scan and a filesort.
+    //
+    // Filtering and ordering must agree on the comparison. Ordering numerically while filtering as text
+    // is a mismatch small data hides: with keys one to twelve and a page of five, the second request
+    // asks for keys after '5' and never returns '10', '11' or '12', because as text they sort below it.
+    $sql = "SELECT $quotedColumns FROM `$table` ";
+    $sql .= $after === null ? '' : "WHERE `$keyColumn` > ? ";
+    $sql .= "ORDER BY `$keyColumn` LIMIT $limit";
+
+    $statement = connect()->prepare($sql);
+
+    if ($after === null) {
+        $statement->execute();
+    } else {
+        // Bound with the type the column holds. lexicon_meta is the only table keyed by text; binding a
+        // numeric key as a string would still work through MySQL's coercion, but binding it as an
+        // integer is what keeps the plan on the index.
+        $isTextKey = in_array($table, LEXICON_TEXT_KEY_TABLES, true);
+        $statement->bindValue(1, $isTextKey ? $after : (int) $after, $isTextKey ? PDO::PARAM_STR : PDO::PARAM_INT);
+        $statement->execute();
+    }
+
+    $rows = $statement->fetchAll(PDO::FETCH_NUM);
+    $count = count($rows);
+
+    return [
+        'table' => $table,
+        'columns' => $columns,
+        'rows' => $rows,
+
+        // A short page is the last one. next_after stays null there, which is what ends the client's
+        // loop; repeating the previous key instead would spin it forever, and the client checks for
+        // exactly that.
+        'next_after' => $count === $limit ? (string) $rows[$count - 1][0] : null,
+    ];
+}
+
+function authorize(): void
+{
+    $expected = getenv('LEXICON_API_TOKEN') ?: '';
+
+    // Fails closed. An unset token is a misconfigured deployment, and treating it as "no auth needed"
+    // would publish the whole dictionary the first time someone forgot to set the variable.
+    if ($expected === '') {
+        error_log('lexicon.php: LEXICON_API_TOKEN není nastaven.');
+        fail(500, 'Server není nastavený.');
+    }
+
+    $header = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+    $presented = preg_match('/^Bearer\s+(.+)$/i', trim($header), $matches) === 1 ? $matches[1] : '';
+
+    // Constant-time, so the comparison does not leak the token one character at a time.
+    if (!hash_equals($expected, $presented)) {
+        fail(401, 'Neplatný token.');
+    }
+}
+
+function connect(): PDO
+{
+    $dsn = getenv('LEXICON_MYSQL_DSN') ?: '';
+
+    if ($dsn === '') {
+        error_log('lexicon.php: LEXICON_MYSQL_DSN není nastaven.');
+        fail(500, 'Server není nastavený.');
+    }
+
+    $pdo = new PDO($dsn, getenv('LEXICON_MYSQL_USER') ?: '', getenv('LEXICON_MYSQL_PASSWORD') ?: '', [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+
+        // Both matter for the wire format. Without them every value comes back as a string, and the
+        // importer would write "1" where the column expects a number and, worse, the empty string where
+        // the row holds a genuine NULL.
+        PDO::ATTR_EMULATE_PREPARES => false,
+        PDO::ATTR_STRINGIFY_FETCHES => false,
+    ]);
+
+    // Without this the connection can negotiate latin1 and every Czech diacritic arrives mangled —
+    // silently, because mangled text is still text. The DSN should carry charset=utf8mb4 as well.
+    $pdo->query('SET NAMES utf8mb4')?->closeCursor();
+
+    return $pdo;
+}
+
+function respond(array $page): never
+{
+    // Unescaped unicode so the Czech stays readable and the payload stays small; the response declares
+    // UTF-8 and the C# client reads it as such.
+    echo json_encode($page, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+    exit(0);
+}
+
+function fail(int $status, string $message): never
+{
+    http_response_code($status);
+    echo json_encode(['error' => $message], JSON_UNESCAPED_UNICODE);
+    exit(1);
+}

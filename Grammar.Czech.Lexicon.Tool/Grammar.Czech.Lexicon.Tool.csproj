@@ -25,4 +25,13 @@
     <EmbeddedResource Include="Data\*.sql" />
   </ItemGroup>
 
+  <!--
+    The PHP is the server half of the same contract and is not compiled into anything, but it is copied
+    to the output so the tests can read it: its column map has to agree with LexiconSchema, and two
+    hand-maintained lists that nothing compares will drift.
+  -->
+  <ItemGroup>
+    <Content Include="Php\**\*.php" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
