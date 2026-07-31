@@ -159,6 +159,31 @@ namespace Grammar.Czech.Test
             }
         }
 
+        /// <summary>
+        /// The server schema sticks to collations MariaDB also has.
+        /// </summary>
+        /// <remarks>
+        /// The utf8mb4_0900 family is MySQL 8 only. MariaDB does not know those names and rejects the
+        /// whole script with "Unknown collation" — not a subtle failure, but one that only appears at
+        /// deployment, on whichever host turns out to run MariaDB rather than MySQL. Shared hosting
+        /// usually does.
+        /// </remarks>
+        [TestMethod]
+        public void MysqlSchema_AvoidsCollationsMariaDbLacks()
+        {
+            var declarations = SqlResources.Read(SqlResources.MysqlSchema)
+                .Split('\n')
+                .Where(line => !line.TrimStart().StartsWith("--", StringComparison.Ordinal))
+                .Where(line => line.Contains("utf8mb4_0900", StringComparison.Ordinal))
+                .ToArray();
+
+            CollectionAssert.AreEqual(
+                Array.Empty<string>(),
+                declarations,
+                "Schéma používá kolaci utf8mb4_0900_*, kterou MariaDB nezná:\n"
+                + string.Join("\n", declarations));
+        }
+
         private static Dictionary<string, TableDefinition> Parse(string sql)
         {
             var tables = new Dictionary<string, TableDefinition>(StringComparer.Ordinal);

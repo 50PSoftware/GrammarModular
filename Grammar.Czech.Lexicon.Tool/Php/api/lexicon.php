@@ -38,8 +38,16 @@ declare(strict_types=1);
  *   RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
  */
 
-require __DIR__ . '/../env.php';
-require __DIR__ . '/../schema-tables.php';
+// Where env.php, schema-tables.php and .env live. They sit one level up by default, which keeps them
+// above the document root when the vhost points at this api/ directory.
+//
+// On shared hosting the document root is usually fixed — Wedos serves www/ and will not be pointed
+// deeper — so there the includes go beside www/ rather than above this file, and this is the single
+// line to change. See the deployment section of the README.
+$lexiconIncludes = __DIR__ . '/..';
+
+require $lexiconIncludes . '/env.php';
+require $lexiconIncludes . '/schema-tables.php';
 
 const MAX_LIMIT = 20000;
 const DEFAULT_LIMIT = 5000;

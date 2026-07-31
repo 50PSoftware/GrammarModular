@@ -213,6 +213,40 @@ The layout is enforced rather than merely documented: a `.env` inside the docume
 
 Authentication is one shared bearer token, compared with `hash_equals` so it cannot be guessed a character at a time, and the API refuses to serve at all when the token is unset rather than serving openly. It rides in a header on every request, so **HTTPS is load-bearing here, not advisory**. Prefer the `LEXICON_API_TOKEN` environment variable over `--token` on the pull side: a command line is visible in `ps` and lands in shell history.
 
+##### On shared hosting
+
+The document root is fixed there — Wedos and similar serve `www/` and will not be pointed deeper — so the includes go *beside* `www/`, not above the endpoint:
+
+```
+lexikon/            ← beside www/, not reachable over HTTP
+  .env
+  env.php
+  schema-tables.php
+www/                ← document root
+  api/lexicon.php   ← only this
+```
+
+Change one line at the top of `lexicon.php`:
+
+```php
+$lexiconIncludes = __DIR__ . '/../../lexikon';
+```
+
+Four things then need checking, and each fails in a way that does not point at itself:
+
+- **The database host is not `localhost`.** Shared hosting puts MySQL on a separate machine; take the hostname from the admin panel and put it in the DSN, with `charset=utf8mb4`.
+- **It is probably MariaDB, not MySQL.** `schema.mysql.sql` sticks to collations both have — `utf8mb4_0900_*` is MySQL 8 only and MariaDB rejects the whole script with *Unknown collation*. A test guards against those creeping back in.
+- **Set PHP to 8.1 or newer** in the admin panel.
+- **The `Authorization` header is likely stripped** before PHP sees it. `env.php` looks in three places for it, including `getallheaders()`, but if requests still come back 401 with a correct token, add to `www/.htaccess`:
+
+  ```apache
+  RewriteEngine On
+  RewriteCond %{HTTP:Authorization} .
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+  ```
+
+Verify the deployment with three requests: `/.env` must return 403 or 404, a request with no token 401, and one with the correct token 200.
+
 The lexicon serves mainly as a metadata provider for selected resolvers; it is not a complete dictionary of Czech.
 
 A valency frame states how a given verb's arguments are realized, and `CzechSentenceBuilder` takes both case and preposition from it: for `vidět` the `PAT` is accusative, for `dávat` the `ADDR` is dative and the `PAT` accusative, for `jít` the `DIR3` is the preposition `do` with the genitive. A case set explicitly is left alone — the frame only fills the gaps. A verb with several frames is disambiguated through `CzechClause.FrameLabel`, because `jít` takes different arguments as motion than as a process.

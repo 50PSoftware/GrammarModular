@@ -1,12 +1,17 @@
--- Grammar.Czech — lexicon and valency schema, MySQL variant.
+-- Grammar.Czech — lexicon and valency schema, MySQL and MariaDB variant.
 --
 -- The counterpart of schema.sql for the central, editable copy of the dictionary. The tables, columns
--- and constraints are the same; what differs is only what MySQL spells differently.
+-- and constraints are the same; what differs is only what these engines spell differently.
 --
--- Target: MySQL 8.0.16 or newer. Below 8.0.16 CHECK constraints are parsed and then silently ignored,
--- which would let an enum value the C# side cannot parse into the data — run the lexicon tool's
--- validate against an exported copy if you are stuck on an older server. Below 8.0 the
--- utf8mb4_0900 collations do not exist; substitute utf8mb4_unicode_ci and utf8mb4_bin.
+-- Target: MySQL 8.0.16+ or MariaDB 10.2.1+, which is where CHECK constraints began to be enforced
+-- rather than parsed and discarded. On anything older the constraints are accepted and ignored, and an
+-- enum value the C# side cannot parse gets into the data unnoticed — run the lexicon tool's validate
+-- against an exported copy if you are stuck there.
+--
+-- The collations here are deliberately the ones both engines have. utf8mb4_0900_ai_ci is MySQL 8 only:
+-- MariaDB does not know it and refuses the whole script with "Unknown collation", which is how this
+-- was found. utf8mb4_unicode_ci and utf8mb4_bin exist in both and carry the same properties the
+-- reasoning below depends on.
 --
 -- What differs from schema.sql, and why:
 --
@@ -16,13 +21,13 @@
 --     accepted and simply advance the counter, so seed.sql replays here unchanged.
 --
 --   * Collation, which is the one thing here that can quietly corrupt Czech data.
---     utf8mb4_0900_ai_ci — the usual default — is accent-insensitive: under it 'dát' and 'dat' are the
---     same string, so UNIQUE (lemma_key, category, homonym_index) would reject one of them as a
---     duplicate of the other, and a lookup for one would return the other. Every column that is
---     matched rather than read by a human is therefore utf8mb4_bin: the lookup key, and every column
---     holding a C# enum member name, where 'Perfective' and 'perfective' must not compare equal
---     because Enum.TryParse is called case-sensitively. Columns meant for human eyes — lemma, gloss,
---     note, source — keep the accent-insensitive default so that admin search stays forgiving.
+--     utf8mb4_unicode_ci is accent-insensitive: under it 'dát' and 'dat' are the same string, so
+--     UNIQUE (lemma_key, category, homonym_index) would reject one of them as a duplicate of the
+--     other, and a lookup for one would return the other. Every column that is matched rather than
+--     read by a human is therefore utf8mb4_bin: the lookup key, and every column holding a C# enum
+--     member name, where 'Perfective' and 'perfective' must not compare equal because Enum.TryParse is
+--     called case-sensitively. Columns meant for human eyes — lemma, gloss, note, source — keep the
+--     accent-insensitive default so that admin search stays forgiving.
 --
 --   * ENGINE=InnoDB, for foreign keys. MyISAM parses them and does not enforce them.
 --
@@ -38,7 +43,7 @@ CREATE TABLE lexicon_meta (
     meta_key    VARCHAR(64)  COLLATE utf8mb4_bin NOT NULL,
     meta_value  VARCHAR(255),
     CONSTRAINT pk_lexicon_meta PRIMARY KEY (meta_key)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Lexeme — the abstract word, holding an aspect pair together
@@ -48,7 +53,7 @@ CREATE TABLE lexeme (
     primary_lemma  VARCHAR(64)  NOT NULL,
     note           VARCHAR(500),
     CONSTRAINT pk_lexeme PRIMARY KEY (lexeme_id)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Lemma entry — the morphological identity of one dictionary form
@@ -108,7 +113,7 @@ CREATE TABLE lemma_entry (
     CONSTRAINT ck_lemma_entry_countable CHECK (is_countable IS NULL OR is_countable IN (0, 1)),
     CONSTRAINT ck_lemma_entry_short_form CHECK (prefers_short_form IS NULL OR prefers_short_form IN (0, 1)),
     CONSTRAINT ck_lemma_entry_verified CHECK (is_verified IN (0, 1))
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Lexical unit — one sense of a lexeme
@@ -122,7 +127,7 @@ CREATE TABLE lexical_unit (
     CONSTRAINT pk_lexical_unit PRIMARY KEY (lu_id),
     CONSTRAINT uq_lexical_unit_sense UNIQUE (lexeme_id, sense_label),
     CONSTRAINT fk_lexical_unit_lexeme FOREIGN KEY (lexeme_id) REFERENCES lexeme (lexeme_id)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Valency frame — one per (lexical unit, diathesis)
@@ -143,7 +148,7 @@ CREATE TABLE valency_frame (
         'Active', 'PassivePeriphrastic', 'ReflexivePassive', 'RecipientDeobjective',
         'Dispositional', 'Resultative')),
     CONSTRAINT ck_valency_frame_default CHECK (is_default IN (0, 1))
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Valency slot — one argument position of a frame
@@ -174,7 +179,7 @@ CREATE TABLE valency_slot (
     CONSTRAINT ck_valency_slot_order CHECK (canonical_order >= 1),
     CONSTRAINT ck_valency_slot_drop_ctx CHECK (can_drop_contextual IN (0, 1)),
     CONSTRAINT ck_valency_slot_drop_gen CHECK (can_drop_generic IN (0, 1))
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Slot realization — the surface forms one slot may take
@@ -198,7 +203,7 @@ CREATE TABLE slot_realization (
         morph_case IS NOT NULL OR clause_type IS NOT NULL OR takes_infinitive = 1),
     CONSTRAINT ck_slot_realization_preposition CHECK (
         preposition IS NULL OR morph_case IS NOT NULL)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Construction — light-verb and idiom templates
@@ -211,7 +216,7 @@ CREATE TABLE construction (
     template_json     VARCHAR(4000) NOT NULL,
     CONSTRAINT pk_construction PRIMARY KEY (construction_id),
     CONSTRAINT uq_construction_name UNIQUE (pattern_name)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Indexes
