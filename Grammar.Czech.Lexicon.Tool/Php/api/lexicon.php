@@ -131,13 +131,44 @@ function authorize(): void
         fail(500, 'Server není nastavený.');
     }
 
-    $header = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
-    $presented = preg_match('/^Bearer\s+(.+)$/i', trim($header), $matches) === 1 ? $matches[1] : '';
+    $presented = preg_match('/^Bearer\s+(.+)$/i', trim(readAuthorizationHeader()), $matches) === 1
+        ? $matches[1]
+        : '';
 
     // Constant-time, so the comparison does not leak the token one character at a time.
     if (!hash_equals($expected, $presented)) {
         fail(401, 'Neplatný token.');
     }
+}
+
+/**
+ * Finds the Authorization header, wherever this particular server put it.
+ *
+ * Getting at it is the single most fragile thing here, because where it lands depends on the SAPI and
+ * on how the vhost is configured. Each source is tried until one yields something non-empty rather
+ * than merely set: the Apache rewrite that restores the header leaves HTTP_AUTHORIZATION defined and
+ * empty on some setups while the real value sits under the REDIRECT_ prefix, and a plain ?? chain
+ * would stop at the empty one and reject every request with a correct token.
+ */
+function readAuthorizationHeader(): string
+{
+    foreach (['HTTP_AUTHORIZATION', 'REDIRECT_HTTP_AUTHORIZATION'] as $key) {
+        if (($_SERVER[$key] ?? '') !== '') {
+            return (string) $_SERVER[$key];
+        }
+    }
+
+    // Available under mod_php and, since PHP 7.3, under FPM too. It reads the header from the SAPI
+    // directly, which is what works when the vhost has not been told to pass it through at all.
+    if (function_exists('getallheaders')) {
+        foreach (getallheaders() as $name => $value) {
+            if (strcasecmp($name, 'Authorization') === 0 && $value !== '') {
+                return (string) $value;
+            }
+        }
+    }
+
+    return '';
 }
 
 function connect(): PDO
