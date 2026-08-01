@@ -131,6 +131,31 @@ namespace Grammar.Czech.Services
             return new[] { primary }.Concat(primary.AlsoReads).ToList();
         }
 
+        /// <summary>
+        /// Gets the conjunctions that join clauses in the requested way, the least marked one first.
+        /// </summary>
+        /// <param name="type">Whether the clauses are of equal rank or one depends on the other.</param>
+        /// <param name="semanticGroup">The relation between them.</param>
+        /// <returns>The matching conjunctions, or an empty sequence when none is registered.</returns>
+        public IReadOnlyList<string> GetConjunctionsFor(ConjunctionType type, ConjunctionSemanticGroup semanticGroup)
+        {
+            static bool Matches(ConjunctionData data, ConjunctionType type, ConjunctionSemanticGroup group)
+                => data.Type == type && data.SemanticGroup == group;
+
+            // Primary readings first: a conjunction that is normally this kind is a better answer than one
+            // that only reads this way in a particular construction.
+            var primary = _conjunctions
+                .Where(entry => Matches(entry.Value, type, semanticGroup))
+                .Select(entry => entry.Key);
+
+            var secondary = _conjunctions
+                .Where(entry => !Matches(entry.Value, type, semanticGroup)
+                    && entry.Value.AlsoReads.Any(reading => Matches(reading, type, semanticGroup)))
+                .Select(entry => entry.Key);
+
+            return primary.Concat(secondary).ToList();
+        }
+
         // Reported rather than papered over, though not quite because the class is closed. NESČ puts it more
         // carefully: conjunctions proper are a closed set, but they are the core of an open class of
         // connective expressions, so an unlisted word is not automatically not a conjunction. The reason to

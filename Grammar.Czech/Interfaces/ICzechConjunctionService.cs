@@ -92,5 +92,25 @@ namespace Grammar.Czech.Interfaces
         /// <returns>The readings registered for it.</returns>
         /// <exception cref="System.InvalidOperationException">Thrown when the conjunction is not in the inventory.</exception>
         IReadOnlyList<Models.ConjunctionData> GetReadings(string conjunction);
+
+        /// <summary>
+        /// Gets the conjunctions that join clauses in the requested way, the least marked one first.
+        /// </summary>
+        /// <param name="type">Whether the clauses are of equal rank or one depends on the other.</param>
+        /// <param name="semanticGroup">The relation between them.</param>
+        /// <returns>The matching conjunctions, or an empty sequence when none is registered.</returns>
+        /// <remarks>
+        /// The inverse of <see cref="GetSemanticGroup"/>, and the reason it is worth having: the semantic
+        /// groups are the traditional taxonomy of dependent clauses under different names — Purpose is the
+        /// účelová věta, Causal the příčinná, Concessive the přípustková, Conditional the podmínková — so a
+        /// caller can say what kind of clause it wants instead of knowing which word expresses it.
+        /// <para>
+        /// Both readings of a conjunction are searched, so asking for a subordinating comparison finds jak,
+        /// whose primary reading is coordinating. Conjunctions matching on their primary reading come first,
+        /// and within each group the data's own order is kept — it lists the unmarked choice first, so
+        /// taking the first result gives protože for a causal clause rather than ježto.
+        /// </para>
+        /// </remarks>
+        IReadOnlyList<string> GetConjunctionsFor(ConjunctionType type, ConjunctionSemanticGroup semanticGroup);
     }
 }
