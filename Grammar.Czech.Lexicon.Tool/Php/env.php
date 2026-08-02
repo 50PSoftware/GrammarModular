@@ -22,8 +22,9 @@ declare(strict_types=1);
  *              the API token with no error and no trace beyond an access log line.
  *
  * lexicon_refuse_if_web_accessible() below exists for the second case and refuses to start when it
- * can tell the .env is inside the document root. A deployment that has deliberately put it there and
- * protected it another way switches that call off; switching to .env.php makes the question moot.
+ * can tell the .env is inside the document root. A deployment that has put it there deliberately and
+ * protected it another way sets LEXICON_ALLOW_ENV_IN_DOCROOT=1, in the environment or in the .env
+ * itself; switching to .env.php makes the question moot instead.
  *
  * The real environment wins over both files, so one value can still be overridden with env[NAME]
  * without editing anything.
@@ -91,8 +92,6 @@ function lexicon_env_file(): array
         return $parsed = [];
     }
 
-    //lexicon_refuse_if_web_accessible($path);
-
     $parsed = [];
 
     foreach (file($path, FILE_IGNORE_NEW_LINES) ?: [] as $line) {
@@ -122,6 +121,11 @@ function lexicon_env_file(): array
         $parsed[$key] = $value;
     }
 
+    // Checked after parsing rather than before, so that the switch is allowed to live in the very file
+    // it governs — which on shared hosting is the only place the deployment can put it. Reading the
+    // file was never the hazard; the web server handing it out is.
+    lexicon_refuse_if_web_accessible($path, $parsed);
+
     return $parsed;
 }
 
@@ -129,10 +133,27 @@ function lexicon_env_file(): array
  * Refuses to continue when the .env sits somewhere the web server would serve it.
  *
  * Fails closed, and loudly, because the alternative failure is silent: the file works perfectly while
- * also being downloadable. Moving it one directory up is the whole fix.
+ * also being downloadable.
+ *
+ * Two ways out, and the deployment has to pick one on purpose:
+ *
+ *   * Move the .env above the document root, or switch to .env.php, which cannot leak whatever the
+ *     server is doing. Either makes this moot.
+ *
+ *   * Set LEXICON_ALLOW_ENV_IN_DOCROOT=1 to say the file is protected some other way — an .htaccess
+ *     deny, an nginx location block. The switch exists because that is a legitimate arrangement and
+ *     commenting the call out was the alternative, which a merge silently undoes and which leaves no
+ *     record of the decision.
+ *
+ * @param string $path The .env being used.
+ * @param array<string, string> $values What was parsed out of it, which may hold the switch.
  */
-function lexicon_refuse_if_web_accessible(string $path): void
+function lexicon_refuse_if_web_accessible(string $path, array $values = []): void
 {
+    if (lexicon_is_truthy(lexicon_setting('LEXICON_ALLOW_ENV_IN_DOCROOT', $values))) {
+        return;
+    }
+
     $documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
 
     // Empty under the CLI, and unreliable enough elsewhere that an unresolvable path is treated as
@@ -152,12 +173,42 @@ function lexicon_refuse_if_web_accessible(string $path): void
 
     if (str_starts_with($realPath, $realRoot)) {
         error_log(
-            "lexicon: .env leží v document rootu ($realPath). Web server ho vydá jako text — "
-            . 'přesuň ho o adresář výš a nasměruj vhost na Php/api/.'
+            "lexicon: .env leží v document rootu ($realPath) a web server ho vydá jako text. "
+            . 'Přejmenuj ho na .env.php (vrací pole, nemůže uniknout), přesuň ho nad document root, '
+            . 'nebo — je-li chráněný jinak — nastav LEXICON_ALLOW_ENV_IN_DOCROOT=1.'
         );
 
         http_response_code(500);
         echo json_encode(['error' => 'Server není nastavený.'], JSON_UNESCAPED_UNICODE);
         exit(1);
     }
+}
+
+/**
+ * Reads a setting from the real environment, then from already-parsed file values.
+ *
+ * Takes the parsed values as an argument rather than going through lexicon_config(), so the guard
+ * does not depend on how far through loading the file it happens to be called. The static in
+ * lexicon_env_file() is in fact populated by that point, but relying on it would make the load order
+ * load-bearing for no gain.
+ *
+ * @param array<string, string> $values
+ */
+function lexicon_setting(string $name, array $values): string
+{
+    $value = getenv($name);
+
+    if ($value !== false && $value !== '') {
+        return $value;
+    }
+
+    return $values[$name] ?? '';
+}
+
+/**
+ * Reads a switch. Anything not affirmative is off, so a typo leaves the guard standing.
+ */
+function lexicon_is_truthy(string $value): bool
+{
+    return in_array(strtolower(trim($value)), ['1', 'true', 'yes', 'on'], true);
 }

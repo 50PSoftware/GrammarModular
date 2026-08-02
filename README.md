@@ -228,6 +228,8 @@ www/                ← document root
 
 **Use `.env.php`, not `.env`, once the file is inside the document root.** It returns an array, so a request for it is executed rather than read out; a plain `.env` in the same place is served as text by any server that has not been explicitly told to refuse it. `env.php` prefers `.env.php` when both exist.
 
+Keeping a plain `.env` there is a supportable choice — the shipped `.htaccess` does deny it — but it has to be a stated one: `env.php` refuses to start until `LEXICON_ALLOW_ENV_IN_DOCROOT=1` is set, in the environment or in the `.env` itself. Anything other than `1`/`true`/`yes`/`on` leaves the guard standing, so a typo fails safe. Then verify it with `curl -i https://…/.env`, which is the only way to find out whether the `.htaccess` is honoured at all — where `AllowOverride` is `None` it is ignored in silence, and `/api/lexicon.php` keeps working while the file is public.
+
 That matters because the alternative protection is thinner than it looks. The shipped `.htaccess` denies dotfiles and the two includes with `Require` directives, which hold whether or not mod_rewrite is loaded — but only while `.htaccess` is read at all, and not on nginx. Doing the same job with a rewrite would be worse still: adding `RewriteCond %{REQUEST_FILENAME} !-f`, the near-universal "leave real files alone" condition, makes a catch-all skip `.env` precisely *because* it is a real file, and it is served in the clear from then on with nothing to show anything changed.
 
 Four more things need checking, and each fails in a way that does not point at itself:
