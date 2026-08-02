@@ -839,8 +839,29 @@ dotnet run --project Grammar.Czech.Lexicon.Tool -- `
   <section class="band">
     <h2>Až budeš přidávat slovíčka</h2>
     <p>
-      Hesla se zapisují do MariaDB a lokální kopie se pak přetáhne znovu — celá, ne přírůstkově.
-      Přepis celého souboru řeší i mazání a přejmenování, které by přírůstkový pull neviděl.
+      Hesla se píšou v administraci na <code>/admin/</code>. Přihlašuje se heslem, jehož hash patří
+      do konfigurace pod <code>LEXICON_ADMIN_PASSWORD_HASH</code> — hash, ne heslo samotné, aby
+      uniklý konfigurační soubor nedal funkční přihlášení:
+    </p>
+    <div class="code"><pre>php -r "echo password_hash('tvoje-heslo', PASSWORD_DEFAULT), PHP_EOL;"</pre></div>
+    <div class="warn">
+      <span class="warn-label">Bez výjimky v <code>.htaccess</code> administrace nepojede</span>
+      <p>
+        Catch-all pravidlo posílá všechno do <code>/api/</code>, takže <code>/admin/</code> by skončilo
+        jako <code>/api/admin/</code> a vrátilo 404. Dodávaný <code>.htaccess</code> výjimku má; kdyby
+        sis ho psal sám, patří tam <code>RewriteCond %{REQUEST_URI} !^/admin/</code>.
+      </p>
+    </div>
+    <p>
+      Administrace vědomě nekontroluje všechno, co kontroluje <code>validate</code>. Dvě ručně
+      udržované kopie stejných pravidel se rozejdou, a <code>validate</code> stejně běží jako brána
+      při každém stažení — co administrace propustí, chytne se dřív, než se to dostane do lokálního
+      slovníku. Hlídá jen to, co se opravit nedá zpětně: klíč pro vyhledávání, povolené hodnoty
+      a tvar rámce.
+    </p>
+    <p>
+      Lokální kopie se pak přetáhne znovu — celá, ne přírůstkově. Přepis celého souboru řeší i mazání
+      a přejmenování, které by přírůstkový pull neviděl.
     </p>
     <div class="code"><pre>dotnet run --project Grammar.Czech.Lexicon.Tool -- pull --url https://tvadomena.cz/api/lexicon.php
 dotnet test Grammar.sln</pre></div>

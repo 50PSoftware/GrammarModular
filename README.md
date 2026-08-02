@@ -249,6 +249,14 @@ Four more things need checking, and each fails in a way that does not point at i
 
 Verify the deployment with four requests. `/.env.php` and `/env.php` must return 403 or 404, or at worst an empty body — never source. A request with no token must return 401, and one with the correct token 200.
 
+##### The admin
+
+`Php/admin/` is where entries are written — a server-rendered PHP interface at `/admin/`, signed into with a password whose `password_hash` output goes in the configuration as `LEXICON_ADMIN_PASSWORD_HASH`. The catch-all rewrite has to skip `/admin/` or the whole interface answers 404; the shipped `.htaccess` already does.
+
+The forms are per *word* rather than per table, because adding a verb touches four of them: the entry, the lexeme it hangs on, the sense, and the frame with its slots and realizations. Enum dropdowns are built from `LEXICON_ENUMS` in `schema-tables.php`, so the admin cannot offer a value the importer would reject, and a test compares that list against the real C# enums.
+
+It deliberately does **not** re-implement `LexiconValidator`. Two hand-maintained copies of the same rules drift, and the validator already gates every pull, so anything the admin lets through is caught before it reaches a local lexicon. What it does enforce is the part that cannot be repaired afterwards — `lemma_key` folded with `mb_strtolower` (the byte-wise `strtolower` leaves `Á` alone and yields a key no lookup matches), the permitted enum values, and the shape of a realization. Missing actors and slots with no preferred realization are shown as warnings where they occur rather than blocked.
+
 The lexicon serves mainly as a metadata provider for selected resolvers; it is not a complete dictionary of Czech.
 
 A valency frame states how a given verb's arguments are realized, and `CzechSentenceBuilder` takes both case and preposition from it: for `vidět` the `PAT` is accusative, for `dávat` the `ADDR` is dative and the `PAT` accusative, for `jít` the `DIR3` is the preposition `do` with the genitive. A case set explicitly is left alone — the frame only fills the gaps. A verb with several frames is disambiguated through `CzechClause.FrameLabel`, because `jít` takes different arguments as motion than as a process.

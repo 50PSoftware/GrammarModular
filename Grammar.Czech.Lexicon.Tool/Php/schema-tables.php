@@ -49,3 +49,110 @@ const LEXICON_TABLES = [
  * two kinds are bound differently. The counterpart of LexiconTable.KeyIsText.
  */
 const LEXICON_TEXT_KEY_TABLES = ['lexicon_meta'];
+
+/**
+ * The values each constrained column accepts, and what to call them in the admin.
+ *
+ * Keys are what goes in the database — the C# enum member names, spelled exactly, because the
+ * provider parses them case-sensitively. Values are Czech labels and exist only on screen.
+ *
+ * Keeping the list here rather than in the admin means the form cannot offer a value the importer
+ * would reject; a test compares the keys against the real C# enums, so adding a functor in one place
+ * and not the other fails at build time instead of at data-entry time.
+ */
+const LEXICON_ENUMS = [
+    'category' => [
+        'Noun' => 'podstatné jméno',
+        'Adjective' => 'přídavné jméno',
+        'Pronoun' => 'zájmeno',
+        'Numerale' => 'číslovka',
+        'Verb' => 'sloveso',
+        'Adverb' => 'příslovce',
+        'Preposition' => 'předložka',
+        'Conjunction' => 'spojka',
+        'Particle' => 'částice',
+        'Interjection' => 'citoslovce',
+    ],
+    'gender' => [
+        'Masculine' => 'mužský',
+        'Feminine' => 'ženský',
+        'Neuter' => 'střední',
+    ],
+    'aspect' => [
+        'Perfective' => 'dokonavý',
+        'Imperfective' => 'nedokonavý',
+    ],
+    'verb_class' => [
+        'Class1' => '1. třída',
+        'Class2' => '2. třída',
+        'Class3' => '3. třída',
+        'Class4' => '4. třída',
+        'Class5' => '5. třída',
+    ],
+    'reflexive_type' => [
+        'None' => 'bez reflexiva',
+        'ReflexivumTantum_Se' => 'reflexivum tantum – se (bát se)',
+        'ReflexivumTantum_Si' => 'reflexivum tantum – si (přát si)',
+        'DerivedReflexive_Se' => 'odvozené reflexivum – se (mýt se)',
+        'DerivedBenefactive_Si' => 'odvozený benefaktiv – si (koupit si)',
+        'Reciprocal_Se' => 'vzájemnostní – se (potkat se)',
+        'DeagentivePassive_Se' => 'deagentní pasivum – se (mluví se)',
+    ],
+    'kind' => [
+        'Verbal' => 'plnovýznamové sloveso',
+        'Copular_NominalPred' => 'spona se jmenným přísudkem',
+        'Copular_AdjectivalPred' => 'spona s adjektivním přísudkem',
+        'Existential' => 'existenciální',
+        'Modal' => 'modální',
+        'PhasalLightVerb' => 'fázové',
+        'LightVerb' => 'kategoriální (mít zájem)',
+    ],
+    'diathesis' => [
+        'Active' => 'aktivum',
+        'PassivePeriphrastic' => 'opisné pasivum',
+        'ReflexivePassive' => 'reflexivní pasivum',
+        'RecipientDeobjective' => 'recipientní deobjektivum (dostat)',
+        'Dispositional' => 'dispoziční',
+        'Resultative' => 'rezultativ (mám napsáno)',
+    ],
+    'functor' => [
+        'ACT' => 'ACT – konatel',
+        'PAT' => 'PAT – patiens',
+        'ADDR' => 'ADDR – adresát',
+        'ORIG' => 'ORIG – původ',
+        'EFF' => 'EFF – efekt',
+        'DIR1' => 'DIR1 – odkud',
+        'DIR2' => 'DIR2 – kudy',
+        'DIR3' => 'DIR3 – kam',
+        'LOC' => 'LOC – kde',
+        'MANN' => 'MANN – jak',
+        'MEANS' => 'MEANS – čím',
+        'BEN' => 'BEN – pro koho',
+        'CAUS' => 'CAUS – proč',
+        'AIM' => 'AIM – za jakým účelem',
+        'TWHEN' => 'TWHEN – kdy',
+        'DIFF' => 'DIFF – o kolik',
+        'OBST' => 'OBST – o co (překážka)',
+        'INTT' => 'INTT – za jakým záměrem',
+        'MAT' => 'MAT – z čeho',
+        'THL' => 'THL – jak dlouho',
+        'EXT' => 'EXT – do jaké míry',
+        'CRIT' => 'CRIT – podle čeho',
+        'ACMP' => 'ACMP – s kým',
+        'COMPL' => 'COMPL – jako co',
+    ],
+    'obligatoriness' => [
+        'Obligatory' => 'obligatorní',
+        'Typical' => 'typický',
+        'Optional' => 'fakultativní',
+    ],
+    'morph_case' => [
+        'Nominative' => '1. nominativ',
+        'Genitive' => '2. genitiv',
+        'Dative' => '3. dativ',
+        'Accusative' => '4. akuzativ',
+        'Vocative' => '5. vokativ',
+        'Locative' => '6. lokál',
+        'Instrumental' => '7. instrumentál',
+    ],
+];

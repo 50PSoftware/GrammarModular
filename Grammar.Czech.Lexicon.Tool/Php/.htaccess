@@ -64,7 +64,11 @@ RewriteBase /
 RewriteCond %{HTTP:Authorization} .
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-# Serve the endpoint from the root: /lexicon.php reaches api/lexicon.php. The condition also ends the
-# loop, since after the internal redirect the request URI does start with /api/.
+# Serve the endpoint from the root: /lexicon.php reaches api/lexicon.php. The first condition also
+# ends the loop, since after the internal redirect the request URI does start with /api/.
+#
+# The admin has to be excluded or the catch-all sends /admin/ to /api/admin/, which does not exist —
+# the whole interface answers 404 and nothing says why.
 RewriteCond %{REQUEST_URI} !^/api/
+RewriteCond %{REQUEST_URI} !^/admin/
 RewriteRule ^(.*)$ /api/$1 [L]

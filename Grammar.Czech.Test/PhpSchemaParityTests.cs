@@ -100,6 +100,65 @@ namespace Grammar.Czech.Test
             }
         }
 
+        /// <summary>
+        /// The values the admin offers are exactly the members of the enums the provider parses.
+        /// </summary>
+        /// <remarks>
+        /// The admin builds its dropdowns from that list, and the provider parses what comes back
+        /// case-sensitively. A functor added to the C# enum and not to the PHP map is a value nobody can
+        /// enter; one added to PHP and not to C# is a value that saves, survives a pull, and then throws
+        /// on the first lookup that touches the frame holding it.
+        /// </remarks>
+        [DataTestMethod]
+        [DynamicData(nameof(EnumColumns), DynamicDataSourceType.Property)]
+        public void Php_OffersExactlyTheEnumMembers(string column, Type enumType)
+        {
+            var source = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Php", "schema-tables.php"));
+            var offered = ParseEnum(source, column);
+
+            Assert.IsTrue(offered.Count > 0, $"V schema-tables.php nenajdu hodnoty pro '{column}'.");
+
+            CollectionAssert.AreEquivalent(
+                Enum.GetNames(enumType),
+                offered.ToArray(),
+                $"Sloupec '{column}': PHP nabízí jiné hodnoty než {enumType.Name}.\n"
+                + $"  chybí v PHP: {string.Join(", ", Enum.GetNames(enumType).Except(offered))}\n"
+                + $"  navíc v PHP: {string.Join(", ", offered.Except(Enum.GetNames(enumType)))}");
+        }
+
+        /// <summary>
+        /// Gets the constrained columns and the enum each one mirrors.
+        /// </summary>
+        public static IEnumerable<object[]> EnumColumns =>
+        [
+            ["category", typeof(Core.Enums.WordCategory)],
+            ["gender", typeof(Core.Enums.Gender)],
+            ["aspect", typeof(Core.Enums.VerbAspect)],
+            ["verb_class", typeof(Czech.Models.VerbClass)],
+            ["reflexive_type", typeof(Czech.Enums.ReflexiveType)],
+            ["kind", typeof(Core.Enums.ValencyKind)],
+            ["diathesis", typeof(Core.Enums.Diathesis)],
+            ["functor", typeof(Core.Enums.FgdFunctor)],
+            ["obligatoriness", typeof(Core.Enums.Obligatoriness)],
+            ["morph_case", typeof(Core.Enums.Case)]
+        ];
+
+        // Each entry is 'column' => ['Value' => 'label', …]. Only the keys are data; the labels are
+        // Czech and belong to the screen.
+        private static List<string> ParseEnum(string source, string column)
+        {
+            var block = Regex.Match(
+                source,
+                $@"'{Regex.Escape(column)}'\s*=>\s*\[(?<body>[^\]]*)\]",
+                RegexOptions.Singleline);
+
+            return block.Success
+                ? Regex.Matches(block.Groups["body"].Value, @"'(?<value>[^']+)'\s*=>")
+                    .Select(match => match.Groups["value"].Value)
+                    .ToList()
+                : [];
+        }
+
         // Each entry is 'table' => ['col', 'col', …]. The inner arrays are flat, so a non-greedy match up
         // to the first closing bracket takes exactly one table's columns.
         private static Dictionary<string, List<string>> Parse(string source)

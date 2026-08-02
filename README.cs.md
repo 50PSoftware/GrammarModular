@@ -249,6 +249,14 @@ Záleží na tom, protože ta druhá ochrana je tenčí, než vypadá. Dodávan�
 
 Nasazení ověř čtyřmi požadavky. `/.env.php` a `/env.php` musí vrátit 403 nebo 404, v nejhorším prázdné tělo — nikdy zdrojový kód. Požadavek bez tokenu musí vrátit 401 a se správným tokenem 200.
 
+##### Administrace
+
+Hesla se píšou v `Php/admin/`, tedy na `/admin/` — serverem vykreslované PHP rozhraní, přihlášení heslem, jehož `password_hash` patří do konfigurace jako `LEXICON_ADMIN_PASSWORD_HASH`. Catch-all přepis musí `/admin/` přeskočit, jinak celé rozhraní vrací 404; dodávaný `.htaccess` to už dělá.
+
+Formuláře jsou na **slovo**, ne na tabulku, protože přidat sloveso znamená sáhnout na čtyři: heslo, lexém, na kterém visí, význam a rámec se sloty a realizacemi. Nabídky se staví z `LEXICON_ENUMS` v `schema-tables.php`, takže administrace nemůže nabídnout hodnotu, kterou by importér odmítl, a test ten seznam porovnává se skutečnými C# enumy.
+
+`LexiconValidator` **záměrně neduplikuje**. Dvě ručně udržované kopie stejných pravidel se rozejdou a validátor stejně běží jako brána při každém stažení, takže co administrace propustí, chytne se dřív, než se to dostane do lokálního slovníku. Vynucuje jen to, co se zpětně opravit nedá: `lemma_key` složený přes `mb_strtolower` (bajtové `strtolower` nechá `Á` být a vyrobí klíč, který žádné vyhledání netrefí), povolené hodnoty enumů a tvar realizace. Chybějící ACT a slot bez preferované realizace hlásí jako varování na místě, kde vznikly, místo aby je blokovala.
+
 Lexikon slouží hlavně jako provider metadat pro vybrané resolvery, není to úplný český slovník.
 
 Valenční rámec říká, jak se realizují argumenty daného slovesa, a `CzechSentenceBuilder` z něj bere pád i předložku: u `vidět` je `PAT` akuzativ, u `dávat` je `ADDR` dativ a `PAT` akuzativ, u `jít` je `DIR3` předložka `do` s genitivem. Pád zadaný explicitně zůstává — rámec doplňuje mezery. Sloveso s víc rámci se vybírá přes `CzechClause.FrameLabel`, protože `jít` má jiné argumenty jako pohyb a jiné jako proces.
