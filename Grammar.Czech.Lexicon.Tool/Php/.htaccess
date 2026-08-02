@@ -1,28 +1,70 @@
-# Defence in depth for the case this directory ends up web-accessible after all.
+# Apache configuration for the deployment where this whole directory IS the document root —
+# shared hosting, where www/ cannot be moved and the .env therefore has nowhere else to go.
 #
-# It should not be: point the vhost at api/ and everything here stays above the document root. But a
-# misconfigured vhost is exactly the situation where the .env leaks, and the cost of a second lock is
-# a file nobody reads.
+# Two jobs, and the order they are written in matters:
 #
-# Apache only. nginx ignores .htaccess entirely — there, add to the server block:
+#   1. Deny the files that must never be served. These are Require directives, not rewrites, so they
+#      hold whether or not mod_rewrite is loaded and they run in the authorization phase, before any
+#      rewriting gets a chance to send the request somewhere else.
 #
-#   location ~ /\.env { deny all; return 404; }
+#   2. Route requests into api/ and restore the Authorization header.
 #
-# and, better, keep the vhost root at Php/api/ so the question never arises.
+# Doing the denies with a rewrite instead would appear to work and would be one edit away from
+# failing open: adding RewriteCond %{REQUEST_FILENAME} !-f — the near-universal "leave real files
+# alone" condition — makes the catch-all skip .env precisely because .env is a real file, and it is
+# served in the clear from that moment on with nothing to indicate anything changed.
+#
+# nginx ignores .htaccess entirely. There, put this in the server block:
+#
+#   location ~ /\. { deny all; return 404; }
+#   location ~ ^/(env|schema-tables)\.php$ { deny all; return 404; }
+#
+# Better still on either server: keep the secrets in .env.php rather than .env. A PHP file requested
+# directly executes and prints nothing, so it cannot leak even when none of this is in effect.
 
-<FilesMatch "^\.env">
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. Denies
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Every dotfile: .env, .env.example, .env.php, .htaccess itself.
+<FilesMatch "^\.">
     Require all denied
 </FilesMatch>
 
-# Nothing here is meant to be requested directly; the endpoint is api/lexicon.php.
-<FilesMatch "\.(php|sql|example)$">
+# The includes. They only ever get pulled in by lexicon.php from the filesystem, so nothing needs to
+# reach them over HTTP. Note that this cannot be a blanket deny on *.php — .htaccess applies to
+# subdirectories too, and that would take api/lexicon.php with it and 403 the whole API.
+<FilesMatch "^(env|schema-tables)\.php$">
     Require all denied
 </FilesMatch>
 
 # Apache 2.2 fallback, harmless under 2.4.
 <IfModule !mod_authz_core.c>
-    <FilesMatch "^\.env|\.(php|sql|example)$">
+    <FilesMatch "^\.|^(env|schema-tables)\.php$">
         Order allow,deny
         Deny from all
     </FilesMatch>
 </IfModule>
+
+# A directory listing would name the files even where fetching them is refused.
+Options -Indexes
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2. Rewrites
+# ─────────────────────────────────────────────────────────────────────────────
+
+RewriteEngine On
+
+# Without this, a substitution beginning with a slash is ambiguous in per-directory context — Apache
+# may read it as a filesystem path rather than a URL path. Stating the base settles it.
+RewriteBase /
+
+# Apache with CGI or FPM drops the Authorization header before PHP sees it, so every request would
+# arrive unauthenticated and the API would answer 401 to a correct token.
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Serve the endpoint from the root: /lexicon.php reaches api/lexicon.php. The condition also ends the
+# loop, since after the internal redirect the request URI does start with /api/.
+RewriteCond %{REQUEST_URI} !^/api/
+RewriteRule ^(.*)$ /api/$1 [L]

@@ -328,20 +328,6 @@
             //Console.WriteLine(composer.GetFullForm(kaRequest).Form);
 
             PrintSentences(provider.GetRequiredService<CzechSentenceBuilder>());
-
-            var nameRequest = new CzechWordRequest
-            {
-                Lemma = "Mendominátor",
-                Case = Case.Vocative,
-                Number = Number.Singular,
-                Gender = Gender.Masculine,
-                IsAnimate = true,
-                Pattern = "pán",
-                WordCategory = WordCategory.Noun,
-                HasMobileE = false
-            };
-
-            Console.WriteLine(composer.GetFullForm(nameRequest).Form);
         }
 
         /// <summary>

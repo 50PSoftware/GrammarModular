@@ -368,4 +368,6 @@ FodyWeavers.xsd
 # env.php also refuses to run if the .env is somewhere the web server would serve it.
 .env
 *.env
+.env.php
 !.env.example
+!.env.php.example

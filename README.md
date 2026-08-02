@@ -215,24 +215,22 @@ Authentication is one shared bearer token, compared with `hash_equals` so it can
 
 ##### On shared hosting
 
-The document root is fixed there — Wedos and similar serve `www/` and will not be pointed deeper — so the includes go *beside* `www/`, not above the endpoint:
+The document root is fixed there — Wedos and similar serve `www/` and will not be pointed deeper — so everything lands inside it, secrets included, and `$lexiconIncludes` stays at its default:
 
 ```
-lexikon/            ← beside www/, not reachable over HTTP
-  .env
+www/                ← document root
+  .env.php          ← secrets, as PHP
+  .htaccess
   env.php
   schema-tables.php
-www/                ← document root
-  api/lexicon.php   ← only this
+  api/lexicon.php
 ```
 
-Change one line at the top of `lexicon.php`:
+**Use `.env.php`, not `.env`, once the file is inside the document root.** It returns an array, so a request for it is executed rather than read out; a plain `.env` in the same place is served as text by any server that has not been explicitly told to refuse it. `env.php` prefers `.env.php` when both exist.
 
-```php
-$lexiconIncludes = __DIR__ . '/../../lexikon';
-```
+That matters because the alternative protection is thinner than it looks. The shipped `.htaccess` denies dotfiles and the two includes with `Require` directives, which hold whether or not mod_rewrite is loaded — but only while `.htaccess` is read at all, and not on nginx. Doing the same job with a rewrite would be worse still: adding `RewriteCond %{REQUEST_FILENAME} !-f`, the near-universal "leave real files alone" condition, makes a catch-all skip `.env` precisely *because* it is a real file, and it is served in the clear from then on with nothing to show anything changed.
 
-Four things then need checking, and each fails in a way that does not point at itself:
+Four more things need checking, and each fails in a way that does not point at itself:
 
 - **The database host is not `localhost`.** Shared hosting puts MySQL on a separate machine; take the hostname from the admin panel and put it in the DSN, with `charset=utf8mb4`.
 - **It is probably MariaDB, not MySQL.** `schema.mysql.sql` sticks to collations both have — `utf8mb4_0900_*` is MySQL 8 only and MariaDB rejects the whole script with *Unknown collation*. A test guards against those creeping back in.
@@ -245,7 +243,7 @@ Four things then need checking, and each fails in a way that does not point at i
   RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
   ```
 
-Verify the deployment with three requests: `/.env` must return 403 or 404, a request with no token 401, and one with the correct token 200.
+Verify the deployment with four requests. `/.env.php` and `/env.php` must return 403 or 404, or at worst an empty body — never source. A request with no token must return 401, and one with the correct token 200.
 
 The lexicon serves mainly as a metadata provider for selected resolvers; it is not a complete dictionary of Czech.
 
