@@ -215,6 +215,8 @@ Authentication is one shared bearer token, compared with `hash_equals` so it can
 
 ##### On shared hosting
 
+[`docs/nasazeni-slovniku-wedos.html`](docs/nasazeni-slovniku-wedos.html) walks the whole deployment through in Czech, step by step, with a check after each one and a table of the failures that do not point at themselves. Open it from disk — it is self-contained.
+
 The document root is fixed there — Wedos and similar serve `www/` and will not be pointed deeper — so everything lands inside it, secrets included, and `$lexiconIncludes` stays at its default:
 
 ```
