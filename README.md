@@ -171,14 +171,14 @@ The schema in `Grammar.Czech.Lexicon.Tool/Schema/schema.sql` is deliberately por
 | `export-json --out <dir>` | writes the same JSON the API serves, for seeding the server |
 
 ```bash
-dotnet run --project Grammar.Czech.Lexicon.Tool -- pull --url https://example.com/api/lexicon.php --token <token>
+dotnet run --project Grammar.Czech.Lexicon.Tool -- pull --url https://example.com/api/ --token <token>
 ```
 
 A pull writes to a temporary file and only moves it into place once `validate` passes, so a failed or interrupted download leaves the working lexicon untouched.
 
 #### The wire format
 
-`Grammar.Czech.Lexicon.Tool/Php/api/lexicon.php` serves one page of one table per request:
+`Grammar.Czech.Lexicon.Tool/Php/api/index.php` serves one page of one table per request:
 
 ```json
 {"table":"lemma_entry","columns":["lemma_entry_id","lemma",…],"rows":[[1,"student",…]],"next_after":"5000"}
@@ -192,45 +192,34 @@ Three choices in there are worth knowing about, because each has a quieter alter
 
 A paged pull is still not a consistent snapshot — nothing stops an edit between one page and the next — and `validate` is what catches the result, as a broken reference rather than as a word that quietly fails to resolve later.
 
-#### Deploying the API
+#### Deploying
 
-Copy `Php/` to the server and **point the vhost at `Php/api/`, not at `Php/`**. Everything the endpoint needs to keep private — the secrets, the schema map, the source — then sits above the document root.
+[`docs/nasazeni-slovniku-wedos.html`](docs/nasazeni-slovniku-wedos.html) walks the whole thing through in Czech, step by step, with a check after each one and a table of the failures that do not point at themselves. Open it from disk — it is self-contained.
 
-```
-Php/
-  .env              secrets, git-ignored
-  .env.example      the template, committed
-  .htaccess         denies .env, for when the vhost is pointed here anyway
-  env.php
-  schema-tables.php
-  api/              ← vhost root
-    lexicon.php
-```
-
-Configuration is read from the real environment first and from `Php/.env` second, so a PHP-FPM pool can override any single value with `env[NAME]` without the file being edited. `getenv()` under FPM sees only what the pool passes, which is the reason the file exists at all.
-
-The layout is enforced rather than merely documented: a `.env` inside the document root is served as plain text by any web server that has not been told otherwise — `https://example.com/.env` handing out the database password with nothing logged but an access line — so `env.php` refuses to start when it can tell that has happened.
-
-Authentication is one shared bearer token, compared with `hash_equals` so it cannot be guessed a character at a time, and the API refuses to serve at all when the token is unset rather than serving openly. It rides in a header on every request, so **HTTPS is load-bearing here, not advisory**. Prefer the `LEXICON_API_TOKEN` environment variable over `--token` on the pull side: a command line is visible in `ps` and lands in shell history.
-
-##### On shared hosting
-
-[`docs/nasazeni-slovniku-wedos.html`](docs/nasazeni-slovniku-wedos.html) walks the whole deployment through in Czech, step by step, with a check after each one and a table of the failures that do not point at themselves. Open it from disk — it is self-contained.
-
-The document root is fixed there — Wedos and similar serve `www/` and will not be pointed deeper — so everything lands inside it, secrets included, and `$lexiconIncludes` stays at its default:
+Copy the contents of `Php/` into the document root. There are two entry points and everything else is either denied or never requested:
 
 ```
 www/                ← document root
-  .env.php          ← secrets, as PHP
-  .htaccess
-  env.php
-  schema-tables.php
-  api/lexicon.php
+  index.php         ← the admin, at /
+  style.css
+  api/index.php     ← the API, at /api/
+  .env.php          ← secrets, as PHP; git-ignored
+  .env.php.example  ← the template, committed
+  .htaccess         denies the dotfiles and the includes
+  env.php           shared include, denied
+  schema-tables.php shared include, denied
+  admin/            the admin's internals, denied wholesale
 ```
 
-**Use `.env.php`, not `.env`, once the file is inside the document root.** It returns an array, so a request for it is executed rather than read out; a plain `.env` in the same place is served as text by any server that has not been explicitly told to refuse it. `env.php` prefers `.env.php` when both exist.
+**The secrets go in `.env.php`, not `.env`.** Since the admin serves from the root, the document root is the only place they can live, and a plain `.env` there is handed out as text by any server that has not been told otherwise — `https://example.com/.env` giving up the database password with nothing logged but an access line. `.env.php` returns an array instead, so a request for it is executed rather than read out, and that holds with no `.htaccess`, with `AllowOverride` off, and on nginx.
 
-Keeping a plain `.env` there is a supportable choice — the shipped `.htaccess` does deny it — but it has to be a stated one: `env.php` refuses to start until `LEXICON_ALLOW_ENV_IN_DOCROOT=1` is set, in the environment or in the `.env` itself. Anything other than `1`/`true`/`yes`/`on` leaves the guard standing, so a typo fails safe. Then verify it with `curl -i https://…/.env`, which is the only way to find out whether the `.htaccess` is honoured at all — where `AllowOverride` is `None` it is ignored in silence, and `/api/lexicon.php` keeps working while the file is public.
+Keeping a plain `.env` is still supportable — the shipped `.htaccess` denies it — but it has to be a stated choice: `env.php` refuses to start until `LEXICON_ALLOW_ENV_IN_DOCROOT=1` is set, in the environment or in the `.env` itself. Anything other than `1`/`true`/`yes`/`on` leaves the guard standing, so a typo fails safe. Verify it with `curl -i https://…/.env` either way, which is the only way to find out whether the `.htaccess` is honoured at all — where `AllowOverride` is `None` it is ignored in silence, and the site keeps working while the file is public.
+
+Configuration is read from the real environment first and from the file second, so a PHP-FPM pool can override any single value with `env[NAME]` without the file being edited. `getenv()` under FPM sees only what the pool passes, which is why a file is needed at all.
+
+There is deliberately no catch-all rewrite. An earlier layout served the endpoint from the root and needed one; now that the admin is at the root and the API has a directory of its own, nothing has to be routed — which also removes the sharpest edge in the whole arrangement, where adding `RewriteCond %{REQUEST_FILENAME} !-f` to such a rule makes it skip `.env` precisely *because* `.env` is a real file.
+
+API authentication is one shared bearer token, compared with `hash_equals` so it cannot be guessed a character at a time, and the API refuses to serve at all when the token is unset rather than serving openly. It rides in a header on every request, so **HTTPS is load-bearing here, not advisory**. Prefer the `LEXICON_API_TOKEN` environment variable over `--token` on the pull side: a command line is visible in `ps` and lands in shell history.
 
 That matters because the alternative protection is thinner than it looks. The shipped `.htaccess` denies dotfiles and the two includes with `Require` directives, which hold whether or not mod_rewrite is loaded — but only while `.htaccess` is read at all, and not on nginx. Doing the same job with a rewrite would be worse still: adding `RewriteCond %{REQUEST_FILENAME} !-f`, the near-universal "leave real files alone" condition, makes a catch-all skip `.env` precisely *because* it is a real file, and it is served in the clear from then on with nothing to show anything changed.
 
@@ -247,13 +236,17 @@ Four more things need checking, and each fails in a way that does not point at i
   RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
   ```
 
-Verify the deployment with four requests. `/.env.php` and `/env.php` must return 403 or 404, or at worst an empty body — never source. A request with no token must return 401, and one with the correct token 200.
+Verify the deployment with five requests. `/.env.php`, `/env.php` and `/admin/lib.php` must return 403 or 404, or at worst an empty body — never source. An API request with no token must return 401, and one with the correct token 200.
 
 ##### The admin
 
-`Php/admin/` is where entries are written — a server-rendered PHP interface at `/admin/`, signed into with a password whose `password_hash` output goes in the configuration as `LEXICON_ADMIN_PASSWORD_HASH`. The catch-all rewrite has to skip `/admin/` or the whole interface answers 404; the shipped `.htaccess` already does.
+`/` is where entries are written — a server-rendered PHP interface, signed into with a password whose `password_hash` output goes in the configuration as `LEXICON_ADMIN_PASSWORD_HASH`. The configuration holds the hash and never the password, so a leaked `.env.php` does not hand over a working login.
 
 The forms are per *word* rather than per table, because adding a verb touches four of them: the entry, the lexeme it hangs on, the sense, and the frame with its slots and realizations. Enum dropdowns are built from `LEXICON_ENUMS` in `schema-tables.php`, so the admin cannot offer a value the importer would reject, and a test compares that list against the real C# enums.
+
+It writes to the database directly rather than through `/api/`, and that is on purpose. The API exists for replication — pages of whole tables, in dependency order, so the C# client can rebuild a copy — which is a different job from "save this one entry". Routing writes through it would add an HTTP hop to the same server, a second set of endpoints and a second authentication path, and share nothing worth sharing: the rules that would benefit from one implementation live in the C# validator, not in PHP. What the two do share is `schema-tables.php`, which is where sharing actually pays.
+
+Nothing under `admin/` is served — `admin/.htaccess` denies the directory, and every file in it also refuses to run unless `index.php` included it first, which is the lock that holds where `.htaccess` is ignored.
 
 It deliberately does **not** re-implement `LexiconValidator`. Two hand-maintained copies of the same rules drift, and the validator already gates every pull, so anything the admin lets through is caught before it reaches a local lexicon. What it does enforce is the part that cannot be repaired afterwards — `lemma_key` folded with `mb_strtolower` (the byte-wise `strtolower` leaves `Á` alone and yields a key no lookup matches), the permitted enum values, and the shape of a realization. Missing actors and slots with no preferred realization are shown as warnings where they occur rather than blocked.
 
@@ -670,7 +663,7 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 - A slot can be stored as realized by a `že`-clause or an infinitive, but nothing generates one yet: that needs a clause planner, and until it exists `CzechSentenceBuilder` leaves such a constituent to the caller.
 - The database is binary, so git cannot show what changed inside it. `dump` produces the reviewable text form; wiring that into the commit workflow is not done.
 - A pull downloads the whole dictionary every time. There is no incremental sync, and adding one would need change tracking and tombstones on the server — deletions are invisible to a delta pull otherwise. Rewriting the file handles them for free, which is why it is the starting point.
-- The PHP half has not been run: there is no PHP in this development environment, so `api/lexicon.php` is reviewed code rather than tested code. The C# half of the same contract is covered end to end by exporting the real lexicon, serializing it as the API would, and importing it back.
+- The PHP half has not been run: there is no PHP in this development environment, so the API is reviewed code rather than tested code. The C# half of the same contract is covered end to end by exporting the real lexicon, serializing it as the API would, and importing it back.
 - The clitic cluster does not know the free dative (*To ti byla legrace*), which per NESČ stands between the auxiliary and the reflexive. The remaining positions match the described order.
 - The conjunctions `aby` and `kdyby` are not supported — they fuse with the conditional auxiliary and inflect by person (*abych*, *abys*, *abychom*). Nor is `však`, which is itself second-position rather than clause-initial.
 - The comma before `nebo` and `či` depends on the relation between the clauses, not on the conjunction. The data carries only the commoner reading; the exclusive one has to be stated through `Coordination.RequiresComma`.

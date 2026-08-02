@@ -171,14 +171,14 @@ O soubor se stará `Grammar.Czech.Lexicon.Tool`:
 | `export-json --out <adresář>` | vypíše stejný JSON, jaký posílá API, pro naplnění serveru |
 
 ```bash
-dotnet run --project Grammar.Czech.Lexicon.Tool -- pull --url https://example.com/api/lexicon.php --token <token>
+dotnet run --project Grammar.Czech.Lexicon.Tool -- pull --url https://example.com/api/ --token <token>
 ```
 
 Pull staví novou databázi do dočasného souboru a přesune ji na místo, teprve když projde `validate` — neúspěšné nebo přerušené stažení funkční lexikon nesáhne.
 
 #### Formát na drátě
 
-`Grammar.Czech.Lexicon.Tool/Php/api/lexicon.php` vrací na jeden požadavek jednu stránku jedné tabulky:
+`Grammar.Czech.Lexicon.Tool/Php/api/index.php` vrací na jeden požadavek jednu stránku jedné tabulky:
 
 ```json
 {"table":"lemma_entry","columns":["lemma_entry_id","lemma",…],"rows":[[1,"student",…]],"next_after":"5000"}
@@ -192,54 +192,41 @@ Tři rozhodnutí v tom stojí za vysvětlení, protože ke každému existuje ti
 
 Stránkované stahování ani tak není konzistentní snímek — nic nebrání editaci mezi dvěma stránkami — a `validate` je to, co výsledek zachytí: jako rozbitý odkaz, ne jako slovo, které se za půl roku nenaskloňuje.
 
-#### Nasazení API
-
-Zkopíruj `Php/` na server a **nasměruj vhost na `Php/api/`, ne na `Php/`**. Všechno, co má endpoint držet v soukromí — tajemství, mapa schématu, zdrojový kód — pak leží nad document rootem.
-
-```
-Php/
-  .env              tajemství, git-ignored
-  .env.example      šablona, commitnutá
-  .htaccess         zakazuje .env pro případ, že vhost míří sem
-  env.php
-  schema-tables.php
-  api/              ← kořen vhostu
-    lexicon.php
-```
-
-Konfigurace se čte nejdřív ze skutečného prostředí, teprve pak z `Php/.env`, takže pool PHP-FPM může kteroukoli jednotlivou hodnotu přebít přes `env[NAME]` bez editace souboru. `getenv()` pod FPM vidí jen to, co mu pool předá — což je celý důvod, proč ten soubor existuje.
-
-Rozvržení se nejen dokumentuje, ale vynucuje: `.env` uvnitř document rootu vydá kterýkoli web server jako čistý text, pokud mu není řečeno jinak — `https://example.com/.env` rozdá heslo do databáze a v logu zůstane jen řádek v access logu — takže `env.php` odmítne nastartovat, když pozná, že se to stalo.
-
-Autentizace je jeden sdílený bearer token, porovnávaný přes `hash_equals`, aby se nedal uhádnout po znacích, a API při nenastaveném tokenu odmítne obsloužit cokoli, místo aby obsluhovalo veřejně. Token letí v hlavičce každého požadavku, takže **HTTPS je tu nosná konstrukce, ne doporučení**. Na straně stahování dej přednost proměnné `LEXICON_API_TOKEN` před `--token`: příkazová řádka je vidět v `ps` a zapíše se do historie shellu.
-
-##### Na sdíleném hostingu
+#### Nasazení
 
 Celé nasazení krok za krokem popisuje [`docs/nasazeni-slovniku-wedos.html`](docs/nasazeni-slovniku-wedos.html) — sedm kroků, u každého kontrola, plus tabulka poruch, které samy na sebe neukazují. Soubor je samostatný, otevřeš ho z disku.
 
-Document root se tam přesunout nedá — Wedos a podobní obsluhují `www/` a hlouběji je nenamíříš — takže dovnitř jde všechno včetně tajemství a `$lexiconIncludes` zůstává na výchozí hodnotě:
+Obsah `Php/` zkopíruj do document rootu. Vstupní body jsou dva, všechno ostatní je buď zakázané, nebo se o to nikdo nehlásí:
 
 ```
 www/                ← document root
-  .env.php          ← tajemství, jako PHP
-  .htaccess
-  env.php
-  schema-tables.php
-  api/lexicon.php
+  index.php         ← administrace, na /
+  style.css
+  api/index.php     ← API, na /api/
+  .env.php          ← tajemství, jako PHP; git-ignored
+  .env.php.example  ← šablona, commitnutá
+  .htaccess         zakazuje tečkové soubory a includy
+  env.php           sdílený include, zakázaný
+  schema-tables.php sdílený include, zakázaný
+  admin/            vnitřnosti administrace, zakázané celé
 ```
 
-**Jakmile je soubor uvnitř document rootu, používej `.env.php`, ne `.env`.** Vrací pole, takže požadavek na něj se provede místo aby se vypsal; obyčejný `.env` na stejném místě vydá jako text kterýkoli server, kterému nebylo výslovně řečeno, aby ho odmítl. `env.php` dá `.env.php` přednost, když leží obojí.
+**Tajemství patří do `.env.php`, ne do `.env`.** Když administrace jede z kořene, je document root jediné místo, kam můžou; a obyčejný `.env` tam vydá jako text kterýkoli server, kterému nebylo řečeno jinak — `https://example.com/.env` rozdá heslo do databáze a v logu zůstane jen řádek v access logu. `.env.php` vrací pole, takže požadavek na něj se provede místo aby se vypsal, a to drží bez `.htaccess`, s vypnutým `AllowOverride` i na nginxu.
 
-Zůstat u obyčejného `.env` je obhajitelná volba — dodávaný `.htaccess` ho zakazuje — ale musí být vyslovená: `env.php` odmítne nastartovat, dokud není nastaveno `LEXICON_ALLOW_ENV_IN_DOCROOT=1`, v prostředí nebo přímo v tom `.env`. Cokoli jiného než `1`/`true`/`yes`/`on` nechá pojistku stát, takže překlep selže bezpečně. Pak to ověř přes `curl -i https://…/.env`, což je jediný způsob, jak vůbec zjistit, jestli se `.htaccess` uplatňuje — při `AllowOverride None` ho Apache tiše ignoruje a `/api/lexicon.php` jede dál, zatímco je soubor veřejný.
+Zůstat u obyčejného `.env` jde pořád — dodávaný `.htaccess` ho zakazuje — ale musí to být vyslovená volba: `env.php` odmítne nastartovat, dokud není nastaveno `LEXICON_ALLOW_ENV_IN_DOCROOT=1`, v prostředí nebo přímo v tom `.env`. Cokoli jiného než `1`/`true`/`yes`/`on` nechá pojistku stát, takže překlep selže bezpečně. Tak či tak to ověř přes `curl -i https://…/.env` — je to jediný způsob, jak zjistit, jestli se `.htaccess` vůbec uplatňuje. Při `AllowOverride None` ho Apache tiše ignoruje a web jede dál, zatímco je soubor veřejný.
 
-Záleží na tom, protože ta druhá ochrana je tenčí, než vypadá. Dodávaný `.htaccess` zakazuje tečkové soubory a oba includy přes direktivy `Require`, které platí bez ohledu na to, jestli je načtený `mod_rewrite` — ale jen dokud se `.htaccess` vůbec čte, a na nginxu neplatí vůbec. Řešit totéž přepisem by bylo ještě horší: stačí přidat `RewriteCond %{REQUEST_FILENAME} !-f`, tu skoro univerzální podmínku „existující soubory nech být“, a catch-all začne `.env` přeskakovat *právě proto, že existuje* — od té chvíle se vydává a nic na to neupozorní.
+Konfigurace se čte nejdřív ze skutečného prostředí, teprve pak ze souboru, takže pool PHP-FPM může kteroukoli jednotlivou hodnotu přebít přes `env[NAME]` bez editace. `getenv()` pod FPM vidí jen to, co mu pool předá — proto je soubor potřeba.
+
+Catch-all přepis tam schválně žádný není. Dřívější rozvržení obsluhovalo endpoint z kořene a jeden potřebovalo; teď je na kořeni administrace a API má vlastní adresář, takže se nic přesměrovávat nemusí — a tím mizí i nejostřejší hrana celého uspořádání, totiž že přidání `RewriteCond %{REQUEST_FILENAME} !-f` k takovému pravidlu způsobí, že začne `.env` přeskakovat *právě proto, že existuje*.
+
+Autentizace API je jeden sdílený bearer token, porovnávaný přes `hash_equals`, aby se nedal uhádnout po znacích, a API při nenastaveném tokenu odmítne obsloužit cokoli, místo aby obsluhovalo veřejně. Token letí v hlavičce každého požadavku, takže **HTTPS je tu nosná konstrukce, ne doporučení**. Na straně stahování dej přednost proměnné `LEXICON_API_TOKEN` před `--token`: příkazová řádka je vidět v `ps` a zapíše se do historie shellu.
 
 Čtyři další věci je potřeba ověřit a každá selže způsobem, který sám na sebe neukazuje:
 
 - **Databázový host není `localhost`.** Sdílený hosting má MySQL na jiném stroji; hostname vezmi z administrace a dej ho do DSN spolu s `charset=utf8mb4`.
 - **Nejspíš je to MariaDB, ne MySQL.** `schema.mysql.sql` se drží kolací, které mají obě — `utf8mb4_0900_*` umí jen MySQL 8 a MariaDB celý skript odmítne s *Unknown collation*. Test hlídá, aby se tam nevrátily.
-- **Nastav PHP na 8.1 nebo novější** v administraci.
-- **Hlavičku `Authorization` server nejspíš ořízne**, než ji PHP uvidí. `env.php` ji hledá na třech místech včetně `getallheaders()`, ale když se se správným tokenem pořád vrací 401, přidej do `www/.htaccess`:
+- **Nastav PHP na 8.1 nebo novější** v administraci hostingu.
+- **Hlavičku `Authorization` server nejspíš ořízne**, než ji PHP uvidí. `env.php` ji hledá na třech místech včetně `getallheaders()`, ale když se se správným tokenem pořád vrací 401, patří do `www/.htaccess`:
 
   ```apache
   RewriteEngine On
@@ -247,15 +234,19 @@ Záleží na tom, protože ta druhá ochrana je tenčí, než vypadá. Dodávan�
   RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
   ```
 
-Nasazení ověř čtyřmi požadavky. `/.env.php` a `/env.php` musí vrátit 403 nebo 404, v nejhorším prázdné tělo — nikdy zdrojový kód. Požadavek bez tokenu musí vrátit 401 a se správným tokenem 200.
+Nasazení ověř pěti požadavky. `/.env.php`, `/env.php` a `/admin/lib.php` musí vrátit 403 nebo 404, v nejhorším prázdné tělo — nikdy zdrojový kód. Požadavek na API bez tokenu musí vrátit 401 a se správným tokenem 200.
 
 ##### Administrace
 
-Hesla se píšou v `Php/admin/`, tedy na `/admin/` — serverem vykreslované PHP rozhraní, přihlášení heslem, jehož `password_hash` patří do konfigurace jako `LEXICON_ADMIN_PASSWORD_HASH`. Catch-all přepis musí `/admin/` přeskočit, jinak celé rozhraní vrací 404; dodávaný `.htaccess` to už dělá.
+Hesla se píšou na `/` — serverem vykreslované PHP rozhraní, přihlášení heslem, jehož `password_hash` patří do konfigurace jako `LEXICON_ADMIN_PASSWORD_HASH`. Konfigurace drží hash, nikdy heslo samotné, takže uniklý `.env.php` nedá funkční přihlášení.
 
 Formuláře jsou na **slovo**, ne na tabulku, protože přidat sloveso znamená sáhnout na čtyři: heslo, lexém, na kterém visí, význam a rámec se sloty a realizacemi. Nabídky se staví z `LEXICON_ENUMS` v `schema-tables.php`, takže administrace nemůže nabídnout hodnotu, kterou by importér odmítl, a test ten seznam porovnává se skutečnými C# enumy.
 
+Do databáze píše **přímo, ne přes `/api/`**, a je to záměr. API je pro replikaci — stránky celých tabulek v pořadí závislostí, aby si C# klient postavil kopii — což je jiná úloha než „ulož tohle jedno heslo". Vést zápisy přes něj by přidalo HTTP skok na týž server, druhou sadu endpointů a druhou autentizaci, a nesdílelo by to nic, co stojí za sdílení: pravidla, kterým by jedna implementace prospěla, jsou v C# validátoru, ne v PHP. Co ty dvě strany sdílejí, je `schema-tables.php` — tam se sdílení vyplácí.
+
 `LexiconValidator` **záměrně neduplikuje**. Dvě ručně udržované kopie stejných pravidel se rozejdou a validátor stejně běží jako brána při každém stažení, takže co administrace propustí, chytne se dřív, než se to dostane do lokálního slovníku. Vynucuje jen to, co se zpětně opravit nedá: `lemma_key` složený přes `mb_strtolower` (bajtové `strtolower` nechá `Á` být a vyrobí klíč, který žádné vyhledání netrefí), povolené hodnoty enumů a tvar realizace. Chybějící ACT a slot bez preferované realizace hlásí jako varování na místě, kde vznikly, místo aby je blokovala.
+
+Nic pod `admin/` se neobsluhuje — `admin/.htaccess` zakazuje celý adresář a každý soubor v něm navíc odmítne běžet, pokud ho neincludoval `index.php`; to je ta pojistka, která drží i tam, kde se `.htaccess` neuplatní.
 
 Lexikon slouží hlavně jako provider metadat pro vybrané resolvery, není to úplný český slovník.
 
@@ -668,7 +659,7 @@ Pravidlová data v projektu `Grammar.Czech` jsou embedded JSON resources. Výjim
 - Slot se dá uložit jako realizovaný `že`-větou nebo infinitivem, ale nic takový tvar zatím negeneruje: to potřebuje plánovač klauzí, a dokud neexistuje, `CzechSentenceBuilder` takový konstituent nechá na volajícím.
 - Databáze je binární, takže git neukáže, co se v ní změnilo. `dump` vyrobí čitelnou textovou podobu; napojení na commitovací postup hotové není.
 - Pull stahuje pokaždé celý slovník. Přírůstková synchronizace neexistuje a vyžadovala by na serveru sledování změn a náhrobní záznamy — smazané řádky by přírůstkový pull jinak neviděl. Přepis celého souboru je řeší zadarmo, proto se začíná tam.
-- PHP část nebyla ve vývojovém prostředí spuštěna: PHP tu není, takže `api/lexicon.php` je zkontrolovaný, ne otestovaný kód. C# polovina téhož kontraktu je pokrytá end to end — export skutečného lexikonu, serializace tak, jak by ji poslalo API, a import zpátky.
+- PHP část nebyla ve vývojovém prostředí spuštěna: PHP tu není, takže API je zkontrolovaný, ne otestovaný kód. C# polovina téhož kontraktu je pokrytá end to end — export skutečného lexikonu, serializace tak, jak by ji poslalo API, a import zpátky.
 - Klitický klastr nezná volný dativ (*To ti byla legrace*), který podle NESČ stojí mezi pomocným slovesem a reflexivem. Ostatní pozice pořadí odpovídají.
 - Spojky `aby` a `kdyby` podporované nejsou — splývají s kondicionálovým pomocným slovesem a časují se podle osoby (*abych*, *abys*, *abychom*). Stejně tak `však`, které je samo druhopozicové, ne uvozovací.
 - Čárka u `nebo` a `či` závisí na poměru vět, ne na spojce. Data nesou jen běžnější čtení; vylučovací poměr se musí říct přes `Coordination.RequiresComma`.

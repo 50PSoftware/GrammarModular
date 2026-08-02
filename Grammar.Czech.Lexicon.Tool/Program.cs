@@ -90,7 +90,7 @@ static int Pull(string[] args)
     var url = Option(args, "--url")
         ?? Environment.GetEnvironmentVariable("LEXICON_API_URL")
         ?? throw new InvalidOperationException(
-            "Chybí --url s adresou API, např. --url https://example.com/api/lexicon.php");
+            "Chybí --url s adresou API, např. --url https://example.com/api/");
 
     var token = Option(args, "--token") ?? Environment.GetEnvironmentVariable("LEXICON_API_TOKEN");
     var destination = Option(args, "--out") ?? DefaultDatabasePath();

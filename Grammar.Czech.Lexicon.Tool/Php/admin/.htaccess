@@ -1,0 +1,15 @@
+# Nothing in here is meant to be requested over HTTP. lib.php and the files under pages/ are pulled
+# in from the filesystem by ../index.php and nowhere else.
+#
+# Each of them also refuses to run unless index.php defined LEXICON_ADMIN first, which is the lock
+# that holds when this file does not — a server with AllowOverride None ignores .htaccess in silence.
+# This is the second lock, not the only one.
+
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

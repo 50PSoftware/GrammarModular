@@ -5,23 +5,29 @@ declare(strict_types=1);
 /**
  * Administrace českého slovníku.
  *
- * Jediný vstupní bod. Stránka se vybírá parametrem p, zápisy jdou přes POST a jsou chráněné tokenem
+ * Jediný vstupní bod, a leží v kořeni — obsah Php/ jde do www/, takže administrace je na / a API
+ * vedle ní na /api/. Stránka se vybírá parametrem p, zápisy jdou přes POST a jsou chráněné tokenem
  * proti CSRF; po každém zápisu se přesměrovává, aby se obnovením stránky formulář neodeslal znovu.
  *
- * Nasazení: adresář Php/ jde do www/, takže tahle administrace je na /admin/. V .htaccess musí být
- * výjimka pro /admin/, jinak ji catch-all pravidlo pošle do /api/ a skončí to 404.
+ * Vnitřnosti — lib.php a pages/ — jsou v admin/, který .htaccess zakazuje celý. Sem patří jen to,
+ * co má vydávat web server: tenhle soubor a style.css.
+ *
+ * Administrace píše do databáze přímo, ne přes /api/. To API existuje pro replikaci — vrací stránky
+ * tabulek v pořadí závislostí, aby si C# klient postavil kopii — což je jiná úloha než „ulož tohle
+ * jedno heslo“. Kdyby zápis chodil přes něj, přibyl by HTTP skok na týž server, druhá autentizace
+ * a druhá sada endpointů, a nic by se tím nesdílelo: pravidla, která by se sdílet vyplatilo, jsou
+ * v C# validátoru, ne v PHP. Sdílí se to, co sdílet dává smysl — schema-tables.php.
  *
  * Konfigurace navíc oproti API:
  *
  *   LEXICON_ADMIN_PASSWORD_HASH   výstup password_hash(), ne samotné heslo
  */
 
-// Stránky pod pages/ leží v document rootu, takže se dají vyžádat přímo — mimo přihlášení a mimo
-// kontrolu tokenu. Každá si na začátku ověří tuhle konstantu, což drží i tam, kde se .htaccess
-// neuplatní. Definuje se dřív než cokoli jiného, aby ji viděl i lib.php.
+// Soubory v admin/ se nesmí dát spustit přímo, ani kdyby se .htaccess neuplatnil. Každý si na
+// začátku ověří tuhle konstantu; definuje se dřív než cokoli jiného, aby ji viděl i lib.php.
 define('LEXICON_ADMIN', true);
 
-require __DIR__ . '/lib.php';
+require __DIR__ . '/admin/lib.php';
 
 admin_session_start();
 admin_check_csrf();
@@ -40,10 +46,10 @@ if (!admin_is_signed_in()) {
 
 // Zápisy si zpracuje stránka sama a přesměruje; sem se dostane jen vykreslení.
 $view = match ($page) {
-    'lemma' => __DIR__ . '/pages/lemma.php',
-    'lexeme' => __DIR__ . '/pages/lexeme.php',
-    'frame' => __DIR__ . '/pages/frame.php',
-    default => __DIR__ . '/pages/list.php',
+    'lemma' => __DIR__ . '/admin/pages/lemma.php',
+    'lexeme' => __DIR__ . '/admin/pages/lexeme.php',
+    'frame' => __DIR__ . '/admin/pages/frame.php',
+    default => __DIR__ . '/admin/pages/list.php',
 };
 
 ob_start();

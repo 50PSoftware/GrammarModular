@@ -7,7 +7,7 @@ declare(strict_types=1);
  *
  * One request returns one page of one table:
  *
- *   GET lexicon.php?table=lemma_entry&limit=5000[&after=<key>]
+ *   GET /api/?table=lemma_entry&limit=5000[&after=<key>]
  *   Authorization: Bearer <token>
  *
  *   {"table":"lemma_entry","columns":[...],"rows":[[...],[...]],"next_after":"5000"}
@@ -26,11 +26,11 @@ declare(strict_types=1);
  * Configuration is LEXICON_MYSQL_DSN, LEXICON_MYSQL_USER, LEXICON_MYSQL_PASSWORD and
  * LEXICON_API_TOKEN, read by env.php from the real environment or from Php/.env. See .env.example.
  *
- * Point the vhost at this api/ directory and nothing above it. That keeps .env, the schema and this
- * source out of reach; a vhost rooted one level up serves .env as plain text to anyone who asks.
+ * Deployed as www/api/index.php, with the admin at www/index.php beside it. The shared includes and
+ * the secrets sit one level up and are denied by .htaccess; see ../.htaccess.
  *
- * One more deployment note, because it costs an afternoon when missed: Apache with CGI or FPM strips
- * the Authorization header before PHP sees it, so every request arrives unauthenticated. Either set
+ * One deployment note, because it costs an afternoon when missed: Apache with CGI or FPM strips the
+ * Authorization header before PHP sees it, so every request arrives unauthenticated. Either set
  * CGIPassAuth On for the directory, or restore it with:
  *
  *   RewriteEngine On
@@ -59,7 +59,7 @@ try {
 } catch (Throwable $exception) {
     // The message is deliberately not the exception's own: a PDO failure carries the DSN, the user and
     // often the statement, none of which belongs in a response to an unauthenticated caller.
-    error_log('lexicon.php: ' . $exception->getMessage());
+    error_log('api: ' . $exception->getMessage());
     fail(500, 'Interní chyba serveru.');
 }
 
@@ -135,7 +135,7 @@ function authorize(): void
     // Fails closed. An unset token is a misconfigured deployment, and treating it as "no auth needed"
     // would publish the whole dictionary the first time someone forgot to set the variable.
     if ($expected === '') {
-        error_log('lexicon.php: LEXICON_API_TOKEN není nastaven.');
+        error_log('api: LEXICON_API_TOKEN není nastaven.');
         fail(500, 'Server není nastavený.');
     }
 
@@ -184,7 +184,7 @@ function connect(): PDO
     $dsn = lexicon_config('LEXICON_MYSQL_DSN');
 
     if ($dsn === '') {
-        error_log('lexicon.php: LEXICON_MYSQL_DSN není nastaven.');
+        error_log('api: LEXICON_MYSQL_DSN není nastaven.');
         fail(500, 'Server není nastavený.');
     }
 

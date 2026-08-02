@@ -512,12 +512,15 @@
             a hlouběji ho nenamíříš. Takže tam jde všechno, tajemství nevyjímaje:
           </p>
           <div class="code plain"><pre>www/                    ← document root
+├── index.php           ← administrace, na /
+├── style.css
 ├── .env.php            ← tajemství, jako PHP
 ├── .htaccess
-├── env.php
-├── schema-tables.php
+├── env.php             zakázaný
+├── schema-tables.php   zakázaný
+├── admin/              vnitřnosti, zakázané celé
 └── api/
-    └── lexicon.php</pre></div>
+    └── index.php       ← API, na /api/</pre></div>
           <div class="warn">
             <span class="warn-label">Proto <code>.env.php</code>, ne <code>.env</code></span>
             <p>
@@ -533,12 +536,12 @@
             </p>
           </div>
           <p>
-            <code>$lexiconIncludes</code> v <code>lexicon.php</code> zůstává na výchozí hodnotě
+            <code>$lexiconIncludes</code> v <code>api/index.php</code> zůstává na výchozí hodnotě
             <code>__DIR__ . '/..'</code> — z <code>www/api/</code> to míří přesně do <code>www/</code>.
           </p>
           <div class="check">
             <span class="check-label">Ověření</span>
-            <span><code>www/api/lexicon.php</code> existuje a <code>www/env.php</code> je o úroveň výš,
+            <span><code>www/index.php</code> i <code>www/api/index.php</code> existují a <code>www/env.php</code> leží vedle nich,
               ne vedle něj.</span>
           </div>
         </div>
@@ -575,7 +578,7 @@
             <p>
               Pak to <strong>ověř</strong> requestem z kroku 6. Kdyby měl hosting
               <code>AllowOverride None</code>, Apache <code>.htaccess</code> tiše ignoruje — API by
-              přes <code>/api/lexicon.php</code> jelo dál a soubor by byl při tom veřejný.
+              přes <code>/api/</code> jelo dál a soubor by byl při tom veřejný.
             </p>
           </div>
           <p>Token vygeneruj, nevymýšlej ho:</p>
@@ -609,14 +612,13 @@
     Require all denied
 &lt;/FilesMatch&gt;
 
+Options -Indexes
+
 RewriteEngine On
 RewriteBase /
 
 RewriteCond %{HTTP:Authorization} .
-RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
-
-RewriteCond %{REQUEST_URI} !^/api/
-RewriteRule ^(.*)$ /api/$1 [L]</pre></div>
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]</pre></div>
           <div class="warn">
             <span class="warn-label">Past</span>
             <p>
@@ -627,7 +629,7 @@ RewriteRule ^(.*)$ /api/$1 [L]</pre></div>
             </p>
             <p>
               Zákaz taky nesmí být plošný na <code>*.php</code>: <code>.htaccess</code> platí i pro
-              podadresáře, takže by vzal s sebou <code>api/lexicon.php</code> a celé API by vracelo 403.
+              podadresáře, takže by vzal s sebou <code>index.php</code> i <code>api/index.php</code> a všechno by vracelo 403.
             </p>
           </div>
           <div class="check">
@@ -646,9 +648,10 @@ RewriteRule ^(.*)$ /api/$1 [L]</pre></div>
           <p>Každý testuje jeden zámek. Dokud nesedí všechny tři, nepokračuj.</p>
           <div class="code"><pre>curl -i https://tvadomena.cz/.env.php
 curl -i https://tvadomena.cz/env.php
-curl -i "https://tvadomena.cz/api/lexicon.php?table=lexeme"
+curl -i https://tvadomena.cz/admin/lib.php
+curl -i "https://tvadomena.cz/api/?table=lexeme"
 curl -i -H "Authorization: Bearer TVUJ_TOKEN" \
-     "https://tvadomena.cz/api/lexicon.php?table=lexeme"</pre></div>
+     "https://tvadomena.cz/api/?table=lexeme"</pre></div>
           <div class="scroller">
             <table>
               <thead>
@@ -712,7 +715,7 @@ RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]</pre></div>
           <p class="caption">lokálně</p>
           <div class="code"><pre>$env:LEXICON_API_TOKEN = "…"
 dotnet run --project Grammar.Czech.Lexicon.Tool -- `
-    pull --url https://tvadomena.cz/api/lexicon.php</pre></div>
+    pull --url https://tvadomena.cz/api/</pre></div>
           <p>
             Pull staví novou databázi vedle té staré pod jménem <code>*.incoming</code>, pustí na ni
             kontrolu a teprve když projde, přesune ji na místo. Neúspěšné nebo přerušené stažení ti
@@ -751,7 +754,7 @@ dotnet run --project Grammar.Czech.Lexicon.Tool -- `
             <td>Doplnit; podrobnost je v error logu, ven jde jen obecná hláška</td>
           </tr>
           <tr>
-            <td class="sym">403 na <code>/api/lexicon.php</code></td>
+            <td class="sym">403 na <code>/api/</code> nebo na <code>/</code></td>
             <td>Zákaz v <code>.htaccess</code> je plošný na <code>*.php</code>; platí i pro podadresáře</td>
             <td>Zakazovat jmenovitě <code>env.php</code> a <code>schema-tables.php</code></td>
           </tr>
@@ -839,17 +842,17 @@ dotnet run --project Grammar.Czech.Lexicon.Tool -- `
   <section class="band">
     <h2>Až budeš přidávat slovíčka</h2>
     <p>
-      Hesla se píšou v administraci na <code>/admin/</code>. Přihlašuje se heslem, jehož hash patří
+      Hesla se píšou v administraci na <code>/</code>. Přihlašuje se heslem, jehož hash patří
       do konfigurace pod <code>LEXICON_ADMIN_PASSWORD_HASH</code> — hash, ne heslo samotné, aby
       uniklý konfigurační soubor nedal funkční přihlášení:
     </p>
     <div class="code"><pre>php -r "echo password_hash('tvoje-heslo', PASSWORD_DEFAULT), PHP_EOL;"</pre></div>
     <div class="warn">
-      <span class="warn-label">Bez výjimky v <code>.htaccess</code> administrace nepojede</span>
+      <span class="warn-label">Proč tam není žádný rewrite</span>
       <p>
-        Catch-all pravidlo posílá všechno do <code>/api/</code>, takže <code>/admin/</code> by skončilo
-        jako <code>/api/admin/</code> a vrátilo 404. Dodávaný <code>.htaccess</code> výjimku má; kdyby
-        sis ho psal sám, patří tam <code>RewriteCond %{REQUEST_URI} !^/admin/</code>.
+        Administrace je <code>index.php</code> v kořeni, takže žádné přesměrování nepotřebuje — a proto
+        v <code>.htaccess</code> žádné catch-all pravidlo není. Adresář <code>admin/</code> drží jen
+        vnitřnosti a je zakázaný celý.
       </p>
     </div>
     <p>
@@ -863,7 +866,7 @@ dotnet run --project Grammar.Czech.Lexicon.Tool -- `
       Lokální kopie se pak přetáhne znovu — celá, ne přírůstkově. Přepis celého souboru řeší i mazání
       a přejmenování, které by přírůstkový pull neviděl.
     </p>
-    <div class="code"><pre>dotnet run --project Grammar.Czech.Lexicon.Tool -- pull --url https://tvadomena.cz/api/lexicon.php
+    <div class="code"><pre>dotnet run --project Grammar.Czech.Lexicon.Tool -- pull --url https://tvadomena.cz/api/
 dotnet test Grammar.sln</pre></div>
     <p>
       Kontrola po každém stažení není formalita. Stránkovaný pull není konzistentní snapshot —
