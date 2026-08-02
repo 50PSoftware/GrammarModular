@@ -162,7 +162,78 @@ dotnet run --project Grammar.Czech.Lexicon.Tool -- pull --url https://example.co
 
 Pull staví novou databázi do dočasného souboru a přesune ji na místo, teprve když projde `validate` — neúspěšné nebo přerušené stažení funkční lexikon nesáhne.
 
-Nasazení serverové části krok za krokem popisuje [`docs/nasazeni-slovniku-wedos.html`](docs/nasazeni-slovniku-wedos.html). Soubor je samostatný, dá se otevřít z disku.
+#### Formát na drátě
+
+`Grammar.Czech.Lexicon.Tool/Php/api/lexicon.php` vrací na jeden požadavek jednu stránku jedné tabulky:
+
+```json
+{"table":"lemma_entry","columns":["lemma_entry_id","lemma",…],"rows":[[1,"student",…]],"next_after":"5000"}
+```
+
+Tři rozhodnutí v tom stojí za vysvětlení, protože ke každému existuje tišší varianta, která vypadá stejně dobře:
+
+- **Tvar tabulek, ne zanoření.** Identifikátory přiděluje server a musí cestu přežít; dokument, který by zanořoval sloty do rámců a rámce do lemmat, by je buď stejně opakoval, nebo by je importér musel vymýšlet.
+- **Řádky jako pole, jména sloupců jednou.** Při stotisíci heslech je opakování dvaceti čtyř klíčů na řádek většina objemu. Ta jediná hlavička je zároveň kontrakt: importér odmítne stránku, jejíž sloupce nejsou ty očekávané ve stejném pořadí — což je to, co zabrání prohozenému sloupci naimportovat se čistě na špatné místo.
+- **Stránkování podle klíče, ne podle offsetu.** Offset se posune, když někdo slovník edituje uprostřed stahování, a tiše přeskočí nebo zopakuje řádky. Klíč se na obou stranách porovnává ve vlastním typu, takže index primárního klíče zůstane použitelný.
+
+Stránkované stahování ani tak není konzistentní snímek — nic nebrání editaci mezi dvěma stránkami — a `validate` je to, co výsledek zachytí: jako rozbitý odkaz, ne jako slovo, které se za půl roku nenaskloňuje.
+
+#### Nasazení API
+
+Zkopíruj `Php/` na server a **nasměruj vhost na `Php/api/`, ne na `Php/`**. Všechno, co má endpoint držet v soukromí — tajemství, mapa schématu, zdrojový kód — pak leží nad document rootem.
+
+```
+Php/
+  .env              tajemství, git-ignored
+  .env.example      šablona, commitnutá
+  .htaccess         zakazuje .env pro případ, že vhost míří sem
+  env.php
+  schema-tables.php
+  api/              ← kořen vhostu
+    lexicon.php
+```
+
+Konfigurace se čte nejdřív ze skutečného prostředí, teprve pak z `Php/.env`, takže pool PHP-FPM může kteroukoli jednotlivou hodnotu přebít přes `env[NAME]` bez editace souboru. `getenv()` pod FPM vidí jen to, co mu pool předá — což je celý důvod, proč ten soubor existuje.
+
+Rozvržení se nejen dokumentuje, ale vynucuje: `.env` uvnitř document rootu vydá kterýkoli web server jako čistý text, pokud mu není řečeno jinak — `https://example.com/.env` rozdá heslo do databáze a v logu zůstane jen řádek v access logu — takže `env.php` odmítne nastartovat, když pozná, že se to stalo.
+
+Autentizace je jeden sdílený bearer token, porovnávaný přes `hash_equals`, aby se nedal uhádnout po znacích, a API při nenastaveném tokenu odmítne obsloužit cokoli, místo aby obsluhovalo veřejně. Token letí v hlavičce každého požadavku, takže **HTTPS je tu nosná konstrukce, ne doporučení**. Na straně stahování dej přednost proměnné `LEXICON_API_TOKEN` před `--token`: příkazová řádka je vidět v `ps` a zapíše se do historie shellu.
+
+##### Na sdíleném hostingu
+
+Celé nasazení krok za krokem popisuje [`docs/nasazeni-slovniku-wedos.html`](docs/nasazeni-slovniku-wedos.html) — sedm kroků, u každého kontrola, plus tabulka poruch, které samy na sebe neukazují. Soubor je samostatný, otevřeš ho z disku.
+
+Document root se tam přesunout nedá — Wedos a podobní obsluhují `www/` a hlouběji je nenamíříš — takže dovnitř jde všechno včetně tajemství a `$lexiconIncludes` zůstává na výchozí hodnotě:
+
+```
+www/                ← document root
+  .env.php          ← tajemství, jako PHP
+  .htaccess
+  env.php
+  schema-tables.php
+  api/lexicon.php
+```
+
+**Jakmile je soubor uvnitř document rootu, používej `.env.php`, ne `.env`.** Vrací pole, takže požadavek na něj se provede místo aby se vypsal; obyčejný `.env` na stejném místě vydá jako text kterýkoli server, kterému nebylo výslovně řečeno, aby ho odmítl. `env.php` dá `.env.php` přednost, když leží obojí.
+
+Zůstat u obyčejného `.env` je obhajitelná volba — dodávaný `.htaccess` ho zakazuje — ale musí být vyslovená: `env.php` odmítne nastartovat, dokud není nastaveno `LEXICON_ALLOW_ENV_IN_DOCROOT=1`, v prostředí nebo přímo v tom `.env`. Cokoli jiného než `1`/`true`/`yes`/`on` nechá pojistku stát, takže překlep selže bezpečně. Pak to ověř přes `curl -i https://…/.env`, což je jediný způsob, jak vůbec zjistit, jestli se `.htaccess` uplatňuje — při `AllowOverride None` ho Apache tiše ignoruje a `/api/lexicon.php` jede dál, zatímco je soubor veřejný.
+
+Záleží na tom, protože ta druhá ochrana je tenčí, než vypadá. Dodávaný `.htaccess` zakazuje tečkové soubory a oba includy přes direktivy `Require`, které platí bez ohledu na to, jestli je načtený `mod_rewrite` — ale jen dokud se `.htaccess` vůbec čte, a na nginxu neplatí vůbec. Řešit totéž přepisem by bylo ještě horší: stačí přidat `RewriteCond %{REQUEST_FILENAME} !-f`, tu skoro univerzální podmínku „existující soubory nech být“, a catch-all začne `.env` přeskakovat *právě proto, že existuje* — od té chvíle se vydává a nic na to neupozorní.
+
+Čtyři další věci je potřeba ověřit a každá selže způsobem, který sám na sebe neukazuje:
+
+- **Databázový host není `localhost`.** Sdílený hosting má MySQL na jiném stroji; hostname vezmi z administrace a dej ho do DSN spolu s `charset=utf8mb4`.
+- **Nejspíš je to MariaDB, ne MySQL.** `schema.mysql.sql` se drží kolací, které mají obě — `utf8mb4_0900_*` umí jen MySQL 8 a MariaDB celý skript odmítne s *Unknown collation*. Test hlídá, aby se tam nevrátily.
+- **Nastav PHP na 8.1 nebo novější** v administraci.
+- **Hlavičku `Authorization` server nejspíš ořízne**, než ji PHP uvidí. `env.php` ji hledá na třech místech včetně `getallheaders()`, ale když se se správným tokenem pořád vrací 401, přidej do `www/.htaccess`:
+
+  ```apache
+  RewriteEngine On
+  RewriteCond %{HTTP:Authorization} .
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+  ```
+
+Nasazení ověř čtyřmi požadavky. `/.env.php` a `/env.php` musí vrátit 403 nebo 404, v nejhorším prázdné tělo — nikdy zdrojový kód. Požadavek bez tokenu musí vrátit 401 a se správným tokenem 200.
 
 Lexikon slouží hlavně jako provider metadat pro vybrané resolvery, není to úplný český slovník.
 
