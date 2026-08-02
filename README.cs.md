@@ -106,6 +106,20 @@ Necelá čísla se vypisují slovy taky — `ComposeFraction` udělá ze `3/4` *
 
 Zápis číslovek číslicemi kontroluje `ICzechNumeralOrthographyService` — odmítne *5tý*, *10ti* i *20-krát* a umí je opravit.
 
+### Příslovce
+
+NESČ řadí příslovce mezi neohebné slovní druhy, takže první stupeň je samo lemma a stupňování je celá jejich morfologie. Neregistrované příslovce proto v prvním stupni projde beze změny — aby se dalo použít ve větě, nemusí být v datech.
+
+Komparativ se ale z `Grammar.Czech/Data/Rules/adverbs.json` čte, neodvozuje. Příslovce od přídavných jmen berou tři různé přípony — `-o`, `-e/-ě` a `-y` (*nízko*, *krásně*, *česky*) — volba mezi nimi není plně předvídatelná a jedno přídavné jméno může dát dvě příslovce, která se stupňují jinak (*dlouho* a *dlouze*, *vysoko* a *vysoce*). Samo stupňování je u frekventovaných příslovcí nepravidelné (*dobře → lépe*, *špatně → hůře*, *brzy → dříve*) a pravidelná přípona `-eji/-ěji` se u některých kmenů potkává s měkčením (*hladce → hladčeji*), u jiných ne (*hustě → hustěji*). Pravidlo by se mýlilo tiše a často.
+
+Superlativ je `nej-` na komparativu. Několik nepravidelných nese dubletu, jejíž kratší člen je ten hovorovější (*hůř* vedle *hůře*, *dřív* vedle *dříve*); vybírá se přes `CzechWordRequest.PrefersShortForm`.
+
+Neregistrovanému příslovci se komparativ odvodí: `-ěji` po `d`, `t`, `n` a retnicích, jinde `-eji`, s měkčením, které přinášejí `-ce`, `-ky` a `-ho`. Proti 99 komparativům v datech pravidlo reprodukuje každý pravidelný a míjí jen ty nepravidelné, které jako nepravidelné uvádí příručka ÚJČ — obojí se dělí bez překryvu, a právě proto je odvozování bezpečné. Test to měří, místo aby to předpokládal, takže se pravidlo a data nemůžou nepozorovaně rozejít. Registrovaný komparativ vždycky vyhrává a příslovce registrované bez něj se bere jako nestupňované, ne jako důvod k odvození.
+
+Přídavné jméno, ze kterého příslovce pochází, se ze stejného důvodu zaznamenává, nepočítá, a `ICzechAdverbService.GetAdverbsFor` mapování čte zpátky — kde jedno přídavné jméno dá dvě příslovce, vrátí obě. Vztažná příslovce (*kde*, *kdy*, *kam*, *jak*) uvozují vztažnou větu přes `RelativeAttachment.Relativizer`, tedy pole, které se dřív jmenovalo `Pronoun`; protože jsou neohebná, neberou pád a nic se přes ně s řídícím členem neshoduje. Záporná příslovce (*nikdy*, *nikde*, *nijak*) jsou samostatná lemmata, ne kladná s předponou.
+
+Jinak utvořený komparativ není totéž co zkrácený tvar a data je drží zvlášť: *snadno* má *snáze* i *snadněji*, *hluboko* má *hlouběji* i *hloub*. Generuje se ten primární, zbytek ukáže `ICzechAdverbService.GetComparativeVariants`. Jedno přídavné jméno taky může dát dvě příslovce, která jsou samostatná lemmata sdílející komparativ — *dlouho* a *dlouze*, *vysoko* a *vysoce*, *těžko* a *těžce*, *široko* a *široce*, *úzko* a *úzce* — a registrovaná jsou obě.
+
 ### Slovesa
 
 Slovesa se generují z pravidel v:
