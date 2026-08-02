@@ -134,10 +134,35 @@ Mezi veřejně používané části patří:
 
 ### Lexikon a valence
 
-`JsonValencyProvider` načítá embedded JSON z `Grammar.Czech/Data/Lexicon/`:
+`SqliteValencyProvider` čte `Grammar.Czech/Data/Lexicon/grammar.czech.lexicon.db`, databázi SQLite. Je to jediný zdroj dat, který tu není embedded JSON — právě on má růst do tisíců hesel, zatímco pravidlové soubory v `Data/Rules/` popisují uzavřené třídy a zůstávají, jak jsou.
 
-- `lexicon.json` obsahuje morfologická metadata lemmat, např. rod, vzor, vid, animátnost, pohybné `e` nebo příznak krácení genitivu plurálu,
-- `valency.json` obsahuje valenční rámce.
+Slovník se edituje centrálně, v MySQL nebo MariaDB za PHP administrací, a tenhle soubor je jeho lokální kopie určená jen ke čtení. Identifikátory přiděluje server a kopie je přebírá beze změny — přečíslovaná kopie by se už nedala porovnat se serverem, ze kterého vznikla.
+
+Databáze má tři vrstvy, oddělené proto, že jedno lemma má právě jednu morfologickou identitu, kdežto lexém může mít víc významů a každý význam rámec pro každou diatezi:
+
+- `lemma_entry` — morfologická identita jednoho slovníkového tvaru: rod, vzor, životnost, pohybné `e`, krácení a vkladné `e` v genitivu plurálu, nesklonnost, pomnožnost, počitatelnost, slovesná třída, vid a jeho protějšek, reflexivní typ a sloupce o původu záznamu,
+- `lexeme` a `lexical_unit` — abstraktní slovo a jeho významy. Vidová dvojice je jeden lexém, takže `dát` a `dávat` sdílejí jeden rámec, místo aby si každé neslo vlastní kopii,
+- `valency_frame`, `valency_slot`, `slot_realization` — samotné rámce. Slot může mít víc realizací s preferencí pro generování, což je to, co dovolí jednomu slotu být v jednom vyjádření holým pádem a v jiném vedlejší větou nebo infinitivem.
+
+Schéma v `Grammar.Czech.Lexicon.Tool/Schema/schema.sql` je záměrně přenositelné SQL — SQLite je první backend, ne poslední, a MySQL, Microsoft SQL i Firebird mají vzít stejné DDL. Vše specifické pro SQLite je v `schema.sqlite.sql`; `schema.mysql.sql` je varianta pro server.
+
+O soubor se stará `Grammar.Czech.Lexicon.Tool`:
+
+| příkaz | co dělá |
+|---|---|
+| `pull --url <api>` | stáhne slovník z API a nahradí jím lokální kopii |
+| `validate` | ohlásí, co rozbil špatný řádek — rámec bez konatele, slot, který se nemůže vyjádřit, `lemma_key`, který žádné vyhledání netrefí |
+| `build` | vytvoří lexikon ze schématu a seedu, pro práci bez serveru |
+| `dump --out <sql>` | vypíše databázi jako přenositelné `INSERT`y k revizi |
+| `export-json --out <adresář>` | vypíše stejný JSON, jaký posílá API, pro naplnění serveru |
+
+```bash
+dotnet run --project Grammar.Czech.Lexicon.Tool -- pull --url https://example.com/api/lexicon.php --token <token>
+```
+
+Pull staví novou databázi do dočasného souboru a přesune ji na místo, teprve když projde `validate` — neúspěšné nebo přerušené stažení funkční lexikon nesáhne.
+
+Nasazení serverové části krok za krokem popisuje [`docs/nasazeni-slovniku-wedos.html`](docs/nasazeni-slovniku-wedos.html). Soubor je samostatný, dá se otevřít z disku.
 
 Lexikon slouží hlavně jako provider metadat pro vybrané resolvery, není to úplný český slovník.
 
@@ -200,10 +225,11 @@ Třída je otevřenější než všechny ostatní — zvukomalba se tvoří ad h
 
 ```text
 Grammar.sln
-|-- Grammar.Core/        jazykově nezávislé enumy, rozhraní a modely
-|-- Grammar.Czech/       česká implementace, servisy, providery a embedded JSON data
-|-- Grammar.Czech.Cli/   konzolové demo s hardcodovanými příklady
-`-- Grammar.Czech.Test/  MSTest testy pro skloňování, časování, fonologii a stavbu vět
+|-- Grammar.Core/               jazykově nezávislé enumy, rozhraní a modely
+|-- Grammar.Czech/              česká implementace: servisy, providery, embedded JSON pravidla a databáze lexikonu
+|-- Grammar.Czech.Cli/          konzolové demo s hardcodovanými příklady
+|-- Grammar.Czech.Lexicon.Tool/ stahuje, staví, kontroluje a vypisuje databázi lexikonu; drží schémata a PHP API
+`-- Grammar.Czech.Test/         MSTest testy pro skloňování, časování, fonologii a stavbu vět
 ```
 
 Hlavní registrace pro DI je `AddCzechGrammarServices()` v `Grammar.Czech/CzechGrammarServiceFactory.cs`.
@@ -507,9 +533,11 @@ dotnet test Grammar.Czech.Test
 
 Testy jsou v MSTest a pokrývají substantiva, adjektiva, zájmena, číslovky, slovesa, vybrané fonologické evaluátory/služby, stavbu vět a souvětí, a načítání všech JSON providerů včetně referenční integrity mezi soubory.
 
+Lexikon má vlastní sadu: průchod databáze přes JSON a zpátky, který ověří, že drátový formát unese celý slovník beze ztráty, stránkovací smyčku proti podstrčenému transportu, a porovnání schémat — přenositelné DDL proti variantě pro MySQL a mapa sloupců v C# proti té v PHP. Ty poslední existují proto, že kontrola v importéru se spustí až při stahování proti běžícímu serveru, což je nejhorší chvíle na zjištění, že se dva ručně udržované seznamy rozešly.
+
 ## Datová vrstva
 
-Všechna gramatická data v projektu `Grammar.Czech` jsou embedded JSON resources:
+Pravidlová data v projektu `Grammar.Czech` jsou embedded JSON resources. Výjimkou je lexikon: ten je databáze SQLite, protože jako jediný má růst do tisíců hesel a edituje se centrálně.
 
 | Cesta | Obsah |
 |---|---|
@@ -529,8 +557,7 @@ Všechna gramatická data v projektu `Grammar.Czech` jsou embedded JSON resource
 | `Data/Rules/conjunctions.json` | spojky, jejich druh, vztah, párovost a pravidlo čárky |
 | `Data/Rules/particles.json` | částice a jejich funkce |
 | `Data/Rules/interjections.json` | citoslovce, jejich druh a přísudkové užití |
-| `Data/Lexicon/lexicon.json` | lexikální metadata |
-| `Data/Lexicon/valency.json` | valenční rámce (`dát`, `dávat`, `jít`, `vidět`) |
+| `Data/Lexicon/grammar.czech.lexicon.db` | lexikální metadata a valenční rámce (`dát`/`dávat`, `jít`, `vidět`) — SQLite, ne JSON |
 
 ## Známá omezení
 
@@ -538,12 +565,17 @@ Všechna gramatická data v projektu `Grammar.Czech` jsou embedded JSON resource
 - `MorphologyEngine.GetForm` vrací jedno slovo, takže u slovesa dá jen základní tvar. Slovesné tvary o víc slovech — opisné futurum, pasivum s pomocným slovesem, kondicionál, negace, reflexivum — potřebují `CzechWordFormComposer.GetFullForm`.
 - Pojmenovaný vzor z `irregulars.json` nese kmeny doslova, takže sedí na sloveso samotného vzoru a na jeho předponové odvozeniny — `nese` pokrývá *nést* i *odnést*, `dělá` pokrývá *dělat* i *dodělat*. Nepříbuzné sloveso potřebuje třídní vzor: *prodávat* se vzorem `dělá` vrátí *dělá*, s `trida5` správné *prodává*.
 - `CzechAlternationRuleEvaluator` není registrovaný v DI a krácení genitivu plurálu není aktivně napojené ve skloňování substantiv.
-- Lexikon není úplný slovník češtiny; `ResolveGenderAndPattern` a `ResolveVerbAspect` fungují jen pro lemmata obsažená v `lexicon.json`.
+- Lexikon není úplný slovník češtiny; `ResolveGenderAndPattern` a `ResolveVerbAspect` fungují jen pro lemmata, která databáze obsahuje.
+- `IValencyProvider.GetEntry` bere lemma a nic víc, takže neumí rozlišit homonyma. Schéma je nese ve sloupci `homonym_index` a provider vrátí to s nejnižším.
 - CLI je demo, ne uživatelský nástroj pro obecné dotazování.
 - Číslovky nepodporují ustrnulou variantu úhrnných číslovek (*bez patero ponožek*), kterou IJP id=792 uvádí vedle skloňované jako rovněž spisovnou; generuje se vždy skloňovaná.
 - Ukazovací zájmeno před číslovkou (*těch pět studentů*) se shoduje s hlavou fráze, ne s celou frází.
 - `CzechNumeralComposer.ComposeOrdinal` a `ComposeOfType` skládají jen z lemmat ve slovníku; hodnota vyžadující chybějící složku (např. *dvoutisící*) selže s výjimkou, místo aby si tvar vymyslela.
-- `valency.json` obsahuje rámce jen pro čtyři slovesa. Mechanismus je hotový, data ne — u slovesa bez rámce si pády zadává volající jako dřív.
+- Lexikon obsahuje rámce jen pro čtyři slovesa. Mechanismus je hotový, data ne — u slovesa bez rámce si pády zadává volající jako dřív.
+- Slot se dá uložit jako realizovaný `že`-větou nebo infinitivem, ale nic takový tvar zatím negeneruje: to potřebuje plánovač klauzí, a dokud neexistuje, `CzechSentenceBuilder` takový konstituent nechá na volajícím.
+- Databáze je binární, takže git neukáže, co se v ní změnilo. `dump` vyrobí čitelnou textovou podobu; napojení na commitovací postup hotové není.
+- Pull stahuje pokaždé celý slovník. Přírůstková synchronizace neexistuje a vyžadovala by na serveru sledování změn a náhrobní záznamy — smazané řádky by přírůstkový pull jinak neviděl. Přepis celého souboru je řeší zadarmo, proto se začíná tam.
+- PHP část nebyla ve vývojovém prostředí spuštěna: PHP tu není, takže `api/lexicon.php` je zkontrolovaný, ne otestovaný kód. C# polovina téhož kontraktu je pokrytá end to end — export skutečného lexikonu, serializace tak, jak by ji poslalo API, a import zpátky.
 - Klitický klastr nezná volný dativ (*To ti byla legrace*), který podle NESČ stojí mezi pomocným slovesem a reflexivem. Ostatní pozice pořadí odpovídají.
 - Spojky `aby` a `kdyby` podporované nejsou — splývají s kondicionálovým pomocným slovesem a časují se podle osoby (*abych*, *abys*, *abychom*). Stejně tak `však`, které je samo druhopozicové, ne uvozovací.
 - Čárka u `nebo` a `či` závisí na poměru vět, ne na spojce. Data nesou jen běžnější čtení; vylučovací poměr se musí říct přes `Coordination.RequiresComma`.
