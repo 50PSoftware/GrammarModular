@@ -60,12 +60,12 @@ Supported patterns:
 
 | Gender / group | Patterns |
 |---|---|
-| masculine animate | `pán`, `muž`, `předseda`, `soudce` |
+| masculine animate | `pán`, `muž`, `učitel`, `předseda`, `soudce` |
 | masculine inanimate | `hrad`, `les`, `stroj` |
 | feminine | `žena`, `růže`, `píseň`, `kost` |
 | neuter | `město`, `moře`, `kuře`, `stavení` |
 
-Patterns can inherit endings through `inheritsFrom`; `les`, for instance, inherits from `hrad` and overrides only the cases that differ. Irregular nouns live in `Grammar.Czech/Data/Rules/Nouns/irregulars.json` (18 lemmas, e.g. *oko*, *dům*, *ruka*, *noha*, *ucho*). The file `Grammar.Czech/Data/Rules/Nouns/propers.json` is empty — the mechanism for proper names exists, the data does not.
+Patterns can inherit endings through `inheritsFrom`; `les`, for instance, inherits from `hrad` and overrides only the cases that differ, and `učitel` inherits from `muž` for the sake of the `-é` nominative and vocative plural that *-tel* agent nouns take (*učitelé*, not *učiteli*). Irregular nouns live in `Grammar.Czech/Data/Rules/Nouns/irregulars.json` (19 lemmas, e.g. *oko*, *dům*, *ruka*, *noha*, *ucho*). The file `Grammar.Czech/Data/Rules/Nouns/propers.json` is empty — the mechanism for proper names exists, the data does not.
 
 ### Adjectives
 

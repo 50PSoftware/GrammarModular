@@ -328,6 +328,16 @@
             //Console.WriteLine(composer.GetFullForm(kaRequest).Form);
 
             PrintSentences(provider.GetRequiredService<CzechSentenceBuilder>());
+
+            var teacherReq = new CzechWordRequest
+            {
+                Lemma = "učitel",
+                WordCategory = WordCategory.Noun,
+                Pattern = "učitel",
+                IsAnimate = true
+            };
+
+            PrintNounForms(composer, teacherReq);
         }
 
         /// <summary>

@@ -79,7 +79,7 @@ namespace Grammar.Czech.Services
         // Měkké skloňovací vzory — koncové -e po labiále zůstává měkké (bez ě).
         private static readonly HashSet<string> SoftPatterns = new()
         {
-            "píseň", "růže", "moře", "kuře", "stroj", "muž", "soudce", "stavení"
+            "píseň", "růže", "moře", "kuře", "stroj", "muž", "učitel", "soudce", "stavení"
         };
     }
 }

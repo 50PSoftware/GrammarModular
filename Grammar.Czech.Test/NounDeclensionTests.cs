@@ -410,6 +410,14 @@ namespace Grammar.Czech.Test
                                             "hrady", "hradů", "hradům", "hrady", "hrady", "hradech", "hrady"}) },
                     { "muž", ("muž", Gender.Masculine, true, null, new [] { "muž", "muže", "muži", "muže", "muži", "muži", "mužem",
                                             "muži", "mužů" ,"mužům", "muže", "muži", "mužích", "muži" })},
+                    // Podvzor učitel: jinak čistý muž, ale 1. a 5. p. mn. č. má -é (IJP: učitelé,
+                    // nikoli *učiteli). Zbytek plurálu zůstává měkký — 4. p. učitele, 6. p. učitelích.
+                    { "učitel", ("učitel", Gender.Masculine, true, null, new [] { "učitel", "učitele", "učiteli", "učitele", "učiteli", "učiteli", "učitelem",
+                                            "učitelé", "učitelů", "učitelům", "učitele", "učitelé", "učitelích", "učiteli"}) },
+                    // Supletivní kmen v plurálu (přítel- → přátel-) a nulový 2. p. mn. č. „přátel“ —
+                    // IJP to označuje za relikt staršího skloňování. Řeší irregulars.json, ne pattern data.
+                    { "přítel", ("učitel", Gender.Masculine, true, null, new [] { "přítel", "přítele", "příteli", "přítele", "příteli", "příteli", "přítelem",
+                                            "přátelé", "přátel", "přátelům", "přátele", "přátelé", "přátelích", "přáteli"}) },
                     { "stroj", ("stroj", Gender.Masculine, false, null, new [] { "stroj", "stroje", "stroji", "stroj", "stroji", "stroji", "strojem",
                                             "stroje", "strojů", "strojům", "stroje", "stroje", "strojích", "stroji"}) },
                     { "předseda", ("předseda", Gender.Masculine, true, null, new[] {"předseda", "předsedy", "předsedovi", "předsedu", "předsedo", "předsedovi", "předsedou",

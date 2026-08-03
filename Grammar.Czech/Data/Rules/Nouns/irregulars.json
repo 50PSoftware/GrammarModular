@@ -70,6 +70,23 @@
       }
     }
   },
+  "přítel": {
+    "inheritsFrom": "učitel",
+    "stem": "přátel",
+    "overrides": {
+      "singular": {
+        "Genitive": "přítele",
+        "Dative": "příteli",
+        "Accusative": "přítele",
+        "Vocative": "příteli",
+        "Locative": "příteli",
+        "Instrumental": "přítelem"
+      },
+      "plural": {
+        "Genitive": "přátel"
+      }
+    }
+  },
   "nůž": {
     "inheritsFrom": "stroj",
     "stem": "noz"

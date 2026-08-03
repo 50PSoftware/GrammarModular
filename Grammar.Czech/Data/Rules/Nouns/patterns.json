@@ -221,6 +221,16 @@
       }
     }
   },
+  "učitel": {
+    "gender": "masculineAnimate",
+    "inheritsFrom": "muž",
+    "endings": {
+      "plural": {
+        "Nominative": "-é",
+        "Vocative": "-é"
+      }
+    }
+  },
   "soudce": {
     "gender": "masculineAnimate",
     "stem": "soud",
