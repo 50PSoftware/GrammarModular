@@ -1,7 +1,7 @@
 -- Grammar.Czech — lexicon seed, update 6.
 --
 -- Continues seed.sql through seed.004.sql. Last ids used there: lexeme 28,
--- lemma_entry 167, lexical_unit 29, valency_frame 29, valency_slot 62,
+-- lemma_entry 191, lexical_unit 29, valency_frame 29, valency_slot 62,
 -- slot_realization 64. Append after all five, in order.
 --
 -- Provenance: hand-authored from Internetová jazyková příručka (prirucka.ujc.cas.cz),
@@ -25,6 +25,13 @@
 --     husity, husitovi, husitu, husito … husité), so it is a member of "turista", not a
 --     sibling of it — the same way ředitel is a member of "učitel".
 --
+--   * Update: this file now carries both suffix classes at full size rather than a sample.
+--     The -an group below is the productive Czech demonyms-in-*-an* class (nationalities,
+--     regional/city adjectival-noun demonyms) — every member takes N/V pl. -é the same way
+--     the vzor word "občan" does. The -ista/-ita group is the equally productive class of
+--     nouns naming a person by their instrument, sport, or -ism (fotbalista, kytarista,
+--     socialista …) — same closed rule, same -é.
+--
 -- On the doublets, since every word here has one:
 --
 --   IJP lists občané/občani, křesťané/křesťani, turisté/turisti, husité/husiti. The -é form
@@ -32,7 +39,21 @@
 --   Moravian variant. NounPattern still carries one ending per case, so the engine produces
 --   the primary and the variant is simply not expressible yet — the same limitation
 --   seed_004 noted for anděl/manžel. Nothing here depends on that being fixed; it just means
---   these rows are a choice of primary, not a claim that -i is wrong.
+--   these rows are a choice of primary, not a claim that -i is wrong. Same for every -an and
+--   -ista word added below — the doublet exists for essentially all of them and isn't
+--   re-flagged per row.
+--
+--   Capitalization: demonyms are proper nouns in Czech (Američan, Rakušan, Slezan…), so
+--   `lemma` keeps the capital and `lemma_key` is lowercased, exactly as seed_005 already
+--   established for Moravan/Pražan.
+--
+-- Two control rows, one per class, doing the job "novinář" already did in the original cut
+-- of this file — marking where the sub-pattern does NOT apply, so the boundary is data, not
+-- just an inference from absence:
+--
+--   * novinář (muž, no podvzor) — kept from the original cut.
+--   * hasič (muž, no podvzor) — added alongside it. -ič is not -tel/-an/-ista; N pl. hasiči,
+--     plain vzor muž, nothing to override.
 --
 -- What is still deliberately left OUT:
 --
@@ -42,7 +63,7 @@
 --     rules match on the literal pattern name: biolog would come out *biologe instead of
 --     biologu. That needs CzechSofteningRuleEvaluator to walk inheritsFrom, which is a code
 --     change, not a data one. Left alone rather than half-done — same bucket as seed_001's
---     syn and král.
+--     syn and král. (Now closed in seed.006.sql.)
 --   * sníh, nůž, oheň, déšť and the sestra/matka genitive-plural epenthesis — unchanged
 --     since seed_002, still waiting on CzechAlternationRuleEvaluator.
 
@@ -53,25 +74,51 @@ INSERT INTO lemma_entry (
     lemma_entry_id, lemma, lemma_key, homonym_index, category, gender, pattern,
     is_animate, has_mobile_e, aspect, aspect_counterpart, lexeme_id, source, is_verified, note)
 VALUES
-    (168, 'občan',    'občan',    1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1,
+    (192, 'občan',    'občan',    1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1,
           'Vzorové slovo podvzoru. N/V pl. občané; IJP uvádí i krátké občani, engine dává primární tvar.'),
-    (169, 'křesťan',  'křesťan',  1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
-    (170, 'měšťan',   'měšťan',   1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
-    (171, 'Moravan',  'moravan',  1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1,
+    (193, 'křesťan',  'křesťan',  1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (194, 'měšťan',   'měšťan',   1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (195, 'Moravan',  'moravan',  1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1,
           'Obyvatelské jméno — velké písmeno je součástí lemmatu, lemma_key je jako všude jinde malými.'),
-    (172, 'Pražan',   'pražan',   1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (196, 'Pražan',   'pražan',   1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+
+    -- Zbytek třídy -an — národnostní a obyvatelská jména, stejný podvzor, stejná dubleta -é/-i.
+    (197, 'Američan', 'američan', 1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (198, 'Evropan',  'evropan',  1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (199, 'Afričan',  'afričan',  1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (200, 'Rakušan',  'rakušan',  1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (201, 'Slovan',   'slovan',   1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (202, 'Ostravan', 'ostravan', 1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (203, 'Brňan',    'brňan',    1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (204, 'Slezan',   'slezan',   1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (205, 'Číňan',    'číňan',    1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (206, 'Kanaďan',  'kanaďan',  1, 'Noun', 'Masculine', 'občan', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Lemma entries — nouns, vzor turista (masc. anim., kmen na -a, N/V pl. -é)
 -- ─────────────────────────────────────────────────────────────────────────────
-    (173, 'turista',   'turista',   1, 'Noun', 'Masculine', 'turista', 1, 0, NULL, NULL, NULL, 'IJP', 1,
+    (207, 'turista',   'turista',   1, 'Noun', 'Masculine', 'turista', 1, 0, NULL, NULL, NULL, 'IJP', 1,
           'Vzorové slovo podvzoru. N/V pl. turisté; IJP uvádí i krátké turisti, engine dává primární tvar.'),
-    (174, 'houslista', 'houslista', 1, 'Noun', 'Masculine', 'turista', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
-    (175, 'husita',    'husita',    1, 'Noun', 'Masculine', 'turista', 1, 0, NULL, NULL, NULL, 'IJP', 1,
+    (208, 'houslista', 'houslista', 1, 'Noun', 'Masculine', 'turista', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (209, 'husita',    'husita',    1, 'Noun', 'Masculine', 'turista', 1, 0, NULL, NULL, NULL, 'IJP', 1,
           '-ita má stejné paradigma jako -ista (husity, husitovi, husitu, husito … husité), takže je členem podvzoru turista, ne vlastním podvzorem.'),
 
+    -- Zbytek třídy -ista — jméno osoby podle nástroje, sportu nebo -ismu, stejný podvzor.
+    (210, 'fotbalista', 'fotbalista', 1, 'Noun', 'Masculine', 'turista', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (211, 'hokejista',  'hokejista',  1, 'Noun', 'Masculine', 'turista', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (212, 'tenista',    'tenista',    1, 'Noun', 'Masculine', 'turista', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (213, 'cyklista',   'cyklista',   1, 'Noun', 'Masculine', 'turista', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (214, 'šachista',   'šachista',   1, 'Noun', 'Masculine', 'turista', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (215, 'kytarista',  'kytarista',  1, 'Noun', 'Masculine', 'turista', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (216, 'specialista','specialista',1, 'Noun', 'Masculine', 'turista', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (217, 'esejista',   'esejista',   1, 'Noun', 'Masculine', 'turista', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (218, 'archivista', 'archivista', 1, 'Noun', 'Masculine', 'turista', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (219, 'publicista', 'publicista', 1, 'Noun', 'Masculine', 'turista', 1, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
+
 -- ─────────────────────────────────────────────────────────────────────────────
--- Kontrolní řádek — vzor bez podvzoru
+-- Kontrolní řádky — vzor bez podvzoru
 -- ─────────────────────────────────────────────────────────────────────────────
-    (176, 'novinář',  'novinář',  1, 'Noun', 'Masculine', 'muž', 1, 0, NULL, NULL, NULL, 'IJP', 1,
-          'Sem podvzor NEpatří: -ář není -tel, N pl. je novináři jako u lékaře. Řádek je tu proto, aby se v lexikonu drželo i to, kam se -é nerozlévá.');
+    (220, 'novinář',  'novinář',  1, 'Noun', 'Masculine', 'muž', 1, 0, NULL, NULL, NULL, 'IJP', 1,
+          'Sem podvzor NEpatří: -ář není -tel, N pl. je novináři jako u lékaře. Řádek je tu proto, aby se v lexikonu drželo i to, kam se -é nerozlévá.'),
+    (221, 'hasič',    'hasič',    1, 'Noun', 'Masculine', 'muž', 1, 0, NULL, NULL, NULL, 'IJP', 1,
+          'Druhý kontrolní řádek: -ič není -tel ani -an ani -ista. N pl. hasiči, čistý vzor muž bez přepisu.');
