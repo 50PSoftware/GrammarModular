@@ -1,6 +1,7 @@
 using Grammar.Core.Enums;
 using Grammar.Czech.Enums;
 using Grammar.Czech.Models;
+using Grammar.Czech.Providers.JsonProviders;
 using Grammar.Czech.Providers.SqliteProviders;
 using Microsoft.Data.Sqlite;
 using System.Data.Common;
@@ -40,6 +41,27 @@ namespace Grammar.Czech.Lexicon.Tool
             ("slot_realization", "morph_case", typeof(Case))
         ];
 
+        // The one enumerated column in lemma_entry with no CHECK behind it, and it cannot have one: the
+        // list of vzory lives in Grammar.Czech's embedded pattern JSON, which neither the server schema
+        // nor the PHP admin can reach. A copy in a CHECK clause or an admin dropdown would be a second
+        // source of truth that drifts — and it would drift first on the sub-patterns (učitel, občan,
+        // turista, syn, král), which are project names rather than textbook ones. So the check belongs
+        // here, the one place where the lexicon and the pattern data are loaded by the same process.
+        private static readonly Lazy<IReadOnlyDictionary<string, IReadOnlySet<string>>> PatternsByCategory = new(() =>
+        {
+            var verbs = new JsonVerbDataProvider();
+
+            return new Dictionary<string, IReadOnlySet<string>>
+            {
+                [nameof(WordCategory.Noun)] = Fold(new JsonNounDataProvider().GetPatterns().Keys),
+                [nameof(WordCategory.Adjective)] = Fold(new JsonAdjectiveDataProvider().GetPatterns().Keys),
+
+                // Verbs accept both halves: the classes (trida4) and the named irregulars (moci, být),
+                // because CzechVerbConjugationService looks the pattern up in both.
+                [nameof(WordCategory.Verb)] = Fold(verbs.GetPatterns().Keys.Concat(verbs.GetIrregulars().Keys))
+            };
+        });
+
         /// <summary>
         /// Validates the lexicon at the supplied path.
         /// </summary>
@@ -76,6 +98,7 @@ namespace Grammar.Czech.Lexicon.Tool
                 CheckSchemaVersion(connection, errors);
                 CheckReferentialIntegrity(connection, errors);
                 CheckEnums(connection, errors);
+                CheckPatterns(connection, errors);
                 CheckLemmaKeys(connection, errors);
                 CheckFrames(connection, errors);
                 CheckSlots(connection, errors);
@@ -142,6 +165,43 @@ namespace Grammar.Czech.Lexicon.Tool
                 }
             }
         }
+
+        // A misspelled vzor is accepted by the database, by the admin's free-text field and by every other
+        // check here, and only surfaces as NotSupportedException("Noun pattern 'ucitel' not found.") the
+        // first time something declines the word — far from the row that caused it.
+        //
+        // The comparison folds case because all three inflection services look the pattern up through
+        // Pattern.ToLower(); matching more strictly than the runtime does would report working rows.
+        private static void CheckPatterns(SqliteConnection connection, List<string> errors)
+        {
+            const string sql = "SELECT DISTINCT category, pattern FROM lemma_entry WHERE pattern IS NOT NULL";
+
+            foreach (var row in Query(connection, sql))
+            {
+                var category = row[0]?.ToString() ?? string.Empty;
+                var pattern = row[1]?.ToString() ?? string.Empty;
+
+                if (!PatternsByCategory.Value.TryGetValue(category, out var known))
+                {
+                    errors.Add(
+                        $"lemma_entry.pattern je '{pattern}' u kategorie {category}, která vzory nemá. "
+                        + "Vzor patří jen ke kategoriím "
+                        + string.Join(", ", PatternsByCategory.Value.Keys) + ".");
+
+                    continue;
+                }
+
+                if (!known.Contains(pattern.ToLowerInvariant()))
+                {
+                    errors.Add(
+                        $"lemma_entry.pattern obsahuje '{pattern}', což mezi vzory kategorie {category} není. "
+                        + "Povolené: " + string.Join(", ", known.OrderBy(name => name, StringComparer.Ordinal)) + ".");
+                }
+            }
+        }
+
+        private static IReadOnlySet<string> Fold(IEnumerable<string> keys) =>
+            keys.Select(key => key.ToLowerInvariant()).ToHashSet();
 
         // lemma_key is what every lookup matches on and it is folded in C# with ToLowerInvariant, so a
         // hand-typed row with the wrong key is a lemma that quietly cannot be found. SQLite's own lower()

@@ -181,7 +181,7 @@ The schema in `Grammar.Czech.Lexicon.Tool/Schema/schema.sql` is deliberately por
 | command | what it does |
 |---|---|
 | `pull --url <api>` | downloads the dictionary from the API and replaces the local copy |
-| `validate` | reports what a bad row broke — a frame with no actor, a slot that can never surface, a `lemma_key` no lookup will match |
+| `validate` | reports what a bad row broke — a frame with no actor, a slot that can never surface, a `lemma_key` no lookup will match, a vzor no pattern data knows |
 | `build` | creates a lexicon from the schema and the seed, for working without a server |
 | `dump --out <sql>` | writes the database out as portable `INSERT`s, for review |
 | `export-json --out <dir>` | writes the same JSON the API serves, for seeding the server |

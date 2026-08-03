@@ -75,6 +75,29 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// A vzor that no pattern data knows is reported, and still nothing is left behind.
+        /// </summary>
+        /// <remarks>
+        /// The admin edits the vzor as free text and neither the CHECK constraints nor any other check
+        /// here looks at it, so a typo used to reach the database intact and only fail much later, the
+        /// first time something declined the word. "ucitel" without the háček is the realistic shape of
+        /// that typo now that vzory include names nobody has muscle memory for.
+        /// </remarks>
+        [TestMethod]
+        public void Check_UnknownPattern_ReportsAndKeepsNothing()
+        {
+            var working = WorkingPath();
+
+            var validation = LexiconPuller.Check(WithPattern("učitel", "ucitel"), _ => { }, working);
+
+            Assert.IsTrue(
+                validation.Errors.Any(error => error.Contains("'ucitel'", StringComparison.Ordinal)),
+                "Očekával jsem hlášku o neznámém vzoru, přišlo: " + string.Join("; ", validation.Errors));
+
+            Assert.IsFalse(File.Exists(working), "Kontrola po sobě nechala pracovní soubor.");
+        }
+
+        /// <summary>
         /// A server that answers with nothing does not read as an empty dictionary.
         /// </summary>
         [TestMethod]
@@ -105,6 +128,28 @@ namespace Grammar.Czech.Test
             => RoundTrip().Select(page => page.Table is "valency_slot" or "slot_realization"
                 ? page with { Rows = [] }
                 : page);
+
+        // Rewrites one vzor everywhere it appears, leaving every other column alone, so the only thing the
+        // validator can be reacting to is the pattern column itself.
+        private static IEnumerable<LexiconPage> WithPattern(string from, string to)
+            => RoundTrip().Select(page =>
+            {
+                if (page.Table != "lemma_entry")
+                {
+                    return page;
+                }
+
+                var column = page.Columns.ToList().IndexOf("pattern");
+
+                return page with
+                {
+                    Rows = page.Rows
+                        .Select(row => LexiconPage.ToDatabaseValue(row[column]) as string == from
+                            ? row.Select((value, index) => index == column ? to : value).ToList()
+                            : row)
+                        .ToList()
+                };
+            });
 
         private static IEnumerable<LexiconPage> EmptyPages()
             => LexiconSchema.Tables.Select(table => new LexiconPage
