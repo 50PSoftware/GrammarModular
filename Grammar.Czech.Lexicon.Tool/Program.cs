@@ -7,6 +7,9 @@ using System.Text.Json;
 // The dictionary is edited centrally, in MySQL behind a PHP admin, and read locally out of a SQLite
 // file. pull is what carries it across; build and dump are what keep the local file workable on its
 // own, and export-json is the same wire format in the other direction, for seeding the server.
+//
+// Settings come from the command line, from lexikon.json in the working directory or one of its
+// parents, or from the environment — see ToolSettings.
 
 Console.OutputEncoding = Encoding.UTF8;
 
@@ -23,29 +26,17 @@ static int Run(string[] args)
 
     try
     {
-        switch (args[0])
+        var settings = ToolSettings.Load(args);
+
+        return args[0] switch
         {
-            case "build":
-                return Build(args);
-
-            case "validate":
-                return Validate(args);
-
-            case "dump":
-                return Dump(args);
-
-            case "pull":
-                return Pull(args);
-
-            case "export-json":
-                return ExportJson(args);
-
-            default:
-                Console.Error.WriteLine($"Neznámý příkaz '{args[0]}'.");
-                PrintUsage();
-
-                return 1;
-        }
+            "build" => Build(args, settings),
+            "validate" => Validate(args, settings),
+            "dump" => Dump(args, settings),
+            "pull" => Pull(args, settings),
+            "export-json" => ExportJson(args, settings),
+            _ => Unknown(args[0]),
+        };
     }
     catch (Exception exception)
     {
@@ -55,68 +46,70 @@ static int Run(string[] args)
     }
 }
 
-static int Build(string[] args)
+static int Unknown(string command)
 {
-    var path = Option(args, "--out") ?? DefaultDatabasePath();
-    var force = args.Contains("--force");
+    Console.Error.WriteLine($"Neznámý příkaz '{command}'.");
+    PrintUsage();
 
-    LexiconBuilder.Build(path, force);
-    Console.WriteLine($"Lexikon vytvořen: {Path.GetFullPath(path)}");
-
-    return Validate(["validate", "--db", path]);
+    return 1;
 }
 
-static int Validate(string[] args)
+static int Build(string[] args, ToolSettings settings)
 {
-    // --url je vědomě jen z argumentu, ne z LEXICON_API_URL. Kdyby se bral z prostředí, `validate` bez
-    // argumentů by u někoho kontroloval lokální soubor a u někoho server, podle toho, co má nastavené.
-    var url = Option(args, "--url");
+    // Tady --out říká, kam lexikon vytvořit.
+    var path = Argument(args, "--out") ?? LexiconPath(settings);
 
-    if (url is null)
+    LexiconBuilder.Build(path, args.Contains("--force"));
+    Console.WriteLine($"Lexikon vytvořen: {Path.GetFullPath(path)}");
+
+    return Report(LexiconValidator.Validate(path), path);
+}
+
+static int Validate(string[] args, ToolSettings settings)
+{
+    // Kontrola serveru se musí vyžádat. Kdyby stačilo mít adresu v konfiguraci, `validate` bez
+    // argumentů by u jednoho člověka kontroloval lokální soubor a u druhého server.
+    var wantsServer = args.Contains("--server") || Array.IndexOf(args, "--url") >= 0;
+
+    if (!wantsServer)
     {
-        var path = Option(args, "--db") ?? DefaultDatabasePath();
+        var path = LexiconPath(settings);
 
         return Report(LexiconValidator.Validate(path), path);
     }
 
-    var token = Option(args, "--token") ?? Environment.GetEnvironmentVariable("LEXICON_API_TOKEN");
-    var pageSize = int.Parse(Option(args, "--page-size") ?? "5000");
-
+    var url = settings.RequireUrl();
     Console.WriteLine($"Kontroluji {url}");
 
-    using var client = new LexiconApiClient(new Uri(url), token, pageSize);
+    using var client = new LexiconApiClient(new Uri(url), settings.Token, settings.PageSize);
 
-    // Stáhne se celý slovník, zvaliduje a zahodí. Lokální lexikon se nemění ani při úspěchu — na to
-    // je pull; tohle odpovídá jen na otázku, jestli to, co je na serveru, vůbec jde načíst.
+    // Stáhne celý slovník, zvaliduje a zahodí. Lokální lexikon se nemění ani při úspěchu — na to je
+    // pull; tohle odpovídá jen na otázku, jestli to, co je na serveru, vůbec jde načíst.
     return Report(LexiconPuller.Check(client.Fetch(), Console.WriteLine), url);
 }
 
-static int Dump(string[] args)
+static int Dump(string[] args, ToolSettings settings)
 {
-    var path = Option(args, "--db") ?? DefaultDatabasePath();
-    var output = Option(args, "--out")
+    var output = Argument(args, "--out")
         ?? throw new InvalidOperationException("Chybí --out s cestou k .sql souboru.");
 
-    LexiconDumper.Dump(path, output);
+    // Tady --out říká, kam zapsat výpis; zdrojem je lexikon z --db nebo z nastavení.
+    LexiconDumper.Dump(LexiconPath(settings), output);
     Console.WriteLine($"Zapsáno: {Path.GetFullPath(output)}");
 
     return 0;
 }
 
-static int Pull(string[] args)
+static int Pull(string[] args, ToolSettings settings)
 {
-    var url = Option(args, "--url")
-        ?? Environment.GetEnvironmentVariable("LEXICON_API_URL")
-        ?? throw new InvalidOperationException(
-            "Chybí --url s adresou API, např. --url https://example.com/api/");
+    var url = settings.RequireUrl();
 
-    var token = Option(args, "--token") ?? Environment.GetEnvironmentVariable("LEXICON_API_TOKEN");
-    var destination = Option(args, "--out") ?? DefaultDatabasePath();
-    var pageSize = int.Parse(Option(args, "--page-size") ?? "5000");
+    // Tady --out říká, kam lexikon uložit.
+    var destination = Argument(args, "--out") ?? LexiconPath(settings);
 
     Console.WriteLine($"Stahuji z {url}");
 
-    using var client = new LexiconApiClient(new Uri(url), token, pageSize);
+    using var client = new LexiconApiClient(new Uri(url), settings.Token, settings.PageSize);
 
     var validation = LexiconPuller.Pull(client.Fetch(), destination, Console.WriteLine);
 
@@ -129,19 +122,17 @@ static int Pull(string[] args)
     return Report(validation, destination);
 }
 
-static int ExportJson(string[] args)
+static int ExportJson(string[] args, ToolSettings settings)
 {
-    var path = Option(args, "--db") ?? DefaultDatabasePath();
-    var output = Option(args, "--out")
+    var output = Argument(args, "--out")
         ?? throw new InvalidOperationException("Chybí --out s cestou k adresáři pro .json soubory.");
-    var pageSize = int.Parse(Option(args, "--page-size") ?? "5000");
 
     Directory.CreateDirectory(output);
 
     var written = 0;
     var pageNumbers = new Dictionary<string, int>(StringComparer.Ordinal);
 
-    foreach (var page in LexiconJsonExporter.Export(path, pageSize))
+    foreach (var page in LexiconJsonExporter.Export(LexiconPath(settings), settings.PageSize))
     {
         var number = pageNumbers.GetValueOrDefault(page.Table) + 1;
         pageNumbers[page.Table] = number;
@@ -157,6 +148,8 @@ static int ExportJson(string[] args)
 
     return 0;
 }
+
+static string LexiconPath(ToolSettings settings) => settings.DatabasePath ?? DefaultDatabasePath();
 
 static int Report(ValidationReport validation, string path)
 {
@@ -182,8 +175,8 @@ static int Report(ValidationReport validation, string path)
     return 0;
 }
 
-// The lexicon lives with the rest of the Czech data, so running the tool without arguments from
-// anywhere in the repository works on the file that actually ships.
+// Poslední záchrana, když cestu neřekl nikdo: uvnitř repozitáře se lexikon najde sám. Nainstalovaný
+// nástroj spuštěný jinde ji nenajde a řekne, jak ji zadat.
 static string DefaultDatabasePath()
 {
     var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
@@ -202,10 +195,11 @@ static string DefaultDatabasePath()
     }
 
     throw new InvalidOperationException(
-        "Nenašel jsem Grammar.Czech/Data/Lexicon. Spusť nástroj z repozitáře, nebo předej --db / --out.");
+        $"Nevím, kde je lexikon. Zapiš cestu do {ToolSettings.FileName} jako \"database\", "
+        + "nebo ji předej přes --db.");
 }
 
-static string? Option(string[] args, string name)
+static string? Argument(string[] args, string name)
 {
     var index = Array.IndexOf(args, name);
 
@@ -214,19 +208,22 @@ static string? Option(string[] args, string name)
 
 static void PrintUsage()
 {
-    Console.WriteLine("""
-        Grammar.Czech.Lexicon.Tool
+    Console.WriteLine($"""
+        lexikon — správa českého slovníku
 
-          build       [--out <cesta>] [--force]      Vytvoří lexikon ze schématu a seedů a zvaliduje ho.
-          validate    [--db  <cesta>]                Zkontroluje lokální lexikon.
-          validate    --url <api> [--token <t>]      Zkontroluje, co má server — nic nemění.
-          dump        [--db  <cesta>] --out <sql>    Vypíše lexikon jako přenositelné INSERTy.
-          pull        --url <api> [--token <t>]      Stáhne slovník z API a nahradí jím lokální lexikon.
-                      [--out <cesta>] [--page-size <n>]
-          export-json [--db  <cesta>] --out <adresář> Vypíše lexikon ve formátu, který posílá API.
-                      [--page-size <n>]
+          build       [--db <cesta>] [--force]       Vytvoří lexikon ze schématu a seedů a zvaliduje ho.
+          validate    [--db <cesta>]                 Zkontroluje lokální lexikon.
+          validate    --server | --url <api>         Zkontroluje, co má server — nic nemění.
+          pull        [--url <api>] [--out <cesta>]  Stáhne slovník z API a nahradí jím lokální lexikon.
+          dump        [--db <cesta>] --out <sql>     Vypíše lexikon jako přenositelné INSERTy.
+          export-json [--db <cesta>] --out <adresář> Vypíše lexikon ve formátu, který posílá API.
 
-        Bez --db / --out se použije Grammar.Czech/Data/Lexicon/grammar.czech.lexicon.db.
-        pull bere --url a --token i z proměnných LEXICON_API_URL a LEXICON_API_TOKEN.
+        Nastavení se bere v tomhle pořadí:
+
+          1. argument         --url, --token, --db, --out, --page-size
+          2. {ToolSettings.FileName,-16}    url, token, database, pageSize — hledá se i v nadřazených adresářích
+          3. prostředí        LEXICON_API_URL, LEXICON_API_TOKEN
+
+        Token nech v prostředí; {ToolSettings.FileName} patří do gitu, token ne.
         """);
 }

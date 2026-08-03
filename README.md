@@ -190,6 +190,19 @@ The schema in `Grammar.Czech.Lexicon.Tool/Schema/schema.sql` is deliberately por
 dotnet run --project Grammar.Czech.Lexicon.Tool -- pull --url https://example.com/api/ --token <token>
 ```
 
+`Grammar.Czech.Lexicon.Tool` packs as a .NET tool, so it can be installed once and used from anywhere:
+
+```bash
+dotnet tool install -g 50PSoftware.GrammarModular.LexiconTool --prerelease
+lexikon pull
+```
+
+Settings come from three places, in this order: a command-line argument, `lexikon.json` in the working directory or any parent, and the environment. Each answers a different question — an argument is what you want this once, the file is what the project always wants and belongs in version control, the environment is what this machine knows. That is also where the token lives: commit the file with the address and the destination, keep `LEXICON_API_TOKEN` in the environment, and a key absent from the file falls through rather than overriding it with a placeholder. See `lexikon.json.example`.
+
+A relative `database` in the file is relative to the file, not to wherever the tool was invoked — the file is searched for up the directory tree precisely so it can be used from anywhere below it.
+
+The tool package does not contain the dictionary either. It is the thing that fetches it.
+
 A pull writes to a temporary file and only moves it into place once `validate` passes, so a failed or interrupted download leaves the working lexicon untouched.
 
 #### The wire format

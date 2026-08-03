@@ -7,8 +7,17 @@
     <Nullable>enable</Nullable>
     <RootNamespace>Grammar.Czech.Lexicon.Tool</RootNamespace>
 
-    <!-- A build utility, not something to publish. -->
-    <IsPackable>false</IsPackable>
+    <!--
+      Balí se jako .NET tool: `dotnet tool install` a pak `lexikon pull` odkudkoli.
+    -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>lexikon</ToolCommandName>
+    <PackageId>50PSoftware.GrammarModular.LexiconTool</PackageId>
+    <Version>1.0.0-preview.22</Version>
+    <Authors>Vojtěch Pchálek</Authors>
+    <Company>50PSoftware</Company>
+    <Description>Správa slovníku pro Grammar Modular — stahování, kontrola a export.</Description>
+    <PackageTags>czech;nlp;lexicon;cli</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
@@ -39,5 +48,24 @@
   <ItemGroup>
     <EmbeddedResource Include="Php\schema-tables.php" />
   </ItemGroup>
+
+  <!--
+    Slovník ven z balíčku nástroje.
+
+    Grammar.Czech ho má jako Content s CopyToOutputDirectory, aby ho měly po ruce testy a CLI, a přes
+    ProjectReference se zkopíruje i sem. Pack="false" tam brání jen tomu, aby šel do balíčku
+    Grammar.Czech — do publish výstupu tohohle projektu se dostane stejně, a `dotnet tool` balí právě
+    ten. Ověřeno rozbalením nupkg, ne přečtením konfigurace: byl tam.
+
+    Vadí to dvakrát. Nainstalovaný nástroj by nesl slovník, který nikdy nečte — cestu k němu bere
+    z nastavení, ne z místa, kde je nainstalovaný — a hlavně by ho rozdával každému, kdo si nástroj
+    nainstaluje. To je přesně to, čemu se vyhýbá i balíček knihovny.
+  -->
+  <Target Name="DropLexiconFromToolPackage" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+                             Condition="'%(Filename)%(Extension)' == 'grammar.czech.lexicon.db'" />
+    </ItemGroup>
+  </Target>
 
 </Project>

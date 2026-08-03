@@ -190,6 +190,19 @@ O soubor se stará `Grammar.Czech.Lexicon.Tool`:
 dotnet run --project Grammar.Czech.Lexicon.Tool -- pull --url https://example.com/api/ --token <token>
 ```
 
+`Grammar.Czech.Lexicon.Tool` se balí jako .NET tool, takže se dá nainstalovat jednou a volat odkudkoli:
+
+```bash
+dotnet tool install -g 50PSoftware.GrammarModular.LexiconTool --prerelease
+lexikon pull
+```
+
+Nastavení se bere ze tří míst v tomhle pořadí: argument, `lexikon.json` v pracovním adresáři nebo kterémkoli nadřazeném, a prostředí. Každé odpovídá na jinou otázku — argument je to, co chceš teď, soubor je to, co chce projekt vždycky a patří do gitu, prostředí je to, co ví tenhle stroj. Tím se řeší i token: do souboru napiš adresu a cíl, token nech v `LEXICON_API_TOKEN`, a klíč, který v souboru není, propadne dál místo aby ho přebil zástupnou hodnotou. Vzor je v `lexikon.json.example`.
+
+Relativní `database` v souboru se počítá od toho souboru, ne od místa, kde nástroj spustíš — hledá se totiž i v nadřazených adresářích právě proto, aby šel používat odkudkoli pod ním.
+
+Balíček nástroje slovník taky neobsahuje. Nástroj je to, co ho stáhne.
+
 Pull staví novou databázi do dočasného souboru a přesune ji na místo, teprve když projde `validate` — neúspěšné nebo přerušené stažení funkční lexikon nesáhne.
 
 #### Formát na drátě

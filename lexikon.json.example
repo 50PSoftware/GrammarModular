@@ -1,0 +1,10 @@
+{
+  "_comment": [
+    "Zkopíruj na lexikon.json. Hledá se v pracovním adresáři a v nadřazených, takže stačí jeden",
+    "v kořeni repozitáře. Prázdná nebo chybějící hodnota propadne na proměnnou prostředí.",
+    "Token sem NEPIŠ — lexikon.json patří do gitu, token do LEXICON_API_TOKEN."
+  ],
+  "url": "https://tvadomena.cz/api/",
+  "database": "Grammar.Czech/Data/Lexicon/grammar.czech.lexicon.db",
+  "pageSize": 5000
+}
