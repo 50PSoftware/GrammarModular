@@ -52,10 +52,18 @@ namespace Grammar.Czech.Lexicon.Tool
         /// will match. Running the check answers "is what I just typed loadable" without waiting for the
         /// next real pull and without touching the working lexicon either way.
         /// </remarks>
-        public static ValidationReport Check(IEnumerable<LexiconPage> pages, Action<string> report)
+        /// <param name="workingPath">
+        /// Where to build the throwaway copy, or <see langword="null"/> for a unique name in the
+        /// temporary directory. Supplied by the tests, which have to observe that the file is gone
+        /// afterwards and cannot do that by watching a directory they share with each other.
+        /// </param>
+        public static ValidationReport Check(
+            IEnumerable<LexiconPage> pages,
+            Action<string> report,
+            string? workingPath = null)
             => Apply(
                 pages,
-                Path.Combine(Path.GetTempPath(), $"lexicon-check-{Guid.NewGuid():N}.db"),
+                workingPath ?? Path.Combine(Path.GetTempPath(), $"lexicon-check-{Guid.NewGuid():N}.db"),
                 destination: null,
                 report);
 

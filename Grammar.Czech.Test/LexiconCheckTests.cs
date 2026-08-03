@@ -36,16 +36,16 @@ namespace Grammar.Czech.Test
         [TestMethod]
         public void Check_SoundLexicon_PassesAndKeepsNothing()
         {
-            var before = TemporaryCheckFiles();
+            var working = WorkingPath();
 
-            var validation = LexiconPuller.Check(RoundTrip(), _ => { });
+            var validation = LexiconPuller.Check(RoundTrip(), _ => { }, working);
 
             Assert.AreEqual(
                 0,
                 validation.Errors.Count,
                 "Kontrola nahlásila chyby: " + string.Join("; ", validation.Errors));
 
-            AssertNothingLeftBehind(before);
+            Assert.IsFalse(File.Exists(working), "Kontrola po sobě nechala pracovní soubor.");
         }
 
         /// <summary>
@@ -59,9 +59,9 @@ namespace Grammar.Czech.Test
         [TestMethod]
         public void Check_FrameWithoutSlots_ReportsAndKeepsNothing()
         {
-            var before = TemporaryCheckFiles();
+            var working = WorkingPath();
 
-            var validation = LexiconPuller.Check(WithoutSlots(), _ => { });
+            var validation = LexiconPuller.Check(WithoutSlots(), _ => { }, working);
 
             Assert.IsTrue(
                 validation.Errors.Count > 0,
@@ -71,7 +71,7 @@ namespace Grammar.Czech.Test
                 validation.Errors.Any(error => error.Contains("nemá žádný slot", StringComparison.Ordinal)),
                 "Očekával jsem hlášku o rámci bez slotu, přišlo: " + string.Join("; ", validation.Errors));
 
-            AssertNothingLeftBehind(before);
+            Assert.IsFalse(File.Exists(working), "Kontrola po sobě nechala pracovní soubor.");
         }
 
         /// <summary>
@@ -114,16 +114,10 @@ namespace Grammar.Czech.Test
                 Rows = []
             });
 
-        // Only files that appeared are the test's business. The temporary directory is shared, and the
-        // tests in this class may run alongside each other, so one of them holding a working file while
-        // another takes its snapshot says nothing about either.
-        private static void AssertNothingLeftBehind(string[] before)
-            => CollectionAssert.AreEquivalent(
-                Array.Empty<string>(),
-                TemporaryCheckFiles().Except(before).ToArray(),
-                "Kontrola po sobě nechala pracovní soubor.");
-
-        private static string[] TemporaryCheckFiles()
-            => Directory.GetFiles(Path.GetTempPath(), "lexicon-check-*.db");
+        // Each test names its own working file and watches only that one. Watching the temporary
+        // directory instead was a race: these tests run alongside each other, so one of them would see
+        // the other's file mid-flight and report it as something left behind.
+        private static string WorkingPath()
+            => Path.Combine(Path.GetTempPath(), $"lexicon-test-{Guid.NewGuid():N}.db");
     }
 }
