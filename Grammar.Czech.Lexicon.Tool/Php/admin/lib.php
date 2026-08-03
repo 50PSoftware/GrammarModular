@@ -253,6 +253,52 @@ function admin_enum(string $name, string $column): ?string
 }
 
 /**
+ * Reads the posted vzor and checks it against the patterns the category has.
+ *
+ * Unlike admin_enum, an unknown value is not quietly dropped to null. A vzor is the one field the
+ * inflection services cannot work around: a null means "nothing declines this word", which is a
+ * legitimate state, while a typo silently turned into null would look like a deliberate choice and
+ * leave a word that never inflects with nobody knowing why. So this reports instead, and the caller
+ * refuses the save.
+ *
+ * Case is folded because all three inflection services look the pattern up through Pattern.ToLower().
+ * The value is stored as typed — the C# side folds again on the way in.
+ *
+ * @param-out string|null $error
+ */
+function admin_pattern(string $name, string $category, ?string &$error): ?string
+{
+    $error = null;
+    $value = admin_text($name);
+
+    if ($value === null) {
+        return null;
+    }
+
+    $label = LEXICON_ENUMS['category'][$category] ?? $category;
+
+    if (!array_key_exists($category, LEXICON_PATTERNS)) {
+        $error = 'Vzor „' . $value . '“ nelze uložit: ' . $label
+            . ' se podle vzoru neskloňuje. Nech pole prázdné.';
+
+        return null;
+    }
+
+    $wanted = mb_strtolower($value, 'UTF-8');
+
+    foreach (LEXICON_PATTERNS[$category] as $pattern) {
+        if ($wanted === mb_strtolower($pattern, 'UTF-8')) {
+            return $value;
+        }
+    }
+
+    $error = 'Vzor „' . $value . '“ neexistuje. Slovní druh ' . $label . ' má tyhle: '
+        . implode(', ', LEXICON_PATTERNS[$category]) . '.';
+
+    return null;
+}
+
+/**
  * Computes the lookup key from a lemma.
  *
  * mb_strtolower and not strtolower: the plain one works byte by byte and leaves Á alone, which would

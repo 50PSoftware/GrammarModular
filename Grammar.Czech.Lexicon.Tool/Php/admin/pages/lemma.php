@@ -39,6 +39,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         admin_redirect(['p' => 'lemma', 'id' => $id]);
     }
 
+    $category = admin_enum('category', 'category') ?? 'Noun';
+
+    // Vzor se kontroluje ještě před založením lexému níž — jinak by odmítnuté uložení nechalo
+    // v tabulce prázdný lexém, na který už nic neukáže.
+    $patternError = null;
+    $pattern = admin_pattern('pattern', $category, $patternError);
+
+    if ($patternError !== null) {
+        admin_flash($patternError, 'err');
+        admin_redirect(['p' => 'lemma', 'id' => $id]);
+    }
+
     // Lexém: buď existující, nebo nový, nebo žádný. Slova bez valence — většina substantiv — ho
     // nepotřebují a NULL je u nich správná hodnota, ne mezera.
     $lexemeId = admin_text('lexeme_id');
@@ -54,9 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $lemma,
         admin_lemma_key($lemma),
         admin_int('homonym_index', 1),
-        admin_enum('category', 'category') ?? 'Noun',
+        $category,
         admin_enum('gender', 'gender'),
-        admin_text('pattern'),
+        $pattern,
         admin_flag('is_animate'),
         admin_flag('has_mobile_e'),
         admin_flag('has_genitive_plural_shortening'),
@@ -145,7 +157,17 @@ $lexemes = admin_all('SELECT lexeme_id, primary_lemma FROM lexeme ORDER BY prima
         </p>
         <p class="field">
             <label for="pattern">Vzor</label>
-            <input type="text" id="pattern" name="pattern" value="<?= h((string) $value('pattern')) ?>" class="mono">
+            <input type="text" id="pattern" name="pattern" value="<?= h((string) $value('pattern')) ?>" class="mono" list="patterns">
+            <?php /* Nabídka, ne výběr: vzor závisí na slovním druhu, což je jiné pole. Co se opravdu
+                     uloží, rozhoduje admin_pattern() při ukládání, ne tenhle seznam. */ ?>
+            <datalist id="patterns">
+                <?php foreach (LEXICON_PATTERNS as $patternCategory => $patterns): ?>
+                    <?php foreach ($patterns as $pattern): ?>
+                        <option value="<?= h($pattern) ?>" label="<?= h(LEXICON_ENUMS['category'][$patternCategory] ?? $patternCategory) ?>"></option>
+                    <?php endforeach; ?>
+                <?php endforeach; ?>
+            </datalist>
+            <small>Prázdné u slov, která se podle vzoru neskloňují.</small>
         </p>
         <p class="field">
             <label for="gender">Rod</label>

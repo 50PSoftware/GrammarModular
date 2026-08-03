@@ -156,3 +156,41 @@ const LEXICON_ENUMS = [
         'Instrumental' => '7. instrumentál',
     ],
 ];
+
+/**
+ * The inflection patterns each word category accepts, keyed by the C# WordCategory member name.
+ *
+ * Not an enum, which is why it is not in LEXICON_ENUMS: the real list is the pattern JSON embedded in
+ * Grammar.Czech, and nothing on the server can read it. The column has no CHECK for the same reason,
+ * so before this list existed a mistyped vzor saved, pulled and validated cleanly, and only failed the
+ * first time something declined the word — NotSupportedException("Noun pattern 'ucitel' not found."),
+ * nowhere near the row that caused it.
+ *
+ * A copy is a copy, and this one is kept honest the same way the enums are: PhpSchemaParityTests
+ * compares it against LexiconValidator.PatternsByCategory, which reads the JSON. A vzor added to the
+ * data and not here is one nobody can enter; one added here and not to the data saves and then throws.
+ * Either way the build fails rather than the data entry.
+ *
+ * Nouns and adjectives take their declension patterns. Verbs take both the conjugation classes and the
+ * named irregular patterns, because CzechVerbConjugationService looks the pattern up in both.
+ * Categories that do not inflect by pattern are absent on purpose — a pattern on one is an error, not
+ * an empty choice.
+ *
+ * Compared case-insensitively, matching the inflection services, which all look up through ToLower().
+ */
+const LEXICON_PATTERNS = [
+    'Noun' => [
+        'hrad', 'kost', 'král', 'kuře', 'les', 'moře', 'muž', 'město', 'občan', 'pán', 'píseň',
+        'předseda', 'růže', 'soudce', 'stavení', 'stroj', 'syn', 'turista', 'učitel', 'žena',
+    ],
+    'Adjective' => [
+        'jarní', 'matčin', 'mladý', 'otcův',
+    ],
+    'Verb' => [
+        'trida1', 'trida2', 'trida3', 'trida4', 'trida5', 'dojme',
+        'bere', 'běžet', 'být', 'chtít', 'číst', 'dát', 'dělá', 'hrát', 'jet', 'jíst', 'jít',
+        'jmout', 'klást', 'kryje', 'kupuje', 'ležet', 'maže', 'mine', 'mít', 'moci', 'nese',
+        'peče', 'pomoci', 'prosí', 'psát', 'říct', 'řvát', 'sedět', 'spát', 'téci', 'tiskne',
+        'umět', 'umře', 'vědět', 'vidět', 'vzít', 'zvát',
+    ],
+];

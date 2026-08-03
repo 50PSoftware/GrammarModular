@@ -119,6 +119,43 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// The vzory the admin accepts are exactly the ones the pattern data defines.
+        /// </summary>
+        /// <remarks>
+        /// This one is not an enum and cannot be a CHECK: the real list is the pattern JSON embedded in
+        /// Grammar.Czech, which nothing on the server can read, so the admin has to carry a copy to
+        /// refuse a typo at save time. This is what stops the copy from being a second source of truth.
+        /// A vzor added to the JSON and not to PHP is one nobody can enter; one added to PHP and not to
+        /// the JSON saves, survives a pull, passes validate, and throws on the first form generated.
+        /// </remarks>
+        [TestMethod]
+        public void Php_AcceptsExactlyThePatternsTheDataDefines()
+        {
+            var offered = ParsePatterns(ToolResources.Read(ToolResources.PhpSchemaTables));
+
+            CollectionAssert.AreEquivalent(
+                LexiconValidator.PatternsByCategory.Keys.ToArray(),
+                offered.Keys.ToArray(),
+                "Kategorie se vzory se rozešly.\n"
+                + $"  C#:  {string.Join(", ", LexiconValidator.PatternsByCategory.Keys)}\n"
+                + $"  PHP: {string.Join(", ", offered.Keys)}");
+
+            foreach (var (category, expected) in LexiconValidator.PatternsByCategory)
+            {
+                // Folded on both sides for the same reason the validator folds: the inflection services
+                // look the pattern up through ToLower(), so casing is not what these two must agree on.
+                var actual = offered[category].Select(name => name.ToLowerInvariant()).ToArray();
+
+                CollectionAssert.AreEquivalent(
+                    expected.ToArray(),
+                    actual,
+                    $"Kategorie '{category}': PHP nabízí jiné vzory než data.\n"
+                    + $"  chybí v PHP: {string.Join(", ", expected.Except(actual))}\n"
+                    + $"  navíc v PHP: {string.Join(", ", actual.Except(expected))}");
+            }
+        }
+
+        /// <summary>
         /// Gets the constrained columns and the enum each one mirrors.
         /// </summary>
         public static IEnumerable<object[]> EnumColumns =>
@@ -134,6 +171,33 @@ namespace Grammar.Czech.Test
             ["obligatoriness", typeof(Core.Enums.Obligatoriness)],
             ["morph_case", typeof(Core.Enums.Case)]
         ];
+
+        // Each entry is 'Category' => ['vzor', 'vzor', …] — a flat list, unlike the enum map, because a
+        // vzor is its own label. The values carry diacritics, so the value pattern cannot be [a-z_]+.
+        private static Dictionary<string, List<string>> ParsePatterns(string source)
+        {
+            var block = Regex.Match(source, @"const\s+LEXICON_PATTERNS\s*=\s*\[(?<body>.*?)^\];",
+                RegexOptions.Singleline | RegexOptions.Multiline);
+
+            Assert.IsTrue(block.Success, "V schema-tables.php nenajdu konstantu LEXICON_PATTERNS.");
+
+            var categories = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+
+            foreach (Match entry in Regex.Matches(
+                block.Groups["body"].Value,
+                @"'(?<category>[A-Za-z]+)'\s*=>\s*\[(?<patterns>[^\]]*)\]",
+                RegexOptions.Singleline))
+            {
+                categories[entry.Groups["category"].Value] = Regex
+                    .Matches(entry.Groups["patterns"].Value, @"'(?<pattern>[^']+)'")
+                    .Select(pattern => pattern.Groups["pattern"].Value)
+                    .ToList();
+            }
+
+            Assert.IsTrue(categories.Count > 0, "Parser nenačetl z LEXICON_PATTERNS žádnou kategorii.");
+
+            return categories;
+        }
 
         // Each entry is 'column' => ['Value' => 'label', …]. Only the keys are data; the labels are
         // Czech and belong to the screen.

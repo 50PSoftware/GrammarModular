@@ -47,7 +47,10 @@ namespace Grammar.Czech.Lexicon.Tool
         // source of truth that drifts — and it would drift first on the sub-patterns (učitel, občan,
         // turista, syn, král), which are project names rather than textbook ones. So the check belongs
         // here, the one place where the lexicon and the pattern data are loaded by the same process.
-        private static readonly Lazy<IReadOnlyDictionary<string, IReadOnlySet<string>>> PatternsByCategory = new(() =>
+        //
+        // Exposed because the admin needs the same answer and must not compute its own: PhpSchemaParityTests
+        // holds LEXICON_PATTERNS in schema-tables.php against this, the way it already does for the enums.
+        private static readonly Lazy<IReadOnlyDictionary<string, IReadOnlySet<string>>> patternsByCategory = new(() =>
         {
             var verbs = new JsonVerbDataProvider();
 
@@ -61,6 +64,15 @@ namespace Grammar.Czech.Lexicon.Tool
                 [nameof(WordCategory.Verb)] = Fold(verbs.GetPatterns().Keys.Concat(verbs.GetIrregulars().Keys))
             };
         });
+
+        /// <summary>
+        /// Gets the inflection patterns each word category accepts, folded to lower case.
+        /// </summary>
+        /// <remarks>
+        /// Keys are <see cref="WordCategory"/> member names. Categories that inflect by pattern are the
+        /// only ones present; anything else carrying a pattern is an error rather than an empty list.
+        /// </remarks>
+        public static IReadOnlyDictionary<string, IReadOnlySet<string>> PatternsByCategory => patternsByCategory.Value;
 
         /// <summary>
         /// Validates the lexicon at the supplied path.
@@ -181,12 +193,12 @@ namespace Grammar.Czech.Lexicon.Tool
                 var category = row[0]?.ToString() ?? string.Empty;
                 var pattern = row[1]?.ToString() ?? string.Empty;
 
-                if (!PatternsByCategory.Value.TryGetValue(category, out var known))
+                if (!PatternsByCategory.TryGetValue(category, out var known))
                 {
                     errors.Add(
                         $"lemma_entry.pattern je '{pattern}' u kategorie {category}, která vzory nemá. "
                         + "Vzor patří jen ke kategoriím "
-                        + string.Join(", ", PatternsByCategory.Value.Keys) + ".");
+                        + string.Join(", ", PatternsByCategory.Keys) + ".");
 
                     continue;
                 }
