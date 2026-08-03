@@ -60,12 +60,12 @@ Supported patterns:
 
 | Gender / group | Patterns |
 |---|---|
-| masculine animate | `pán`, `občan`, `muž`, `učitel`, `předseda`, `turista`, `soudce` |
+| masculine animate | `pán`, `občan`, `syn`, `muž`, `učitel`, `král`, `předseda`, `turista`, `soudce` |
 | masculine inanimate | `hrad`, `les`, `stroj` |
 | feminine | `žena`, `růže`, `píseň`, `kost` |
 | neuter | `město`, `moře`, `kuře`, `stavení` |
 
-Patterns can inherit endings through `inheritsFrom`; `les`, for instance, inherits from `hrad` and overrides only the cases that differ. `učitel`, `občan` and `turista` are the same mechanism used for one thing: the `-é` nominative and vocative plural that the *-tel*, *-an* and *-ista/-ita* suffix classes take (*učitelé*, *občané*, *turisté* — not *učiteli*, *občani*, *turisti*), over `muž`, `pán` and `předseda` respectively. Irregular nouns live in `Grammar.Czech/Data/Rules/Nouns/irregulars.json` (19 lemmas, e.g. *oko*, *dům*, *ruka*, *noha*, *ucho*). The file `Grammar.Czech/Data/Rules/Nouns/propers.json` is empty — the mechanism for proper names exists, the data does not.
+Patterns can inherit endings through `inheritsFrom`; `les`, for instance, inherits from `hrad` and overrides only the cases that differ. The five masculine animate sub-patterns all use it for the same thing, a nominative and vocative plural the base vzor does not have: `učitel`, `občan` and `turista` give `-é` to the *-tel*, *-an* and *-ista/-ita* suffix classes (*učitelé*, *občané*, *turisté*), and `syn` and `král` give `-ové` to the lexically defined class that takes it (*synové*, *biologové*, *králové*). Softening rules are inherited along with endings — a rule named for `pán` governs `občan` and `syn` too — so a sub-pattern does not have to restate the palatalization its base already describes. Irregular nouns live in `Grammar.Czech/Data/Rules/Nouns/irregulars.json` (19 lemmas, e.g. *oko*, *dům*, *ruka*, *noha*, *ucho*). The file `Grammar.Czech/Data/Rules/Nouns/propers.json` is empty — the mechanism for proper names exists, the data does not.
 
 ### Adjectives
 

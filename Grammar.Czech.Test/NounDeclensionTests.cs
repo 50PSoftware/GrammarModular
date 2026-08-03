@@ -29,7 +29,7 @@ namespace Grammar.Czech.Test
             var prefixService = new CzechPrefixService(new JsonPrefixDataProvider());
             var epenthesisRule = new CzechEpenthesisRuleEvaluator(registry);
             var wordStructureResolver = new CzechWordStructureResolver(verbDataprovider, nounDataPrvider, prefixService, phonologyService, registry, epenthesisRule);
-            var softeningEvaluator = new CzechSofteningRuleEvaluator();
+            var softeningEvaluator = new CzechSofteningRuleEvaluator(nounDataPrvider);
             var epenthesisEvaluator = new CzechEpenthesisRuleEvaluator(registry);
             var jotationEvaluator = new CzechJotationRuleEvaluator(registry, wordStructureResolver);
             var syncretismEvaluator = new CzechSyncretismRuleEvaluator();
@@ -411,6 +411,17 @@ namespace Grammar.Czech.Test
                     // vzoru pán, která se na podvzor neváží, tu nic neřeší — 5. p. sg. je prosté občane.
                     { "občan", ("občan", Gender.Masculine, true, null, new [] { "občan", "občana", "občanovi", "občana", "občane", "občanovi", "občanem",
                                             "občané", "občanů", "občanům", "občany", "občané", "občanech", "občany"}) },
+                    // Podvzor syn: pán s -ové v 1. a 5. p. mn. č. 5. p. sg. je "synu", ne *syne —
+                    // to je vlastnost slova syn, ne celé třídy, takže sedí v overrides vzoru
+                    // (uplatní se jen když lemma == vzor), stejně jako "pane" u vzoru pán.
+                    { "syn", ("syn", Gender.Masculine, true, null, new [] { "syn", "syna", "synovi", "syna", "synu", "synovi", "synem",
+                                            "synové", "synů", "synům", "syny", "synové", "synech", "syny"}) },
+                    // biolog je členem podvzoru syn a drží obojí, co dědění pravidel po vzoru pán
+                    // přineslo: 5. p. sg. "biologu" (velární základ, bez měkčení) a 6. p. mn. č.
+                    // "biolozích" (g→z, 2. palatalizace). Zároveň hlídá, že -ové palatalizaci
+                    // v 1. p. mn. č. nespouští — jinak by tu stálo *biolozi.
+                    { "biolog", ("syn", Gender.Masculine, true, null, new [] { "biolog", "biologa", "biologovi", "biologa", "biologu", "biologovi", "biologem",
+                                            "biologové", "biologů", "biologům", "biology", "biologové", "biolozích", "biology"}) },
                     { "hrad", ("hrad", Gender.Masculine, false, null, new [] {"hrad", "hradu", "hradu", "hrad", "hrade", "hradě", "hradem",
                                             "hrady", "hradů", "hradům", "hrady", "hrady", "hradech", "hrady"}) },
                     { "muž", ("muž", Gender.Masculine, true, null, new [] { "muž", "muže", "muži", "muže", "muži", "muži", "mužem",
@@ -423,6 +434,10 @@ namespace Grammar.Czech.Test
                     // IJP to označuje za relikt staršího skloňování. Řeší irregulars.json, ne pattern data.
                     { "přítel", ("učitel", Gender.Masculine, true, null, new [] { "přítel", "přítele", "příteli", "přítele", "příteli", "příteli", "přítelem",
                                             "přátelé", "přátel", "přátelům", "přátele", "přátelé", "přátelích", "přáteli"}) },
+                    // Podvzor král: muž s -ové v 1. a 5. p. mn. č. Zbytek je čistý muž, včetně
+                    // 2. p. sg. "krále" (ne *krála — jde o historicky měkký kmen, ne o odchylku).
+                    { "král", ("král", Gender.Masculine, true, null, new [] { "král", "krále", "králi", "krále", "králi", "králi", "králem",
+                                            "králové", "králů", "králům", "krále", "králové", "králích", "králi"}) },
                     { "stroj", ("stroj", Gender.Masculine, false, null, new [] { "stroj", "stroje", "stroji", "stroj", "stroji", "stroji", "strojem",
                                             "stroje", "strojů", "strojům", "stroje", "stroje", "strojích", "stroji"}) },
                     { "předseda", ("předseda", Gender.Masculine, true, null, new[] {"předseda", "předsedy", "předsedovi", "předsedu", "předsedo", "předsedovi", "předsedou",

@@ -11,6 +11,21 @@ namespace Grammar.Czech.Services
     /// </summary>
     public class CzechSofteningRuleEvaluator : ISofteningRuleEvaluator<CzechWordRequest>
     {
+        // The inheritsFrom chain is hand-written JSON, so a cycle is a typo away and would
+        // otherwise spin forever. Eight is far past anything the data plausibly needs.
+        private const int MaxInheritanceDepth = 8;
+
+        private readonly INounDataProvider _nounDataProvider;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CzechSofteningRuleEvaluator"/> type.
+        /// </summary>
+        /// <param name="nounDataProvider">The provider whose patterns supply the inheritance chain.</param>
+        public CzechSofteningRuleEvaluator(INounDataProvider nounDataProvider)
+        {
+            _nounDataProvider = nounDataProvider;
+        }
+
         private readonly List<SofteningRule> rules = new()
         {
             new("žena", WordCategory.Noun, Number.Singular, Case.Dative, IsVelarStem, EndingTransformation: "-e", Context: PalatalizationContext.Second),
@@ -23,6 +38,14 @@ namespace Grammar.Czech.Services
             // so there is no -ec left to match by the time the stem reaches us.
             new("muž", WordCategory.Noun, Number.Singular, Case.Vocative,
                 (req, _) => req.Lemma?.EndsWith("ec", StringComparison.Ordinal) == true, EndingTransformation: "-e"),
+
+            // Vzor syn is pán with -ové in the nominative and vocative plural. The palatalization
+            // below exists because pán's ending there is -i; -ové does not trigger it, so duch has
+            // to come out duchové and not *dušové. These two sit ahead of the pán block on purpose —
+            // GetMatchingRule takes the first match, and pán's rules now reach syn through
+            // inheritsFrom.
+            new("syn", WordCategory.Noun, Number.Plural, Case.Nominative, ApplySoftening: false),
+            new("syn", WordCategory.Noun, Number.Plural, Case.Vocative, ApplySoftening: false),
 
             new("pán", WordCategory.Noun, Number.Plural, Case.Nominative,
     EndsWithK,
@@ -42,6 +65,12 @@ namespace Grammar.Czech.Services
             new("pán", WordCategory.Noun, Number.Plural, Case.Locative,
     EndsWithCh,
     EndingTransformation: "-ích", Context: PalatalizationContext.First),
+            // g belongs here with k and ch — IJP has biolog → o biolozích. It was missing because
+            // no g-stem word reached the locative plural before; the -log borrowings all take -ové
+            // in the nominative plural, so they only arrive here via vzor syn.
+            new("pán", WordCategory.Noun, Number.Plural, Case.Locative,
+    EndsWithG,
+    EndingTransformation: "-ích", Context: PalatalizationContext.Second),
 
             new("pán", WordCategory.Noun, Number.Singular, Case.Vocative, IsConsonantRStem,
     EndingTransformation: "-e", Context: PalatalizationContext.First),
@@ -70,6 +99,8 @@ namespace Grammar.Czech.Services
 
         private static bool EndsWithCh(CzechWordRequest req, string stem) => stem.EndsWith("ch", StringComparison.Ordinal);
 
+        private static bool EndsWithG(CzechWordRequest req, string stem) => stem.EndsWith("g", StringComparison.Ordinal);
+
         // Velar stems take -u in the vocative sg. with no palatalization. All four velars, per IJP:
         // "jejichž tvarotvorný základ končí na -k, -g, -h, -ch, mají koncovku -u" — vojáku, biologu,
         // vrahu, hochu. The g was missing and gave biologe.
@@ -77,7 +108,7 @@ namespace Grammar.Czech.Services
             EndsWithK(req, stem)
             || EndsWithCh(req, stem)
             || stem.EndsWith("h", StringComparison.Ordinal)
-            || stem.EndsWith("g", StringComparison.Ordinal);
+            || EndsWithG(req, stem);
 
         // A consonant before the final r means syllabic r, which palatalizes in the vocative sg.:
         // bratr → bratře, Petr → Petře, ministr → ministře. A vowel before the r keeps the plain
@@ -96,10 +127,37 @@ namespace Grammar.Czech.Services
             || (req.Lemma.EndsWith("ha") && !req.Lemma.EndsWith("cha"))
             || req.Lemma.EndsWith("ga");
 
+        // A rule named for a base vzor governs that vzor's sub-patterns too. občan is pán with a
+        // different nominative plural, so pán's velar vocative (biologu, not *biologe) and its k/ch
+        // palatalization are občan's rules as well — and duplicating the whole pán block per
+        // sub-pattern is how they would silently drift apart. Walk inheritsFrom instead.
+        private bool MatchesPattern(string? rulePattern, string? requestPattern)
+        {
+            if (rulePattern == null)
+            {
+                return true;
+            }
+
+            var patterns = _nounDataProvider.GetPatterns();
+            var current = requestPattern?.ToLower();
+
+            for (var depth = 0; !string.IsNullOrEmpty(current) && depth < MaxInheritanceDepth; depth++)
+            {
+                if (current == rulePattern)
+                {
+                    return true;
+                }
+
+                current = patterns.TryGetValue(current, out var pattern) ? pattern.InheritsFrom?.ToLower() : null;
+            }
+
+            return false;
+        }
+
         private SofteningRule? GetMatchingRule(CzechWordRequest wordRequest, string stem)
         {
             return rules.FirstOrDefault(rule =>
-                (rule.Pattern == null || rule.Pattern == wordRequest.Pattern) &&
+                MatchesPattern(rule.Pattern, wordRequest.Pattern) &&
                 (rule.Category == null || rule.Category == wordRequest.WordCategory) &&
                 (rule.Number == null || rule.Number == wordRequest.Number) &&
                 (rule.Case == null || rule.Case == wordRequest.Case) &&

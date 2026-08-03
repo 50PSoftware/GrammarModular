@@ -1,6 +1,7 @@
 using Grammar.Core.Enums;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
+using Grammar.Czech.Providers.JsonProviders;
 using Grammar.Czech.Services;
 
 namespace Grammar.Czech.Test
@@ -24,7 +25,7 @@ namespace Grammar.Czech.Test
         [TestInitialize]
         public void Setup()
         {
-            softeningRuleEvaluator = new CzechSofteningRuleEvaluator();
+            softeningRuleEvaluator = new CzechSofteningRuleEvaluator(new JsonNounDataProvider());
         }
 
         /// <summary>

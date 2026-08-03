@@ -218,6 +218,21 @@
       }
     }
   },
+  "syn": {
+    "gender": "masculineAnimate",
+    "inheritsFrom": "pán",
+    "endings": {
+      "plural": {
+        "Nominative": "-ové",
+        "Vocative": "-ové"
+      }
+    },
+    "overrides": {
+      "singular": {
+        "Vocative": "synu"
+      }
+    }
+  },
   "muž": {
     "gender": "masculineAnimate",
     "stem": "muž",
@@ -248,6 +263,16 @@
       "plural": {
         "Nominative": "-é",
         "Vocative": "-é"
+      }
+    }
+  },
+  "král": {
+    "gender": "masculineAnimate",
+    "inheritsFrom": "muž",
+    "endings": {
+      "plural": {
+        "Nominative": "-ové",
+        "Vocative": "-ové"
       }
     }
   },
