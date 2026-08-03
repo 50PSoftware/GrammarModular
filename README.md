@@ -48,7 +48,7 @@ dotnet add reference ../Grammar/Grammar.Czech/Grammar.Czech.csproj
 
 The version is still a `-preview`, so a package reference needs to allow prerelease versions.
 
-All grammatical data ships as embedded resources inside `Grammar.Czech`, so no data files need to be copied next to the assembly.
+The rule data ships as embedded resources inside `Grammar.Czech`, so no rule files need to be copied next to the assembly. The lexicon is the exception and is supplied by the deployment — see [Lexicon and valency](#lexicon-and-valency).
 
 ## What the project does today
 
@@ -151,6 +151,22 @@ The parts in public use include:
 `SqliteValencyProvider` reads `Grammar.Czech/Data/Lexicon/grammar.czech.lexicon.db`, a SQLite database. It is the one data source here that is not embedded JSON, because it is the part meant to grow into thousands of entries; the rule files under `Data/Rules/` describe closed classes and stay as they are.
 
 The dictionary is edited centrally, in MySQL behind a PHP admin, and this file is the local read-only copy pulled from it. Identifiers are assigned by the server and carried over unchanged — a copy that renumbered could never be compared against the server it came from again.
+
+The dictionary is **not carried inside the NuGet package**, and that is deliberate: a word added on the server is not a reason to release the library, and a consumer should not have to wait for one. The package ships the code; the deployment supplies the data and can replace it without rebuilding anything.
+
+A consumer names its copy in one of three ways, tried in this order:
+
+```csharp
+services.AddCzechGrammarServices(@"D:\data\grammar.czech.lexicon.db");   // explicit
+```
+
+```
+GRAMMAR_CZECH_LEXICON=/srv/grammar/grammar.czech.lexicon.db               // environment
+```
+
+…or simply puts `grammar.czech.lexicon.db` beside the application, which is where the provider looks last. With none of them set it throws at startup naming all three, rather than behaving like a dictionary that happens to be empty.
+
+Separating them means the two can drift, so `SqliteValencyProvider` reads `schema_version` when it opens the file and refuses a lexicon written for a schema it does not read. That check belongs in the library rather than only in the tool's validator, since a package consumer has the library and not the tool.
 
 The database holds three layers, kept apart because one lemma has exactly one morphological identity but a lexeme may have several senses and each sense a frame per diathesis:
 

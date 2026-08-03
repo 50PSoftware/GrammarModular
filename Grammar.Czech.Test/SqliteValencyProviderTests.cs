@@ -257,5 +257,51 @@ namespace Grammar.Czech.Test
 
             StringAssert.Contains(exception.Message, missing);
         }
+
+        /// <summary>
+        /// A lexicon written for a different schema is refused when the provider is built, not later.
+        /// </summary>
+        /// <remarks>
+        /// The dictionary is supplied by the deployment rather than carried in the package, so the two
+        /// are updated separately and can disagree. A newer lexicon read by an older library does not
+        /// fail cleanly — a column the queries name is simply absent, or present and meaning something
+        /// else — and the tool's validator, which checks the same thing, is not something a consumer of
+        /// the library has. Failing at construction puts it at application startup instead of on
+        /// whichever request first happened to touch a word.
+        /// </remarks>
+        [TestMethod]
+        public void Constructor_LexiconFromAnotherSchema_Throws()
+        {
+            var copy = Path.Combine(Path.GetTempPath(), $"jine-schema-{Guid.NewGuid():N}.db");
+            File.Copy(Path.Combine(AppContext.BaseDirectory, SqliteValencyProvider.DefaultFileName), copy);
+
+            try
+            {
+                using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={copy}"))
+                {
+                    connection.Open();
+
+                    using var command = connection.CreateCommand();
+                    command.CommandText =
+                        "UPDATE lexicon_meta SET meta_value = '99' WHERE meta_key = 'schema_version'";
+                    command.ExecuteNonQuery();
+                }
+
+                Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+
+                var exception = Assert.ThrowsException<InvalidOperationException>(
+                    () => new SqliteValencyProvider(copy));
+
+                StringAssert.Contains(exception.Message, "99");
+                StringAssert.Contains(
+                    exception.Message,
+                    SqliteValencyProvider.SupportedSchemaVersion.ToString());
+            }
+            finally
+            {
+                Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+                File.Delete(copy);
+            }
+        }
     }
 }

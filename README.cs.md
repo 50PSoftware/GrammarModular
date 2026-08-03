@@ -48,7 +48,7 @@ dotnet add reference ../Grammar/Grammar.Czech/Grammar.Czech.csproj
 
 Verze je pořád `-preview`, takže package reference musí povolit předběžné verze.
 
-Gramatická data jsou vložená jako embedded resources přímo v `Grammar.Czech`, takže se vedle sestavení nekopírují žádné datové soubory.
+Pravidlová data jsou vložená jako embedded resources přímo v `Grammar.Czech`, takže se vedle sestavení nekopírují žádné soubory s pravidly. Výjimkou je lexikon, který dodává nasazení — viz [Lexikon a valence](#lexikon-a-valence).
 
 ## Co projekt teď umí
 
@@ -151,6 +151,22 @@ Mezi veřejně používané části patří:
 `SqliteValencyProvider` čte `Grammar.Czech/Data/Lexicon/grammar.czech.lexicon.db`, databázi SQLite. Je to jediný zdroj dat, který tu není embedded JSON — právě on má růst do tisíců hesel, zatímco pravidlové soubory v `Data/Rules/` popisují uzavřené třídy a zůstávají, jak jsou.
 
 Slovník se edituje centrálně, v MySQL nebo MariaDB za PHP administrací, a tenhle soubor je jeho lokální kopie určená jen ke čtení. Identifikátory přiděluje server a kopie je přebírá beze změny — přečíslovaná kopie by se už nedala porovnat se serverem, ze kterého vznikla.
+
+Slovník **není součástí NuGet balíčku**, a je to záměr: heslo přidané na serveru není důvod vydávat knihovnu a konzument na to nemá čekat. Balíček veze kód, data dodává nasazení — a může je vyměnit, aniž by cokoli přestavovalo.
+
+Konzument řekne, kde svou kopii má, jedním ze tří způsobů, které se zkoušejí v tomhle pořadí:
+
+```csharp
+services.AddCzechGrammarServices(@"D:\data\grammar.czech.lexicon.db");   // přímo
+```
+
+```
+GRAMMAR_CZECH_LEXICON=/srv/grammar/grammar.czech.lexicon.db               // prostředí
+```
+
+…nebo prostě položí `grammar.czech.lexicon.db` vedle aplikace, kam se provider dívá nakonec. Když není ani jedno, spadne to při startu s hláškou, která jmenuje všechny tři — místo aby se to tvářilo jako prázdný slovník.
+
+Tím, že jdou zvlášť, se můžou rozejít, takže `SqliteValencyProvider` při otevření souboru přečte `schema_version` a lexikon psaný pro schéma, které neumí, odmítne. Ta kontrola patří do knihovny, ne jen do validátoru v nástroji — konzument balíčku má knihovnu, nástroj ne.
 
 Databáze má tři vrstvy, oddělené proto, že jedno lemma má právě jednu morfologickou identitu, kdežto lexém může mít víc významů a každý význam rámec pro každou diatezi:
 

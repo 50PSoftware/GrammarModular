@@ -6,6 +6,7 @@ using Grammar.Czech.Models;
 using Microsoft.Data.Sqlite;
 using System.Collections.Concurrent;
 using System.Data.Common;
+using System.Globalization;
 
 namespace Grammar.Czech.Providers.SqliteProviders
 {
@@ -27,14 +28,27 @@ namespace Grammar.Czech.Providers.SqliteProviders
     public sealed class SqliteValencyProvider : IValencyProvider<CzechLexicalEntry>
     {
         /// <summary>
-        /// The default file name of the lexicon database, as copied next to the assembly.
+        /// The file name looked for beside the application when no path is given.
         /// </summary>
         public const string DefaultFileName = "grammar.czech.lexicon.db";
 
         /// <summary>
-        /// The schema version this provider reads, matching PRAGMA user_version in the database.
+        /// The environment variable naming the lexicon, used when no path is passed in code.
+        /// </summary>
+        /// <remarks>
+        /// The dictionary is not shipped inside the package: it grows on its own schedule, and binding it
+        /// to a package version would mean a release of this library every time a word is added. A
+        /// deployment therefore says where its copy is, and this is the way to say it without a rebuild.
+        /// </remarks>
+        public const string PathVariable = "GRAMMAR_CZECH_LEXICON";
+
+        /// <summary>
+        /// The schema version this provider reads, matching schema_version in lexicon_meta.
         /// </summary>
         public const int SupportedSchemaVersion = 1;
+
+        private const string SchemaVersionQuery =
+            "SELECT meta_value FROM lexicon_meta WHERE meta_key = 'schema_version'";
 
         private const string EntryQuery = """
             SELECT lemma, category, gender, pattern, is_animate, has_mobile_e,
@@ -91,22 +105,30 @@ namespace Grammar.Czech.Providers.SqliteProviders
         /// Initializes a new instance of the <see cref="SqliteValencyProvider"/> type over a lexicon file.
         /// </summary>
         /// <param name="databasePath">
-        /// The path to the lexicon database, or <see langword="null"/> to take <see cref="DefaultFileName"/>
-        /// from the directory the assembly runs out of.
+        /// The path to the lexicon database, or <see langword="null"/> to look at
+        /// <see cref="PathVariable"/> and then beside the application.
         /// </param>
         /// <exception cref="FileNotFoundException">The lexicon database does not exist.</exception>
+        /// <remarks>
+        /// The dictionary is not carried inside the package. It grows on its own schedule — a word added
+        /// on the server is not a reason to release the library — so a deployment points at its own copy
+        /// and can replace that copy without rebuilding anything.
+        /// </remarks>
         public SqliteValencyProvider(string? databasePath = null)
         {
-            var path = databasePath ?? Path.Combine(AppContext.BaseDirectory, DefaultFileName);
+            var path = databasePath
+                ?? Environment.GetEnvironmentVariable(PathVariable)
+                ?? Path.Combine(AppContext.BaseDirectory, DefaultFileName);
 
             // A missing file has to fail here rather than at the first lookup. SQLite would otherwise
             // create an empty database and every lemma would come back as simply absent, which reads as a
-            // gap in the dictionary instead of as a build that failed to copy the file.
+            // gap in the dictionary rather than as a lexicon that was never supplied.
             if (!File.Exists(path))
             {
                 throw new FileNotFoundException(
-                    $"Lexikon '{path}' neexistuje. Zkontroluj, že se {DefaultFileName} kopíruje do výstupu "
-                    + "(CopyToOutputDirectory), nebo předej cestu konstruktoru.",
+                    $"Lexikon '{path}' neexistuje. Slovník se nedodává v balíčku — stáhni si ho a ukaž na něj: "
+                    + $"AddCzechGrammarServices(cesta), proměnnou {PathVariable}, nebo polož {DefaultFileName} "
+                    + "vedle aplikace.",
                     path);
             }
 
@@ -120,6 +142,8 @@ namespace Grammar.Czech.Providers.SqliteProviders
 
             _connectionFactory = () => new SqliteConnection(connectionString);
             _sourceDescription = path;
+
+            VerifySchemaVersion();
         }
 
         /// <summary>
@@ -137,6 +161,54 @@ namespace Grammar.Czech.Providers.SqliteProviders
         {
             _connectionFactory = connectionFactory;
             _sourceDescription = sourceDescription;
+
+            VerifySchemaVersion();
+        }
+
+        /// <summary>
+        /// Refuses a lexicon built to a schema this version does not read.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">The versions do not match.</exception>
+        /// <remarks>
+        /// This matters more now that the dictionary is supplied by the deployment rather than carried in
+        /// the package: the two can be updated separately, so they can disagree. Reading a newer lexicon
+        /// with an older library does not fail cleanly — a column the queries expect is simply missing,
+        /// or worse, present and meaning something else. The tool's validator checks the same thing, but
+        /// the validator lives in the tool and a consumer of the library does not have it.
+        /// <para>
+        /// Checked when the provider is constructed rather than at the first lookup, so a mismatch stops
+        /// the application at startup instead of on whichever request first touched a word.
+        /// </para>
+        /// </remarks>
+        private void VerifySchemaVersion()
+        {
+            string? stored;
+
+            try
+            {
+                using var connection = OpenConnection();
+                using var command = connection.CreateCommand();
+                command.CommandText = SchemaVersionQuery;
+
+                stored = command.ExecuteScalar() as string;
+            }
+            catch (DbException exception)
+            {
+                throw new InvalidOperationException(
+                    $"Lexikon '{_sourceDescription}' nejde přečíst. Je to opravdu databáze slovníku? "
+                    + exception.Message,
+                    exception);
+            }
+
+            if (stored == SupportedSchemaVersion.ToString(CultureInfo.InvariantCulture))
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                $"Lexikon '{_sourceDescription}' je psaný pro schéma verze {stored ?? "(neuvedeno)"}, "
+                + $"tahle verze knihovny čte {SupportedSchemaVersion}. Stáhni slovník odpovídající "
+                + "verzi balíčku, nebo balíček aktualizuj.");
         }
 
         /// <summary>

@@ -32,28 +32,28 @@
   </ItemGroup>
 
   <!--
-    The lexicon is a SQLite file and SQLite reads files, not streams, so this one data file is copied
-    next to the assembly rather than embedded like the rule JSONs. contentFiles alone does not reach a
-    PackageReference consumer's output directory, so the targets file below does the copy there; the
-    None item ships it for both consumption styles.
+    The lexicon is copied beside anything built in this repository — the tests and the CLI resolve it
+    from their own output directory — but it is deliberately NOT packed.
 
-    The Exists condition is what lets the repository bootstrap itself: Grammar.Czech.Lexicon.Tool builds
-    the database and references this project to do it, so requiring the file here would mean the tool
-    could never be built to produce it. A missing file is not silently tolerated at runtime — the
-    provider throws FileNotFoundException naming the path.
+    A dictionary and a morphology library change on different schedules: a word added on the server is
+    not a reason to release a new version of this package, and a consumer should not have to wait for
+    one. So the package carries the code and the deployment supplies the data, pointing at it with
+    AddCzechGrammarServices(path) or the GRAMMAR_CZECH_LEXICON variable.
+
+    What that costs, and how it is paid: the two can now drift apart, so SqliteValencyProvider checks
+    schema_version when it opens the file and refuses a lexicon written for a schema it does not read.
+
+    The Exists condition lets the repository bootstrap itself: Grammar.Czech.Lexicon.Tool builds the
+    database and references this project to do it, so requiring the file here would mean the tool could
+    never be built to produce it.
   -->
   <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)Data\Lexicon\grammar.czech.lexicon.db')">
-    <!--
-      Content and not None: only Content items carry CopyToOutputDirectory across a ProjectReference, and
-      the test project resolves the lexicon from its own output directory like any other consumer does.
-    -->
-    <Content Include="Data\Lexicon\grammar.czech.lexicon.db" Link="grammar.czech.lexicon.db" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="contentFiles\any\net8.0\;build\" />
+    <Content Include="Data\Lexicon\grammar.czech.lexicon.db"
+             Link="grammar.czech.lexicon.db"
+             CopyToOutputDirectory="PreserveNewest"
+             Pack="false" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="build\50PSoftware.GrammarModular.Czech.targets" Pack="true" PackagePath="build\" />
-  </ItemGroup>
-
-  <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>
+<ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>
 
 </Project>
