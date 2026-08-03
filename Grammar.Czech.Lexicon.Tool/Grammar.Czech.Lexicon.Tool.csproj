@@ -26,12 +26,19 @@
   </ItemGroup>
 
   <!--
-    The PHP is the server half of the same contract and is not compiled into anything, but it is copied
-    to the output so the tests can read it: its column map has to agree with LexiconSchema, and two
-    hand-maintained lists that nothing compares will drift.
+    One file, named rather than globbed. It holds the server's half of the column map and the permitted
+    values, and PhpSchemaParityTests reads it from the output directory to check it against
+    LexiconSchema and the C# enums — two hand-maintained lists that nothing compares will drift.
+
+    This was Php\**\*.php, which copied the entire PHP application into bin. Two reasons not to:
+    nothing in the build has any use for the endpoint or the admin, and .env.php matches *.php, so a
+    real configuration file with the API token and the database password in it was copied into the
+    build output — and, because Content flows across a ProjectReference, into the test project's
+    output as well. Both are git-ignored, so nothing would have reached a commit; but a secret in
+    three places instead of one outlives its rotation and travels with any copy of bin.
   -->
   <ItemGroup>
-    <Content Include="Php\**\*.php" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Php\schema-tables.php" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
