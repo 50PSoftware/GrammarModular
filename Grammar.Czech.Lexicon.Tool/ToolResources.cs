@@ -33,9 +33,36 @@ namespace Grammar.Czech.Lexicon.Tool
         public const string MysqlSchema = "Schema.schema.mysql.sql";
 
         /// <summary>
-        /// The starting contents of the dictionary.
+        /// Lists the seed files in the order they have to be applied.
         /// </summary>
-        public const string Seed = "Data.seed.sql";
+        /// <returns>Resource names, lowest number first.</returns>
+        /// <remarks>
+        /// The dictionary is written in numbered blocks — seed.000.sql, seed.001.sql — because each one
+        /// continues the identifiers of the last and none of them can be replayed on its own. Ordering is
+        /// therefore not cosmetic: applying 001 before 000 fails on a foreign key, which is the good case.
+        /// <para>
+        /// The number is in the name rather than the base file being special-cased, so that sorting the
+        /// names ordinally is the whole of the rule. A base called seed.sql would sort <em>after</em>
+        /// seed.001.sql, since '0' precedes 's'.
+        /// </para>
+        /// <para>
+        /// These are the bootstrap corpus, not a running log. Once the central database is live, entries
+        /// are written in the admin and pulled from there; a seed file added after that point is a second
+        /// source of truth that every pull silently discards.
+        /// </para>
+        /// </remarks>
+        public static IReadOnlyList<string> SeedFiles()
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var prefix = $"{assembly.GetName().Name}.Data.seed.";
+
+            return assembly.GetManifestResourceNames()
+                .Where(name => name.StartsWith(prefix, StringComparison.Ordinal)
+                    && name.EndsWith(".sql", StringComparison.Ordinal))
+                .Order(StringComparer.Ordinal)
+                .Select(name => name[(assembly.GetName().Name!.Length + 1)..])
+                .ToList();
+        }
 
         /// <summary>
         /// The server's copy of the column map and the permitted values.

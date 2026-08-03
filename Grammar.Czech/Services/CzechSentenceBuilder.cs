@@ -332,6 +332,15 @@ namespace Grammar.Czech.Services
 
         private ClauseElement ApplySlot(ClauseElement element, ValencyFrame? frame, string verbLemma)
         {
+            // A vocative is a form of address, not an argument. It stands outside the argument structure —
+            // Studente, dělej! names who is spoken to, and the verb governs it in no way — so no frame
+            // licenses it and none should be asked to. Checking it against one rejected every imperative
+            // naming its addressee, as soon as the verb gained a frame at all.
+            if (element.Word.Case == Case.Vocative)
+            {
+                return element;
+            }
+
             var slot = frame is null ? null : valencyService.GetSlot(frame, element.Functor);
 
             // An inner participant belongs to the verb, so a verb with no slot for it cannot take it at all.

@@ -144,7 +144,7 @@ namespace Grammar.Czech.Test
                 [
                     Student(),
                     contrastive,
-                    ClauseElement.Of(WhPronoun("kdo", Case.Dative), FgdFunctor.ADDR, InformationStatus.Interrogative)
+                    ClauseElement.Of(WhPronoun("kdo", Case.Dative), FgdFunctor.BEN, InformationStatus.Interrogative)
                 ],
                 Terminator = "?"
             };

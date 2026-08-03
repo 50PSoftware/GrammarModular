@@ -342,7 +342,7 @@ namespace Grammar.Czech.Test
                     Number = Number.Singular,
                     IsAnimate = true
                 },
-                @case == Case.Dative ? FgdFunctor.ADDR : FgdFunctor.PAT,
+                @case == Case.Dative ? FgdFunctor.BEN : FgdFunctor.PAT,
                 status);
 
         /// <summary>
