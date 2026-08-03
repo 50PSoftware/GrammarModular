@@ -29,34 +29,92 @@ define('LEXICON_ADMIN', true);
 
 require __DIR__ . '/admin/lib.php';
 
-admin_session_start();
-admin_check_csrf();
+// Všechno pod jedním odchytem. Bez něj vyletí neošetřená výjimka z PDO jako fatální chyba PHP —
+// s celou cestou na serveru, jménem souboru a stack trace, vypsanými do prohlížeče komukoli, kdo ji
+// vyvolal. Detail patří do logu, ne na stránku.
+try {
+    admin_session_start();
+    admin_check_csrf();
 
-$page = (string) ($_GET['p'] ?? 'list');
+    $page = (string) ($_GET['p'] ?? 'list');
 
-if ($page === 'logout') {
-    admin_sign_out();
-    admin_redirect(['p' => 'list']);
+    if ($page === 'logout') {
+        admin_sign_out();
+        admin_redirect(['p' => 'list']);
+    }
+
+    if (!admin_is_signed_in()) {
+        admin_login_page();
+        exit(0);
+    }
+
+    // Zápisy si zpracuje stránka sama a přesměruje; sem se dostane jen vykreslení.
+    $view = match ($page) {
+        'lemma' => __DIR__ . '/admin/pages/lemma.php',
+        'lexeme' => __DIR__ . '/admin/pages/lexeme.php',
+        'frame' => __DIR__ . '/admin/pages/frame.php',
+        default => __DIR__ . '/admin/pages/list.php',
+    };
+
+    ob_start();
+    require $view;
+    $content = ob_get_clean();
+
+    admin_layout($content);
+} catch (Throwable $exception) {
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+
+    error_log('lexikon admin: ' . $exception);
+
+    http_response_code(500);
+    admin_error_page(admin_explain($exception));
 }
 
-if (!admin_is_signed_in()) {
-    admin_login_page();
-    exit(0);
+/**
+ * Přeloží výjimku do věty, se kterou se dá něco udělat.
+ *
+ * Většina jich nic srozumitelného neřekne a zůstane u obecné hlášky. Jedna ale ano, a je natolik
+ * pravděpodobná, že se vyplatí ji pojmenovat: schéma na serveru vzniklo z schema.sql místo
+ * schema.mysql.sql, takže primární klíče nejsou AUTO_INCREMENT. Administrace identifikátory nevkládá
+ * — spoléhá, že si je databáze přidělí — takže první založení čehokoli skončí chybou 1364.
+ */
+function admin_explain(Throwable $exception): string
+{
+    if ($exception instanceof PDOException
+        && str_contains($exception->getMessage(), "doesn't have a default value")) {
+        return 'Tabulky nemají AUTO_INCREMENT na primárním klíči. Schéma nejspíš vzniklo '
+            . 'z schema.sql, což je varianta pro SQLite — pro MariaDB platí schema.mysql.sql. '
+            . 'Spusť Schema/repair.mysql-autoincrement.sql; data se tím nemění.';
+    }
+
+    return 'Něco se pokazilo. Podrobnost je v error logu serveru.';
 }
 
-// Zápisy si zpracuje stránka sama a přesměruje; sem se dostane jen vykreslení.
-$view = match ($page) {
-    'lemma' => __DIR__ . '/admin/pages/lemma.php',
-    'lexeme' => __DIR__ . '/admin/pages/lexeme.php',
-    'frame' => __DIR__ . '/admin/pages/frame.php',
-    default => __DIR__ . '/admin/pages/list.php',
-};
-
-ob_start();
-require $view;
-$content = ob_get_clean();
-
-admin_layout($content);
+/**
+ * Vykreslí chybovou stránku bez čehokoli, co by mohlo selhat podruhé.
+ */
+function admin_error_page(string $message): void
+{
+    ?><!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Chyba — slovník</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+    <p class="msg err"><?= h($message) ?></p>
+    <p><a href="?p=list">Zpět na seznam</a></p>
+</main>
+</body>
+</html>
+<?php
+}
 
 /**
  * Vykreslí přihlašovací stránku a případně zpracuje odeslané heslo.

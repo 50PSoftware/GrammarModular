@@ -5,7 +5,7 @@ namespace Grammar.Czech.Lexicon.Tool
     /// <summary>
     /// Creates lexicon databases — empty ones for an import to fill, or seeded ones to start from.
     /// </summary>
-    internal static class LexiconBuilder
+    public static class LexiconBuilder
     {
         /// <summary>
         /// Builds a new lexicon database holding the seed entries.

@@ -1,9 +1,23 @@
 -- Grammar.Czech — lexicon and valency schema.
 --
--- This file is the source of truth for the shape of the dictionary. It is deliberately written in
--- portable SQL: SQLite is the first backend, not the last one, and MySQL, Microsoft SQL and Firebird
--- are meant to take the same DDL. Everything SQLite-specific lives in schema.sqlite.sql, which runs
--- after this file.
+-- ┌───────────────────────────────────────────────────────────────────────────────────────────────┐
+-- │ THIS FILE IS FOR SQLITE. For MySQL or MariaDB use schema.mysql.sql instead.                    │
+-- │                                                                                                │
+-- │ The two are not interchangeable, whatever the portability below suggests. This one has no      │
+-- │ AUTO_INCREMENT — deliberately, because on the SQLite side identifiers come from the writer:     │
+-- │ the seed files state them outright and a pull carries the server's over unchanged. The admin    │
+-- │ does not state them, so on a server built from this file every insert fails with               │
+-- │                                                                                                │
+-- │     1364 Field 'slot_id' doesn't have a default value                                          │
+-- │                                                                                                │
+-- │ If that has already happened, repair.mysql-autoincrement.sql fixes it without touching data.    │
+-- └───────────────────────────────────────────────────────────────────────────────────────────────┘
+--
+-- This file is the source of truth for the shape of the dictionary. It is written in portable SQL so
+-- that a variant for another engine is a translation rather than a redesign — SQLite is the first
+-- backend, not the last one. What "portable" does not mean is that the same file can be run anywhere:
+-- each engine has its own variant, differing in exactly the places noted below. Everything
+-- SQLite-specific lives in schema.sqlite.sql, which runs after this file.
 --
 -- Rules the portability rests on, so that later edits keep it:
 --   * VARCHAR with an explicit length, never TEXT — MySQL cannot index TEXT without a prefix length.

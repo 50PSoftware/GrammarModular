@@ -329,7 +329,14 @@ VALUES
     (33, 33, 'Accusative', NULL, NULL, 0, 1),
     (34, 34, 'Nominative', NULL, NULL, 0, 1),
     (35, 35, NULL,         NULL, NULL, 1, 1),
-    (36, 36, 'Accusative', NULL, NULL, 0, 2),
+
+    -- Preference řadí realizace uvnitř jednoho slotu, ne sloty proti sobě. Tohle je jediná realizace
+    -- slotu PAT, takže musí být 1; s dvojkou by se PAT slovesa chtít nevygeneroval vůbec.
+    --
+    -- Že chtít tíhne spíš k infinitivu (chci jít) než k předmětu (chci vodu), je vztah mezi slotem 35
+    -- a slotem 36 — a ten tímhle sloupcem vyjádřit nejde. Nese ho obligatornost: COMPL je Typical,
+    -- PAT je Optional.
+    (36, 36, 'Accusative', NULL, NULL, 0, 1),
     (37, 37, 'Nominative', NULL, NULL, 0, 1),
     (38, 38, NULL,         NULL, NULL, 1, 1),
     (39, 39, 'Nominative', NULL, NULL, 0, 1),
