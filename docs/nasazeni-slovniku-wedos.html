@@ -567,20 +567,7 @@
             <code>charset=utf8mb4</code> v DSN není volitelný. Bez něj může spojení vyjednat latin1
             a diakritika přijde rozsypaná — tiše, protože rozsypaný text je pořád text.
           </p>
-          <div class="warn">
-            <span class="warn-label">Když chceš zůstat u obyčejného <code>.env</code></span>
-            <p>
-              Jde to, <code>.htaccess</code> ho zakazuje. Ale <code>env.php</code> odmítne nastartovat,
-              dokud to nepotvrdíš — přidej do souboru <code>LEXICON_ALLOW_ENV_IN_DOCROOT=1</code>.
-              Cokoli jiného než <code>1</code>, <code>true</code>, <code>yes</code> nebo <code>on</code>
-              nechá pojistku stát, takže překlep selže bezpečně.
-            </p>
-            <p>
-              Pak to <strong>ověř</strong> requestem z kroku 6. Kdyby měl hosting
-              <code>AllowOverride None</code>, Apache <code>.htaccess</code> tiše ignoruje — API by
-              přes <code>/api/</code> jelo dál a soubor by byl při tom veřejný.
-            </p>
-          </div>
+          
           <p>Token vygeneruj, nevymýšlej ho:</p>
           <p class="caption">PowerShell</p>
           <div class="code"><pre>$b = New-Object byte[] 32
@@ -764,11 +751,7 @@ dotnet run --project Grammar.Czech.Lexicon.Tool -- `
               (nejspíš <code>AllowOverride None</code>)</td>
             <td>Přejít na <code>.env.php</code>, token i heslo databáze rovnou vyměnit</td>
           </tr>
-          <tr>
-            <td class="sym">500 a v logu „leží v document rootu“</td>
-            <td>Obyčejný <code>.env</code> uvnitř <code>www/</code> bez potvrzení</td>
-            <td><code>LEXICON_ALLOW_ENV_IN_DOCROOT=1</code>, nebo lépe přejít na <code>.env.php</code></td>
-          </tr>
+          
           <tr>
             <td class="sym">401 se správným tokenem</td>
             <td>Server ořízl hlavičku <code>Authorization</code></td>
@@ -823,13 +806,7 @@ dotnet run --project Grammar.Czech.Lexicon.Tool -- `
             <td>klient</td>
             <td>Adresa endpointu, alternativa k <code>--url</code></td>
           </tr>
-          <tr>
-            <td><code>LEXICON_ALLOW_ENV_IN_DOCROOT</code></td>
-            <td>server</td>
-            <td>Nastav na <code>1</code>, jen když necháváš obyčejný <code>.env</code>
-              v document rootu a chráníš ho přes <code>.htaccess</code>. Bez toho
-              <code>env.php</code> odmítne nastartovat. S <code>.env.php</code> netřeba</td>
-          </tr>
+          
         </tbody>
       </table>
     </div>

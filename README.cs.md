@@ -213,8 +213,6 @@ www/                ← document root
 
 **Tajemství patří do `.env.php`, ne do `.env`.** Když administrace jede z kořene, je document root jediné místo, kam můžou; a obyčejný `.env` tam vydá jako text kterýkoli server, kterému nebylo řečeno jinak — `https://example.com/.env` rozdá heslo do databáze a v logu zůstane jen řádek v access logu. `.env.php` vrací pole, takže požadavek na něj se provede místo aby se vypsal, a to drží bez `.htaccess`, s vypnutým `AllowOverride` i na nginxu.
 
-Zůstat u obyčejného `.env` jde pořád — dodávaný `.htaccess` ho zakazuje — ale musí to být vyslovená volba: `env.php` odmítne nastartovat, dokud není nastaveno `LEXICON_ALLOW_ENV_IN_DOCROOT=1`, v prostředí nebo přímo v tom `.env`. Cokoli jiného než `1`/`true`/`yes`/`on` nechá pojistku stát, takže překlep selže bezpečně. Tak či tak to ověř přes `curl -i https://…/.env` — je to jediný způsob, jak zjistit, jestli se `.htaccess` vůbec uplatňuje. Při `AllowOverride None` ho Apache tiše ignoruje a web jede dál, zatímco je soubor veřejný.
-
 Konfigurace se čte nejdřív ze skutečného prostředí, teprve pak ze souboru, takže pool PHP-FPM může kteroukoli jednotlivou hodnotu přebít přes `env[NAME]` bez editace. `getenv()` pod FPM vidí jen to, co mu pool předá — proto je soubor potřeba.
 
 Catch-all přepis tam schválně žádný není. Dřívější rozvržení obsluhovalo endpoint z kořene a jeden potřebovalo; teď je na kořeni administrace a API má vlastní adresář, takže se nic přesměrovávat nemusí — a tím mizí i nejostřejší hrana celého uspořádání, totiž že přidání `RewriteCond %{REQUEST_FILENAME} !-f` k takovému pravidlu způsobí, že začne `.env` přeskakovat *právě proto, že existuje*.

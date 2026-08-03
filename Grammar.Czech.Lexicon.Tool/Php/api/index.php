@@ -24,7 +24,7 @@ declare(strict_types=1);
  * Requires PHP 8.1 or newer, for the never return type.
  *
  * Configuration is LEXICON_MYSQL_DSN, LEXICON_MYSQL_USER, LEXICON_MYSQL_PASSWORD and
- * LEXICON_API_TOKEN, read by env.php from the real environment or from Php/.env. See .env.example.
+ * LEXICON_API_TOKEN, read by env.php from the real environment or from Php/.env.php. See .env.php.example.
  *
  * Deployed as www/api/index.php, with the admin at www/index.php beside it. The shared includes and
  * the secrets sit one level up and are denied by .htaccess; see ../.htaccess.

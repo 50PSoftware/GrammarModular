@@ -25,7 +25,7 @@
 # Require directives, not rewrites: they run in the authorization phase and hold whether or not
 # mod_rewrite is loaded.
 
-# Every dotfile: .env, .env.php, .env.example, .htaccess itself.
+# Every dotfile: .env.php, .env.php.example, .htaccess itself.
 <FilesMatch "^\.">
     Require all denied
 </FilesMatch>
