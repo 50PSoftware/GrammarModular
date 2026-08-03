@@ -36,7 +36,39 @@ namespace Grammar.Czech.Lexicon.Tool
                 Directory.CreateDirectory(directory);
             }
 
-            var temporaryPath = destination + ".incoming";
+            return Apply(pages, destination + ".incoming", destination, report);
+        }
+
+        /// <summary>
+        /// Fetches the whole dictionary and validates it without keeping any of it.
+        /// </summary>
+        /// <param name="pages">The pages to check, in dependency order.</param>
+        /// <param name="report">Receives progress messages.</param>
+        /// <returns>The validation report of what the server is serving.</returns>
+        /// <remarks>
+        /// This is how entries written in the admin get checked. They live only in the central database
+        /// until something pulls them, and nothing on the server enforces what LexiconValidator does — a
+        /// frame with no actor, a slot with no realization at preference 1, a lookup key that no lookup
+        /// will match. Running the check answers "is what I just typed loadable" without waiting for the
+        /// next real pull and without touching the working lexicon either way.
+        /// </remarks>
+        public static ValidationReport Check(IEnumerable<LexiconPage> pages, Action<string> report)
+            => Apply(
+                pages,
+                Path.Combine(Path.GetTempPath(), $"lexicon-check-{Guid.NewGuid():N}.db"),
+                destination: null,
+                report);
+
+        // One path for both, because the only difference is whether the finished file is kept. Building
+        // it somewhere else and moving it into place at the end is what makes a failed pull leave the
+        // working lexicon untouched, and it costs nothing to also not move it.
+        private static ValidationReport Apply(
+            IEnumerable<LexiconPage> pages,
+            string workingPath,
+            string? destination,
+            Action<string> report)
+        {
+            var temporaryPath = workingPath;
 
             try
             {
@@ -57,13 +89,13 @@ namespace Grammar.Czech.Lexicon.Tool
                     if (importer.Counts.GetValueOrDefault("lemma_entry") == 0)
                     {
                         throw new InvalidOperationException(
-                            "Pull nepřinesl ani jedno heslo. Lokální lexikon zůstává, jaký byl.");
+                            "Server nevrátil ani jedno heslo. Lokální lexikon zůstává, jaký byl.");
                     }
                 }
 
                 var validation = LexiconValidator.Validate(temporaryPath);
 
-                if (validation.Errors.Count == 0)
+                if (destination is not null && validation.Errors.Count == 0)
                 {
                     File.Move(temporaryPath, destination, overwrite: true);
                 }

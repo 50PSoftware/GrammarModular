@@ -68,9 +68,27 @@ static int Build(string[] args)
 
 static int Validate(string[] args)
 {
-    var path = Option(args, "--db") ?? DefaultDatabasePath();
+    // --url je vědomě jen z argumentu, ne z LEXICON_API_URL. Kdyby se bral z prostředí, `validate` bez
+    // argumentů by u někoho kontroloval lokální soubor a u někoho server, podle toho, co má nastavené.
+    var url = Option(args, "--url");
 
-    return Report(LexiconValidator.Validate(path), path);
+    if (url is null)
+    {
+        var path = Option(args, "--db") ?? DefaultDatabasePath();
+
+        return Report(LexiconValidator.Validate(path), path);
+    }
+
+    var token = Option(args, "--token") ?? Environment.GetEnvironmentVariable("LEXICON_API_TOKEN");
+    var pageSize = int.Parse(Option(args, "--page-size") ?? "5000");
+
+    Console.WriteLine($"Kontroluji {url}");
+
+    using var client = new LexiconApiClient(new Uri(url), token, pageSize);
+
+    // Stáhne se celý slovník, zvaliduje a zahodí. Lokální lexikon se nemění ani při úspěchu — na to
+    // je pull; tohle odpovídá jen na otázku, jestli to, co je na serveru, vůbec jde načíst.
+    return Report(LexiconPuller.Check(client.Fetch(), Console.WriteLine), url);
 }
 
 static int Dump(string[] args)
@@ -199,8 +217,9 @@ static void PrintUsage()
     Console.WriteLine("""
         Grammar.Czech.Lexicon.Tool
 
-          build       [--out <cesta>] [--force]      Vytvoří lexikon ze schématu a seedu a zvaliduje ho.
-          validate    [--db  <cesta>]                Zkontroluje existující lexikon.
+          build       [--out <cesta>] [--force]      Vytvoří lexikon ze schématu a seedů a zvaliduje ho.
+          validate    [--db  <cesta>]                Zkontroluje lokální lexikon.
+          validate    --url <api> [--token <t>]      Zkontroluje, co má server — nic nemění.
           dump        [--db  <cesta>] --out <sql>    Vypíše lexikon jako přenositelné INSERTy.
           pull        --url <api> [--token <t>]      Stáhne slovník z API a nahradí jím lokální lexikon.
                       [--out <cesta>] [--page-size <n>]
