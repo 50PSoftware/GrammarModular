@@ -43,6 +43,16 @@
       }
     }
   },
+  "turista": {
+    "gender": "masculineAnimate",
+    "inheritsFrom": "předseda",
+    "endings": {
+      "plural": {
+        "Nominative": "-é",
+        "Vocative": "-é"
+      }
+    }
+  },
   "růže": {
     "gender": "feminine",
     "endings": {
@@ -195,6 +205,16 @@
     "overrides": {
       "singular": {
         "Vocative": "pane"
+      }
+    }
+  },
+  "občan": {
+    "gender": "masculineAnimate",
+    "inheritsFrom": "pán",
+    "endings": {
+      "plural": {
+        "Nominative": "-é",
+        "Vocative": "-é"
       }
     }
   },

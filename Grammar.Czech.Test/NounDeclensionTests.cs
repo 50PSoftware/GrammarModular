@@ -406,6 +406,11 @@ namespace Grammar.Czech.Test
                                             "chlapci", "chlapců", "chlapcům", "chlapce", "chlapci", "chlapcích", "chlapci"}) },
                     { "pán", ("pán", Gender.Masculine, true, null, new [] { "pán", "pána", "pánovi", "pána", "pane", "pánovi", "pánem",
                                             "páni", "pánů", "pánům", "pány", "páni", "pánech", "pány"}) },
+                    // Podvzor občan: pán s -é v 1. a 5. p. mn. č. (IJP: občané, občani jen jako
+                    // druhá varianta). Kmen končí na -n, takže velární ani r-ová vokativní pravidla
+                    // vzoru pán, která se na podvzor neváží, tu nic neřeší — 5. p. sg. je prosté občane.
+                    { "občan", ("občan", Gender.Masculine, true, null, new [] { "občan", "občana", "občanovi", "občana", "občane", "občanovi", "občanem",
+                                            "občané", "občanů", "občanům", "občany", "občané", "občanech", "občany"}) },
                     { "hrad", ("hrad", Gender.Masculine, false, null, new [] {"hrad", "hradu", "hradu", "hrad", "hrade", "hradě", "hradem",
                                             "hrady", "hradů", "hradům", "hrady", "hrady", "hradech", "hrady"}) },
                     { "muž", ("muž", Gender.Masculine, true, null, new [] { "muž", "muže", "muži", "muže", "muži", "muži", "mužem",
@@ -422,6 +427,12 @@ namespace Grammar.Czech.Test
                                             "stroje", "strojů", "strojům", "stroje", "stroje", "strojích", "stroji"}) },
                     { "předseda", ("předseda", Gender.Masculine, true, null, new[] {"předseda", "předsedy", "předsedovi", "předsedu", "předsedo", "předsedovi", "předsedou",
                                             "předsedové", "předsedů", "předsedům", "předsedy", "předsedové", "předsedech", "předsedy"}) },
+                    // Podvzor turista: předseda mění -ové na -é (IJP: turisté, turisti je moravská
+                    // krátká varianta). Zahrnuje i -ita, které má stejné paradigma — husita → husité.
+                    { "turista", ("turista", Gender.Masculine, true, null, new[] {"turista", "turisty", "turistovi", "turistu", "turisto", "turistovi", "turistou",
+                                            "turisté", "turistů", "turistům", "turisty", "turisté", "turistech", "turisty"}) },
+                    { "husita", ("turista", Gender.Masculine, true, null, new[] {"husita", "husity", "husitovi", "husitu", "husito", "husitovi", "husitou",
+                                            "husité", "husitů", "husitům", "husity", "husité", "husitech", "husity"}) },
                     // Vokativ je roven nominativu: IJP uvádí u vzoru soudce tvar "soudce" a *soudče
                     // označuje za nespisovné — vzniká „patrně nevýrazností formy 5. p. totožné s 1. p.“
                     { "soudce", ("soudce", Gender.Masculine, true, null, new[] { "soudce", "soudce", "soudci", "soudce", "soudce", "soudci", "soudcem",
