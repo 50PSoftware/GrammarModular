@@ -50,6 +50,17 @@ namespace Grammar.Czech.Lexicon.Tool
             var errors = new List<string>();
             var warnings = new List<string>();
 
+            // Opening a database that is not there fails deep inside SQLite with "unable to open
+            // database file", which names neither the path nor what to do about it. The provider guards
+            // the same way for the same reason.
+            if (!File.Exists(path))
+            {
+                throw new FileNotFoundException(
+                    $"Lexikon '{Path.GetFullPath(path)}' neexistuje. Vytvoř ho příkazem build, "
+                    + "stáhni příkazem pull, nebo předej správnou cestu přes --db.",
+                    path);
+            }
+
             var connectionString = new SqliteConnectionStringBuilder
             {
                 DataSource = path,
