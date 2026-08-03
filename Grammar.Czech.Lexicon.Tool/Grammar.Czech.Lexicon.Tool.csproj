@@ -26,19 +26,18 @@
   </ItemGroup>
 
   <!--
-    One file, named rather than globbed. It holds the server's half of the column map and the permitted
-    values, and PhpSchemaParityTests reads it from the output directory to check it against
-    LexiconSchema and the C# enums — two hand-maintained lists that nothing compares will drift.
+    The server's half of the column map, embedded rather than copied beside the assembly. Only
+    PhpSchemaParityTests reads it, and it needs the contents, not a file — nothing in a .NET build
+    output has any use for PHP source.
 
-    This was Php\**\*.php, which copied the entire PHP application into bin. Two reasons not to:
-    nothing in the build has any use for the endpoint or the admin, and .env.php matches *.php, so a
-    real configuration file with the API token and the database password in it was copied into the
-    build output — and, because Content flows across a ProjectReference, into the test project's
-    output as well. Both are git-ignored, so nothing would have reached a commit; but a secret in
-    three places instead of one outlives its rotation and travels with any copy of bin.
+    This was Content with a Php\**\*.php glob, which copied the whole PHP application into bin. The
+    part that made it worth undoing rather than tidying: .env.php matches *.php, so a real
+    configuration file with the API token and the database password in it was copied into the build
+    output, and — because Content flows across a ProjectReference — into the test project's output as
+    well. Embedding takes one named file and cannot pick up anything else.
   -->
   <ItemGroup>
-    <Content Include="Php\schema-tables.php" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="Php\schema-tables.php" />
   </ItemGroup>
 
 </Project>

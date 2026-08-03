@@ -17,7 +17,7 @@ namespace Grammar.Czech.Lexicon.Tool
             using var connection = CreateEmpty(path, force);
             using var transaction = connection.BeginTransaction();
 
-            Execute(connection, SqlResources.Read(SqlResources.Seed), transaction);
+            Execute(connection, ToolResources.Read(ToolResources.Seed), transaction);
             transaction.Commit();
         }
 
@@ -65,8 +65,8 @@ namespace Grammar.Czech.Lexicon.Tool
 
             // The settings run first: page_size only takes effect before the first table exists, and
             // foreign_keys is per connection, so it has to be on before anything writes a reference.
-            Execute(connection, SqlResources.Read(SqlResources.SqliteSettings));
-            Execute(connection, SqlResources.Read(SqlResources.Schema));
+            Execute(connection, ToolResources.Read(ToolResources.SqliteSettings));
+            Execute(connection, ToolResources.Read(ToolResources.Schema));
 
             return connection;
         }

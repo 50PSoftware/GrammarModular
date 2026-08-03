@@ -43,8 +43,8 @@ namespace Grammar.Czech.Test
         [ClassInitialize]
         public static void SetupClass(TestContext _)
         {
-            portable = Parse(SqlResources.Read(SqlResources.Schema));
-            mysql = Parse(SqlResources.Read(SqlResources.MysqlSchema));
+            portable = Parse(ToolResources.Read(ToolResources.Schema));
+            mysql = Parse(ToolResources.Read(ToolResources.MysqlSchema));
         }
 
         /// <summary>
@@ -138,7 +138,7 @@ namespace Grammar.Czech.Test
         [TestMethod]
         public void MysqlSchema_CollatesMatchedColumnsBinary()
         {
-            var text = SqlResources.Read(SqlResources.MysqlSchema);
+            var text = ToolResources.Read(ToolResources.MysqlSchema);
 
             string[] mustBeBinary =
             [
@@ -171,7 +171,7 @@ namespace Grammar.Czech.Test
         [TestMethod]
         public void MysqlSchema_AvoidsCollationsMariaDbLacks()
         {
-            var declarations = SqlResources.Read(SqlResources.MysqlSchema)
+            var declarations = ToolResources.Read(ToolResources.MysqlSchema)
                 .Split('\n')
                 .Where(line => !line.TrimStart().StartsWith("--", StringComparison.Ordinal))
                 .Where(line => line.Contains("utf8mb4_0900", StringComparison.Ordinal))

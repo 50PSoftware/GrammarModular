@@ -18,17 +18,10 @@ namespace Grammar.Czech.Test
         private static Dictionary<string, List<string>> php = null!;
 
         /// <summary>
-        /// Parses the PHP column map copied next to the test assembly.
+        /// Parses the PHP column map compiled into the tool.
         /// </summary>
         [ClassInitialize]
-        public static void SetupClass(TestContext _)
-        {
-            var path = Path.Combine(AppContext.BaseDirectory, "Php", "schema-tables.php");
-
-            Assert.IsTrue(File.Exists(path), $"'{path}' se nezkopíroval do výstupu.");
-
-            php = Parse(File.ReadAllText(path));
-        }
+        public static void SetupClass(TestContext _) => php = Parse(ToolResources.Read(ToolResources.PhpSchemaTables));
 
         /// <summary>
         /// The parser found the map, so the comparisons below are not passing on nothing.
@@ -67,7 +60,7 @@ namespace Grammar.Czech.Test
         [TestMethod]
         public void Php_AgreesOnWhichKeysAreText()
         {
-            var source = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Php", "schema-tables.php"));
+            var source = ToolResources.Read(ToolResources.PhpSchemaTables);
 
             var declared = Regex.Match(source, @"const\s+LEXICON_TEXT_KEY_TABLES\s*=\s*\[(?<body>[^\]]*)\]");
 
@@ -113,8 +106,7 @@ namespace Grammar.Czech.Test
         [DynamicData(nameof(EnumColumns), DynamicDataSourceType.Property)]
         public void Php_OffersExactlyTheEnumMembers(string column, Type enumType)
         {
-            var source = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Php", "schema-tables.php"));
-            var offered = ParseEnum(source, column);
+            var offered = ParseEnum(ToolResources.Read(ToolResources.PhpSchemaTables), column);
 
             Assert.IsTrue(offered.Count > 0, $"V schema-tables.php nenajdu hodnoty pro '{column}'.");
 
