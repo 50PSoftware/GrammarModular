@@ -47,17 +47,11 @@
       Content and not None: only Content items carry CopyToOutputDirectory across a ProjectReference, and
       the test project resolves the lexicon from its own output directory like any other consumer does.
     -->
-    <Content Include="Data\Lexicon\grammar.czech.lexicon.db"
-             Link="grammar.czech.lexicon.db"
-             CopyToOutputDirectory="PreserveNewest"
-             Pack="true"
-             PackagePath="contentFiles\any\net8.0\;build\" />
+    <Content Include="Data\Lexicon\grammar.czech.lexicon.db" Link="grammar.czech.lexicon.db" CopyToOutputDirectory="PreserveNewest" Pack="true" PackagePath="contentFiles\any\net8.0\;build\" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="build\50PSoftware.GrammarModular.Czech.targets"
-          Pack="true"
-          PackagePath="build\" />
+    <None Include="build\50PSoftware.GrammarModular.Czech.targets" Pack="true" PackagePath="build\" />
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>
