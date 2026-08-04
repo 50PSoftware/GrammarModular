@@ -14,7 +14,8 @@ namespace Grammar.Core.Exceptions
         /// Initializes a new instance of the <see cref="LemmaNotFoundException"/> type.
         /// </summary>
         public LemmaNotFoundException(string lemma)
-            : base($"Lemma '{lemma}' was not found in the lexicon. Add it to lexicon.json.")
+            : base($"Lemma '{lemma}' was not found in the lexicon. Add it in the admin, or in a "
+                + "seed block, and pull the dictionary again.")
         {
             Lemma = lemma;
         }

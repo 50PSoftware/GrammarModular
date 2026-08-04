@@ -87,6 +87,18 @@ namespace Grammar.Czech.Services
                 }
             }
 
+            // Bez vzoru se skloňovat nedá, a dokud tahle kontrola nebyla, skončilo to o řádek níž
+            // NullReferenceException — což volajícímu neřeklo ani to, co chybí, ani kde to vzít.
+            // Slovník se sám neptá: metadata dodává volající, a lexikon je zdroj, ze kterého si je může
+            // vytáhnout, ne krok, který by se dál sám.
+            if (string.IsNullOrEmpty(word.Pattern))
+            {
+                throw new InvalidOperationException(
+                    $"Podstatné jméno '{word.Lemma}' nemá zadaný vzor. Doplň CzechWordRequest.Pattern, "
+                    + "nebo si vzor i rod vytáhni ze slovníku přes "
+                    + $"{nameof(CzechNounDeclensionService)}.{nameof(ResolveGenderAndPattern)}.");
+            }
+
             if (!_dataProvider.GetPatterns().TryGetValue(word.Pattern.ToLower(), out var pattern))
             {
                 throw new NotSupportedException($"Noun pattern '{word.Pattern}' not found.");

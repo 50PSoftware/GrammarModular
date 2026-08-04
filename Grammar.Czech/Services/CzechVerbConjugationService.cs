@@ -123,7 +123,7 @@ namespace Grammar.Czech.Services
             return entry.Aspect
                 ?? throw new LemmaNotFoundException(lemma,
                     $"Lemma '{lemma}' found in lexicon but Aspect is null. " +
-                    $"Set the 'aspect' field in lexicon.json.");
+                    "Set the aspect on the entry in the admin, or in a seed block.");
         }
 
         /// <summary>

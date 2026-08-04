@@ -18,7 +18,7 @@ namespace Grammar.Czech.Models
         /// Gets or sets a value indicating whether mobile vowel alternation applies.
         /// </summary>
         /// <remarks>
-        /// Named to match the hasMobileE key in lexicon.json and <see cref="CzechWordRequest.HasMobileE"/>.
+        /// Named to match the has_mobile_e column and <see cref="CzechWordRequest.HasMobileE"/>.
         /// It was HasMobileVowel, which the camelCase naming policy turned into a key the data never had,
         /// so the lexicon's mobile-vowel flag deserialized to null for every entry.
         /// </remarks>
