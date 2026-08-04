@@ -300,7 +300,7 @@
             }
         }
 
-        private static void PrintAdjetiveForms(CzechWordFormComposer composer, CzechWordRequest request, )
+        private static void PrintAdjectiveForms(CzechWordFormComposer composer, CzechWordRequest request, )
         {
             PrintWordInfo(request);
             foreach(var cGender in Enum.GetValues<Gender>())
