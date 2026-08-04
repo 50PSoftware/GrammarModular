@@ -39,11 +39,8 @@ namespace Grammar.Czech.Services
             new("muž", WordCategory.Noun, Number.Singular, Case.Vocative,
                 (req, _) => req.Lemma?.EndsWith("ec", StringComparison.Ordinal) == true, EndingTransformation: "-e"),
 
-            // Vzor syn is pán with -ové in the nominative and vocative plural. The palatalization
-            // below exists because pán's ending there is -i; -ové does not trigger it, so duch has
-            // to come out duchové and not *dušové. These two sit ahead of the pán block on purpose —
-            // GetMatchingRule takes the first match, and pán's rules now reach syn through
-            // inheritsFrom.
+            // Vzor syn is pán with -ové where pán has -i, and -ové triggers no palatalization: duchové,
+            // not *dušové. Ahead of the pán block on purpose, since GetMatchingRule takes the first match.
             new("syn", WordCategory.Noun, Number.Plural, Case.Nominative, ApplySoftening: false),
             new("syn", WordCategory.Noun, Number.Plural, Case.Vocative, ApplySoftening: false),
 
@@ -65,9 +62,8 @@ namespace Grammar.Czech.Services
             new("pán", WordCategory.Noun, Number.Plural, Case.Locative,
     EndsWithCh,
     EndingTransformation: "-ích", Context: PalatalizationContext.First),
-            // g belongs here with k and ch — IJP has biolog → o biolozích. It was missing because
-            // no g-stem word reached the locative plural before; the -log borrowings all take -ové
-            // in the nominative plural, so they only arrive here via vzor syn.
+            // g belongs with k and ch — IJP has biolog → o biolozích. Missing until now because the -log
+            // borrowings take -ové and so only reach here through vzor syn.
             new("pán", WordCategory.Noun, Number.Plural, Case.Locative,
     EndsWithG,
     EndingTransformation: "-ích", Context: PalatalizationContext.Second),
@@ -91,46 +87,38 @@ namespace Grammar.Czech.Services
             return rule?.EndingTransformation;
         }
 
-        // These read the stem, not the lemma: the ending attaches to the stem, and the two diverge
-        // whenever an alternation fires (nůž → noz-, dům → dom-, domek → domk-).
-        // Ordinal throughout: cs-CZ collation treats a trailing "ch" as a single unit, so a
-        // culture-aware EndsWith("h") is false for hoch and EndsWith("ch") is unreliable.
+        // These read the stem, not the lemma, the two diverging whenever an alternation fires (nůž →
+        // noz-). Ordinal throughout: under cs-CZ, EndsWith("h") is false for hoch.
         private static bool EndsWithK(CzechWordRequest req, string stem) => stem.EndsWith("k", StringComparison.Ordinal);
 
         private static bool EndsWithCh(CzechWordRequest req, string stem) => stem.EndsWith("ch", StringComparison.Ordinal);
 
         private static bool EndsWithG(CzechWordRequest req, string stem) => stem.EndsWith("g", StringComparison.Ordinal);
 
-        // Velar stems take -u in the vocative sg. with no palatalization. All four velars, per IJP:
-        // "jejichž tvarotvorný základ končí na -k, -g, -h, -ch, mají koncovku -u" — vojáku, biologu,
-        // vrahu, hochu. The g was missing and gave biologe.
+        // Velar stems take -u in the vocative sg. without palatalization, all four per IJP: vojáku,
+        // biologu, vrahu, hochu. The g was missing and gave *biologe.
         private static bool IsVelarVocativeStem(CzechWordRequest req, string stem) =>
             EndsWithK(req, stem)
             || EndsWithCh(req, stem)
             || stem.EndsWith("h", StringComparison.Ordinal)
             || EndsWithG(req, stem);
 
-        // A consonant before the final r means syllabic r, which palatalizes in the vocative sg.:
-        // bratr → bratře, Petr → Petře, ministr → ministře. A vowel before the r keeps the plain
-        // -e, which is what latinate agent nouns need: doktore, profesore, Mendominátore.
+        // A consonant before the final r means syllabic r, which palatalizes in the vocative sg.
+        // (bratře, Petře); a vowel before it keeps the plain -e, as latinate agent nouns need.
         private static bool IsConsonantRStem(CzechWordRequest req, string stem) =>
             stem.Length > 1
             && stem.EndsWith("r", StringComparison.Ordinal)
             && MorphologyHelper.IsConsonant(stem[^2]);
 
-        // Feminine žena velar stems undergoing 2nd palatalization in dat/loc sg: k→c, h→z, g→z.
-        // ch (moucha) is excluded — it stays on the general 1st-palatalization path (ch→š → mouše).
-        // Keyed off the lemma because the test includes the nom.sg. vowel the stem no longer carries,
-        // and because the žena stem may still have its derivation suffix detached at this point.
+        // Feminine žena velar stems taking 2nd palatalization in dat/loc sg: k→c, h→z, g→z. ch stays on
+        // the 1st-palatalization path (mouše). Keyed off the lemma, which still has the nom.sg. vowel.
         private static bool IsVelarStem(CzechWordRequest req, string stem) =>
             req.Lemma.EndsWith("ka")
             || (req.Lemma.EndsWith("ha") && !req.Lemma.EndsWith("cha"))
             || req.Lemma.EndsWith("ga");
 
-        // A rule named for a base vzor governs that vzor's sub-patterns too. občan is pán with a
-        // different nominative plural, so pán's velar vocative (biologu, not *biologe) and its k/ch
-        // palatalization are občan's rules as well — and duplicating the whole pán block per
-        // sub-pattern is how they would silently drift apart. Walk inheritsFrom instead.
+        // A rule named for a base vzor governs its sub-patterns too: občan is pán with a different
+        // nominative plural, so pán's rules are its rules. Walking inheritsFrom beats duplicating them.
         private bool MatchesPattern(string? rulePattern, string? requestPattern)
         {
             if (rulePattern == null)

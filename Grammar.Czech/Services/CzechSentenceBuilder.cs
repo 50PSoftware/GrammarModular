@@ -71,10 +71,8 @@ namespace Grammar.Czech.Services
             return Capitalize(NormalizePunctuation(Render(sentence, firstPositionTaken: false))) + FindTerminator(sentence);
         }
 
-        // A relative clause always emits the comma that closes it, because whether one is needed depends on
-        // what follows and the constituent cannot see that. Two commas therefore meet whenever the clause it
-        // closes is also followed by a comma of its own, and a comma is left dangling whenever the relative
-        // clause happens to end the sentence. Both are settled here, once, rather than guessed at per site.
+        // A relative clause always emits its closing comma, not being able to see what follows, so the
+        // doubled and the dangling one are both settled here rather than guessed at per site.
         private static string NormalizePunctuation(string sentence) =>
             Regex.Replace(sentence, @",(\s*,)+", ",").TrimEnd().TrimEnd(',');
 
@@ -85,10 +83,8 @@ namespace Grammar.Czech.Services
             bool suppressConditional = false)
             => RenderNode(sentence, firstPositionTaken, secondPositionConjunction, suppressConditional).Text;
 
-        // Hands back the predicate of the leading clause alongside the text, because a caller above may need
-        // the person it agreed on — aby does. CzechWordRequest is a struct, so the categories subject
-        // agreement fills in cannot be read back off the clause the caller still holds: that copy never saw
-        // them. Returning the resolved one is the only way to see it without resolving it a second time.
+        // Hands back the predicate because a caller above may need the person it agreed on, and
+        // CzechWordRequest is a struct — the caller's copy never saw what agreement filled in.
         private (string Text, CzechWordRequest? Predicate) RenderNode(
             SentenceNode sentence,
             bool firstPositionTaken,
@@ -102,10 +98,8 @@ namespace Grammar.Czech.Services
             _ => throw new NotSupportedException($"Neznámý typ větného uzlu: {sentence.GetType().Name}.")
         };
 
-        // The conjunction stands between the conjuncts and outside the clause that follows it, so that
-        // clause keeps its own first position: "Petr přišel a umyl se".
-        // An inherited first position — a subordinator above this coordination — reaches the first conjunct
-        // only. Every later conjunct is a clause of its own and opens its own second position.
+        // The conjunction stands outside the clause that follows it, so that clause keeps its own first
+        // position ("Petr přišel a umyl se"). An inherited one reaches the first conjunct only.
         private (string Text, CzechWordRequest? Predicate) RenderCoordination(
             Coordination coordination, bool firstPositionTaken, bool suppressConditional)
         {
@@ -123,10 +117,8 @@ namespace Grammar.Czech.Services
 
             var correlate = coordination.Paired ? ResolveCorrelate(coordination.Conjunction) : null;
 
-            // In the split construction it is the correlate that joins the conjuncts, and it always takes a
-            // comma — the ÚJČ rule is that one is written before the second connective whatever the bare
-            // conjunction would do, so "buď … , nebo …" and "ani … , ani …" are punctuated against the
-            // commaless "nebo" and "ani" that join without splitting.
+            // In the split construction the correlate joins the conjuncts and always takes a comma — ÚJČ
+            // writes one before the second connective whatever the bare conjunction would do.
             var separator = correlate is not null
                 ? $", {correlate} "
                 : secondPosition
@@ -172,17 +164,15 @@ namespace Grammar.Czech.Services
             var conjunction = subordination.Conjunction;
             var fuses = conjunctionService.FusesWithConditional(conjunction);
 
-            // aby and kdyby carry the conditional auxiliary themselves, so the clause is built without one:
-            // the particle moved into the conjunction, it was not duplicated. Rendering both would give
-            // "abych se bych umyl".
+            // aby and kdyby carry the conditional auxiliary themselves — the particle moved into the
+            // conjunction rather than being duplicated, and rendering both gives "abych se bych umyl".
             var (subordinate, subordinatePredicate) = RenderNode(
                 subordination.Subordinate,
                 conjunctionService.OccupiesFirstPosition(conjunction),
                 suppressConditional: fuses);
 
-            // The person comes back out of the render rather than being worked out ahead of it. Subject
-            // agreement is what resolves it — stated outright, left to pro-drop, or taken off a nominative
-            // subject — and doing that twice would mean keeping a second copy of the rule in step with it.
+            // Taken out of the render rather than worked out ahead of it, since subject agreement is what
+            // resolves it and doing that twice means two copies of the rule to keep in step.
             var conjunctionForm = conjunctionService.GetForm(
                 conjunction, subordinatePredicate?.Number, subordinatePredicate?.Person);
 
@@ -223,14 +213,12 @@ namespace Grammar.Czech.Services
             ValidateSentenceType(clause, constituents, firstPositionTaken);
             ValidateParticles(clause, constituents);
 
-            // A clause-initial particle fills first position exactly as a subordinating conjunction does, so
-            // the cluster follows it: "Ať se umyje". An interjection does not — it stands outside the clause
-            // behind its own comma and leaves first position to whatever comes next.
+            // A clause-initial particle fills first position as a subordinator does, so the cluster
+            // follows it ("Ať se umyje"); an interjection stands outside the clause and does not.
             firstPositionTaken |= clause.Particle is not null;
 
-            // FSP: the interrogative focus opens the clause, contrastive material is fronted behind it,
-            // given material forms the theme before the verb, new material forms the rheme after it.
-            // Order inside one status is the caller's.
+            // FSP: interrogative focus opens the clause, contrastive material follows it, theme before
+            // the verb and rheme after. Order within one status is the caller's.
             var preVerbal = constituents
                 .Where(element => element.Status == InformationStatus.Interrogative)
                 .Concat(constituents.Where(element => element.Status == InformationStatus.Contrastive))
@@ -283,10 +271,8 @@ namespace Grammar.Czech.Services
                         + "nebo nuže; částici s dosahem na jeden člen dej na ClauseElement.Particle.");
                 }
 
-                // The mood is deliberately not checked. "Ať přijde" is a plain third-person present — Czech
-                // has no third-person imperative — and NESČ states no mood government for the optative group
-                // at all, so any check here would be enforcing a rule of mine rather than one of the
-                // language's.
+                // The mood is deliberately unchecked: "Ať přijde" is a plain third-person present, and
+                // NESČ states no mood government for the optative group at all.
             }
 
             if (clause.Interjection is { } interjection && interjectionService.IsInterjection(interjection)
@@ -296,9 +282,8 @@ namespace Grammar.Czech.Services
                     $"Citoslovce '{interjection}' se tu neodděluje čárkou, což tenhle slot neumí vyjádřit.");
             }
 
-            // A modifying particle carries no stress of its own, so it cannot be part of what the utterance
-            // is about. NESČ states it of the whole group, and Status is what says which constituent is the
-            // rheme, so this is checkable rather than merely documented.
+            // A modifying particle carries no stress of its own, so it cannot be the rheme — NESČ states
+            // it of the whole group, and Status makes it checkable rather than merely documented.
             foreach (var element in constituents)
             {
                 if (element.Particle is not { } scoped || !particleService.IsParticle(scoped))
@@ -315,9 +300,8 @@ namespace Grammar.Czech.Services
             }
         }
 
-        // The frame says how each argument of this verb is realized, so the caller states the functor and the
-        // word and the case follows from the verb. A case set explicitly wins — the frame fills gaps, it does
-        // not overrule a deliberate choice.
+        // The frame says how each argument is realized, so the caller states the functor and the word and
+        // the case follows. An explicit case wins — the frame fills gaps, it does not overrule.
         private CzechClause ApplyValencyFrame(CzechClause clause)
         {
             if (clause.Predicate.WordCategory != WordCategory.Verb)
@@ -332,10 +316,8 @@ namespace Grammar.Czech.Services
 
         private ClauseElement ApplySlot(ClauseElement element, ValencyFrame? frame, string verbLemma)
         {
-            // A vocative is a form of address, not an argument. It stands outside the argument structure —
-            // Studente, dělej! names who is spoken to, and the verb governs it in no way — so no frame
-            // licenses it and none should be asked to. Checking it against one rejected every imperative
-            // naming its addressee, as soon as the verb gained a frame at all.
+            // A vocative is address, not an argument: no verb governs it and no frame licenses it.
+            // Checking it against one rejected every imperative naming its addressee.
             if (element.Word.Case == Case.Vocative)
             {
                 return element;
@@ -359,9 +341,8 @@ namespace Grammar.Czech.Services
 
             var realization = slot.PreferredRealization;
 
-            // A slot may be realized as a dependent clause or an infinitive instead of a case — říct to
-            // against říct, že přijde. Building those is the clause planner's job and it does not exist
-            // yet, so the frame has nothing to fill in here and the caller's own wording stands.
+            // A slot may be realized as a clause or an infinitive instead of a case — říct to against
+            // říct, že přijde — and building those needs the clause planner, which does not exist yet.
             if (realization?.Case is not { } governedCase)
             {
                 return element;
@@ -377,9 +358,8 @@ namespace Grammar.Czech.Services
             };
         }
 
-        // The one place Czech runs agreement backwards. Everywhere else the head hands its categories down to
-        // its attributes; a cardinal from five up instead forces the noun it counts into the genitive plural
-        // and, through the element, the predicate into the neuter singular — pět žáků bylo.
+        // The one place Czech runs agreement backwards: a cardinal from five up forces the noun it counts
+        // into the genitive plural and the predicate into the neuter singular — pět žáků bylo.
         private CzechClause ApplyCardinalGovernment(CzechClause clause) =>
             clause with { Elements = clause.Elements.Select(GovernByCardinal).ToList() };
 
@@ -451,10 +431,8 @@ namespace Grammar.Czech.Services
                     + "Ponech tázací status na jednom z nich.");
             }
 
-            // Two claims on one first position. In Czech an indirect question is introduced by the wh-word
-            // itself — "Zeptal se, koho jsem viděl" — not by a conjunction with a wh-word behind it, so the
-            // combination does not describe a real sentence. Refused rather than linearized into
-            // "protože jsi koho viděl".
+            // Two claims on one first position: an indirect question is introduced by the wh-word itself,
+            // not by a conjunction with one behind it. Refused rather than linearized into nonsense.
             if (interrogativeCount == 1 && firstPositionTaken)
             {
                 throw new NotSupportedException(
@@ -510,10 +488,8 @@ namespace Grammar.Czech.Services
             return element.Relative is null ? text : $"{text}, {RenderRelative(element)}";
         }
 
-        // The pronoun agrees with the antecedent in gender, number and animacy, and takes its case from the
-        // role it plays inside the relative clause. It also fills the first position of that clause, so the
-        // cluster follows it: "muž, kterého jsem viděl".
-        // The closing comma is emitted here and removed again if the sentence happens to end on it.
+        // The pronoun agrees with the antecedent but takes its case from its role inside the clause, and
+        // fills that clause's first position: "muž, kterého jsem viděl".
         private string RenderRelative(ClauseElement element)
         {
             var relative = element.Relative!;
@@ -553,10 +529,8 @@ namespace Grammar.Czech.Services
             return $"{pronoun} {RenderClause(clause, firstPositionTaken: true).Text},";
         }
 
-        // The preposition governs the constituent, not its head noun, and the two part company under a
-        // cardinal: in "pro pět studentů" the noun is genitive because the numeral put it there, while the
-        // phrase pro governs is accusative. PhraseCase is what the constituent actually stands in, so that
-        // is what gets checked; it is only filled when a numeral rewrote the head, hence the fallback.
+        // The preposition governs the constituent, not its head noun: in "pro pět studentů" the noun is
+        // genitive but the phrase is accusative. PhraseCase holds the latter, hence the fallback.
         private void ValidateGovernment(ClauseElement element)
         {
             var preposition = element.Preposition!;
@@ -609,11 +583,8 @@ namespace Grammar.Czech.Services
                     new PronounFormOptions { PreferClitic = true }) ?? element.Word.Lemma)
                 .ToList();
 
-        // A personal pronoun in the dative or accusative is prosodically weak and belongs in the cluster.
-        // Four things keep one out: a preposition, which forces the prepositional form inside its own phrase;
-        // contrastive status, which needs the stressed long form left where it stands (Mně to dal, ne tobě);
-        // a modifier, which makes the pronoun the head of a full phrase rather than a weak word; and any
-        // other case, which is never clitic.
+        // A dative or accusative personal pronoun is prosodically weak and belongs in the cluster; a
+        // preposition, contrastive status, a modifier or any other case keeps it out.
         private bool IsCliticPronoun(ClauseElement element) =>
             element.Word.WordCategory == WordCategory.Pronoun
             && element.Word.Case is Case.Dative or Case.Accusative
@@ -625,19 +596,16 @@ namespace Grammar.Czech.Services
             && element.Modifiers.Count == 0
             && pronounService.GetPronounType(element.Word.Lemma) == PronounType.Personal;
 
-        // The clitic cluster attaches to the first constituent of the clause, whatever that constituent is.
-        // With no pre-verbal constituent the verb itself opens the clause and the cluster follows its first word
-        // (Budu se dělat); otherwise it follows the first constituent only, not all of them — which is why
-        // "Petr včera se myl" is wrong and "Petr se včera myl" is right.
+        // The cluster follows the first constituent, whatever it is — the verb itself when nothing
+        // precedes it (Budu se dělat), and the first one only: "Petr se včera myl", not "Petr včera se".
         private static List<string> BuildLinearOrder(
             List<string> preVerbal, List<string> verbRest, IReadOnlyList<string> clitics, List<string> postVerbal,
             bool firstPositionTaken, string? secondPositionConjunction = null)
         {
             var words = new List<string>();
 
-            // však lands in the same slot as the cluster, behind it. It takes no rank inside the obligatory
-            // cluster — NESČ counts it among the nestálá klitika rather than the klitika tantum — so this is
-            // a position the sources permit, not one they prescribe.
+            // však lands in the cluster's slot, behind it. NESČ counts it among the nestálá klitika, so
+            // this is a position the sources permit rather than prescribe.
             var second = clitics.ToList();
 
             if (secondPositionConjunction is not null)
@@ -682,9 +650,8 @@ namespace Grammar.Czech.Services
             return words;
         }
 
-        // The builder owns the whole cluster, so it asks the composer for a phrase without the reflexive and
-        // adds the particle itself. Letting the composer place it first and lifting it back out would break on
-        // the contracted forms, where the auxiliary and the reflexive fuse into a single token (jsi se → ses).
+        // The builder owns the cluster, so it asks for a phrase without the reflexive and adds it itself:
+        // lifting it back out afterwards breaks on the contracted forms (jsi se → ses).
         private (List<string> VerbRest, List<string> Clitics) SplitOffClitics(
             CzechWordRequest predicate, bool suppressConditional)
         {

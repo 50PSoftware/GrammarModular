@@ -129,9 +129,8 @@ namespace Grammar.Czech.Providers.SqliteProviders
                 ?? Environment.GetEnvironmentVariable(PathVariable)
                 ?? Path.Combine(AppContext.BaseDirectory, DefaultFileName);
 
-            // A missing file has to fail here rather than at the first lookup. SQLite would otherwise
-            // create an empty database and every lemma would come back as simply absent, which reads as a
-            // gap in the dictionary rather than as a lexicon that was never supplied.
+            // SQLite would otherwise create an empty database and every lemma would read as a gap in the
+            // dictionary rather than as a lexicon nobody supplied.
             if (!File.Exists(path))
             {
                 throw new FileNotFoundException(
@@ -258,10 +257,8 @@ namespace Grammar.Czech.Providers.SqliteProviders
         /// <returns><see langword="true"/> when the lemma is present in the lexicon; otherwise, <see langword="false"/>.</returns>
         public bool HasEntry(string lemma) => GetEntry(lemma) is not null;
 
-        // The key is folded here rather than by a database collation. SQLite NOCASE folds ASCII only, so
-        // DÁT and dát would be two different keys, and a Czech culture collation is the wrong instrument
-        // besides — culture-aware comparison treats ch as a unit and would answer questions about Czech
-        // orthography that a lookup key has no business asking.
+        // Folded here and not by a collation: NOCASE folds ASCII only, so DÁT and dát would be two keys,
+        // and a Czech culture collation treats ch as a unit.
         private static string ToKey(string lemma) => lemma.ToLowerInvariant();
 
         private CzechLexicalEntry? LoadEntry(string key)
@@ -290,11 +287,8 @@ namespace Grammar.Czech.Providers.SqliteProviders
             using var command = CreateCommand(connection, FrameQuery, key);
             using var reader = command.ExecuteReader();
 
-            // The join flattens frame, slot and realization into one result set, so the rows are folded
-            // back into the nesting they came from. They arrive grouped and ordered by the ORDER BY, which
-            // is what lets a single pass do it. The grouping key is frame_id and not lu_id: one lexical
-            // unit carries a frame per diathesis, so lu_id would collapse the active and the passive of
-            // the same sense into one frame.
+            // The join flattens three levels into one result set, folded back in a single pass. Keyed on
+            // frame_id, not lu_id — one lexical unit carries a frame per diathesis.
             var frames = new List<(long Id, ValencyFrame Frame)>();
             var slotIdsByFrame = new Dictionary<long, List<long>>();
             var slotsById = new Dictionary<long, ValencySlot>();
@@ -319,9 +313,8 @@ namespace Grammar.Czech.Providers.SqliteProviders
                     slotIdsByFrame[frameId] = [];
                 }
 
-                // The outer joins leave these null for a frame with no slots, or a slot with no
-                // realization. Both are data errors the tool's validate command reports; reading them is
-                // not the place to fail on them.
+                // Null for a frame with no slots or a slot with no realization — data errors that
+                // validate reports, not ones to fail a lookup on.
                 if (reader.IsDBNull(SlotId))
                 {
                     continue;

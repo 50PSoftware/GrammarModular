@@ -44,10 +44,8 @@ namespace Grammar.Czech.Models
         /// </summary>
         public ReflexiveType ReflexiveType { get; init; }
 
-        // The properties below are lexical facts that used to be reachable only through
-        // CzechWordRequest, which meant every caller had to know that banka takes an epenthetic e in the
-        // genitive plural and that lyže has no singular. They belong to the word, so the lexicon states
-        // them once and the request keeps its own copies for callers working without an entry.
+        // Lexical facts that used to reach the engine only through CzechWordRequest, which made every
+        // caller know that banka takes an epenthetic e in the genitive plural.
 
         /// <summary>
         /// Gets a value indicating whether genitive plural epenthesis applies, as in banka to bank.

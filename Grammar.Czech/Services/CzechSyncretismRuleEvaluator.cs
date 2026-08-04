@@ -32,10 +32,8 @@ namespace Grammar.Czech.Services
         /// <returns>True when the surface form equals the lemma; otherwise, false.</returns>
         public bool ShouldUseLemmaForm(CzechWordRequest request, string ending)
         {
-            // Akuzativ sg. s nulovou koncovkou = nominativ sg. (synkretismus přímých pádů).
-            // Vzory hrad, stroj, kost, píseň: neživotná maskulina a souhláskové feminina
-            // mají Ak. sg. = Nom. sg., takže lemma je správný tvar včetně pohyblivého „e"
-            // a kvantitativních alternací.
+            // Synkretismus přímých pádů: u vzorů hrad, stroj, kost a píseň je Ak. sg. = Nom. sg., takže
+            // lemma je správný tvar včetně pohyblivého „e" a kvantitativních alternací.
             return request.Case == Case.Accusative
                 && request.Number == Number.Singular
                 && MorphologyHelper.IsEnding(ending)

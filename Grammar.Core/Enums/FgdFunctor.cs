@@ -83,10 +83,8 @@
         /// </summary>
         TWHEN,
 
-        // The members below were added after the first fifteen and are appended rather than sorted into
-        // their groups, because the values are what the lexicon stores. Renumbering ACT through TWHEN to
-        // put the quasi-valency functors next to the inner participants would silently repoint every row
-        // already written.
+        // Appended rather than sorted into their groups: the values are what the lexicon stores, so
+        // renumbering would silently repoint every row already written.
 
         /// <summary>
         /// Difference (o kolik) — the extent by which something changes: zdražilo o pět korun.

@@ -33,9 +33,8 @@ namespace Grammar.Czech.Services
         // The spelled-out ending of an oblique case glued to digits: 10ti, 8mi, 12tiprocentní.
         private static readonly Regex CaseEndingAfterDigits = new(@"^\d+(ti|mi)", RegexOptions.Compiled);
 
-        // An ordinal ending glued to digits: 5tý, 19tá, 8mý, 8mého, o 5tém. Both consonants have to be
-        // covered because the ending copies the spelled-out numeral — pátý gives t, osmý gives m. The long
-        // vowel is what keeps 8metrový and 300korunová out of it.
+        // An ordinal ending glued to digits: 5tý, 8mého. Both consonants, because the ending copies the
+        // spelled-out numeral; the long vowel is what keeps 8metrový and 300korunová out.
         private static readonly Regex OrdinalEndingAfterDigits = new(@"^\d+[tm]([ýáéí]|ou)", RegexOptions.Compiled);
 
         // Digits joined straight to a word, which is the correct pattern: 20krát, 256členná, 8metrový.

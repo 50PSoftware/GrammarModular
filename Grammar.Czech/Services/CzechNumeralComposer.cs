@@ -396,9 +396,8 @@ namespace Grammar.Czech.Services
             return _numeralService.TryGetForm(lemma, nounCase, Gender.Feminine, number, false, null) ?? lemma;
         }
 
-        // The word celá names the unit a decimal is a whole number of, and is counted like any noun:
-        // nula celá, jedna celá, dvě celé, pět celých. Zero is the exception — nula celá, not nula celých —
-        // because there the numeral names the unit itself rather than a quantity of them.
+        // celá is counted like any noun — jedna celá, dvě celé, pět celých — except after nula, where the
+        // numeral names the unit rather than a quantity of them.
         private string RenderUnitWord(long whole, Case phraseCase)
         {
             var agreement = whole == 0
@@ -420,9 +419,8 @@ namespace Grammar.Czech.Services
             }).Form;
         }
 
-        // A contracted ordinal ends in the same member the spaced one does, so the last member is declined
-        // and the invariant prefix put in front of it: pěta + dvacátého gives pětadvacátého. That is also
-        // why no contracted ordinal needs a lexicon entry of its own.
+        // A contracted ordinal ends in the same member the spaced one does, so declining that member and
+        // prefixing the rest (pěta + dvacátého) spares every one of them a lexicon entry.
         private bool TryRenderContractedOrdinal(
             long value,
             Case grammaticalCase,
@@ -467,9 +465,8 @@ namespace Grammar.Czech.Services
             => _numeralService.TryGetForm(
                 lemma, grammaticalCase, gender ?? Gender.Masculine, Number.Singular, isAnimate ?? true, null) ?? lemma;
 
-        // Unit before ten, joined by a: jedenadvacet, čtyřiadvacet, pětadvacet. Only the twenty-one to
-        // ninety-nine range contracts, and the result declines by the same rule as pět — hence no lexicon
-        // entry for any of them.
+        // Unit before ten, joined by a: jedenadvacet, pětadvacet. Only 21–99 contracts, and the result
+        // declines by the same rule as pět — hence no lexicon entry.
         private bool TryRenderContracted(long value, Case grammaticalCase, out string contracted)
         {
             contracted = string.Empty;
@@ -534,9 +531,8 @@ namespace Grammar.Czech.Services
             return [multiplier, RenderScale(group.ScaleLemma, scaleData, group.Multiplier, grammaticalCase)];
         }
 
-        // Sto is the irregular one: two hundred is dvě stě, three and four hundred are sta, five hundred
-        // upwards is set. Those forms are data, keyed by multiplier class. The other scale words are plain
-        // nouns and take the number their own multiplier imposes on them, exactly as a counted noun would.
+        // Sto is the irregular one — dvě stě, tři sta, pět set — so its forms are data keyed by
+        // multiplier class. The other scale words are plain nouns and behave like any counted noun.
         private string RenderScale(string scaleLemma, NumeralData scaleData, long multiplier, Case grammaticalCase)
         {
             if (scaleData.Composite is not null && multiplier > 1)
@@ -568,9 +564,8 @@ namespace Grammar.Czech.Services
             return _numeralService.TryGetForm(scaleLemma, scaleCase, scaleData.Gender, Number.Plural, scaleData.IsAnimate, null)!;
         }
 
-        // One and two are the only cardinals that reflect the gender of what they count. As the last member
-        // of a compound they lose even that and freeze — ÚJČ id=792 has dvacet jedna žáků, not
-        // dvacet jedna žák, because the compound governs the genitive plural instead of agreeing.
+        // One and two are the only cardinals that reflect gender, and as the last member of a compound
+        // they freeze: ÚJČ id=792 has dvacet jedna žáků, because the compound governs rather than agrees.
         private string RenderBare(long value, Case grammaticalCase, Gender? gender, bool? isAnimate, bool inCompound)
         {
             var lemma = _cardinalsByValue.TryGetValue(value, out var found)

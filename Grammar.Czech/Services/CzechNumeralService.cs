@@ -195,9 +195,8 @@ namespace Grammar.Czech.Services
             Case phraseCase,
             bool isCountable = true)
         {
-            // What decides the genitive is the case of the phrase. "Pro pět studentů" keeps it because the
-            // preposition governs the accusative, which is direct; "o pěti studentech" loses it because the
-            // locative is not.
+            // The case of the phrase decides: pro pět studentů keeps the genitive because the accusative
+            // is direct, o pěti studentech loses it because the locative is not.
             var isDirect = phraseCase is Case.Nominative or Case.Accusative or Case.Vocative;
 
             return agreement switch
@@ -244,9 +243,8 @@ namespace Grammar.Czech.Services
 
         // ── Privátní metody ────────────────────────────────────────────
 
-        // A numeral may reach the service already written in digits, which is how a decimal gets here at
-        // all — there is no lemma for 1,5. The comma is the Czech decimal separator; a trailing full stop
-        // is not a separator but the ordinal marker, and is deliberately not accepted here.
+        // Digits are how a decimal arrives at all, there being no lemma for 1,5. The comma is the Czech
+        // separator; a trailing full stop is the ordinal marker and deliberately not accepted.
         private static bool TryParseNumericLemma(string lemma, out decimal value)
         {
             value = 0m;
@@ -259,10 +257,8 @@ namespace Grammar.Czech.Services
                     out value);
         }
 
-        // Five upwards has only two forms: bare in the direct cases, plus -i everywhere else. Written as a
-        // rule rather than as data, which keeps every numeral from pět to devadesát down to one metadata
-        // line. Verified against pěti, šesti, sedmi, osmi, deseti, jedenácti, dvaceti, padesáti, devadesáti.
-        // The one exception, devět → devíti, is carried by that entry's overrides and never reaches here.
+        // Five upwards has two forms — bare in the direct cases, -i elsewhere — so a rule keeps pět to
+        // devadesát down to one metadata line each. devět → devíti sits in that entry's overrides.
         private static string BuildTwoFormCardinal(string lemma, Case grammaticalCase) =>
             grammaticalCase is Case.Nominative or Case.Accusative or Case.Vocative
                 ? lemma
@@ -341,9 +337,8 @@ namespace Grammar.Czech.Services
             return _adjectiveService.GetForm(request).Form;
         }
 
-        // The scale words are nouns and decline as such: sto after město, tisíc after stroj, milion after
-        // hrad, miliarda after žena. The pronoun service has had DelegateToAdjective from the start; this is
-        // its missing twin.
+        // The scale words are nouns: sto after město, tisíc after stroj, milion after hrad, miliarda
+        // after žena. The twin of the pronoun service's DelegateToAdjective.
         private string? DelegateToNoun(
             string lemma,
             NumeralData data,
@@ -367,9 +362,8 @@ namespace Grammar.Czech.Services
             return _nounService.GetForm(request).Form;
         }
 
-        // Most numerals store their forms under Any because they do not distinguish number at all. Asking
-        // for the requested number first and falling back to Any lets jeden — which does distinguish —
-        // share one lookup with dva and pět, which do not.
+        // Most numerals store their forms under Any, not distinguishing number, so falling back to it
+        // lets jeden share one lookup with dva and pět.
         private static Dictionary<GenderSlot, Dictionary<Case, string>>? ResolveNumberSlot(
             NumeralParadigm paradigm,
             Number? number)

@@ -406,20 +406,16 @@ namespace Grammar.Czech.Test
                                             "chlapci", "chlapců", "chlapcům", "chlapce", "chlapci", "chlapcích", "chlapci"}) },
                     { "pán", ("pán", Gender.Masculine, true, null, new [] { "pán", "pána", "pánovi", "pána", "pane", "pánovi", "pánem",
                                             "páni", "pánů", "pánům", "pány", "páni", "pánech", "pány"}) },
-                    // Podvzor občan: pán s -é v 1. a 5. p. mn. č. (IJP: občané, občani jen jako
-                    // druhá varianta). Kmen končí na -n, takže velární ani r-ová vokativní pravidla
-                    // vzoru pán, která se na podvzor neváží, tu nic neřeší — 5. p. sg. je prosté občane.
+                    // Podvzor občan: pán s -é v 1. a 5. p. mn. č. Kmen na -n, takže vokativní pravidla
+                    // vzoru pán tu nic neřeší a 5. p. sg. je prosté občane.
                     { "občan", ("občan", Gender.Masculine, true, null, new [] { "občan", "občana", "občanovi", "občana", "občane", "občanovi", "občanem",
                                             "občané", "občanů", "občanům", "občany", "občané", "občanech", "občany"}) },
-                    // Podvzor syn: pán s -ové v 1. a 5. p. mn. č. 5. p. sg. je "synu", ne *syne —
-                    // to je vlastnost slova syn, ne celé třídy, takže sedí v overrides vzoru
-                    // (uplatní se jen když lemma == vzor), stejně jako "pane" u vzoru pán.
+                    // Podvzor syn: pán s -ové v 1. a 5. p. mn. č. 5. p. sg. „synu" je vlastnost toho
+                    // slova, ne třídy, takže sedí v overrides vzoru — stejně jako „pane" u pán.
                     { "syn", ("syn", Gender.Masculine, true, null, new [] { "syn", "syna", "synovi", "syna", "synu", "synovi", "synem",
                                             "synové", "synů", "synům", "syny", "synové", "synech", "syny"}) },
-                    // biolog je členem podvzoru syn a drží obojí, co dědění pravidel po vzoru pán
-                    // přineslo: 5. p. sg. "biologu" (velární základ, bez měkčení) a 6. p. mn. č.
-                    // "biolozích" (g→z, 2. palatalizace). Zároveň hlídá, že -ové palatalizaci
-                    // v 1. p. mn. č. nespouští — jinak by tu stálo *biolozi.
+                    // biolog drží obojí, co dědění pravidel po vzoru pán přineslo: 5. p. sg. „biologu"
+                    // bez měkčení a 6. p. mn. č. „biolozích". A že -ové palatalizaci nespouští.
                     { "biolog", ("syn", Gender.Masculine, true, null, new [] { "biolog", "biologa", "biologovi", "biologa", "biologu", "biologovi", "biologem",
                                             "biologové", "biologů", "biologům", "biology", "biologové", "biolozích", "biology"}) },
                     { "hrad", ("hrad", Gender.Masculine, false, null, new [] {"hrad", "hradu", "hradu", "hrad", "hrade", "hradě", "hradem",

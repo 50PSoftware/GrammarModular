@@ -67,10 +67,8 @@ namespace Grammar.Czech.Services
             word.VerbClass ??= entry.VerbClass;
             word.Aspect ??= entry.Aspect;
 
-            // ReflexiveType is not nullable, so None doubles as "not stated" and there is no way to tell
-            // a caller who wants no particle from one who did not think about it. Filling it from the
-            // lexicon is therefore only safe in that one direction: an entry that says nothing cannot
-            // overwrite a caller who does.
+            // ReflexiveType is not nullable, so None doubles as "not stated" — safe to fill in this one
+            // direction only, since an entry saying nothing cannot overwrite a caller who does.
             if (word.ReflexiveType == Enums.ReflexiveType.None)
             {
                 word.ReflexiveType = entry.ReflexiveType;

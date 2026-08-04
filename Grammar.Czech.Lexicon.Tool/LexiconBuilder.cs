@@ -17,9 +17,8 @@ namespace Grammar.Czech.Lexicon.Tool
             using var connection = CreateEmpty(path, force);
             using var transaction = connection.BeginTransaction();
 
-            // One transaction across every block. They reference each other — a later file's frames hang
-            // off an earlier file's lexemes — so a half-applied set is a database with dangling
-            // references, and rolling the lot back is the only sensible failure.
+            // One transaction across every block: a later file's frames hang off an earlier file's
+            // lexemes, so a half-applied set is a database with dangling references.
             foreach (var seed in ToolResources.SeedFiles())
             {
                 Execute(connection, ToolResources.Read(seed), transaction);

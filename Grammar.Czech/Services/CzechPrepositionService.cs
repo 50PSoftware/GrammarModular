@@ -196,11 +196,8 @@ namespace Grammar.Czech.Services
             return count;
         }
 
-        // The same consonant, its voicing counterpart, or the sibilant series that s and z share with š and
-        // ž. All three come out of the phoneme registry rather than a table here: the voicing pairs v/f, k/g,
-        // s/z and d/t are already stated once on Phoneme, and a sibilant is just a fricative articulated at
-        // the alveolar or palatal place, which the features say directly. Restating them locally is how the
-        // two descriptions drift apart.
+        // The same consonant, its voicing counterpart, or the sibilant series. All three come out of the
+        // phoneme registry rather than a local table, which is how two descriptions drift apart.
         private bool SameOrPaired(char prepositionFinal, char next)
         {
             if (prepositionFinal == next)

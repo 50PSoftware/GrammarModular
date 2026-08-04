@@ -24,9 +24,8 @@ namespace Grammar.Czech.Test
     [TestClass]
     public sealed class LexiconRoundTripTests
     {
-        // Small on purpose. The shipped lexicon has twelve lemma entries, so a page of five crosses the
-        // boundary where a key compared as text stops agreeing with a key compared as a number — the
-        // point at which '10' sorts below '5' and rows silently stop arriving.
+        // Small on purpose: a page of five crosses the point where '10' sorts below '5' as text and
+        // rows silently stop arriving.
         private const int PageSize = 5;
 
         private static string sourceDatabase = null!;
@@ -164,9 +163,8 @@ namespace Grammar.Czech.Test
                 () => importer.Import(new LexiconPage { Table = "slovicka" }));
         }
 
-        // Serializes each page and reads it back, so the test exercises the actual JSON rather than
-        // handing the importer the objects the exporter happened to build. Without this the round trip
-        // would never touch a JsonElement, which is the only form the importer ever sees in production.
+        // Through real JSON rather than the objects the exporter built, so the importer sees the
+        // JsonElement it sees in production.
         private static IEnumerable<LexiconPage> RoundTrip(string databasePath)
         {
             foreach (var page in LexiconJsonExporter.Export(databasePath, PageSize))

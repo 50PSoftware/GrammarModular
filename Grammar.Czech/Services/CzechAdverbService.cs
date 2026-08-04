@@ -119,9 +119,8 @@ namespace Grammar.Czech.Services
 
         private const string Vowels = "aáeéěiíyýoóuúů";
 
-        // -ěji after d, t, n and the labials, -eji elsewhere — the same ě-orthography split the declension
-        // uses — with the palatalization that -ce, -ky and -ho bring, and r already standing as ř.
-        // Verified against IJP on one representative of each: tvrději, chytřeji, prudčeji, hezčeji.
+        // -ěji after d, t, n and the labials, -eji elsewhere: the same ě-orthography split the declension
+        // uses. Checked against IJP on tvrději, chytřeji, prudčeji, hezčeji.
         private static string? DeriveComparative(string lemma)
         {
             if (lemma.Length < 3)

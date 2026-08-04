@@ -50,10 +50,8 @@ namespace Grammar.Czech.Lexicon.Tool
         {
             var table = LexiconSchema.Get(page.Table);
 
-            // The column header is checked rather than trusted. A server that has gained a column, lost
-            // one, or reordered them would otherwise write values into the wrong columns — and since most
-            // of them are nullable text, the result would be a database that opens and validates and is
-            // quietly wrong.
+            // The header is checked rather than trusted: a reordered column would write values into the
+            // wrong ones, and since most are nullable text the result still opens and validates.
             if (!page.Columns.SequenceEqual(table.Columns, StringComparer.Ordinal))
             {
                 throw new InvalidOperationException(

@@ -15,9 +15,8 @@ namespace Grammar.Czech.Test
     [TestClass]
     public sealed class LexiconDataTests
     {
-        // Patterns whose grammatical animacy is decided by the pattern itself. Only masculines are
-        // listed: for feminines and neuters the flag records natural animacy — žena and kuře are living
-        // beings — and no declension consults it, so there is nothing to check.
+        // Masculines only: elsewhere the flag records natural animacy (žena, kuře) and no declension
+        // consults it.
         private static readonly HashSet<string> AnimatePatterns =
             ["pán", "muž", "předseda", "soudce", "učitel", "občan", "syn", "král", "turista"];
 
@@ -42,10 +41,8 @@ namespace Grammar.Czech.Test
             ("it", "trida4"), ("ět", "trida4"), ("et", "trida4"), ("ít", "trida4"),
         ];
 
-        // Lemmas where the dictionary deliberately contradicts HasLikelyMobileE. The field exists to
-        // override the rule — the rule knows only -ec, -ek and -ev, and closed-class stems like pes and
-        // den have to be stated — so a disagreement is allowed, but it has to be a decision. Add the
-        // lemma here and the test stops asking.
+        // Lemmas that deliberately contradict HasLikelyMobileE, which knows only -ec, -ek and -ev.
+        // Disagreement is allowed; naming it here is what makes it a decision.
         private static readonly HashSet<string> DeliberateMobileEOverrides =
         [
             // Closed-class stems the rule cannot see: pes → psa, den → dne.

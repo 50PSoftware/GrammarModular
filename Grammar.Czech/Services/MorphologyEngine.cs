@@ -77,11 +77,8 @@ namespace Grammar.Czech.Services
                 WordCategory.Adverb => adverbService.GetForm(word),
                 WordCategory.Verb => verbConjugationService.GetBasicForm(word),
 
-                // The uninflected classes. Handing back the lemma is not a stub here — it is the whole of
-                // their morphology, and saying so is what lets them travel through a word request like any
-                // other word. What they do in a sentence is a different question, answered by their own
-                // services: government by the preposition service, comma and clause position by the
-                // conjunction and particle ones, punctuation by the interjection one.
+                // The uninflected classes: handing back the lemma is their whole morphology, not a stub.
+                // What they do in a sentence is their own services' business.
                 WordCategory.Preposition
                     or WordCategory.Conjunction
                     or WordCategory.Particle

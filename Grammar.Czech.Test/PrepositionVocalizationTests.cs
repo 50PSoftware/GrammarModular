@@ -131,9 +131,8 @@ namespace Grammar.Czech.Test
 
         #region The rule measured against the corpus
 
-        // Attested combinations checked against the ÚJČ reference, each one a preposition that has a
-        // vocalized variant followed by a word that either triggers it or does not. The set is what the
-        // two tests below measure the cluster rules against.
+        // Attested combinations from the ÚJČ reference, each a vocalizable preposition followed by a
+        // word that either triggers it or does not.
         private static readonly (string Preposition, string Word, string Expected)[] Corpus =
         [
             // never before a vowel

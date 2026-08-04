@@ -87,10 +87,8 @@ namespace Grammar.Czech.Services
                 }
             }
 
-            // Bez vzoru se skloňovat nedá, a dokud tahle kontrola nebyla, skončilo to o řádek níž
-            // NullReferenceException — což volajícímu neřeklo ani to, co chybí, ani kde to vzít.
-            // Slovník se sám neptá: metadata dodává volající, a lexikon je zdroj, ze kterého si je může
-            // vytáhnout, ne krok, který by se dál sám.
+            // Bez vzoru to o řádek níž končilo NullReferenceException, které neřeklo ani co chybí, ani
+            // kde to vzít.
             if (string.IsNullOrEmpty(word.Pattern))
             {
                 throw new InvalidOperationException(

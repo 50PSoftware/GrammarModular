@@ -17,13 +17,9 @@ namespace Grammar.Czech.Test
     [TestClass]
     public sealed class SchemaParityTests
     {
-        // A column line is "name TYPE …". Requiring the type is what tells a declaration apart from a
-        // CONSTRAINT line or from the continuation lines of a CHECK list.
-        //
-        // The word boundary belongs to the bare types only. VARCHAR(64) ends in a parenthesis and is
-        // followed by a space, and there is no boundary between two non-word characters — a trailing \b
-        // therefore silently dropped every VARCHAR column, which left this class comparing half the
-        // schema against half the schema and finding them equal.
+        // A column line is "name TYPE …", the type being what tells it from a CONSTRAINT or a CHECK
+        // continuation. The word boundary applies to the bare types only: a trailing \b after
+        // VARCHAR(64)'s parenthesis matches nothing and silently dropped every VARCHAR column.
         private static readonly Regex ColumnPattern = new(
             @"^\s*(?<name>[a-z_][a-z0-9_]*)\s+(?:(?:INTEGER|INT|SMALLINT)\b|VARCHAR\s*\(\s*\d+\s*\))",
             RegexOptions.IgnoreCase | RegexOptions.Compiled);

@@ -311,9 +311,8 @@ namespace Grammar.Czech.Services
             if (word.ReflexiveType != ReflexiveType.None)
                 result += $" {_cliticService.GetReflexive(word.ReflexiveType)}";
 
-            // No exclamation mark: this returns a word form, and the closing punctuation belongs to the
-            // sentence — CzechClause.Terminator. Baking it in here produced "Dělej!!" through the clause
-            // path, and put the reflexive behind the mark as "Dělej! se".
+            // No exclamation mark: this returns a word form and the punctuation belongs to the sentence.
+            // Baking it in gave "Dělej!!" and put the reflexive behind it as "Dělej! se".
             return new WordForm($"{prefix}{result}");
         }
 

@@ -64,14 +64,8 @@ namespace Grammar.Czech.Lexicon.Tool
         {
             using var command = connection.CreateCommand();
 
-            // Keyset paging on the primary key, comparing it in its own type. Column affinity does the
-            // rest: an integer key bound as a number compares numerically, the text key of lexicon_meta
-            // bound as text compares as text, and both orderings match the ORDER BY.
-            //
-            // Getting that wrong is not a mismatch small data reveals. Ordering numerically while
-            // filtering textually leaves the first page of ids one to twelve ending at 5, the next asking
-            // for keys after '5', and '10', '11' and '12' sorting below it as text — never fetched, never
-            // reported missing.
+            // Keyset paging with the key compared in its own type, so the filter agrees with the ORDER
+            // BY. Ordering numerically while filtering as text loses '10' behind '5' — silently.
             var filter = after is null ? string.Empty : $"WHERE {table.KeyColumn} > @after ";
 
             command.CommandText =

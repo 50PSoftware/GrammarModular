@@ -2,14 +2,9 @@ using Grammar.Czech.Lexicon.Tool;
 using System.Text;
 using System.Text.Json;
 
-// Build, check, pull and export the Czech lexicon database.
-//
-// The dictionary is edited centrally, in MySQL behind a PHP admin, and read locally out of a SQLite
-// file. pull is what carries it across; build and dump are what keep the local file workable on its
-// own, and export-json is the same wire format in the other direction, for seeding the server.
-//
-// Settings come from the command line, from lexikon.json in the working directory or one of its
-// parents, or from the environment — see ToolSettings.
+// Build, check, pull and export the Czech lexicon database. Edited centrally in MySQL behind a PHP
+// admin and read locally out of SQLite; settings come from the command line, lexikon.json or the
+// environment — see ToolSettings.
 
 Console.OutputEncoding = Encoding.UTF8;
 

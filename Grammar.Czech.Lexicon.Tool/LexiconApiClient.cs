@@ -60,9 +60,8 @@ namespace Grammar.Czech.Lexicon.Tool
                             $"Server vrátil tabulku '{page.Table}', ptali jsme se na '{table.Name}'.");
                     }
 
-                    // Without this a server that always answers with the same next_after — a paging bug,
-                    // or an endpoint ignoring the parameter — would keep the pull running forever while
-                    // the importer inserted the same rows until the primary key finally rejected them.
+                    // A server that keeps answering with the same next_after would otherwise pull
+                    // forever, reinserting the same rows until the primary key rejected them.
                     if (page.NextAfter is not null && page.NextAfter == after)
                     {
                         throw new InvalidOperationException(

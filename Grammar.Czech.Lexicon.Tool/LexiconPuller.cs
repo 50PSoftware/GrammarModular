@@ -67,9 +67,8 @@ namespace Grammar.Czech.Lexicon.Tool
                 destination: null,
                 report);
 
-        // One path for both, because the only difference is whether the finished file is kept. Building
-        // it somewhere else and moving it into place at the end is what makes a failed pull leave the
-        // working lexicon untouched, and it costs nothing to also not move it.
+        // One path for both: building elsewhere and moving into place at the end is what leaves the
+        // working lexicon untouched when a pull fails, and check simply does not move it.
         private static ValidationReport Apply(
             IEnumerable<LexiconPage> pages,
             string workingPath,

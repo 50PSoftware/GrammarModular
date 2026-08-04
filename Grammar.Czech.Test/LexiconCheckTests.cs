@@ -150,9 +150,8 @@ namespace Grammar.Czech.Test
             }
         }
 
-        // Both tables have to go. Dropping the slots alone leaves realizations pointing at them, and the
-        // foreign key rejects that during the import — earlier than the validator, and a different
-        // failure from the one this test is about.
+        // Both tables, because dropping the slots alone leaves realizations pointing at them and the
+        // foreign key fails during the import — earlier, and for a different reason.
         private static IEnumerable<LexiconPage> WithoutSlots()
             => RoundTrip().Select(page => page.Table is "valency_slot" or "slot_realization"
                 ? page with { Rows = [] }
@@ -180,9 +179,8 @@ namespace Grammar.Czech.Test
                 };
             });
 
-        // Drops one heslo and nothing else, which is exactly what the admin's delete does. bydlet is the
-        // right one to drop: it is the only heslo on its lexeme, so the lexeme is orphaned, and no other
-        // verb names it as an aspect counterpart, so that is the only thing the validator can react to.
+        // Drops one heslo, as the admin's delete does. bydlet is the only heslo on its lexeme and no
+        // verb names it as a counterpart, so orphaning is all the validator can react to.
         private static IEnumerable<LexiconPage> WithoutLemma(string lemma)
             => RoundTrip().Select(page =>
             {
@@ -209,9 +207,8 @@ namespace Grammar.Czech.Test
                 Rows = []
             });
 
-        // Each test names its own working file and watches only that one. Watching the temporary
-        // directory instead was a race: these tests run alongside each other, so one of them would see
-        // the other's file mid-flight and report it as something left behind.
+        // Each test watches only its own file. Watching the temp directory was a race — these run
+        // alongside each other and one would see another's file mid-flight.
         private static string WorkingPath()
             => Path.Combine(Path.GetTempPath(), $"lexicon-test-{Guid.NewGuid():N}.db");
     }

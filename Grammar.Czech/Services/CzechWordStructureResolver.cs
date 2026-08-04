@@ -96,9 +96,8 @@ namespace Grammar.Czech.Services
 
             var derivationSuffix = DetectNounDerivationSuffix(lemma, pattern);
 
-            // Ordinal comparison: culture-aware EndsWith treats a trailing "ch" as one collation
-            // unit under cs-CZ, so root.EndsWith("h") would wrongly return false for stems like
-            // "mouch", leaving a spurious derivation suffix that then gets re-appended.
+            // Ordinal: under cs-CZ a trailing "ch" is one collation unit, so EndsWith("h") is false for
+            // "mouch" and leaves a spurious derivation suffix to be re-appended.
             if (!string.IsNullOrEmpty(derivationSuffix) && root.EndsWith(derivationSuffix, StringComparison.Ordinal))
             {
                 if (_epenthesisRuleEvaluator.ShouldApplyEpenthesis(root[..^derivationSuffix.Length], derivationSuffix, wordRequest))
@@ -190,10 +189,8 @@ namespace Grammar.Czech.Services
             if (verbDataProvider.GetIrregulars().TryGetValue(request.Pattern!.ToLower(), out var namedPattern)
                 && namedPattern.Stem != null)
             {
-                // The stems here belong to the unprefixed verb, so a prefix carried by the lemma is
-                // prepended to them. Only a prefix that was actually stripped off a derivative may be:
-                // vidět opens with the prefix v, but what is left is idět, no form of the pattern —
-                // prepending there would double the prefix into vvidí.
+                // The stems belong to the unprefixed verb, so only a prefix actually stripped off a
+                // derivative may be prepended: vidět opens with v, but idět is no form, giving *vvidí.
                 var derivedFrom = IsPrefixedDerivative(lemmaBase, request.Pattern!.ToLower(), namedPattern)
                     ? prefix
                     : null;

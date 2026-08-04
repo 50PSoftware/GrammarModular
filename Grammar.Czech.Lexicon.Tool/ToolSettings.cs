@@ -33,10 +33,8 @@ namespace Grammar.Czech.Lexicon.Tool
             Url = Argument(args, "--url") ?? Blank(file.Url) ?? Variable("LEXICON_API_URL");
             Token = Argument(args, "--token") ?? Blank(file.Token) ?? Variable("LEXICON_API_TOKEN");
 
-            // Jen --db. --out tady schválně není: u build a pull je to cíl lexikonu, ale u dump
-            // a export-json je to výstupní soubor nebo adresář. Kdyby ho hltalo tohle, `dump --out
-            // vypis.sql` by si tu .sql cestu vzalo za cestu ke slovníku a pokusilo se ji otevřít jako
-            // databázi. Co --out znamená, ví jen ten který příkaz.
+            // Jen --db. --out znamená u každého příkazu něco jiného, takže `dump --out vypis.sql` by si
+            // tu .sql cestu vzalo za slovník a otevřelo ji jako databázi.
             DatabasePath = Argument(args, "--db") ?? Relative(Blank(file.Database), source);
 
             PageSize = int.TryParse(Argument(args, "--page-size"), out var size) && size > 0
@@ -135,11 +133,8 @@ namespace Grammar.Czech.Lexicon.Tool
             return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
         }
 
-        // A relative path in the file is relative to the file, not to wherever the tool was invoked. The
-        // settings are looked for up the directory tree precisely so they can be used from anywhere
-        // below them, and resolving against the working directory would undo that: the same setting
-        // would mean a different file in every subdirectory. A path typed as an argument is left alone —
-        // that one is relative to the shell it was typed in.
+        // Relative to the file, not to the working directory — otherwise the same setting would mean a
+        // different file in every subdirectory the tool is run from. An argument is left alone.
         private static string? Relative(string? value, string? settingsPath)
             => value is null || settingsPath is null || Path.IsPathRooted(value)
                 ? value

@@ -41,15 +41,8 @@ namespace Grammar.Czech.Lexicon.Tool
             ("slot_realization", "morph_case", typeof(Case))
         ];
 
-        // The one enumerated column in lemma_entry with no CHECK behind it, and it cannot have one: the
-        // list of vzory lives in Grammar.Czech's embedded pattern JSON, which neither the server schema
-        // nor the PHP admin can reach. A copy in a CHECK clause or an admin dropdown would be a second
-        // source of truth that drifts — and it would drift first on the sub-patterns (učitel, občan,
-        // turista, syn, král), which are project names rather than textbook ones. So the check belongs
-        // here, the one place where the lexicon and the pattern data are loaded by the same process.
-        //
-        // Exposed because the admin needs the same answer and must not compute its own: PhpSchemaParityTests
-        // holds LEXICON_PATTERNS in schema-tables.php against this, the way it already does for the enums.
+        // The vzory live in Grammar.Czech's embedded JSON, which no CHECK can reach, so the check belongs
+        // here — and is public because PhpSchemaParityTests holds LEXICON_PATTERNS against it.
         private static readonly Lazy<IReadOnlyDictionary<string, IReadOnlySet<string>>> patternsByCategory = new(() =>
         {
             var verbs = new JsonVerbDataProvider();
@@ -84,9 +77,7 @@ namespace Grammar.Czech.Lexicon.Tool
             var errors = new List<string>();
             var warnings = new List<string>();
 
-            // Opening a database that is not there fails deep inside SQLite with "unable to open
-            // database file", which names neither the path nor what to do about it. The provider guards
-            // the same way for the same reason.
+            // SQLite would fail with "unable to open database file", naming neither the path nor the fix.
             if (!File.Exists(path))
             {
                 throw new FileNotFoundException(
@@ -122,9 +113,8 @@ namespace Grammar.Czech.Lexicon.Tool
             }
             finally
             {
-                // Disposing the connection returns it to the pool rather than closing it, and a pooled
-                // connection still holds the file. A pull validates the database it has just written and
-                // then renames it into place, which on Windows fails outright while the handle is open.
+                // Disposing only pools the connection, which keeps the file open — and a pull renames
+                // the database it has just validated, which on Windows fails while a handle is held.
                 SqliteConnection.ClearAllPools();
             }
         }
@@ -148,9 +138,8 @@ namespace Grammar.Czech.Lexicon.Tool
             }
         }
 
-        // SQLite accepts foreign key clauses whether or not it enforces them, and enforcement is off by
-        // default, so a row written by a connection that forgot the pragma can sit in the file pointing at
-        // nothing. This is the sweep that finds those.
+        // Foreign key enforcement is off by default, so a row written without the pragma can sit in the
+        // file pointing at nothing.
         private static void CheckReferentialIntegrity(SqliteConnection connection, List<string> errors)
         {
             foreach (var row in Query(connection, "PRAGMA foreign_key_check"))
@@ -179,12 +168,8 @@ namespace Grammar.Czech.Lexicon.Tool
             }
         }
 
-        // A misspelled vzor is accepted by the database, by the admin's free-text field and by every other
-        // check here, and only surfaces as NotSupportedException("Noun pattern 'ucitel' not found.") the
-        // first time something declines the word — far from the row that caused it.
-        //
-        // The comparison folds case because all three inflection services look the pattern up through
-        // Pattern.ToLower(); matching more strictly than the runtime does would report working rows.
+        // Nothing else refuses a misspelled vzor; it surfaces the first time something declines the word.
+        // Folded, because the inflection services look it up through ToLower().
         private static void CheckPatterns(SqliteConnection connection, List<string> errors)
         {
             const string sql = "SELECT DISTINCT category, pattern FROM lemma_entry WHERE pattern IS NOT NULL";
@@ -216,9 +201,8 @@ namespace Grammar.Czech.Lexicon.Tool
         private static IReadOnlySet<string> Fold(IEnumerable<string> keys) =>
             keys.Select(key => key.ToLowerInvariant()).ToHashSet();
 
-        // lemma_key is what every lookup matches on and it is folded in C# with ToLowerInvariant, so a
-        // hand-typed row with the wrong key is a lemma that quietly cannot be found. SQLite's own lower()
-        // folds ASCII only and would pass Dát as correct, which is why the comparison happens here.
+        // A wrong lemma_key is a lemma no lookup finds. Compared here and not in SQL, whose lower()
+        // folds ASCII only and would pass Dát as correct.
         private static void CheckLemmaKeys(SqliteConnection connection, List<string> errors)
         {
             foreach (var row in Query(connection, "SELECT lemma, lemma_key FROM lemma_entry"))
@@ -293,10 +277,8 @@ namespace Grammar.Czech.Lexicon.Tool
             }
         }
 
-        // These two columns hold a lemma rather than a foreign key, because lemma_entry is unique on
-        // (lemma_key, category, homonym_index) and neither reference carries a category. A dangling one is
-        // a warning and not an error: a reference can point at a real Czech word the dictionary has simply
-        // not reached yet, which is a gap to fill rather than a row to reject.
+        // Both hold a lemma rather than a foreign key, since neither reference carries a category. A
+        // dangling one warns rather than fails: it may name a real word the dictionary has yet to reach.
         private static void CheckDanglingLemmaReferences(SqliteConnection connection, List<string> warnings)
         {
             const string dangling = """
@@ -329,10 +311,8 @@ namespace Grammar.Czech.Lexicon.Tool
             }
         }
 
-        // The mirror image of CheckEmptyLexemes, and the one that happens. Valency is reached from a
-        // lemma, so a lexeme no lemma points at holds frames nothing can look up. Deleting a heslo in the
-        // admin leaves them: the foreign key runs the other way, so nothing objects. A warning and not an
-        // error — the rows are dead weight, not corruption.
+        // Valency is reached from a lemma, so a lexeme no lemma points at holds frames nothing can look
+        // up — what deleting a heslo leaves, since the foreign key runs the other way and nothing objects.
         private static void CheckUnreachableLexemes(SqliteConnection connection, List<string> warnings)
         {
             const string unreachable = """

@@ -156,15 +156,10 @@ namespace Grammar.Czech.Services
             return primary.Concat(secondary).ToList();
         }
 
-        // Reported rather than papered over, though not quite because the class is closed. NESČ puts it more
-        // carefully: conjunctions proper are a closed set, but they are the core of an open class of
-        // connective expressions, so an unlisted word is not automatically not a conjunction. The reason to
-        // refuse is narrower and holds anyway — the comma and the clitic position both follow from which
-        // kind it is, and neither can be guessed from the word itself.
-        //
-        // A reading asked for by type is answered from the alternatives when the primary one is the other
-        // type: ať subordinates a content clause and coordinates a split one, and the caller building a
-        // coordination knows which it means even though the lemma does not.
+        // Refused rather than guessed, though not because the class is closed — NESČ calls conjunctions
+        // the core of an open class. The reason is narrower: the comma and the clitic position follow
+        // from which kind it is, and the word does not say. A type asked for explicitly is answered from
+        // the alternatives, since ať both subordinates and coordinates.
         private ConjunctionData Lookup(string conjunction, ConjunctionType? reading)
         {
             if (!_conjunctions.TryGetValue(conjunction, out var data))

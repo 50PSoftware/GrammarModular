@@ -51,8 +51,7 @@ namespace Grammar.Czech
             services.AddSingleton<INumeralDataProvider>(new JsonNumeralDataProvider());
 
             // ── Valency & lexical dictionary ─────────────────────────────────────────
-            // The lexicon is the one data source that is a database rather than an embedded JSON: it is
-            // the part meant to grow into thousands of entries, and it is authored directly in the file.
+            // The one data source that is a database rather than embedded JSON, because it grows.
             services.AddSingleton<IValencyProvider<CzechLexicalEntry>>(
                 _ => new SqliteValencyProvider(lexiconPath));
 
@@ -117,11 +116,8 @@ namespace Grammar.Czech
             services.AddSingleton<CzechWordFormComposer>();
             services.AddSingleton<CzechSentenceBuilder>();
 
-            // Several services implement IInflectionService<CzechWordRequest>, but the container holds one
-            // registration per key and the last one silently wins. It is bound here, after all of them, and
-            // to the engine: it is the only implementation that takes a request of any word class, whereas
-            // a per-class service would throw on everything outside its own class. A caller that wants one
-            // particular class asks for its concrete type.
+            // Several services implement this and the last registration silently wins, so it is bound
+            // here, to the engine — the only one that accepts a request of any word class.
             services.AddSingleton<IInflectionService<CzechWordRequest>>(sp =>
                 sp.GetRequiredService<MorphologyEngine>());
             services.AddSingleton<IVerbInflectionService<CzechWordRequest>>(sp =>
