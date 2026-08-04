@@ -100,7 +100,13 @@ namespace Grammar.Czech.Models
         /// <summary>
         /// Gets or sets the lexical category of the requested word.
         /// </summary>
-        public WordCategory WordCategory { get; set; }
+        /// <remarks>
+        /// Nullable so that "not stated" has a value of its own, the same way the flags do. It used to be
+        /// a bare <see cref="Core.Enums.WordCategory"/>, whose default is <c>Noun</c> — so a request that
+        /// never mentioned a category was silently a noun, and a verb sent without one was declined
+        /// rather than conjugated. Leaving it unset now means the lexicon supplies it.
+        /// </remarks>
+        public WordCategory? WordCategory { get; set; }
         /// <summary>
         /// Gets or sets the inflection pattern key.
         /// </summary>

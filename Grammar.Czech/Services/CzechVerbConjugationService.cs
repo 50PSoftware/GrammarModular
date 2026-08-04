@@ -182,7 +182,18 @@ namespace Grammar.Czech.Services
         /// </summary>
         private VerbPattern ResolvePattern(CzechWordRequest word)
         {
-            var key = word.Pattern!.ToLower();
+            // Without a vzor there is nothing to conjugate by, and until this check the next line threw
+            // NullReferenceException — which named neither the word nor what was missing. The noun
+            // service guards the same way; this is the verb half of it.
+            if (string.IsNullOrEmpty(word.Pattern))
+            {
+                throw new InvalidOperationException(
+                    $"Sloveso '{word.Lemma}' nemá zadaný vzor ani třídu. Doplň "
+                    + $"{nameof(CzechWordRequest)}.{nameof(CzechWordRequest.Pattern)} nebo "
+                    + $"{nameof(CzechWordRequest.VerbClass)}, nebo heslo zaveď do slovníku.");
+            }
+
+            var key = word.Pattern.ToLower();
 
             if (_dataProvider.GetPatterns().TryGetValue(key, out var regular))
                 return regular;

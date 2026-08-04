@@ -58,10 +58,14 @@ namespace Grammar.Czech.Services
         {
             ValidateRequest(wordRequest);
 
-            if (!analyzers.TryGetValue(wordRequest.WordCategory, out var analyzer))
+            // A request with no category reaches here only when something bypassed MorphologyEngine,
+            // which fills it from the lexicon and refuses what it cannot. Reported as unsupported like
+            // any other category the resolver has no analyzer for.
+            if (wordRequest.WordCategory is not { } category
+                || !analyzers.TryGetValue(category, out var analyzer))
             {
                 throw new NotSupportedException(
-                    $"Word category '{wordRequest.WordCategory}' is not supported.");
+                    $"Word category '{wordRequest.WordCategory?.ToString() ?? "neuvedeno"}' is not supported.");
             }
 
             return analyzer(wordRequest);

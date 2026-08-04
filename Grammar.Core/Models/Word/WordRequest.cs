@@ -58,7 +58,7 @@ namespace Grammar.Core.Models.Word
         /// Gets or sets the lexical category of the requested word.
         /// </summary>
         [JsonPropertyName("Category")]
-        public WordCategory WordCategory { get; set; }
+        public WordCategory? WordCategory { get; set; }
 
         /// <summary>
         /// Gets or sets the inflection pattern key.

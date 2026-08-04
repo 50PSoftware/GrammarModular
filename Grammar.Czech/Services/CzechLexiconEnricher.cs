@@ -53,6 +53,23 @@ namespace Grammar.Czech.Services
                 return word;
             }
 
+            if (word.WordCategory is { } stated && stated != entry.Category)
+            {
+                // The lexicon holds a different word class under this lemma — stát the country against
+                // stát the verb. Everything on that row describes the other word, so filling from it
+                // would not complete this request but answer a different one: the caller would ask to
+                // conjugate stát and be handed the vzor hrad.
+                //
+                // GetEntry takes a lemma and no category, so it cannot pick the right homonym; until it
+                // can, refusing the wrong one is the whole of what is available. The request goes through
+                // as the caller wrote it, which is what happened before there was a lexicon at all.
+                return word;
+            }
+
+            // The category first, because it is what decides which service the request is routed to and
+            // therefore which of the fields below will even be read. Every lexicon row carries one.
+            word.WordCategory ??= entry.Category;
+
             word.Gender ??= entry.Gender;
             word.Pattern ??= entry.Pattern;
             word.IsAnimate ??= entry.IsAnimate;

@@ -275,9 +275,13 @@ Do databáze píše **přímo, ne přes `/api/`**, a je to záměr. API je pro r
 
 Nic pod `admin/` se neobsluhuje — `admin/.htaccess` zakazuje celý adresář a každý soubor v něm navíc odmítne běžet, pokud ho neincludoval `index.php`; to je ta pojistka, která drží i tam, kde se `.htaccess` neuplatní.
 
-U slova, které slovník zná, nemusíš zadat nic než lemma. `CzechLexiconEnricher` běží před skloňováním a časováním a doplní, co požadavek neřekl — rod, vzor, životnost, hláskové příznaky, slovesnou třídu, vid, reflexivitu.
+U slova, které slovník zná, nemusíš zadat nic než lemma. `CzechLexiconEnricher` běží v `MorphologyEngine` ještě před rozřazením a doplní, co požadavek neřekl — slovní druh, rod, vzor, životnost, hláskové příznaky, slovesnou třídu, vid, reflexivitu.
+
+Před rozřazením proto, že slovní druh je jedna z věcí, které doplňuje, a zároveň to, podle čeho se vybírá služba. `WordCategory` je tedy nullable: výchozí hodnota enumu je vždycky některý jeho člen a tady to byl `Noun`, takže požadavek, který slovní druh neuvedl, nebyl mezera, ale tvrzení — `dát` skončilo u skloňování, správně si ze slovníku doplnilo vzor `trida5` a spadlo na *Noun pattern 'trida5' not found*.
 
 Zapisuje jen tam, kde je v požadavku `null`, takže zadaný vzor vyhraje i proti slovníku a `HasMobileE = false` zůstane false, místo aby ho přebil záznam. Proto jsou ty příznaky nullable: `false` je „volající říká, že slovo pohyblivé -e nemá", `null` je „volající to neřekl", a mezera je jen to druhé. Slovo, které slovník nezná, projde beze změny a skloní se z toho, co dodal volající — což je běžný případ, ne okrajový: většina češtiny ve slovníku není a nebude.
+
+Záznam se použije jen tehdy, když jeho slovní druh odpovídá tomu, na co se ptáš. `GetEntry` bere lemma bez kategorie, takže u lemmatu zavedeného pod dvěma slovními druhy vrátí ten řádek, na který narazí; doplnit požadavek o sloveso *stát* z řádku pro *stát* jako zemi by ho nedoplnilo, ale odpovědělo na něco jiného.
 
 Lexikon slouží hlavně jako provider metadat pro vybrané resolvery, není to úplný český slovník.
 

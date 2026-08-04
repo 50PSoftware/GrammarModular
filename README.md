@@ -277,9 +277,13 @@ Nothing under `admin/` is served — `admin/.htaccess` denies the directory, and
 
 It deliberately does **not** re-implement `LexiconValidator`. Two hand-maintained copies of the same rules drift, and the validator already gates every pull, so anything the admin lets through is caught before it reaches a local lexicon. What it does enforce is the part that cannot be repaired afterwards — `lemma_key` folded with `mb_strtolower` (the byte-wise `strtolower` leaves `Á` alone and yields a key no lookup matches), the permitted enum values, and the shape of a realization. Missing actors and slots with no preferred realization are shown as warnings where they occur rather than blocked.
 
-Nothing is required beyond the lemma for a word the dictionary holds. `CzechLexiconEnricher` runs in front of noun and verb inflection and fills in whatever the request left unsaid — gender, pattern, animacy, the phonological flags, verb class, aspect, reflexive type.
+Nothing is required beyond the lemma for a word the dictionary holds. `CzechLexiconEnricher` runs in `MorphologyEngine` ahead of the dispatch and fills in whatever the request left unsaid — the word class, gender, pattern, animacy, the phonological flags, verb class, aspect, reflexive type.
+
+Ahead of the dispatch, because the word class is one of the things it fills and is also what selects the inflection service. `WordCategory` is therefore nullable: an enum's default is one of its members, and for this one that was `Noun`, so a request that never mentioned a class was a claim rather than a gap — `dát` reached the declension service, had its vzor filled from the lexicon correctly as `trida5`, and failed with *Noun pattern 'trida5' not found*.
 
 It only ever writes where the request holds `null`, so a stated pattern wins even when the lexicon disagrees, and `HasMobileE = false` stays false rather than being replaced by the entry. That distinction is why the flags are nullable: `false` is the caller saying the word has no mobile e, `null` is the caller not saying, and only the second is a gap. A word the lexicon has never heard of goes through untouched and inflects from what the caller passes, which is the ordinary case — most of Czech is not in the dictionary and never will be.
+
+An entry is used only when its word class matches the one asked about. `GetEntry` takes a lemma and no category, so on a lemma entered under two classes it returns whichever row it finds; filling a request about *stát* the verb from the row for *stát* the country would not complete it but answer a different question.
 
 The lexicon serves mainly as a metadata provider for selected resolvers; it is not a complete dictionary of Czech.
 
