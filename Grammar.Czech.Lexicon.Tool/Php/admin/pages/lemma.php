@@ -51,6 +51,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         admin_redirect(['p' => 'lemma', 'id' => $id]);
     }
 
+    $verbClass = admin_enum('verb_class', 'verb_class');
+
+    // Třída doplní vzor, když žádný není. Vyplněný vzor nepřepisuje: čtrnáct sloves ve slovníku běží
+    // na pojmenovaných vzorech (psát, moci, být), které do žádné třídy zapsat nejdou, a přepsat psát
+    // na trida1 by je začalo časovat bez alternace kmene. Stejné pořadí priorit má
+    // CzechVerbConjugationService, kde je VerbClass rovněž jen náhradník za chybějící vzor.
+    //
+    // Děje se to tady, a ne jen tím kouskem JavaScriptu ve formuláři, protože uložit se dá i bez něj.
+    if ($category === 'Verb' && $pattern === null && $verbClass !== null) {
+        $pattern = LEXICON_VERB_CLASSES[$verbClass]['pattern'];
+    }
+
     // Lexém: buď existující, nebo nový, nebo žádný. Slova bez valence — většina substantiv — ho
     // nepotřebují a NULL je u nich správná hodnota, ne mezera.
     $lexemeId = admin_text('lexeme_id');
@@ -77,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         admin_flag('is_plural_only'),
         admin_flag('is_countable'),
         admin_flag('prefers_short_form'),
-        admin_enum('verb_class', 'verb_class'),
+        $verbClass,
         admin_enum('aspect', 'aspect'),
         admin_text('aspect_counterpart'),
         admin_enum('reflexive_type', 'reflexive_type') ?? 'None',
@@ -131,6 +143,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $value = static fn (string $column, mixed $default = null): mixed => $entry[$column] ?? $default;
 $lexemes = admin_all('SELECT lexeme_id, primary_lemma FROM lexeme ORDER BY primary_lemma');
+
+// Co po smazání zůstane rozbité. Nic z toho smazání neblokuje — jsou to legitimní kroky, když se
+// heslo zakládalo omylem — ale ani jedno není z formuláře vidět, protože cizí klíč vede od hesla
+// k lexému a ne zpátky, takže databáze mlčí a mrtvá data zůstanou v každém dalším pullu.
+$deleteWarnings = [];
+
+if (!$isNew) {
+    $orphanLexeme = $value('lexeme_id') === null ? null : admin_one(
+        'SELECT x.lexeme_id, x.primary_lemma,
+                (SELECT COUNT(*) FROM lexical_unit u WHERE u.lexeme_id = x.lexeme_id) AS senses
+         FROM lexeme x
+         WHERE x.lexeme_id = ?
+           AND NOT EXISTS (SELECT 1 FROM lemma_entry e
+                           WHERE e.lexeme_id = x.lexeme_id AND e.lemma_entry_id <> ?)',
+        [(int) $value('lexeme_id'), (int) $id]
+    );
+
+    if ($orphanLexeme !== null) {
+        $deleteWarnings[] = [
+            'text' => 'Na lexém „' . $orphanLexeme['primary_lemma'] . '“ pak neukáže žádné heslo. '
+                . 'Jeho významy (' . (int) $orphanLexeme['senses'] . ') a jejich rámce zůstanou '
+                . 'v databázi, ale nepůjde se k nim dostat.',
+            'link' => admin_url(['p' => 'lexeme', 'id' => (int) $orphanLexeme['lexeme_id']]),
+            'linkText' => 'Otevřít lexém',
+        ];
+    }
+
+    // aspect_counterpart a base_verb_lemma nesou lemma, ne cizí klíč — heslo se dá smazat i zpod nich.
+    // Který ze dvou sloupců to je, se rozhoduje tady a ne v SQL: CASE s parametry v THEN i ELSE je
+    // přesně ten druh dotazu, u kterého se ovladače liší v tom, jak si odvodí typ.
+    $referrers = admin_all(
+        'SELECT lemma, lemma_entry_id, aspect_counterpart, base_verb_lemma
+         FROM lemma_entry
+         WHERE (aspect_counterpart = ? OR base_verb_lemma = ?) AND lemma_entry_id <> ?',
+        [$value('lemma'), $value('lemma'), (int) $id]
+    );
+
+    foreach ($referrers as $referrer) {
+        $via = $referrer['aspect_counterpart'] === $value('lemma')
+            ? 'vidový protějšek'
+            : 'odvozeno ze slovesa';
+
+        $deleteWarnings[] = [
+            'text' => 'Heslo „' . $referrer['lemma'] . '“ na tohle ukazuje přes „' . $via
+                . '“. Odkaz zůstane viset na slovo, které ve slovníku nebude.',
+            'link' => admin_url(['p' => 'lemma', 'id' => (int) $referrer['lemma_entry_id']]),
+            'linkText' => 'Otevřít heslo',
+        ];
+    }
+}
 ?>
 
 <p class="crumbs"><a href="<?= h(admin_url(['p' => 'list'])) ?>">Hesla</a> / <?= $isNew ? 'nové' : h((string) $value('lemma')) ?></p>
@@ -204,7 +266,18 @@ $lexemes = admin_all('SELECT lexeme_id, primary_lemma FROM lexeme ORDER BY prima
     <div class="grid">
         <p class="field">
             <label for="verb_class">Slovesná třída</label>
-            <?= admin_select('verb_class', 'verb_class', $value('verb_class')) ?>
+            <?php /* Vlastní select místo admin_select(): popiska nese vzory třídy, aby se dala vybrat
+                     podle toho, jak sloveso zní, ne podle čísla, které si nikdo nepamatuje. */ ?>
+            <select name="verb_class" id="verb_class">
+                <option value="">— neuvedeno —</option>
+                <?php foreach (LEXICON_VERB_CLASSES as $class => $info): ?>
+                    <option value="<?= h($class) ?>" data-pattern="<?= h($info['pattern']) ?>"<?= $value('verb_class') === $class ? ' selected' : '' ?>>
+                        <?= h(LEXICON_ENUMS['verb_class'][$class]) ?>
+                        (<?= h($info['ending']) ?>) — <?= h(implode(', ', $info['examples'])) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <small>Vyplní vzor, když žádný není. Vyplněný nepřepíše — psát ani moci se do třídy zapsat nedají.</small>
         </p>
         <p class="field">
             <label for="aspect">Vid</label>
@@ -276,11 +349,63 @@ $lexemes = admin_all('SELECT lexeme_id, primary_lemma FROM lexeme ORDER BY prima
 </form>
 
 <?php if (!$isNew): ?>
-<form method="post" class="card danger" onsubmit="return confirm('Opravdu smazat heslo <?= h((string) $value('lemma')) ?>?');">
+<?php
+// Varování patří i do confirmu, ne jen na stránku: kdo maže, klikne na tlačítko a dialog přečte,
+// zatímco text nad ním už přeskočil.
+$confirm = 'Opravdu smazat heslo ' . $value('lemma') . '?';
+
+foreach ($deleteWarnings as $warning) {
+    $confirm .= "\n\n" . $warning['text'];
+}
+
+// json_encode kvůli uvozovkám a zalomením v textu; h() proto, že výsledek jde do atributu.
+$confirmLiteral = (string) json_encode($confirm, JSON_UNESCAPED_UNICODE);
+?>
+<form method="post" class="card danger" onsubmit="return confirm(<?= h($confirmLiteral) ?>);">
     <input type="hidden" name="csrf" value="<?= h(admin_csrf_token()) ?>">
     <input type="hidden" name="action" value="delete">
     <h2>Smazat heslo</h2>
-    <p>Lexém a jeho rámce zůstanou — patří i druhému členu vidové dvojice.</p>
+
+    <?php if ($deleteWarnings === []): ?>
+        <p>Nic dalšího na tohle heslo neukazuje.<?= $value('lexeme_id') === null ? '' : ' Lexém a jeho rámce zůstanou — patří i druhému členu vidové dvojice.' ?></p>
+    <?php else: ?>
+        <p><strong>Po smazání zůstane rozbité:</strong></p>
+        <ul class="warnings">
+            <?php foreach ($deleteWarnings as $warning): ?>
+                <li>
+                    <?= h($warning['text']) ?>
+                    <a href="<?= h($warning['link']) ?>"><?= h($warning['linkText']) ?></a>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+        <p class="hint">Smazat to jde i tak — jen to ve slovníku nechá data, ke kterým nevede cesta.
+            Nástroj lexikonu na ně upozorní při každém <code>validate</code>.</p>
+    <?php endif; ?>
+
     <button type="submit" class="del">Smazat</button>
 </form>
 <?php endif; ?>
+
+<script>
+    // Propsání třídy do vzoru. Totéž dělá i PHP při ukládání — tohle je jen proto, aby bylo vidět,
+    // co se uloží, dřív než se to uloží.
+    (function () {
+        var verbClass = document.getElementById('verb_class');
+        var pattern = document.getElementById('pattern');
+
+        if (!verbClass || !pattern) {
+            return;
+        }
+
+        verbClass.addEventListener('change', function () {
+            var option = verbClass.options[verbClass.selectedIndex];
+            var derived = option ? option.getAttribute('data-pattern') : null;
+
+            // Pojmenovaný vzor je vždycky rozhodnutí, které třída přebít nesmí. Přepsat se dá jen
+            // prázdné pole nebo vzor, který sám vznikl z třídy.
+            if (derived && (pattern.value === '' || /^trida[1-5]$/.test(pattern.value))) {
+                pattern.value = derived;
+            }
+        });
+    })();
+</script>

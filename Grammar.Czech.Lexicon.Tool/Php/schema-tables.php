@@ -194,3 +194,25 @@ const LEXICON_PATTERNS = [
         'umět', 'umře', 'vědět', 'vidět', 'vzít', 'zvát',
     ],
 ];
+
+/**
+ * Slovesné třídy: vzor, kterým se třída časuje, a čím se pozná.
+ *
+ * Sloveso se ve slovníku ukládá vzorem, ne třídou — čtrnáct sloves z dnešních dvaačtyřiceti běží na
+ * pojmenovaných vzorech (být, moci, psát), pro které žádná hodnota VerbClass neexistuje. Třída je tedy
+ * zkratka, kterou se dá vzor vyplnit u sloves pravidelných, ne samostatný údaj.
+ *
+ * 'pattern' musí souhlasit s CzechVerbConjugationService::PatternByVerbClass — kdyby se rozešly,
+ * administrace by ukládala vzor, kterým se sloveso ve skutečnosti nečasuje. Hlídá to
+ * PhpSchemaParityTests.
+ *
+ * 'examples' jsou vzory, které do třídy patří a engine je zná; 'ending' je koncovka 3. os. j. č., podle
+ * které se třída určuje. Obojí je jen popiska ve formuláři.
+ */
+const LEXICON_VERB_CLASSES = [
+    'Class1' => ['pattern' => 'trida1', 'ending' => '-e', 'examples' => ['nese', 'bere', 'maže', 'peče', 'umře']],
+    'Class2' => ['pattern' => 'trida2', 'ending' => '-ne', 'examples' => ['tiskne', 'mine']],
+    'Class3' => ['pattern' => 'trida3', 'ending' => '-je', 'examples' => ['kryje', 'kupuje']],
+    'Class4' => ['pattern' => 'trida4', 'ending' => '-í', 'examples' => ['prosí']],
+    'Class5' => ['pattern' => 'trida5', 'ending' => '-á', 'examples' => ['dělá']],
+];

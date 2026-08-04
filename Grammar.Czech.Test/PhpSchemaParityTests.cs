@@ -1,4 +1,5 @@
 using Grammar.Czech.Lexicon.Tool;
+using Grammar.Czech.Services;
 using System.Text.RegularExpressions;
 
 namespace Grammar.Czech.Test
@@ -156,6 +157,53 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Each slovesná třída in the admin fills the vzor the conjugation service conjugates it by.
+        /// </summary>
+        /// <remarks>
+        /// The admin offers the třída as a shortcut for the vzor, because most verbs are regular and
+        /// nobody wants to type trida4. That makes it a second copy of a mapping the engine already owns,
+        /// and the failure if they drift is silent: the entry saves, pulls and validates, and the verb is
+        /// simply conjugated by the wrong class — <em>prosí</em> endings on a verb that takes
+        /// <em>nese</em> ones.
+        /// <para>
+        /// The examples are only a label and are not checked here, but the vzor each one names has to
+        /// exist, or the form would recommend a vzor nothing can be saved with.
+        /// </para>
+        /// </remarks>
+        [TestMethod]
+        public void Php_MapsEachVerbClassToThePatternTheEngineUses()
+        {
+            var source = ToolResources.Read(ToolResources.PhpSchemaTables);
+            var offered = ParseVerbClasses(source);
+            var expected = CzechVerbConjugationService.PatternByVerbClass;
+
+            CollectionAssert.AreEquivalent(
+                expected.Keys.Select(verbClass => verbClass.ToString()).ToArray(),
+                offered.Keys.ToArray(),
+                "Třídy se rozešly.\n"
+                + $"  C#:  {string.Join(", ", expected.Keys)}\n"
+                + $"  PHP: {string.Join(", ", offered.Keys)}");
+
+            var verbPatterns = ParsePatterns(source)["Verb"];
+
+            foreach (var (verbClass, pattern) in expected)
+            {
+                Assert.AreEqual(
+                    pattern,
+                    offered[verbClass.ToString()].Pattern,
+                    $"Třída {verbClass} plní v administraci jiný vzor, než kterým ji engine časuje.");
+
+                foreach (var example in offered[verbClass.ToString()].Examples)
+                {
+                    CollectionAssert.Contains(
+                        verbPatterns,
+                        example,
+                        $"Třída {verbClass} nabízí jako příklad vzor '{example}', který neexistuje.");
+                }
+            }
+        }
+
+        /// <summary>
         /// Gets the constrained columns and the enum each one mirrors.
         /// </summary>
         public static IEnumerable<object[]> EnumColumns =>
@@ -171,6 +219,35 @@ namespace Grammar.Czech.Test
             ["obligatoriness", typeof(Core.Enums.Obligatoriness)],
             ["morph_case", typeof(Core.Enums.Case)]
         ];
+
+        // Each entry is 'ClassN' => ['pattern' => '…', 'ending' => '…', 'examples' => ['…', …]].
+        private static Dictionary<string, (string Pattern, List<string> Examples)> ParseVerbClasses(
+            string source)
+        {
+            var block = Regex.Match(source, @"const\s+LEXICON_VERB_CLASSES\s*=\s*\[(?<body>.*?)^\];",
+                RegexOptions.Singleline | RegexOptions.Multiline);
+
+            Assert.IsTrue(block.Success, "V schema-tables.php nenajdu konstantu LEXICON_VERB_CLASSES.");
+
+            var classes = new Dictionary<string, (string, List<string>)>(StringComparer.Ordinal);
+
+            foreach (Match entry in Regex.Matches(
+                block.Groups["body"].Value,
+                @"'(?<class>Class\d)'\s*=>\s*\[\s*'pattern'\s*=>\s*'(?<pattern>[^']+)'.*?"
+                    + @"'examples'\s*=>\s*\[(?<examples>[^\]]*)\]",
+                RegexOptions.Singleline))
+            {
+                classes[entry.Groups["class"].Value] = (
+                    entry.Groups["pattern"].Value,
+                    Regex.Matches(entry.Groups["examples"].Value, @"'(?<example>[^']+)'")
+                        .Select(example => example.Groups["example"].Value)
+                        .ToList());
+            }
+
+            Assert.IsTrue(classes.Count > 0, "Parser nenačetl z LEXICON_VERB_CLASSES žádnou třídu.");
+
+            return classes;
+        }
 
         // Each entry is 'Category' => ['vzor', 'vzor', …] — a flat list, unlike the enum map, because a
         // vzor is its own label. The values carry diacritics, so the value pattern cannot be [a-z_]+.

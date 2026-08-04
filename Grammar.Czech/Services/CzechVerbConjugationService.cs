@@ -24,18 +24,25 @@ namespace Grammar.Czech.Services
         private readonly CzechLexiconEnricher _lexiconEnricher;
 
         /// <summary>
-        /// Mapování <see cref="VerbClass"/> na klíče generických vzorů v patterns.json.
-        /// Používá se pouze pokud volající předá <see cref="CzechWordRequest.VerbClass"/>
-        /// místo explicitního <see cref="CzechWordRequest.Pattern"/>.
+        /// Gets the generic pattern key in patterns.json that each <see cref="VerbClass"/> conjugates by.
         /// </summary>
-        private readonly Dictionary<VerbClass, string> verbClassMap = new()
-        {
-            { VerbClass.Class1, "trida1" },
-            { VerbClass.Class2, "trida2" },
-            { VerbClass.Class3, "trida3" },
-            { VerbClass.Class4, "trida4" },
-            { VerbClass.Class5, "trida5" },
-        };
+        /// <remarks>
+        /// Used only when the caller supplies <see cref="CzechWordRequest.VerbClass"/> instead of an
+        /// explicit <see cref="CzechWordRequest.Pattern"/>.
+        /// <para>
+        /// Exposed because the admin fills the vzor from the třída the same way and must not invent its
+        /// own mapping; PhpSchemaParityTests holds LEXICON_VERB_CLASSES against this.
+        /// </para>
+        /// </remarks>
+        public static IReadOnlyDictionary<VerbClass, string> PatternByVerbClass { get; } =
+            new Dictionary<VerbClass, string>
+            {
+                { VerbClass.Class1, "trida1" },
+                { VerbClass.Class2, "trida2" },
+                { VerbClass.Class3, "trida3" },
+                { VerbClass.Class4, "trida4" },
+                { VerbClass.Class5, "trida5" },
+            };
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechVerbConjugationService"/> type.
@@ -82,7 +89,7 @@ namespace Grammar.Czech.Services
             if (word.VerbClass.HasValue
                 && (word.Pattern == null || !_dataProvider.GetPatterns().ContainsKey(word.Pattern.ToLower())))
             {
-                if (!verbClassMap.TryGetValue(word.VerbClass.Value, out var mappedKey))
+                if (!PatternByVerbClass.TryGetValue(word.VerbClass.Value, out var mappedKey))
                     throw new InvalidOperationException(
                         $"Unknown verb class {word.VerbClass.Value}.");
                 word.Pattern = mappedKey;
