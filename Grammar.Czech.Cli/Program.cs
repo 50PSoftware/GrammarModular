@@ -300,7 +300,7 @@
             }
         }
 
-        private static void PrintAdjectiveForms(CzechWordFormComposer composer, CzechWordRequest request, )
+        private static void PrintAdjectiveForms(CzechWordFormComposer composer, CzechWordRequest request, Degree degree = Degree.Positive)
         {
             PrintWordInfo(request);
             foreach(var cGender in Enum.GetValues<Gender>())
@@ -314,6 +314,7 @@
                         request.Gender = cGender;
                         request.Number = cNumber;
                         request.Case = cCase;
+                        request.Degree = degree;
                         var result = composer.GetFullForm(request);
                         Console.WriteLine($"\t\t\t{cCase}: {result.Form}");
                     }
