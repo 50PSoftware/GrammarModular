@@ -50,13 +50,22 @@ namespace Grammar.Czech.Providers.SqliteProviders
         private const string SchemaVersionQuery =
             "SELECT meta_value FROM lexicon_meta WHERE meta_key = 'schema_version'";
 
-        private const string EntryQuery = """
+        private const string EntryColumns = """
             SELECT lemma, category, gender, pattern, is_animate, has_mobile_e,
                    has_genitive_plural_shortening, has_epenthesis_in_genitive_plural,
                    is_indeclinable, is_plural_only, is_countable, prefers_short_form,
                    verb_class, aspect, aspect_counterpart, reflexive_type, base_verb_lemma
             FROM lemma_entry
+
+            """;
+
+        private const string EntryQuery = EntryColumns + """
             WHERE lemma_key = @key
+            ORDER BY homonym_index
+            """;
+
+        private const string EntryByCategoryQuery = EntryColumns + """
+            WHERE lemma_key = @key AND category = @category
             ORDER BY homonym_index
             """;
 
@@ -217,12 +226,22 @@ namespace Grammar.Czech.Providers.SqliteProviders
         /// <param name="lemma">The dictionary form to resolve or analyze.</param>
         /// <returns>The lexical entry for the lemma, or null when the lemma is not present.</returns>
         /// <remarks>
-        /// A lemma shared by two word classes — stát the building and stát the verb — yields the entry with
-        /// the lowest homonym index. The interface takes a lemma and nothing else, so there is nothing here
-        /// to tell the two apart with.
+        /// A lemma held under two word classes yields whichever comes first. Use the overload taking a
+        /// <see cref="WordCategory"/> when the class is known.
         /// </remarks>
         public CzechLexicalEntry? GetEntry(string lemma)
             => _entryCache.GetOrAdd(ToKey(lemma), LoadEntry);
+
+        /// <summary>
+        /// Gets the lexical entry registered for the supplied lemma in the supplied word class.
+        /// </summary>
+        /// <param name="lemma">The dictionary form to resolve or analyze.</param>
+        /// <param name="category">The word class to look the lemma up in.</param>
+        /// <returns>The lexical entry, or null when the lemma is not present in that class.</returns>
+        public CzechLexicalEntry? GetEntry(string lemma, WordCategory category)
+            => _entryCache.GetOrAdd(
+                $"{category}|{ToKey(lemma)}",
+                _ => LoadEntry(ToKey(lemma), category));
 
         /// <summary>
         /// Gets valency frames registered for the supplied verb lemma.
@@ -249,6 +268,17 @@ namespace Grammar.Czech.Providers.SqliteProviders
         {
             using var connection = OpenConnection();
             using var command = CreateCommand(connection, EntryQuery, key);
+            using var reader = command.ExecuteReader();
+
+            return reader.Read() ? ReadEntry(reader) : null;
+        }
+
+        private CzechLexicalEntry? LoadEntry(string key, WordCategory category)
+        {
+            using var connection = OpenConnection();
+            using var command = CreateCommand(connection, EntryByCategoryQuery, key);
+            AddParameter(command, "@category", category.ToString());
+
             using var reader = command.ExecuteReader();
 
             return reader.Read() ? ReadEntry(reader) : null;
@@ -377,13 +407,17 @@ namespace Grammar.Czech.Providers.SqliteProviders
         {
             var command = connection.CreateCommand();
             command.CommandText = sql;
-
-            var parameter = command.CreateParameter();
-            parameter.ParameterName = "@key";
-            parameter.Value = key;
-            command.Parameters.Add(parameter);
+            AddParameter(command, "@key", key);
 
             return command;
+        }
+
+        private static void AddParameter(DbCommand command, string name, string value)
+        {
+            var parameter = command.CreateParameter();
+            parameter.ParameterName = name;
+            parameter.Value = value;
+            command.Parameters.Add(parameter);
         }
 
         private static string? GetNullableString(DbDataReader reader, int ordinal)

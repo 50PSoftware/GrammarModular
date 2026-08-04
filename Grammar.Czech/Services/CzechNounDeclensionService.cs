@@ -22,7 +22,6 @@ namespace Grammar.Czech.Services
         private readonly ISyncretismRuleEvaluator<CzechWordRequest> _syncretismRuleEvaluator;
         private readonly ICzechOrthographyService _orthographyService;
         private readonly IValencyProvider<CzechLexicalEntry> _valencyProvider;
-        private readonly CzechLexiconEnricher _lexiconEnricher;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechNounDeclensionService"/> type.
@@ -38,7 +37,6 @@ namespace Grammar.Czech.Services
             this._syncretismRuleEvaluator = syncretismRuleEvaluator;
             this._orthographyService = orthographyService;
             this._valencyProvider = valencyProvider;
-            this._lexiconEnricher = new CzechLexiconEnricher(valencyProvider);
         }
 
         /// <summary>
@@ -48,9 +46,6 @@ namespace Grammar.Czech.Services
         /// <returns>The generated noun form.</returns>
         public WordForm GetForm(CzechWordRequest word)
         {
-            // Doplní ze slovníku jen to, co požadavek neřekl. Co řekl, platí.
-            word = _lexiconEnricher.Enrich(word);
-
             if (_dataProvider.GetPropers().TryGetValue(word.Lemma, out var propers) && word.IsIndeclinable.HasValue && word.IsIndeclinable.Value)
             {
                 return new WordForm(word.Lemma);

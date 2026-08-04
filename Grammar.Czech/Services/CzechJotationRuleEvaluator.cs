@@ -54,9 +54,8 @@ namespace Grammar.Czech.Services
             var isLabial = phoneme?.Place == ArticulationPlace.Bilabial || (phoneme?.Place == ArticulationPlace.Labiodental && phoneme.Symbol == "v");
             var isNasal = phoneme?.Place == ArticulationPlace.Alveolar && phoneme?.Manner == ArticulationManner.Nasal;
             var isDTN = phoneme?.Place == ArticulationPlace.Alveolar && (phoneme?.Manner == ArticulationManner.Nasal || phoneme?.Manner == ArticulationManner.Plosive);
-            // The vzor is analyzed as a word of the same class as the word being inflected — žena is a
-            // noun exactly because student is. Stating it is not optional: the category used to default
-            // to Noun, which was right here by accident rather than by anything said.
+            // The vzor is analyzed as the same word class as the word being inflected. Stated rather
+            // than left to the default, which used to be Noun and was right here only by accident.
             var patternRequest = new CzechWordRequest
             {
                 Lemma = request.Pattern,

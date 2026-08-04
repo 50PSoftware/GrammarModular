@@ -95,18 +95,10 @@ namespace Grammar.Czech.Services
         /// Fills the request from the lexicon before anything decides what to do with it.
         /// </summary>
         /// <remarks>
-        /// The enrichment belongs here rather than only in the per-class services, because the category is
-        /// itself one of the things the lexicon knows, and the services are chosen by it — by the time one
-        /// of them enriched a request, the routing had already happened. A verb sent without a category
-        /// used to reach the noun service, which then filled the vzor from the lexicon, correctly, and
-        /// failed with "Noun pattern 'trida5' not found" — a message about the vzor for a mistake about
-        /// the word class.
-        /// <para>
-        /// The noun and verb services still enrich too. They are registered under their own types and can
-        /// be called without going through here, and enriching twice costs a lookup the provider has
-        /// already memoized: Enrich only ever writes where a field is null, so the second pass finds
-        /// nothing left to do.
-        /// </para>
+        /// Before the dispatch, because the word class is one of the things the lexicon supplies and also
+        /// what selects the service. Enriching inside the services was too late: a verb sent without a
+        /// class reached the noun one, filled its vzor as trida5 and failed with "Noun pattern 'trida5'
+        /// not found" — a complaint about the vzor for a mistake about the class.
         /// </remarks>
         private CzechWordRequest Complete(CzechWordRequest word)
         {

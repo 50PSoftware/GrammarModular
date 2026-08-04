@@ -190,7 +190,7 @@ const LEXICON_PATTERNS = [
         'trida1', 'trida2', 'trida3', 'trida4', 'trida5', 'dojme',
         'bere', 'běžet', 'být', 'chtít', 'číst', 'dát', 'dělá', 'hrát', 'jet', 'jíst', 'jít',
         'jmout', 'klást', 'kryje', 'kupuje', 'ležet', 'maže', 'mine', 'mít', 'moci', 'nese',
-        'peče', 'pomoci', 'prosí', 'psát', 'říct', 'řvát', 'sedět', 'spát', 'téci', 'tiskne',
+        'peče', 'pomoci', 'prosí', 'psát', 'říct', 'řvát', 'sedět', 'spát', 'stát', 'téci', 'tiskne',
         'umět', 'umře', 'vědět', 'vidět', 'vzít', 'zvát',
     ],
 ];
@@ -198,16 +198,12 @@ const LEXICON_PATTERNS = [
 /**
  * Slovesné třídy: vzor, kterým se třída časuje, a čím se pozná.
  *
- * Sloveso se ve slovníku ukládá vzorem, ne třídou — čtrnáct sloves z dnešních dvaačtyřiceti běží na
- * pojmenovaných vzorech (být, moci, psát), pro které žádná hodnota VerbClass neexistuje. Třída je tedy
- * zkratka, kterou se dá vzor vyplnit u sloves pravidelných, ne samostatný údaj.
+ * Sloveso se ukládá vzorem, ne třídou — čtrnáct ze dvaačtyřiceti běží na pojmenovaných vzorech (být,
+ * moci, psát), pro které žádná hodnota VerbClass neexistuje. Třída je zkratka k vyplnění vzoru.
  *
- * 'pattern' musí souhlasit s CzechVerbConjugationService::PatternByVerbClass — kdyby se rozešly,
- * administrace by ukládala vzor, kterým se sloveso ve skutečnosti nečasuje. Hlídá to
- * PhpSchemaParityTests.
- *
- * 'examples' jsou vzory, které do třídy patří a engine je zná; 'ending' je koncovka 3. os. j. č., podle
- * které se třída určuje. Obojí je jen popiska ve formuláři.
+ * 'pattern' musí souhlasit s CzechVerbConjugationService::PatternByVerbClass, jinak by administrace
+ * ukládala vzor, kterým se sloveso nečasuje. Hlídá PhpSchemaParityTests. 'ending' a 'examples' jsou
+ * popisky ve formuláři.
  */
 const LEXICON_VERB_CLASSES = [
     'Class1' => ['pattern' => 'trida1', 'ending' => '-e', 'examples' => ['nese', 'bere', 'maže', 'peče', 'umře']],

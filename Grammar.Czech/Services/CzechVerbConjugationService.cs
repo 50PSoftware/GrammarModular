@@ -21,18 +21,14 @@ namespace Grammar.Czech.Services
         private readonly ICzechPrefixService _czechPrefixService;
         private readonly IPhonemeRegistry _phonemeRegistry;
         private readonly IValencyProvider<CzechLexicalEntry> _valencyProvider;
-        private readonly CzechLexiconEnricher _lexiconEnricher;
 
         /// <summary>
         /// Gets the generic pattern key in patterns.json that each <see cref="VerbClass"/> conjugates by.
         /// </summary>
         /// <remarks>
-        /// Used only when the caller supplies <see cref="CzechWordRequest.VerbClass"/> instead of an
-        /// explicit <see cref="CzechWordRequest.Pattern"/>.
-        /// <para>
-        /// Exposed because the admin fills the vzor from the třída the same way and must not invent its
-        /// own mapping; PhpSchemaParityTests holds LEXICON_VERB_CLASSES against this.
-        /// </para>
+        /// Used only when the caller supplies <see cref="CzechWordRequest.VerbClass"/> instead of a
+        /// <see cref="CzechWordRequest.Pattern"/>. Public because the admin fills the vzor from the třída
+        /// the same way; PhpSchemaParityTests holds LEXICON_VERB_CLASSES against this.
         /// </remarks>
         public static IReadOnlyDictionary<VerbClass, string> PatternByVerbClass { get; } =
             new Dictionary<VerbClass, string>
@@ -61,7 +57,6 @@ namespace Grammar.Czech.Services
             this._czechPrefixService = czechPrefixService;
             this._phonemeRegistry = phonemeRegistry;
             this._valencyProvider = valencyProvider;
-            _lexiconEnricher = new CzechLexiconEnricher(valencyProvider);
         }
 
         #region Public API
@@ -73,9 +68,6 @@ namespace Grammar.Czech.Services
         /// <returns>The generated verb form before phrase-level composition is applied.</returns>
         public WordForm GetBasicForm(CzechWordRequest word)
         {
-            // Doplní ze slovníku jen to, co požadavek neřekl. Co řekl, platí.
-            word = _lexiconEnricher.Enrich(word);
-
             if (word.Modus == Modus.Imperative && word.Voice == Voice.Passive)
                 throw new InvalidOperationException(
                     "Passive form does not exist in imperative.");
@@ -182,9 +174,8 @@ namespace Grammar.Czech.Services
         /// </summary>
         private VerbPattern ResolvePattern(CzechWordRequest word)
         {
-            // Without a vzor there is nothing to conjugate by, and until this check the next line threw
-            // NullReferenceException — which named neither the word nor what was missing. The noun
-            // service guards the same way; this is the verb half of it.
+            // Without a vzor the next line threw NullReferenceException, naming neither the word nor
+            // what was missing. The noun service guards the same way.
             if (string.IsNullOrEmpty(word.Pattern))
             {
                 throw new InvalidOperationException(

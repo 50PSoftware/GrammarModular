@@ -7,16 +7,10 @@ namespace Grammar.Czech.Services
     /// Fills in from the lexicon whatever a request did not state.
     /// </summary>
     /// <remarks>
-    /// Additive by construction: it only ever writes where the request holds <see langword="null"/>, so
-    /// anything the caller said stands, and a word the lexicon has never heard of goes through unchanged
-    /// and fails — or succeeds — exactly as it did before. That is what lets it sit in front of every
-    /// inflection without changing the meaning of any existing call.
-    /// <para>
-    /// The distinction it rests on is that a nullable flag has three states, not two.
-    /// <c>HasMobileE = false</c> is the caller saying the word has no mobile e; <see langword="null"/> is
-    /// the caller not saying. Only the second is a gap worth filling, which is also why the lexicon
-    /// columns are nullable rather than defaulted.
-    /// </para>
+    /// Additive: it only writes where the request holds <see langword="null"/>, so anything the caller
+    /// said stands and an unknown word passes through unchanged. That rests on a nullable flag having
+    /// three states — <c>HasMobileE = false</c> is a claim, <see langword="null"/> is a gap, and only the
+    /// second is filled. Hence nullable lexicon columns rather than defaulted ones.
     /// </remarks>
     public sealed class CzechLexiconEnricher
     {
@@ -43,31 +37,21 @@ namespace Grammar.Czech.Services
                 return word;
             }
 
-            var entry = _valencyProvider.GetEntry(word.Lemma);
+            // A stated word class picks the right homonym — stát the country and stát the verb share a
+            // lemma and nothing else. Without one, whichever row comes first has to do.
+            var entry = word.WordCategory is { } stated
+                ? _valencyProvider.GetEntry(word.Lemma, stated)
+                : _valencyProvider.GetEntry(word.Lemma);
 
             if (entry is null)
             {
-                // Most of Czech is not in the dictionary and never will be. A word it does not hold is
-                // the ordinary case, not a failure — the caller supplies the metadata itself, as it
-                // always has.
+                // Most of Czech is not in the dictionary and never will be, so a word it does not hold
+                // is the ordinary case: the caller supplies the metadata, as it always has.
                 return word;
             }
 
-            if (word.WordCategory is { } stated && stated != entry.Category)
-            {
-                // The lexicon holds a different word class under this lemma — stát the country against
-                // stát the verb. Everything on that row describes the other word, so filling from it
-                // would not complete this request but answer a different one: the caller would ask to
-                // conjugate stát and be handed the vzor hrad.
-                //
-                // GetEntry takes a lemma and no category, so it cannot pick the right homonym; until it
-                // can, refusing the wrong one is the whole of what is available. The request goes through
-                // as the caller wrote it, which is what happened before there was a lexicon at all.
-                return word;
-            }
-
-            // The category first, because it is what decides which service the request is routed to and
-            // therefore which of the fields below will even be read. Every lexicon row carries one.
+            // The category first — it decides which service the request is routed to, and therefore
+            // which of the fields below is ever read.
             word.WordCategory ??= entry.Category;
 
             word.Gender ??= entry.Gender;

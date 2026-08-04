@@ -160,15 +160,9 @@ namespace Grammar.Czech.Test
         /// Each slovesná třída in the admin fills the vzor the conjugation service conjugates it by.
         /// </summary>
         /// <remarks>
-        /// The admin offers the třída as a shortcut for the vzor, because most verbs are regular and
-        /// nobody wants to type trida4. That makes it a second copy of a mapping the engine already owns,
-        /// and the failure if they drift is silent: the entry saves, pulls and validates, and the verb is
-        /// simply conjugated by the wrong class — <em>prosí</em> endings on a verb that takes
-        /// <em>nese</em> ones.
-        /// <para>
-        /// The examples are only a label and are not checked here, but the vzor each one names has to
-        /// exist, or the form would recommend a vzor nothing can be saved with.
-        /// </para>
+        /// A second copy of a mapping the engine owns, and the failure if they drift is silent: the entry
+        /// saves, pulls and validates, and the verb is conjugated by the wrong class. The examples are a
+        /// label, but each vzor they name has to exist or the form recommends an unsaveable one.
         /// </remarks>
         [TestMethod]
         public void Php_MapsEachVerbClassToThePatternTheEngineUses()

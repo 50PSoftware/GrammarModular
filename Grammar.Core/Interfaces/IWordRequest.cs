@@ -49,9 +49,8 @@ namespace Grammar.Core.Interfaces
         /// Gets or sets the lexical category of the requested word.
         /// </summary>
         /// <remarks>
-        /// Nullable like every other category here, and for the same reason: an enum's default is one of
-        /// its members, so a non-nullable one cannot say that nobody chose. For this property that
-        /// default was <c>Noun</c>, which made an unstated category into a claim rather than a gap.
+        /// Nullable like every other category here: an enum's default is one of its members, so a
+        /// non-nullable one cannot say that nobody chose. Here that default was <c>Noun</c>.
         /// </remarks>
         [JsonPropertyName("Category")]
         public WordCategory? WordCategory { get; }

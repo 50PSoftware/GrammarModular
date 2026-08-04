@@ -101,10 +101,9 @@ namespace Grammar.Czech.Test
         /// A lexeme left behind by a deleted lemma is reported as unreachable.
         /// </summary>
         /// <remarks>
-        /// Deleting a heslo in the admin is a plain DELETE on lemma_entry, and the foreign key runs from
-        /// the heslo to the lexeme rather than back, so nothing objects and the lexeme stays — with its
-        /// senses and frames intact and no lemma left to reach them by. Nothing failed and nothing
-        /// warned; the rows simply sat in every pull afterwards.
+        /// Deleting a heslo is a plain DELETE on lemma_entry and the foreign key runs the other way, so
+        /// nothing objects and the lexeme stays with its senses and frames unreachable. Nothing failed
+        /// and nothing warned; the rows simply sat in every pull afterwards.
         /// </remarks>
         [TestMethod]
         public void Check_LexemeWithNoLemma_ReportsItAsUnreachable()

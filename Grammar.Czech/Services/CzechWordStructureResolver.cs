@@ -58,9 +58,8 @@ namespace Grammar.Czech.Services
         {
             ValidateRequest(wordRequest);
 
-            // A request with no category reaches here only when something bypassed MorphologyEngine,
-            // which fills it from the lexicon and refuses what it cannot. Reported as unsupported like
-            // any other category the resolver has no analyzer for.
+            // No category means something bypassed MorphologyEngine, which fills it and refuses what it
+            // cannot. Reported like any other category with no analyzer.
             if (wordRequest.WordCategory is not { } category
                 || !analyzers.TryGetValue(category, out var analyzer))
             {

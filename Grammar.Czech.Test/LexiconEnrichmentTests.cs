@@ -67,11 +67,9 @@ namespace Grammar.Czech.Test
         /// A lemma the lexicon knows inflects without being told what word class it is.
         /// </summary>
         /// <remarks>
-        /// The word class decides which service the request is routed to, so it has to be filled before
-        /// the routing rather than inside it. Until it was, an unstated category was not a gap at all:
-        /// the property was a bare enum whose default is Noun, so <c>dát</c> was sent to the declension
-        /// service, which filled the vzor from the lexicon — correctly, trida5 — and then failed with
-        /// "Noun pattern 'trida5' not found", a complaint about the vzor for a mistake about the class.
+        /// The word class picks the service, so it has to be filled before the routing. Until it was, an
+        /// unstated one was not a gap: the default was Noun, so <c>dát</c> went to the declension service
+        /// and failed with "Noun pattern 'trida5' not found".
         /// </remarks>
         [TestMethod]
         public void GetForm_CategoryNotStated_ComesFromTheLexicon()
@@ -97,19 +95,41 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// A lemma held under two word classes inflects correctly as either.
+        /// </summary>
+        /// <remarks>
+        /// stát is the one lemma in the dictionary entered twice — a masculine inanimate noun and an
+        /// imperfective verb — and nothing about the two rows is shared. Whichever one a lookup returns,
+        /// the other request has to still come out right.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow(WordCategory.Noun, "státu")]
+        [DataRow(WordCategory.Verb, "stojím")]
+        public void GetForm_LemmaInTwoWordClasses_InflectsAsTheOneAskedFor(
+            WordCategory category,
+            string expected)
+        {
+            var form = engine.GetForm(new CzechWordRequest
+            {
+                Lemma = "stát",
+                WordCategory = category,
+                Case = Case.Genitive,
+                Number = Number.Singular,
+                Person = Person.First,
+                Tense = Tense.Present,
+                Modus = Modus.Indicative,
+            });
+
+            Assert.AreEqual(expected, form.Form);
+        }
+
+        /// <summary>
         /// The lexicon is not read across word classes, so a homonym of another class fills nothing.
         /// </summary>
         /// <remarks>
-        /// GetEntry takes a lemma and no category, so on a lemma that exists in two classes it returns
-        /// whichever row it finds. Filling from that row when the caller asked about the other word does
-        /// not complete the request, it answers a different one — a caller conjugating <em>stát</em>
-        /// would be handed the vzor <em>hrad</em>. Refusing the wrong entry leaves the request exactly as
-        /// it was written, which is how it behaved before there was a lexicon.
-        /// <para>
-        /// Tested against a stub because no lemma in the dictionary is currently entered under two word
-        /// classes — which is precisely why this needs a test rather than an example: the day one is, the
-        /// breakage would be in every caller of the other class.
-        /// </para>
+        /// Filling from the row for the other word does not complete the request, it answers a different
+        /// one — a caller conjugating <em>stát</em> handed the vzor <em>hrad</em>. Against a stub rather
+        /// than the dictionary, so the property holds for any pair and not just the one that exists.
         /// </remarks>
         [TestMethod]
         public void Enrich_EntryOfAnotherCategory_FillsNothing()
@@ -136,9 +156,8 @@ namespace Grammar.Czech.Test
         /// A verb with no vzor and no třída says so instead of throwing NullReferenceException.
         /// </summary>
         /// <remarks>
-        /// The lexicon does not hold every verb and never will, so this is an ordinary way to call the
-        /// engine wrong rather than an edge case. It used to dereference the missing vzor and fail with a
-        /// message naming neither the word nor what it wanted.
+        /// The lexicon holds nowhere near every verb, so this is an ordinary call and not an edge case.
+        /// It used to dereference the missing vzor.
         /// </remarks>
         [TestMethod]
         public void GetForm_VerbWithNoPatternAnywhere_ExplainsWhatIsMissing()
@@ -249,6 +268,9 @@ namespace Grammar.Czech.Test
         {
             public CzechLexicalEntry? GetEntry(string lemma)
                 => string.Equals(lemma, entry.Lemma, StringComparison.OrdinalIgnoreCase) ? entry : null;
+
+            public CzechLexicalEntry? GetEntry(string lemma, WordCategory category)
+                => GetEntry(lemma) is { } found && found.Category == category ? found : null;
 
             public bool HasEntry(string lemma) => GetEntry(lemma) is not null;
 

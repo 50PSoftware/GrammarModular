@@ -7,14 +7,10 @@ namespace Grammar.Czech.Test
     /// Checks the dictionary's content for the mistakes a schema cannot catch.
     /// </summary>
     /// <remarks>
-    /// A CHECK constraint can say that a gender is one of three values; it cannot say that a noun
-    /// declined by <em>žena</em> is not masculine. Those are the errors that survive into the data and
-    /// then surface far away, as a form that is quietly wrong rather than as anything failing — which is
-    /// what happened with the mobile e of <em>větev</em>.
-    /// <para>
-    /// Written against the whole dictionary rather than a handful of examples, because the point is to
-    /// keep holding as it grows: these checks cost nothing per entry and there are meant to be thousands.
-    /// </para>
+    /// A CHECK constraint can say a gender is one of three values; it cannot say a noun declined by
+    /// <em>žena</em> is not masculine. Those errors surface far away, as a quietly wrong form rather than
+    /// a failure — as the mobile e of <em>větev</em> did. Run over the whole dictionary, because the
+    /// point is to keep holding as it grows.
     /// </remarks>
     [TestClass]
     public sealed class LexiconDataTests
@@ -110,8 +106,8 @@ namespace Grammar.Czech.Test
         /// A masculine noun's animacy is the one its pattern implies.
         /// </summary>
         /// <remarks>
-        /// Masculines only. Animacy is what splits pán from hrad, and stating it against the pattern
-        /// produces forms from the wrong half of the paradigm.
+        /// Masculines only — animacy is what splits pán from hrad. Elsewhere the flag records natural
+        /// animacy and no declension reads it.
         /// </remarks>
         [TestMethod]
         public void EveryMasculineNoun_HasTheAnimacyOfItsPattern()
@@ -128,14 +124,10 @@ namespace Grammar.Czech.Test
         /// The mobile-e flag agrees with the rule wherever the rule has an opinion.
         /// </summary>
         /// <remarks>
-        /// This is the check that would have caught <em>větev</em>. It was recorded as having no mobile e
-        /// while ending in -ev, which the rule reads as having one; nothing noticed until the flag
-        /// started reaching the engine, and then the noun declined to <em>*věteve</em>.
-        /// <para>
-        /// Disagreement is legitimate — the field exists to override the rule — so this does not forbid
-        /// it, it just requires that somebody chose it, by naming the lemma in
-        /// <see cref="DeliberateMobileEOverrides"/>.
-        /// </para>
+        /// The check that would have caught <em>větev</em>: recorded as having no mobile e while ending
+        /// in -ev, which the rule reads as having one, and nothing noticed until it declined to
+        /// <em>*věteve</em>. Disagreement stays legitimate — the field exists to override the rule — it
+        /// just has to be a choice, named in <see cref="DeliberateMobileEOverrides"/>.
         /// </remarks>
         [TestMethod]
         public void EveryNoun_AgreesWithTheMobileERule()
@@ -164,9 +156,8 @@ namespace Grammar.Czech.Test
         /// Every aspect counterpart resolves, carries the opposite aspect, and points back.
         /// </summary>
         /// <remarks>
-        /// The counterpart is a lemma rather than a foreign key, so nothing in the schema stops it naming
-        /// a word that is absent, or one of the same aspect. Either would surface as a wrong future
-        /// tense, which is built from it — jít pointed at zajít for exactly that reason.
+        /// A lemma rather than a foreign key, so nothing stops it naming an absent word or one of the
+        /// same aspect. Either surfaces as a wrong future tense, which is built from it.
         /// </remarks>
         [TestMethod]
         public void EveryAspectCounterpart_ResolvesAndPointsBack()

@@ -188,6 +188,13 @@
     "stem": "sp",
     "pastStem": "spa"
   },
+  "stát": {
+    "inheritsFrom": "trida4",
+    "aspect": "imperfective",
+    "stem": "stoj",
+    "pastStem": "stá",
+    "imperativeStem": "stůj"
+  },
   "ležet": {
     "inheritsFrom": "trida4",
     "aspect": "imperfective",

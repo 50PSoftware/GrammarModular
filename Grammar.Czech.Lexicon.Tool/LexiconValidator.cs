@@ -329,14 +329,10 @@ namespace Grammar.Czech.Lexicon.Tool
             }
         }
 
-        // The mirror image of CheckEmptyLexemes, and the one that actually happens. Valency is reached
-        // from a lemma — lemma_entry.lexeme_id → lexeme → lexical_unit → valency_frame — so a lexeme no
-        // lemma points at is a set of frames nothing can ever look up.
-        //
-        // Deleting a lemma in the admin is what leaves them: the foreign key runs the other way, so
-        // nothing objects, and the lexeme stays behind fully populated. It is a warning rather than an
-        // error because the rows are dead weight, not corruption — they still export, import and load,
-        // they simply answer no question.
+        // The mirror image of CheckEmptyLexemes, and the one that happens. Valency is reached from a
+        // lemma, so a lexeme no lemma points at holds frames nothing can look up. Deleting a heslo in the
+        // admin leaves them: the foreign key runs the other way, so nothing objects. A warning and not an
+        // error — the rows are dead weight, not corruption.
         private static void CheckUnreachableLexemes(SqliteConnection connection, List<string> warnings)
         {
             const string unreachable = """
@@ -358,8 +354,7 @@ namespace Grammar.Czech.Lexicon.Tool
             }
         }
 
-        // A grammar library counting in broken Czech would be a poor advertisement, and 1/2–4/5+ is the
-        // whole rule for this noun.
+        // 1 / 2–4 / 5+ is the whole rule for this noun.
         private static string SenseCountNoun(long count) => count switch
         {
             1 => "význam",

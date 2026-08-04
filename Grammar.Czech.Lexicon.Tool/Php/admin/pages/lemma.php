@@ -53,12 +53,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $verbClass = admin_enum('verb_class', 'verb_class');
 
-    // Třída doplní vzor, když žádný není. Vyplněný vzor nepřepisuje: čtrnáct sloves ve slovníku běží
-    // na pojmenovaných vzorech (psát, moci, být), které do žádné třídy zapsat nejdou, a přepsat psát
-    // na trida1 by je začalo časovat bez alternace kmene. Stejné pořadí priorit má
-    // CzechVerbConjugationService, kde je VerbClass rovněž jen náhradník za chybějící vzor.
-    //
-    // Děje se to tady, a ne jen tím kouskem JavaScriptu ve formuláři, protože uložit se dá i bez něj.
+    // Třída doplní vzor, když žádný není, a vyplněný nepřepíše: psát ani moci do třídy zapsat nejdou a
+    // přepsat psát na trida1 by je časovalo bez alternace kmene. Stejné priority má
+    // CzechVerbConjugationService. Tady, a ne jen v JavaScriptu, protože uložit se dá i bez něj.
     if ($category === 'Verb' && $pattern === null && $verbClass !== null) {
         $pattern = LEXICON_VERB_CLASSES[$verbClass]['pattern'];
     }
@@ -144,9 +141,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $value = static fn (string $column, mixed $default = null): mixed => $entry[$column] ?? $default;
 $lexemes = admin_all('SELECT lexeme_id, primary_lemma FROM lexeme ORDER BY primary_lemma');
 
-// Co po smazání zůstane rozbité. Nic z toho smazání neblokuje — jsou to legitimní kroky, když se
-// heslo zakládalo omylem — ale ani jedno není z formuláře vidět, protože cizí klíč vede od hesla
-// k lexému a ne zpátky, takže databáze mlčí a mrtvá data zůstanou v každém dalším pullu.
+// Co po smazání zůstane rozbité. Neblokuje to — heslo založené omylem je důvod ho smazat — ale ani
+// jedno není z formuláře vidět: cizí klíč vede od hesla k lexému a ne zpátky, takže databáze mlčí.
 $deleteWarnings = [];
 
 if (!$isNew) {
@@ -171,8 +167,8 @@ if (!$isNew) {
     }
 
     // aspect_counterpart a base_verb_lemma nesou lemma, ne cizí klíč — heslo se dá smazat i zpod nich.
-    // Který ze dvou sloupců to je, se rozhoduje tady a ne v SQL: CASE s parametry v THEN i ELSE je
-    // přesně ten druh dotazu, u kterého se ovladače liší v tom, jak si odvodí typ.
+    // Který sloupec to je, se rozhoduje v PHP: CASE s parametry v THEN i ELSE si každý ovladač otypuje
+    // po svém.
     $referrers = admin_all(
         'SELECT lemma, lemma_entry_id, aspect_counterpart, base_verb_lemma
          FROM lemma_entry
@@ -350,8 +346,7 @@ if (!$isNew) {
 
 <?php if (!$isNew): ?>
 <?php
-// Varování patří i do confirmu, ne jen na stránku: kdo maže, klikne na tlačítko a dialog přečte,
-// zatímco text nad ním už přeskočil.
+// I do confirmu: kdo maže, klikne na tlačítko a dialog přečte, zatímco text nad ním přeskočil.
 $confirm = 'Opravdu smazat heslo ' . $value('lemma') . '?';
 
 foreach ($deleteWarnings as $warning) {
@@ -387,8 +382,7 @@ $confirmLiteral = (string) json_encode($confirm, JSON_UNESCAPED_UNICODE);
 <?php endif; ?>
 
 <script>
-    // Propsání třídy do vzoru. Totéž dělá i PHP při ukládání — tohle je jen proto, aby bylo vidět,
-    // co se uloží, dřív než se to uloží.
+    // Propsání třídy do vzoru. Totéž dělá PHP při ukládání; tohle je proto, aby to bylo vidět dřív.
     (function () {
         var verbClass = document.getElementById('verb_class');
         var pattern = document.getElementById('pattern');
@@ -401,8 +395,7 @@ $confirmLiteral = (string) json_encode($confirm, JSON_UNESCAPED_UNICODE);
             var option = verbClass.options[verbClass.selectedIndex];
             var derived = option ? option.getAttribute('data-pattern') : null;
 
-            // Pojmenovaný vzor je vždycky rozhodnutí, které třída přebít nesmí. Přepsat se dá jen
-            // prázdné pole nebo vzor, který sám vznikl z třídy.
+            // Pojmenovaný vzor je rozhodnutí, které třída přebít nesmí.
             if (derived && (pattern.value === '' || /^trida[1-5]$/.test(pattern.value))) {
                 pattern.value = derived;
             }
