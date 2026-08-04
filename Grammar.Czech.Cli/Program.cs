@@ -300,6 +300,27 @@
             }
         }
 
+        private static void PrintAdjetiveForms(CzechWordFormComposer composer, CzechWordRequest request, )
+        {
+            PrintWordInfo(request);
+            foreach(var cGender in Enum.GetValues<Gender>())
+            {
+                Console.WriteLine("\t{0}:", cGender);
+                foreach (var cNumber in Enum.GetValues<Number>())
+                {
+                    Console.WriteLine("\t\t{0}:", cNumber.ToString());
+                    foreach (var cCase in Enum.GetValues<Case>())
+                    {
+                        request.Gender = cGender;
+                        request.Number = cNumber;
+                        request.Case = cCase;
+                        var result = composer.GetFullForm(request);
+                        Console.WriteLine($"\t\t\t{cCase}: {result.Form}");
+                    }
+                }
+            }
+        }
+
         private static void PrintVerbForms(CzechWordFormComposer composer, CzechWordRequest request, Modus modus = Modus.Conjunctive)
         {
             PrintWordInfo(request);
