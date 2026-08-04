@@ -116,6 +116,7 @@ namespace Grammar.Czech.Lexicon.Tool
                 CheckSlots(connection, errors);
                 CheckDanglingLemmaReferences(connection, warnings);
                 CheckEmptyLexemes(connection, warnings);
+                CheckUnreachableLexemes(connection, warnings);
 
                 return new ValidationReport(errors, warnings);
             }
@@ -327,6 +328,44 @@ namespace Grammar.Czech.Lexicon.Tool
                 warnings.Add($"Lexém {row[0]} ({row[1]}) nemá žádnou lexikální jednotku, takže nemá ani rámec.");
             }
         }
+
+        // The mirror image of CheckEmptyLexemes, and the one that actually happens. Valency is reached
+        // from a lemma — lemma_entry.lexeme_id → lexeme → lexical_unit → valency_frame — so a lexeme no
+        // lemma points at is a set of frames nothing can ever look up.
+        //
+        // Deleting a lemma in the admin is what leaves them: the foreign key runs the other way, so
+        // nothing objects, and the lexeme stays behind fully populated. It is a warning rather than an
+        // error because the rows are dead weight, not corruption — they still export, import and load,
+        // they simply answer no question.
+        private static void CheckUnreachableLexemes(SqliteConnection connection, List<string> warnings)
+        {
+            const string unreachable = """
+                SELECT x.lexeme_id, x.primary_lemma,
+                       (SELECT COUNT(*) FROM lexical_unit u WHERE u.lexeme_id = x.lexeme_id)
+                FROM lexeme x
+                WHERE EXISTS (SELECT 1 FROM lexical_unit u WHERE u.lexeme_id = x.lexeme_id)
+                  AND NOT EXISTS (SELECT 1 FROM lemma_entry e WHERE e.lexeme_id = x.lexeme_id)
+                """;
+
+            foreach (var row in Query(connection, unreachable))
+            {
+                var senses = Convert.ToInt64(row[2]);
+
+                warnings.Add(
+                    $"Na lexém {row[0]} ({row[1]}) neukazuje žádné heslo, takže jeho {senses} "
+                    + $"{SenseCountNoun(senses)} a jejich rámce jsou nedosažitelné. Nejspíš zbytek po "
+                    + "smazaném hesle.");
+            }
+        }
+
+        // A grammar library counting in broken Czech would be a poor advertisement, and 1/2–4/5+ is the
+        // whole rule for this noun.
+        private static string SenseCountNoun(long count) => count switch
+        {
+            1 => "význam",
+            >= 2 and <= 4 => "významy",
+            _ => "významů"
+        };
 
         private static string? ScalarText(SqliteConnection connection, string sql)
         {

@@ -98,6 +98,36 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// A lexeme left behind by a deleted lemma is reported as unreachable.
+        /// </summary>
+        /// <remarks>
+        /// Deleting a heslo in the admin is a plain DELETE on lemma_entry, and the foreign key runs from
+        /// the heslo to the lexeme rather than back, so nothing objects and the lexeme stays — with its
+        /// senses and frames intact and no lemma left to reach them by. Nothing failed and nothing
+        /// warned; the rows simply sat in every pull afterwards.
+        /// </remarks>
+        [TestMethod]
+        public void Check_LexemeWithNoLemma_ReportsItAsUnreachable()
+        {
+            var working = WorkingPath();
+
+            var validation = LexiconPuller.Check(WithoutLemma("bydlet"), _ => { }, working);
+
+            Assert.AreEqual(
+                0,
+                validation.Errors.Count,
+                "Osiřelý lexém není chyba, jen mrtvá data: " + string.Join("; ", validation.Errors));
+
+            Assert.IsTrue(
+                validation.Warnings.Any(warning
+                    => warning.Contains("neukazuje žádné heslo", StringComparison.Ordinal)),
+                "Očekával jsem varování o nedosažitelném lexému, přišlo: "
+                    + string.Join("; ", validation.Warnings));
+
+            Assert.IsFalse(File.Exists(working), "Kontrola po sobě nechala pracovní soubor.");
+        }
+
+        /// <summary>
         /// A server that answers with nothing does not read as an empty dictionary.
         /// </summary>
         [TestMethod]
@@ -147,6 +177,27 @@ namespace Grammar.Czech.Test
                         .Select(row => LexiconPage.ToDatabaseValue(row[column]) as string == from
                             ? row.Select((value, index) => index == column ? to : value).ToList()
                             : row)
+                        .ToList()
+                };
+            });
+
+        // Drops one heslo and nothing else, which is exactly what the admin's delete does. bydlet is the
+        // right one to drop: it is the only heslo on its lexeme, so the lexeme is orphaned, and no other
+        // verb names it as an aspect counterpart, so that is the only thing the validator can react to.
+        private static IEnumerable<LexiconPage> WithoutLemma(string lemma)
+            => RoundTrip().Select(page =>
+            {
+                if (page.Table != "lemma_entry")
+                {
+                    return page;
+                }
+
+                var column = page.Columns.ToList().IndexOf("lemma");
+
+                return page with
+                {
+                    Rows = page.Rows
+                        .Where(row => LexiconPage.ToDatabaseValue(row[column]) as string != lemma)
                         .ToList()
                 };
             });
