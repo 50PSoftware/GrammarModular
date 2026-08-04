@@ -277,6 +277,10 @@ Nothing under `admin/` is served — `admin/.htaccess` denies the directory, and
 
 It deliberately does **not** re-implement `LexiconValidator`. Two hand-maintained copies of the same rules drift, and the validator already gates every pull, so anything the admin lets through is caught before it reaches a local lexicon. What it does enforce is the part that cannot be repaired afterwards — `lemma_key` folded with `mb_strtolower` (the byte-wise `strtolower` leaves `Á` alone and yields a key no lookup matches), the permitted enum values, and the shape of a realization. Missing actors and slots with no preferred realization are shown as warnings where they occur rather than blocked.
 
+Nothing is required beyond the lemma for a word the dictionary holds. `CzechLexiconEnricher` runs in front of noun and verb inflection and fills in whatever the request left unsaid — gender, pattern, animacy, the phonological flags, verb class, aspect, reflexive type.
+
+It only ever writes where the request holds `null`, so a stated pattern wins even when the lexicon disagrees, and `HasMobileE = false` stays false rather than being replaced by the entry. That distinction is why the flags are nullable: `false` is the caller saying the word has no mobile e, `null` is the caller not saying, and only the second is a gap. A word the lexicon has never heard of goes through untouched and inflects from what the caller passes, which is the ordinary case — most of Czech is not in the dictionary and never will be.
+
 The lexicon serves mainly as a metadata provider for selected resolvers; it is not a complete dictionary of Czech.
 
 A valency frame states how a given verb's arguments are realized, and `CzechSentenceBuilder` takes both case and preposition from it: for `vidět` the `PAT` is accusative, for `dávat` the `ADDR` is dative and the `PAT` accusative, for `jít` the `DIR3` is the preposition `do` with the genitive. A case set explicitly is left alone — the frame only fills the gaps. A verb with several frames is disambiguated through `CzechClause.FrameLabel`, because `jít` takes different arguments as motion than as a process.

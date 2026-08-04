@@ -109,10 +109,14 @@ VALUES
     (42, 'situace',   'situace',   1, 'Noun', 'Feminine', 'růže', 0, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
 
     -- píseň (fem., gen. -ě — the DTN/labial reversal in NormalizeEndingOrthography applies here)
-    (43, 'píseň',     'píseň',     1, 'Noun', 'Feminine', 'píseň', 0, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
-    (44, 'větev',     'větev',     1, 'Noun', 'Feminine', 'píseň', 0, 0, NULL, NULL, NULL, 'IJP', 1,
+    -- Všechna tři slova vzoru píseň mají pohyblivé -e: píseň→písně, větev→větve, třešeň→třešně.
+    -- Byla tu nastavená na 0, což tvarosloví mlčky vyplo. Vyšlo to najevo, až když si příznaky začal
+    -- ze slovníku brát i samotný generátor — do té doby si je volající dodával sám a chyby v datech
+    -- se nedotkl.
+    (43, 'píseň',     'píseň',     1, 'Noun', 'Feminine', 'píseň', 0, 1, NULL, NULL, NULL, 'IJP', 1, NULL),
+    (44, 'větev',     'větev',     1, 'Noun', 'Feminine', 'píseň', 0, 1, NULL, NULL, NULL, 'IJP', 1,
          'Ověřovací slovo pro labiodentální větev ě→e reverze v CzechOrthographyService.'),
-    (45, 'třešeň',    'třešeň',    1, 'Noun', 'Feminine', 'píseň', 0, 0, NULL, NULL, NULL, 'IJP', 1,
+    (45, 'třešeň',    'třešeň',    1, 'Noun', 'Feminine', 'píseň', 0, 1, NULL, NULL, NULL, 'IJP', 1,
          'Ověřovací slovo pro DTN větev ě→e reverze v CzechOrthographyService.'),
 
     -- kost (fem., gen. -i)

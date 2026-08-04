@@ -21,6 +21,7 @@ namespace Grammar.Czech.Services
         private readonly ICzechPrefixService _czechPrefixService;
         private readonly IPhonemeRegistry _phonemeRegistry;
         private readonly IValencyProvider<CzechLexicalEntry> _valencyProvider;
+        private readonly CzechLexiconEnricher _lexiconEnricher;
 
         /// <summary>
         /// Mapování <see cref="VerbClass"/> na klíče generických vzorů v patterns.json.
@@ -53,6 +54,7 @@ namespace Grammar.Czech.Services
             this._czechPrefixService = czechPrefixService;
             this._phonemeRegistry = phonemeRegistry;
             this._valencyProvider = valencyProvider;
+            _lexiconEnricher = new CzechLexiconEnricher(valencyProvider);
         }
 
         #region Public API
@@ -64,6 +66,9 @@ namespace Grammar.Czech.Services
         /// <returns>The generated verb form before phrase-level composition is applied.</returns>
         public WordForm GetBasicForm(CzechWordRequest word)
         {
+            // Doplní ze slovníku jen to, co požadavek neřekl. Co řekl, platí.
+            word = _lexiconEnricher.Enrich(word);
+
             if (word.Modus == Modus.Imperative && word.Voice == Voice.Passive)
                 throw new InvalidOperationException(
                     "Passive form does not exist in imperative.");

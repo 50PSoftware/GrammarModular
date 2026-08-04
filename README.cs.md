@@ -275,6 +275,10 @@ Do databáze píše **přímo, ne přes `/api/`**, a je to záměr. API je pro r
 
 Nic pod `admin/` se neobsluhuje — `admin/.htaccess` zakazuje celý adresář a každý soubor v něm navíc odmítne běžet, pokud ho neincludoval `index.php`; to je ta pojistka, která drží i tam, kde se `.htaccess` neuplatní.
 
+U slova, které slovník zná, nemusíš zadat nic než lemma. `CzechLexiconEnricher` běží před skloňováním a časováním a doplní, co požadavek neřekl — rod, vzor, životnost, hláskové příznaky, slovesnou třídu, vid, reflexivitu.
+
+Zapisuje jen tam, kde je v požadavku `null`, takže zadaný vzor vyhraje i proti slovníku a `HasMobileE = false` zůstane false, místo aby ho přebil záznam. Proto jsou ty příznaky nullable: `false` je „volající říká, že slovo pohyblivé -e nemá", `null` je „volající to neřekl", a mezera je jen to druhé. Slovo, které slovník nezná, projde beze změny a skloní se z toho, co dodal volající — což je běžný případ, ne okrajový: většina češtiny ve slovníku není a nebude.
+
 Lexikon slouží hlavně jako provider metadat pro vybrané resolvery, není to úplný český slovník.
 
 Valenční rámec říká, jak se realizují argumenty daného slovesa, a `CzechSentenceBuilder` z něj bere pád i předložku: u `vidět` je `PAT` akuzativ, u `dávat` je `ADDR` dativ a `PAT` akuzativ, u `jít` je `DIR3` předložka `do` s genitivem. Pád zadaný explicitně zůstává — rámec doplňuje mezery. Sloveso s víc rámci se vybírá přes `CzechClause.FrameLabel`, protože `jít` má jiné argumenty jako pohyb a jiné jako proces.
