@@ -402,6 +402,61 @@ function admin_select(string $name, string $column, ?string $selected, bool $all
 }
 
 /**
+ * Counts how many of the named columns the row actually says something in.
+ *
+ * Drives which sections of the entry form open by themselves. A collapsed section that turns out to
+ * hold data is worse than no collapsing at all — the value is invisible and looks absent — so a
+ * section opens whenever it has something to show.
+ *
+ * A flag set to "no" counts: 0 is a claim, and only null is the gap.
+ */
+function admin_filled_count(?array $row, array $columns): int
+{
+    if ($row === null) {
+        return 0;
+    }
+
+    $filled = 0;
+
+    foreach ($columns as $column) {
+        $value = $row[$column] ?? null;
+
+        if ($value !== null && $value !== '') {
+            $filled++;
+        }
+    }
+
+    return $filled;
+}
+
+/**
+ * Opens a foldable section of a form.
+ *
+ * A <details> rather than anything scripted, because the fields inside a collapsed one are still in
+ * the form and still post. A section hidden with display:none would do the same, but one built out of
+ * tabs or removed from the DOM would silently drop half the entry on save.
+ */
+function admin_fold_open(string $title, int $filled, int $total): string
+{
+    // Vyplněná sekce se otevře sama. Nevyplněná zůstane složená a řekne to číslem, aby nešlo splést
+    // „nic tam není“ s „nekoukal jsem dovnitř“.
+    $badge = $filled === 0
+        ? '<span class="muted">prázdné</span>'
+        : '<span class="badge">' . $filled . ' z ' . $total . '</span>';
+
+    return '<details class="fold"' . ($filled > 0 ? ' open' : '') . '><summary>' . h($title) . $badge
+        . '</summary>';
+}
+
+/**
+ * Closes a foldable section.
+ */
+function admin_fold_close(): string
+{
+    return '</details>';
+}
+
+/**
  * Renders a three-state flag as a group of radio buttons.
  */
 function admin_flag_field(string $name, ?int $value): string

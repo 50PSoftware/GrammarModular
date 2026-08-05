@@ -150,6 +150,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $value = static fn (string $column, mixed $default = null): mixed => $entry[$column] ?? $default;
 $lexemes = admin_all('SELECT lexeme_id, primary_lemma FROM lexeme ORDER BY primary_lemma');
 
+// Skládací sekce. Formulář pokrývá všechny slovní druhy, takže u každého hesla jsou dvě třetiny
+// políček bezpředmětné — u substantiva vid a kmeny, u slovesa pomnožnost. Sekce, ve které heslo něco
+// má, se otevře sama; zbytek se dá rozbalit. Pole zůstávají ve formuláři i složená a odesílají se.
+$foldColumns = [
+    'flags' => [
+        'has_mobile_e', 'has_genitive_plural_shortening', 'has_epenthesis_in_genitive_plural',
+        'is_indeclinable', 'is_plural_only', 'is_countable', 'prefers_short_form',
+    ],
+    'verb' => ['verb_class', 'aspect', 'aspect_counterpart', 'base_verb_lemma'],
+    'stems' => [
+        'stem', 'present_stem', 'past_stem', 'future_stem', 'imperative_stem', 'passive_stem',
+        'infinitive', 'forms_passive',
+    ],
+];
+
+$foldFilled = array_map(
+    static fn (array $columns): int => admin_filled_count($entry, $columns),
+    $foldColumns
+);
+
+// reflexive_type je NOT NULL s výchozím 'None', takže by sekci Sloveso otvíral i u substantiva.
+// Počítá se, jen když opravdu něco říká.
+if ($value('reflexive_type', 'None') !== 'None') {
+    $foldFilled['verb']++;
+}
+
 // Co po smazání zůstane rozbité. Neblokuje to — heslo založené omylem je důvod ho smazat — ale ani
 // jedno není z formuláře vidět: cizí klíč vede od hesla k lexému a ne zpátky, takže databáze mlčí.
 $deleteWarnings = [];
@@ -246,7 +272,7 @@ if (!$isNew) {
         </p>
     </div>
 
-    <h2>Hláskové a tvarové příznaky</h2>
+    <?= admin_fold_open('Hláskové a tvarové příznaky', $foldFilled['flags'], count($foldColumns['flags'])) ?>
     <p class="hint">Neuvedeno není totéž co „ne“ — resolvery s tím počítají jinak.</p>
 
     <div class="grid">
@@ -265,8 +291,9 @@ if (!$isNew) {
         <p class="field"><label>Preferuje krátký tvar</label>
             <?= admin_flag_field('prefers_short_form', $value('prefers_short_form') === null ? null : (int) $value('prefers_short_form')) ?></p>
     </div>
+    <?= admin_fold_close() ?>
 
-    <h2>Sloveso</h2>
+    <?= admin_fold_open('Sloveso', $foldFilled['verb'], count($foldColumns['verb']) + 1) ?>
 
     <div class="grid">
         <p class="field">
@@ -303,8 +330,9 @@ if (!$isNew) {
             <small>U dějových substantiv — příjezd ← přijet. Rámec pak dědí.</small>
         </p>
     </div>
+    <?= admin_fold_close() ?>
 
-    <h2>Kmeny</h2>
+    <?= admin_fold_open('Kmeny', $foldFilled['stems'], count($foldColumns['stems'])) ?>
     <p class="hint">Prázdné je běžný stav — kmen si určí vzor. Vyplňuje se jen to, co vzor netrefí:
         říct se časuje podle 1. třídy a minulý čas přesto tvoří na <code>řek-</code>. Píše se bez
         koncovky a bez pomlčky, a vždycky celý za tohle heslo — u odvozeného slovesa tedy i s
@@ -355,6 +383,7 @@ if (!$isNew) {
             <small>„Ne“ jen u sloves bez trpného příčestí — moci ho nemá, pomoci má pomožen.</small>
         </p>
     </div>
+    <?= admin_fold_close() ?>
 
     <h2>Valence</h2>
 

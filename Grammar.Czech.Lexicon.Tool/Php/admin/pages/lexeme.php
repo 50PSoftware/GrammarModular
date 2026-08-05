@@ -37,6 +37,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             admin_flash('Význam přidán. Teď mu dej rámec.');
             break;
 
+        case 'sense_edit':
+            // lexeme_id v podmínce, ne jen lu_id: identifikátor přišel z formuláře a bez něj by
+            // podvržené číslo přepsalo význam cizího lexému, aniž by to stránka dala najevo.
+            try {
+                admin_run(
+                    'UPDATE lexical_unit SET sense_label = ?, gloss = ? WHERE lu_id = ? AND lexeme_id = ?',
+                    [
+                        admin_text('sense_label'),
+                        admin_text('gloss'),
+                        (int) ($_POST['lu_id'] ?? 0),
+                        $id,
+                    ]
+                );
+                admin_flash('Význam uložen.');
+            } catch (PDOException $exception) {
+                // Stejné UNIQUE (lexeme_id, sense_label) jako u zakládání — jen se do něj teď dá
+                // narazit přejmenováním na název, který na lexému už je.
+                if ($exception->getCode() === '23000') {
+                    admin_flash(
+                        'Význam s tímhle názvem už na lexému je. Rámce se věší na význam, takže se '
+                        . 'názvy musí lišit.',
+                        'err'
+                    );
+                    break;
+                }
+
+                throw $exception;
+            }
+            break;
+
         case 'sense_delete':
             // Rámce, sloty a realizace pod významem musí padnout s ním; MySQL by jinak cizí klíč
             // odmítl a smazání by z pohledu uživatele prostě nefungovalo.
@@ -155,7 +185,22 @@ $frames = admin_all(
         <?php $own = array_values(array_filter($frames, static fn (array $f): bool => (int) $f['lu_id'] === (int) $sense['lu_id'])); ?>
         <div class="sense">
             <h3><?= h((string) ($sense['sense_label'] ?? '(bez názvu)')) ?></h3>
-            <?php if ($sense['gloss'] !== null): ?><p class="gloss"><?= h((string) $sense['gloss']) ?></p><?php endif; ?>
+
+            <?php /* Editace na místě, ne na vlastní stránce: význam jsou dvě políčka a jeho jediný
+                     smysl je ten, který dává rámcům pod ním. */ ?>
+            <form method="post" class="inline">
+                <input type="hidden" name="csrf" value="<?= h(admin_csrf_token()) ?>">
+                <input type="hidden" name="action" value="sense_edit">
+                <input type="hidden" name="lu_id" value="<?= (int) $sense['lu_id'] ?>">
+                <label class="sr" for="sense_label_<?= (int) $sense['lu_id'] ?>">Název významu</label>
+                <input type="text" id="sense_label_<?= (int) $sense['lu_id'] ?>" name="sense_label"
+                       value="<?= h((string) $sense['sense_label']) ?>" placeholder="bez názvu">
+                <label class="sr" for="gloss_<?= (int) $sense['lu_id'] ?>">Popis</label>
+                <input type="text" id="gloss_<?= (int) $sense['lu_id'] ?>" name="gloss"
+                       value="<?= h((string) $sense['gloss']) ?>" placeholder="stručný popis významu"
+                       class="grow">
+                <button type="submit">Uložit význam</button>
+            </form>
 
             <?php if ($own === []): ?>
                 <p class="empty">Bez rámce.</p>
