@@ -72,7 +72,8 @@ namespace Grammar.Czech.Providers.SqliteProviders
             SELECT f.frame_id, e.lemma, f.lu_id, u.sense_label, f.kind, f.diathesis, f.is_default,
                    s.slot_id, s.functor, s.canonical_order, s.obligatoriness,
                    s.can_drop_contextual, s.can_drop_generic, s.control_target,
-                   r.morph_case, r.preposition, r.clause_type, r.takes_infinitive, r.preference
+                   r.morph_case, r.preposition, r.clause_type, r.takes_infinitive, r.preference,
+                   f.reflexive_type
             FROM lemma_entry e
             JOIN lexical_unit u ON u.lexeme_id = e.lexeme_id
             JOIN valency_frame f ON f.lu_id = u.lu_id
@@ -103,6 +104,10 @@ namespace Grammar.Czech.Providers.SqliteProviders
         private const int RealizationClauseType = 16;
         private const int RealizationTakesInfinitive = 17;
         private const int RealizationPreference = 18;
+
+        // Last rather than beside is_default, where it belongs by meaning: appending cannot shift
+        // anything above it, and this list is the only thing standing between the query and silence.
+        private const int FrameReflexiveType = 19;
 
         private readonly Func<DbConnection> _connectionFactory;
         private readonly string _sourceDescription;
@@ -306,7 +311,9 @@ namespace Grammar.Czech.Providers.SqliteProviders
                         FrameLabel = GetNullableString(reader, FrameSenseLabel),
                         Kind = ParseEnum<ValencyKind>(reader.GetString(FrameKind), "kind"),
                         Diathesis = ParseEnum<Diathesis>(reader.GetString(FrameDiathesis), "diathesis"),
-                        IsDefault = reader.GetInt64(FrameIsDefault) != 0
+                        IsDefault = reader.GetInt64(FrameIsDefault) != 0,
+                        ReflexiveType = ParseEnum<ReflexiveType>(
+                            reader.GetString(FrameReflexiveType), "reflexive_type")
                     }));
 
                     slotIdsByFrame[frameId] = [];

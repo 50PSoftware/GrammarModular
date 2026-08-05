@@ -43,6 +43,17 @@ namespace Grammar.Core.Models.Valency
         public bool IsDefault { get; init; }
 
         /// <summary>
+        /// Gets the reflexive particle this sense requires, if any.
+        /// </summary>
+        /// <remarks>
+        /// This is derived reflexivity — it holds for one sense, not for the lemma. <c>dát si kávu</c>
+        /// needs the particle, <c>dát knihu Pavlovi</c> does not, and both are the same lemma. Inherent
+        /// reflexivity — <c>bát se</c>, where no non-reflexive verb exists — is stated on the lexical
+        /// entry instead, because there it holds under every frame.
+        /// </remarks>
+        public ReflexiveType ReflexiveType { get; init; } = ReflexiveType.None;
+
+        /// <summary>
         /// Gets or sets the valency slots required by the frame.
         /// </summary>
         public IReadOnlyList<ValencySlot> Slots { get; init; } = [];
