@@ -237,6 +237,14 @@ namespace Grammar.Czech.Test
         [DataRow("jmout", "jmout", "Masculine", "Singular", "jat", DisplayName = "jmout – trpný sg m")]
         [DataRow("dojmout", "dojme", "Masculine", "Singular", "dojat", DisplayName = "dojmout – trpný sg m")]
         [DataRow("jíst", "jíst", "Masculine", "Singular", "jeden", DisplayName = "jíst – trpný sg m")]
+        // Nepřechodnost trpné příčestí neruší — neosobně se používá dál (bylo jito, bylo pomoženo).
+        // Tvary jsou z IJP, ne odvozené: jít a jet berou -t, téci a pomoci -n s jotací.
+        [DataRow("jít", "jít", "Masculine", "Singular", "jit", DisplayName = "jít – trpný sg m")]
+        [DataRow("jet", "jet", "Masculine", "Singular", "jet", DisplayName = "jet – trpný sg m")]
+        [DataRow("téci", "téci", "Masculine", "Singular", "tečen", DisplayName = "téci – trpný sg m")]
+        [DataRow("pomoci", "pomoci", "Masculine", "Singular", "pomožen", DisplayName = "pomoci – trpný sg m")]
+        [DataRow("umřít", "umře", "Masculine", "Singular", "umřen", DisplayName = "umřít – trpný sg m")]
+        [DataRow("chtít", "chtít", "Masculine", "Singular", "chtěn", DisplayName = "chtít – trpný sg m")]
         // Obecná 4. třída: -ět si téma nese do příčestí, -it ho zahazuje a místo něj jotuje.
         [DataRow("vidět", "trida4", "Masculine", "Singular", "viděn", DisplayName = "vidět – trpný sg m")]
         [DataRow("trpět", "trida4", "Masculine", "Singular", "trpěn", DisplayName = "trpět – trpný sg m")]
@@ -284,6 +292,37 @@ namespace Grammar.Czech.Test
             var result = service.GetBasicForm(request);
 
             Assert.AreEqual(expected, result.Form);
+        }
+
+        /// <summary>
+        /// The one verb that forms no passive participle says so instead of inventing one.
+        /// </summary>
+        /// <remarks>
+        /// Being intransitive is not the reason and would be the wrong test: bylo pracováno is standard,
+        /// and IJP gives jít a passive participle too. moci is on the list because IJP leaves the row
+        /// empty for it, where the near-identical pomoci has pomožen — so it cannot be derived from
+        /// anything the model holds and has to be stated.
+        /// </remarks>
+        [TestMethod]
+        public void GetBasicForm_VerbWithNoPassiveParticiple_SaysSoRatherThanInventingOne()
+        {
+            var request = new CzechWordRequest
+            {
+                Lemma = "moci",
+                Pattern = "moci",
+                WordCategory = WordCategory.Verb,
+                Tense = Tense.Past,
+                Modus = Modus.Indicative,
+                Voice = Voice.Passive,
+                Person = Person.Third,
+                Gender = Gender.Masculine,
+                Number = Number.Singular,
+            };
+
+            var exception = Assert.ThrowsException<InvalidOperationException>(
+                () => service.GetBasicForm(request));
+
+            StringAssert.Contains(exception.Message, "moci");
         }
 
         /// <summary>

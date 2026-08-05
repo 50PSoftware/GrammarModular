@@ -74,6 +74,7 @@
   "moci": {
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
+    "formsPassive": false,
     "stem": "můž",
     "pastStem": "moh",
     "present": {
@@ -151,6 +152,12 @@
     "aspect": "imperfective",
     "stem": "jd",
     "pastStem": "š",
+    "passiveStem": "ji",
+    "passiveParticiple": {
+      "masculine": { "singular": "-t", "plural": "-ti" },
+      "feminine": { "singular": "-ta", "plural": "-ty" },
+      "neuter": { "singular": "-to", "plural": "-ta" }
+    },
     "pastParticiple": {
       "masculine": {
         "singular": "-el",
@@ -170,7 +177,13 @@
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
     "stem": "jed",
-    "pastStem": "je"
+    "pastStem": "je",
+    "passiveStem": "je",
+    "passiveParticiple": {
+      "masculine": { "singular": "-t", "plural": "-ti" },
+      "feminine": { "singular": "-ta", "plural": "-ty" },
+      "neuter": { "singular": "-to", "plural": "-ta" }
+    }
   },
   "hrát": {
     "inheritsFrom": "trida3",
@@ -245,7 +258,8 @@
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
     "stem": "teč",
-    "pastStem": "tek"
+    "pastStem": "tek",
+    "passiveStem": "teče"
   },
   "řvát": {
     "inheritsFrom": "trida1",
@@ -281,7 +295,8 @@
     "inheritsFrom": "trida1",
     "aspect": "perfective",
     "stem": "pomůž",
-    "pastStem": "pomoh"
+    "pastStem": "pomoh",
+    "passiveStem": "pomože"
   },
   "psát": {
     "inheritsFrom": "trida1",

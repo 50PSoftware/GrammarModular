@@ -205,6 +205,8 @@ namespace Grammar.Czech.Services
         private static VerbPattern Merge(VerbPattern @base, VerbPattern irregular) =>
             @base with
             {
+                // The irregular answers for itself: the base is a class, and a class never refuses.
+                FormsPassive = irregular.FormsPassive,
                 Stem = irregular.Stem ?? @base.Stem,
                 FutureStem = irregular.FutureStem ?? @base.FutureStem,
                 PresentStem = irregular.PresentStem ?? @base.PresentStem,
@@ -233,6 +235,12 @@ namespace Grammar.Czech.Services
         {
             var genderKey = ResolveGenderKey(word.Gender);
             var stem = verbStruct.PassiveStem ?? verbStruct.PastStem;
+
+            if (!pattern.FormsPassive)
+                throw new InvalidOperationException(
+                    $"Sloveso '{word.Lemma}' trpné příčestí netvoří, takže o něj nemá smysl žádat. "
+                    + "Nepřechodnost sama důvod není — bylo pracováno je spisovné; tohle je výčet "
+                    + "sloves, u kterých tvar nemá ani IJP.");
 
             RequireParticiple(pattern, pattern.PassiveParticiple, "trpné");
 

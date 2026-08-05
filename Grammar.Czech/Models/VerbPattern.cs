@@ -12,6 +12,19 @@ namespace Grammar.Czech.Models
         /// </summary>
         public VerbAspect Aspect { get; init; }
         /// <summary>
+        /// Gets a value indicating whether the verb forms a passive participle at all.
+        /// </summary>
+        /// <remarks>
+        /// Almost every verb does, including intransitive ones, which use it impersonally — bylo
+        /// pracováno, bylo tančeno. The exception is small enough to name: moci has no passive
+        /// participle in IJP where pomoci has pomožen, so it cannot be derived and has to be stated.
+        /// <para>
+        /// A pattern that says nothing forms one, so the endings inherited from a class keep working
+        /// and only the verb that refuses has to say so.
+        /// </para>
+        /// </remarks>
+        public bool FormsPassive { get; init; } = true;
+        /// <summary>
         /// Gets or sets future.
         /// </summary>
         public VerbTenseForms Future { get; init; }
