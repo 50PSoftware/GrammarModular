@@ -219,6 +219,13 @@
     "stem": "vid",
     "pastStem": "vidě"
   },
+  "cítit": {
+    "inheritsFrom": "trida4",
+    "aspect": "imperfective",
+    "stem": "cít",
+    "pastStem": "cíti",
+    "passiveStem": "cítě"
+  },
   "klást": {
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
@@ -302,6 +309,7 @@
     "aspect": "imperfective",
     "stem": "peč",
     "pastStem": "pek",
+    "passiveStem": "peče",
     "infinitive": "péct"
   },
   "umře": {

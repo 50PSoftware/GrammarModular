@@ -219,7 +219,35 @@ namespace Grammar.Czech.Test
         [DataRow("prosit", "prosí", "Masculine", "Singular", "prošen", DisplayName = "prosit – trpný sg m")]
         [DataRow("nést", "nese", "Masculine", "Singular", "nesen", DisplayName = "nést – trpný sg m")]
         [DataRow("tisknout", "tiskne", "Masculine", "Singular", "tištěn", DisplayName = "tisknout – trpný sg m")]
+        [DataRow("péct", "peče", "Masculine", "Singular", "pečen", DisplayName = "péct – trpný sg m")]
+        // Obecná 4. třída: -ět si téma nese do příčestí, -it ho zahazuje a místo něj jotuje.
         [DataRow("vidět", "trida4", "Masculine", "Singular", "viděn", DisplayName = "vidět – trpný sg m")]
+        [DataRow("trpět", "trida4", "Masculine", "Singular", "trpěn", DisplayName = "trpět – trpný sg m")]
+        [DataRow("rozumět", "trida4", "Masculine", "Singular", "rozuměn", DisplayName = "rozumět – trpný sg m")]
+        // Souhláska se mění: s→š, z→ž, t→c, d→z.
+        [DataRow("prosit", "trida4", "Masculine", "Singular", "prošen", DisplayName = "prosit – trpný sg m (třída)")]
+        [DataRow("nosit", "trida4", "Masculine", "Singular", "nošen", DisplayName = "nosit – trpný sg m")]
+        [DataRow("kazit", "trida4", "Masculine", "Singular", "kažen", DisplayName = "kazit – trpný sg m")]
+        [DataRow("platit", "trida4", "Masculine", "Singular", "placen", DisplayName = "platit – trpný sg m")]
+        [DataRow("zaplatit", "trida4", "Masculine", "Singular", "zaplacen", DisplayName = "zaplatit – trpný sg m")]
+        [DataRow("vrátit", "trida4", "Masculine", "Singular", "vrácen", DisplayName = "vrátit – trpný sg m")]
+        [DataRow("hodit", "trida4", "Masculine", "Singular", "hozen", DisplayName = "hodit – trpný sg m")]
+        [DataRow("narodit", "trida4", "Masculine", "Singular", "narozen", DisplayName = "narodit – trpný sg m")]
+        // Shluky: st→šť, zd→žď, psané před ě jako ště/žďě.
+        [DataRow("pustit", "trida4", "Masculine", "Singular", "puštěn", DisplayName = "pustit – trpný sg m")]
+        [DataRow("čistit", "trida4", "Masculine", "Singular", "čištěn", DisplayName = "čistit – trpný sg m")]
+        [DataRow("jezdit", "trida4", "Masculine", "Singular", "ježděn", DisplayName = "jezdit – trpný sg m")]
+        // Souhláska, která se nemění: po n nese měkkost ě, jinde stojí e.
+        [DataRow("změnit", "trida4", "Masculine", "Singular", "změněn", DisplayName = "změnit – trpný sg m")]
+        [DataRow("chránit", "trida4", "Masculine", "Singular", "chráněn", DisplayName = "chránit – trpný sg m")]
+        [DataRow("koupit", "trida4", "Masculine", "Singular", "koupen", DisplayName = "koupit – trpný sg m")]
+        [DataRow("mluvit", "trida4", "Masculine", "Singular", "mluven", DisplayName = "mluvit – trpný sg m")]
+        [DataRow("stavit", "trida4", "Masculine", "Singular", "staven", DisplayName = "stavit – trpný sg m")]
+        [DataRow("kreslit", "trida4", "Masculine", "Singular", "kreslen", DisplayName = "kreslit – trpný sg m")]
+        [DataRow("vařit", "trida4", "Masculine", "Singular", "vařen", DisplayName = "vařit – trpný sg m")]
+        [DataRow("zlomit", "trida4", "Feminine", "Singular", "zlomena", DisplayName = "zlomit – trpný sg f")]
+        // Výjimku z jotace nese vlastní vzor v irregulars.json, stejně jako u dát.
+        [DataRow("cítit", "cítit", "Masculine", "Singular", "cítěn", DisplayName = "cítit – trpný sg m")]
         public void GetBasicForm_PassiveParticiple_KeepsItsOwnStem(
             string lemma, string pattern, string gender, string number, string expected)
         {

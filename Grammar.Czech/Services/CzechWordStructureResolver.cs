@@ -294,17 +294,60 @@ namespace Grammar.Czech.Services
             if (lemma.EndsWith("it") || lemma.EndsWith("ít") ||
                 lemma.EndsWith("et") || lemma.EndsWith("ět"))
             {
+                var hasThemeI = lemma.EndsWith("it") || lemma.EndsWith("ít");
+
                 return new()
                 {
                     Prefix = prefix,
                     PresentStem = lemma[..^2],
                     PastStem = lemma[..^1],
-                    PassiveStem = lemma[..^1],
+                    // The two halves of the class part company here. An -ět verb carries its theme
+                    // vowel into the participle — trpě-n, vidě-n — while an -it verb drops it and
+                    // iotates the consonant instead: pros-it gives proše-n, not *prosi-n.
+                    PassiveStem = hasThemeI ? IotatePassiveStem(lemma[..^2]) : lemma[..^1],
                     Aspect = aspect
                 };
             }
 
             return UnknownInfinitiveFallback(prefix, lemma, aspect);
+        }
+
+        /// <summary>
+        /// Applies the iotation an -it verb undergoes before the passive participle ending.
+        /// </summary>
+        /// <param name="root">The infinitive with its theme vowel and the -t already removed.</param>
+        /// <returns>The passive stem including the connecting vowel the ending attaches to.</returns>
+        /// <remarks>
+        /// The connecting vowel comes back with the stem because that is how the named patterns already
+        /// state it — prosí carries <c>proše</c> and nese <c>nese</c>, each with a bare -n ending — and a
+        /// class that answered differently would need its own ending row for no gain.
+        /// <para>
+        /// It is ě only where the consonant survives unchanged and the digraph has to carry the softness:
+        /// změn-it gives změněn, while koup-it gives koupen. The clusters resolve to šť and žď, which are
+        /// spelt with t and d in front of that ě — pust-it gives puštěn.
+        /// </para>
+        /// <para>
+        /// t→c and d→z are regular in this position — placen, ztracen, hozen, narozen — unlike in
+        /// derivation, where they are lexical. A verb that departs from any of this states its own
+        /// passiveStem in irregulars.json, the way cítit does for cítěn.
+        /// </para>
+        /// </remarks>
+        private static string IotatePassiveStem(string root)
+        {
+            // Clusters are read before their last consonant, which on its own would answer differently:
+            // the t of pust would give *pucen rather than puštěn.
+            if (root.EndsWith("st", StringComparison.Ordinal)) return root[..^2] + "ště";
+            if (root.EndsWith("zd", StringComparison.Ordinal)) return root[..^2] + "ždě";
+
+            return root switch
+            {
+                _ when root.EndsWith('s') => root[..^1] + "še",
+                _ when root.EndsWith('z') => root[..^1] + "že",
+                _ when root.EndsWith('t') => root[..^1] + "ce",
+                _ when root.EndsWith('d') => root[..^1] + "ze",
+                _ when root.EndsWith('n') => root + "ě",
+                _ => root + "e"
+            };
         }
 
         // trida3: kupovat → PresentStem: kupu, PastStem: kupova, ImperativeStem: kupuj

@@ -188,7 +188,7 @@ const LEXICON_PATTERNS = [
     ],
     'Verb' => [
         'trida1', 'trida2', 'trida3', 'trida4', 'trida5', 'dojme',
-        'bere', 'běžet', 'být', 'chtít', 'číst', 'dát', 'dělá', 'hrát', 'jet', 'jíst', 'jít',
+        'bere', 'běžet', 'být', 'chtít', 'cítit', 'číst', 'dát', 'dělá', 'hrát', 'jet', 'jíst', 'jít',
         'jmout', 'klást', 'kryje', 'kupuje', 'ležet', 'maže', 'mine', 'mít', 'moci', 'nese',
         'peče', 'pomoci', 'prosí', 'psát', 'říct', 'řvát', 'sedět', 'spát', 'stát', 'téci', 'tiskne',
         'umět', 'umře', 'vědět', 'vidět', 'vzít', 'zvát',
