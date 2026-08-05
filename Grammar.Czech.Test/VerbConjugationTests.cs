@@ -245,6 +245,9 @@ namespace Grammar.Czech.Test
         [DataRow("pomoci", "pomoci", "Masculine", "Singular", "pomožen", DisplayName = "pomoci – trpný sg m")]
         [DataRow("umřít", "umře", "Masculine", "Singular", "umřen", DisplayName = "umřít – trpný sg m")]
         [DataRow("chtít", "chtít", "Masculine", "Singular", "chtěn", DisplayName = "chtít – trpný sg m")]
+        // Doplnění rozhoduje, ne přechodnost: umět něco ho má, a tvar se proto tvoří — na rozdíl od
+        // sousedních vzorů 4. třídy, které jsou bez předmětu a odmítají.
+        [DataRow("umět", "umět", "Masculine", "Singular", "uměn", DisplayName = "umět – trpný sg m")]
         // Jotace k→č na kmeni, který ji v žádném jiném tvaru neukáže: řekl, ale řečen.
         [DataRow("říct", "říct", "Masculine", "Singular", "řečen", DisplayName = "říct – trpný sg m")]
         [DataRow("říct", "říct", "Feminine", "Singular", "řečena", DisplayName = "říct – trpný sg f")]
@@ -301,14 +304,24 @@ namespace Grammar.Czech.Test
         /// A verb that forms no passive participle says so instead of inventing one.
         /// </summary>
         /// <remarks>
-        /// Being intransitive is not the reason and would be the wrong test: bylo pracováno is standard,
-        /// and IJP gives jít a passive participle too. These two are on the list because IJP leaves the
-        /// row empty for them, where the near-identical pomoci has pomožen — so it cannot be derived from
-        /// anything the model holds and has to be stated.
+        /// Being intransitive is not the reason and would be the wrong test: IJP gives jít the participle
+        /// jit, and pomoci pomožen. The condition NESČ states for the -n-/-t- participle is a valency one
+        /// — an agent and at least one true complement — so what bars a verb is having no complement at
+        /// all, which is why NESČ stars *Je běženo. moci and mít are here on separate evidence: IJP leaves
+        /// their row empty where the near-identical pomoci has a form.
+        /// <para>
+        /// None of it is derivable from what a pattern holds, so it is stated. Once the frame answers the
+        /// valency question, this list should shrink to the two that are genuinely lexical.
+        /// </para>
         /// </remarks>
         [DataTestMethod]
         [DataRow("moci", "moci", DisplayName = "moci netvoří trpné příčestí")]
         [DataRow("mít", "mít", DisplayName = "mít netvoří trpné příčestí")]
+        [DataRow("spát", "spát", DisplayName = "spát netvoří trpné příčestí")]
+        [DataRow("stát", "stát", DisplayName = "stát netvoří trpné příčestí")]
+        [DataRow("běžet", "běžet", DisplayName = "běžet netvoří trpné příčestí")]
+        [DataRow("ležet", "ležet", DisplayName = "ležet netvoří trpné příčestí")]
+        [DataRow("sedět", "sedět", DisplayName = "sedět netvoří trpné příčestí")]
         public void GetBasicForm_VerbWithNoPassiveParticiple_SaysSoRatherThanInventingOne(
             string lemma, string pattern)
         {

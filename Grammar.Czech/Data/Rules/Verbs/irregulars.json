@@ -201,12 +201,14 @@
   "spát": {
     "inheritsFrom": "trida4",
     "aspect": "imperfective",
+    "formsPassive": false,
     "stem": "sp",
     "pastStem": "spa"
   },
   "stát": {
     "inheritsFrom": "trida4",
     "aspect": "imperfective",
+    "formsPassive": false,
     "stem": "stoj",
     "pastStem": "stá",
     "imperativeStem": "stůj"
@@ -214,18 +216,21 @@
   "ležet": {
     "inheritsFrom": "trida4",
     "aspect": "imperfective",
+    "formsPassive": false,
     "stem": "lež",
     "pastStem": "leže"
   },
   "sedět": {
     "inheritsFrom": "trida4",
     "aspect": "imperfective",
+    "formsPassive": false,
     "stem": "sed",
     "pastStem": "sedě"
   },
   "běžet": {
     "inheritsFrom": "trida4",
     "aspect": "imperfective",
+    "formsPassive": false,
     "stem": "běž",
     "pastStem": "běže"
   },
