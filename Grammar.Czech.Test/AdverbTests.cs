@@ -1,5 +1,4 @@
 using Grammar.Core.Enums;
-using Grammar.Czech.Enums;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
 using Grammar.Czech.Models.Syntax;

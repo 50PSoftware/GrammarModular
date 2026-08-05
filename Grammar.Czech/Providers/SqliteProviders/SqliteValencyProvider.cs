@@ -1,7 +1,6 @@
 using Grammar.Core.Enums;
 using Grammar.Core.Interfaces;
 using Grammar.Core.Models.Valency;
-using Grammar.Czech.Enums;
 using Grammar.Czech.Models;
 using Microsoft.Data.Sqlite;
 using System.Collections.Concurrent;

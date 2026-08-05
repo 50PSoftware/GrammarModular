@@ -1,3 +1,4 @@
+using Grammar.Core.Enums;
 using Grammar.Core.Interfaces;
 using Grammar.Czech.Models;
 
@@ -69,7 +70,7 @@ namespace Grammar.Czech.Services
 
             // ReflexiveType is not nullable, so None doubles as "not stated" — safe to fill in this one
             // direction only, since an entry saying nothing cannot overwrite a caller who does.
-            if (word.ReflexiveType == Enums.ReflexiveType.None)
+            if (word.ReflexiveType == ReflexiveType.None)
             {
                 word.ReflexiveType = entry.ReflexiveType;
             }

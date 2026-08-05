@@ -1,5 +1,4 @@
 using Grammar.Core.Enums;
-using Grammar.Czech.Enums;
 using Grammar.Czech.Providers.JsonProviders;
 using Grammar.Czech.Services;
 

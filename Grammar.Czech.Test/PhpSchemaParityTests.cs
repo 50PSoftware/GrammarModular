@@ -206,7 +206,7 @@ namespace Grammar.Czech.Test
             ["gender", typeof(Core.Enums.Gender)],
             ["aspect", typeof(Core.Enums.VerbAspect)],
             ["verb_class", typeof(Czech.Models.VerbClass)],
-            ["reflexive_type", typeof(Czech.Enums.ReflexiveType)],
+            ["reflexive_type", typeof(Core.Enums.ReflexiveType)],
             ["kind", typeof(Core.Enums.ValencyKind)],
             ["diathesis", typeof(Core.Enums.Diathesis)],
             ["functor", typeof(Core.Enums.FgdFunctor)],

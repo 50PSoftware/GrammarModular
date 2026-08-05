@@ -2,7 +2,6 @@
 {
     using Grammar.Core.Enums;
     using Grammar.Czech;
-    using Grammar.Czech.Enums;
     using Grammar.Czech.Models;
     using Grammar.Czech.Models.Syntax;
     using Grammar.Czech.Services;

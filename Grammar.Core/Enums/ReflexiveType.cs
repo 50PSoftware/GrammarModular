@@ -1,4 +1,4 @@
-namespace Grammar.Czech.Enums
+namespace Grammar.Core.Enums
 {
     /// <summary>
     /// Specifies the reflexive type of a Czech verb, determining which particle (se/si) is required.

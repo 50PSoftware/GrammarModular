@@ -1,6 +1,5 @@
 using Grammar.Core.Enums;
 using Grammar.Core.Models.Valency;
-using Grammar.Czech.Enums;
 
 namespace Grammar.Czech.Models
 {

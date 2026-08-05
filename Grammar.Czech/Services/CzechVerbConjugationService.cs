@@ -3,7 +3,6 @@ using Grammar.Core.Enums.PhonologicalFeatures;
 using Grammar.Core.Exceptions;
 using Grammar.Core.Interfaces;
 using Grammar.Core.Models.Word;
-using Grammar.Czech.Enums;
 using Grammar.Czech.Helpers;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;

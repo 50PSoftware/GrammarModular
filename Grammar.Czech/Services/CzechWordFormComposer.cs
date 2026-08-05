@@ -1,7 +1,6 @@
 using Grammar.Core.Enums;
 using Grammar.Core.Interfaces;
 using Grammar.Core.Models.Word;
-using Grammar.Czech.Enums;
 using Grammar.Czech.Models;
 
 namespace Grammar.Czech.Services
