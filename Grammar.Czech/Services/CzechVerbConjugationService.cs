@@ -234,11 +234,21 @@ namespace Grammar.Czech.Services
             var genderKey = ResolveGenderKey(word.Gender);
             var stem = verbStruct.PassiveStem ?? verbStruct.PastStem;
 
+            if (!pattern.PassiveParticiple.TryGetValue(genderKey, out var passiveDict)
+                || !passiveDict.TryGetValue(numberKey, out var ending))
+                throw new InvalidOperationException(
+                    $"Passive participle ending not found for {genderKey} {numberKey}.");
+
             // Participium na -án u sloves s kmenem na -a: dělán, brán, mazán, kupován, dán. Délka patří
             // jen trpnému rodu — l-ové příčestí týchž sloves zůstává krátké (dělal, bral) — takže se
             // dodává tady a ne na kmeni, který podává resolver. Kmen sem přitom přichází ze dvou stran,
             // z odvození třídy i z pojmenovaného vzoru, a oprava jen v jedné z nich by tu druhou minula.
-            if (stem.EndsWith('a') && _phonemeRegistry.Get('a')?.LongCounterpart is { } longA)
+            //
+            // Váže se na -n, ne na kmen samotný: příčestí na -t se stejným kmenem zůstává krátké,
+            // vzat proti vzán a začat proti *začán.
+            if (ending.TrimStart('-').StartsWith('n')
+                && stem.EndsWith('a')
+                && _phonemeRegistry.Get('a')?.LongCounterpart is { } longA)
                 stem = stem[..^1] + longA;
 
             // Heuristické úpravy kmene pasiva.
@@ -249,11 +259,6 @@ namespace Grammar.Czech.Services
                 stem = stem[..^1] + "š";    // pros  → proš(en)
             else if (word.Lemma == "kvést")
                 stem = "květ";              // kvést → květ(en) — nepravidelné
-
-            if (!pattern.PassiveParticiple.TryGetValue(genderKey, out var passiveDict)
-                || !passiveDict.TryGetValue(numberKey, out var ending))
-                throw new InvalidOperationException(
-                    $"Passive participle ending not found for {genderKey} {numberKey}.");
 
             return new WordForm(PrefixedForm(verbStruct.Prefix, stem, ending));
         }

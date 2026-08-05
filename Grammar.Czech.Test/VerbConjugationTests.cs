@@ -220,6 +220,13 @@ namespace Grammar.Czech.Test
         [DataRow("nést", "nese", "Masculine", "Singular", "nesen", DisplayName = "nést – trpný sg m")]
         [DataRow("tisknout", "tiskne", "Masculine", "Singular", "tištěn", DisplayName = "tisknout – trpný sg m")]
         [DataRow("péct", "peče", "Masculine", "Singular", "pečen", DisplayName = "péct – trpný sg m")]
+        [DataRow("číst", "číst", "Masculine", "Singular", "čten", DisplayName = "číst – trpný sg m")]
+        [DataRow("klást", "klást", "Masculine", "Singular", "kladen", DisplayName = "klást – trpný sg m")]
+        // Příčestí na -t se nedlouží, i když kmen na -a končí: vzat proti vzán.
+        [DataRow("vzít", "vzít", "Masculine", "Singular", "vzat", DisplayName = "vzít – trpný sg m")]
+        [DataRow("vzít", "vzít", "Feminine", "Singular", "vzata", DisplayName = "vzít – trpný sg f")]
+        [DataRow("minout", "mine", "Masculine", "Singular", "minut", DisplayName = "minout – trpný sg m")]
+        [DataRow("krýt", "kryje", "Masculine", "Singular", "kryt", DisplayName = "krýt – trpný sg m")]
         // Obecná 4. třída: -ět si téma nese do příčestí, -it ho zahazuje a místo něj jotuje.
         [DataRow("vidět", "trida4", "Masculine", "Singular", "viděn", DisplayName = "vidět – trpný sg m")]
         [DataRow("trpět", "trida4", "Masculine", "Singular", "trpěn", DisplayName = "trpět – trpný sg m")]
@@ -268,6 +275,7 @@ namespace Grammar.Czech.Test
 
             Assert.AreEqual(expected, result.Form);
         }
+
 
         #endregion Past Tense
 

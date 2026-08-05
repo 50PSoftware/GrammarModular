@@ -229,13 +229,15 @@
   "klást": {
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
-    "stem": "klad"
+    "stem": "klad",
+    "passiveStem": "klade"
   },
   "číst": {
     "inheritsFrom": "trida1",
     "aspect": "imperfective",
     "stem": "čt",
-    "pastStem": "čet"
+    "pastStem": "čet",
+    "passiveStem": "čte"
   },
   "téci": {
     "inheritsFrom": "trida1",
@@ -265,7 +267,13 @@
     "inheritsFrom": "trida1",
     "aspect": "perfective",
     "stem": "vezm",
-    "pastStem": "vza"
+    "pastStem": "vza",
+    "passiveStem": "vza",
+    "passiveParticiple": {
+      "masculine": { "singular": "-t", "plural": "-ti" },
+      "feminine": { "singular": "-ta", "plural": "-ty" },
+      "neuter": { "singular": "-to", "plural": "-ta" }
+    }
   },
   "pomoci": {
     "inheritsFrom": "trida1",
