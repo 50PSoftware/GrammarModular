@@ -287,6 +287,37 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// The generic first class refuses to derive stems instead of returning ones nobody should use.
+        /// </summary>
+        /// <remarks>
+        /// nést, brát, péct and mazat share the class and not a single stem, so the infinitive cannot
+        /// yield them. The class said as much in a comment while still answering — nél in the past, nén in
+        /// the passive — which is worse than not answering, because a wrong form looks like a form.
+        /// </remarks>
+        [TestMethod]
+        public void GetBasicForm_GenericFirstClass_RefusesAndNamesTheAlternative()
+        {
+            var request = new CzechWordRequest
+            {
+                Lemma = "nést",
+                Pattern = "trida1",
+                WordCategory = WordCategory.Verb,
+                Tense = Tense.Past,
+                Modus = Modus.Indicative,
+                Voice = Voice.Active,
+                Person = Person.Third,
+                Gender = Gender.Masculine,
+                Number = Number.Singular,
+            };
+
+            var exception = Assert.ThrowsException<NotSupportedException>(
+                () => service.GetBasicForm(request));
+
+            StringAssert.Contains(exception.Message, "nést");
+            StringAssert.Contains(exception.Message, "nese");
+        }
+
+        /// <summary>
         /// A pattern that states no endings for the participle says so, rather than throwing from inside
         /// the lookup.
         /// </summary>

@@ -262,7 +262,7 @@ namespace Grammar.Czech.Services
                 "trida4" => DeriveTrida4(prefix, lemma, aspect),
                 "trida3" => DeriveTrida3(prefix, lemma, aspect),
                 "trida2" => DeriveTrida2(prefix, lemma, aspect),
-                "trida1" => DeriveTrida1(prefix, lemma, aspect),
+                "trida1" => DeriveTrida1(lemma),
                 _ => throw new NotSupportedException($"Unknown pattern class: '{patternKey}'")
             };
         }
@@ -390,27 +390,24 @@ namespace Grammar.Czech.Services
             return UnknownInfinitiveFallback(prefix, lemma, aspect);
         }
 
-        // trida1: nést, brát, péct… — stems NOT derivable from infinitive.
-        // All practical trida1 patterns must be in irregulars.json.
-        private VerbStructure DeriveTrida1(string? prefix, string lemma, VerbAspect aspect)
-        {
-            var stem = lemma switch
-            {
-                _ when lemma.EndsWith("st") => lemma[..^2],
-                _ when lemma.EndsWith("zt") => lemma[..^2],
-                _ when lemma.EndsWith("ct") => lemma[..^2],
-                _ when lemma.EndsWith("ít") => lemma[..^2],
-                _ => lemma
-            };
-
-            return new()
-            {
-                Prefix = prefix,
-                PresentStem = stem,
-                PastStem = stem,
-                Aspect = aspect
-            };
-        }
+        /// <summary>
+        /// Reports that the first class cannot derive stems from an infinitive.
+        /// </summary>
+        /// <param name="lemma">The lemma the caller asked to conjugate.</param>
+        /// <returns>Never returns; the call always throws.</returns>
+        /// <exception cref="NotSupportedException">Always.</exception>
+        /// <remarks>
+        /// nést, brát, péct and mazat share an ending and nothing else: their present stems are nes, ber,
+        /// peč and maž, none of which the infinitive shows. The class has always said so in a comment
+        /// while still handing back a stem chopped off the infinitive, which nobody should use — nést came
+        /// out as nél in the past and nén in the passive. Saying it in the one place that can be acted on
+        /// costs nothing, because every first-class verb worth conjugating has a named pattern already.
+        /// </remarks>
+        private static VerbStructure DeriveTrida1(string lemma) =>
+            throw new NotSupportedException(
+                $"Sloveso '{lemma}' nelze časovat obecnou první třídou — ta kmeny z infinitivu odvodit "
+                + "neumí (nést má kmen nes, péct peč, brát ber). Použij pojmenovaný vzor z "
+                + "irregulars.json, třeba nese, bere, maže nebo peče, nebo tam sloveso doplň.");
 
         private VerbStructure UnknownInfinitiveFallback(string? prefix, string lemma, VerbAspect aspect) =>
             new()
