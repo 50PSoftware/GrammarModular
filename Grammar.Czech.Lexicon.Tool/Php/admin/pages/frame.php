@@ -34,11 +34,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     switch ((string) ($_POST['action'] ?? '')) {
         case 'frame':
             admin_run(
-                'UPDATE valency_frame SET kind = ?, diathesis = ?, is_default = ? WHERE frame_id = ?',
+                'UPDATE valency_frame SET kind = ?, diathesis = ?, is_default = ?, reflexive_type = ?
+                 WHERE frame_id = ?',
                 [
                     admin_enum('kind', 'kind') ?? 'Verbal',
                     admin_enum('diathesis', 'diathesis') ?? 'Active',
                     admin_flag('is_default') === 1 ? 1 : 0,
+                    admin_enum('reflexive_type', 'reflexive_type') ?? 'None',
                     $id,
                 ]
             );
@@ -166,6 +168,10 @@ $hasActor = array_filter($slots, static fn (array $s): bool => $s['functor'] ===
         <p class="field"><label>Výchozí rámec</label>
             <?= admin_flag_field('is_default', (int) $frame['is_default']) ?>
             <small>Sloveso s víc významy nechává obojí na „ne“ — pak si volající musí říct o konkrétní.</small></p>
+        <p class="field"><label for="reflexive_type">Reflexivita významu</label>
+            <?= admin_select('reflexive_type', 'reflexive_type', (string) $frame['reflexive_type'], allowEmpty: false) ?>
+            <small>Jen když částice patří tomuhle významu — dát si kávu, ale dát knihu ne. U reflexiva
+                tantum (starat se) ji nes na hesle, tam platí pro všechny rámce.</small></p>
     </div>
     <div class="actions"><button type="submit">Uložit</button></div>
 </form>
