@@ -199,23 +199,38 @@ namespace Grammar.Czech.Lexicon.Tool
             }
         }
 
-        // Only CzechVerbConjugationService reads the stems, and it is reached by category. A stem on a
-        // noun is therefore not a harmless extra: it is an edit that will never do anything, and the row
-        // looks finished. The CHECK constraints cannot see this — the columns are legal on every row.
+        // The stems are read by category, so a stem on a row nothing routes to that category is not a
+        // harmless extra: it is an edit that will never do anything, on a row that looks finished. The
+        // CHECK constraints cannot see this — the columns are legal on every row.
         private static void CheckStems(SqliteConnection connection, List<string> errors)
         {
-            string[] columns =
-                ["stem", "present_stem", "past_stem", "future_stem", "imperative_stem",
+            // The general stem serves both: verbs conjugate on it, and noun declension takes it as the
+            // stem after alternation — dům to dom-. The rest is tense and mood, which a noun has not.
+            string[] verbOnly =
+                ["present_stem", "past_stem", "future_stem", "imperative_stem",
                  "passive_stem", "infinitive", "forms_passive"];
 
-            var conditions = string.Join(" OR ", columns.Select(column => $"{column} IS NOT NULL"));
-            var sql = $"SELECT lemma, category FROM lemma_entry WHERE category <> 'Verb' AND ({conditions})";
+            var verbConditions = string.Join(" OR ", verbOnly.Select(column => $"{column} IS NOT NULL"));
+
+            var sql = $"""
+                SELECT lemma, category FROM lemma_entry
+                WHERE category NOT IN ('Verb', 'Noun') AND (stem IS NOT NULL OR {verbConditions})
+                """;
 
             foreach (var row in Query(connection, sql))
             {
                 errors.Add(
-                    $"Heslo '{row[0]}' je {row[1]} a má vyplněný kmen. Kmeny čte jen časování sloves, "
-                    + "takže tam nikdy nedojde.");
+                    $"Heslo '{row[0]}' je {row[1]} a má vyplněný kmen. Kmeny čte jen časování sloves a "
+                    + "skloňování substantiv, takže tam nikdy nedojde.");
+            }
+
+            var nounSql = $"SELECT lemma FROM lemma_entry WHERE category = 'Noun' AND ({verbConditions})";
+
+            foreach (var row in Query(connection, nounSql))
+            {
+                errors.Add(
+                    $"Heslo '{row[0]}' je substantivum a má vyplněný slovesný kmen. Substantivum má jen "
+                    + "obecný kmen (stem); čas, způsob ani rod nečasuje.");
             }
         }
 

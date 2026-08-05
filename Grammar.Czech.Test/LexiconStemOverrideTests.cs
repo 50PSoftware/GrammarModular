@@ -27,6 +27,7 @@ namespace Grammar.Czech.Test
         private static string databasePath = null!;
         private static SqliteValencyProvider provider = null!;
         private static CzechVerbConjugationService service = null!;
+        private static CzechNounDeclensionService nounService = null!;
 
         /// <summary>
         /// Copies the shipped lexicon and writes stems onto two of its verbs.
@@ -47,6 +48,7 @@ namespace Grammar.Czech.Test
                 command.CommandText = """
                     UPDATE lemma_entry SET past_stem = 'vid' WHERE lemma = 'vidět';
                     UPDATE lemma_entry SET past_stem = 'uzř' WHERE lemma = 'uvidět';
+                    UPDATE lemma_entry SET stem = 'mest' WHERE lemma = 'město';
                     """;
                 command.ExecuteNonQuery();
             }
@@ -55,6 +57,7 @@ namespace Grammar.Czech.Test
 
             provider = new SqliteValencyProvider(databasePath);
             service = BuildService(provider);
+            nounService = BuildNounService(provider);
         }
 
         /// <summary>
@@ -204,6 +207,78 @@ namespace Grammar.Czech.Test
             Assert.AreEqual("uvidí", result.Form);
         }
 
+        /// <summary>
+        /// A noun declines on the stem from the lexicon rather than on the one the pattern derives.
+        /// </summary>
+        /// <remarks>
+        /// The noun half of the same mechanism, and the one the ů→o words need: dům declines on dom-,
+        /// which is lexical rather than a rule — kůra keeps its ů throughout.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("Genitive", "Singular", "mesta", DisplayName = "město – gen. sg z lexikonu")]
+        [DataRow("Dative", "Singular", "mestu", DisplayName = "město – dat. sg z lexikonu")]
+        [DataRow("Genitive", "Plural", "mest", DisplayName = "město – gen. pl z lexikonu")]
+        public void GetForm_NounWithLexiconStem_UsesIt(string grammaticalCase, string number, string expected)
+        {
+            var result = nounService.GetForm(new CzechWordRequest
+            {
+                Lemma = "město",
+                Pattern = "město",
+                WordCategory = WordCategory.Noun,
+                Gender = Gender.Neuter,
+                Number = Enum.Parse<Number>(number),
+                Case = Enum.Parse<Case>(grammaticalCase),
+            });
+
+            Assert.AreEqual(expected, result.Form);
+        }
+
+        /// <summary>
+        /// A noun the lexicon writes no stem for declines exactly as before.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow("student", "pán", false, "studenta", DisplayName = "student – v lexikonu, bez kmene")]
+        [DataRow("pes", "pán", true, "psa", DisplayName = "pes – pohybné e beze změny")]
+        [DataRow("hrad", "hrad", false, "hradu", DisplayName = "hrad – mimo lexikon")]
+        public void GetForm_NounWithoutLexiconStem_IsUnchanged(
+            string lemma, string pattern, bool hasMobileE, string expected)
+        {
+            var result = nounService.GetForm(new CzechWordRequest
+            {
+                Lemma = lemma,
+                Pattern = pattern,
+                WordCategory = WordCategory.Noun,
+                Gender = Gender.Masculine,
+                Number = Number.Singular,
+                Case = Case.Genitive,
+
+                // Ručně sestavený request neprošel obohacením z lexikonu, které tenhle příznak jinak
+                // doplní — bez něj by pes dal pesa.
+                HasMobileE = hasMobileE,
+            });
+
+            Assert.AreEqual(expected, result.Form);
+        }
+
+        /// <summary>
+        /// The noun path reads the entry of its own category, not whichever homonym comes first.
+        /// </summary>
+        /// <remarks>
+        /// stát is a noun and a verb, and the stems of the two have nothing to do with each other. The
+        /// lookup states the category for that reason; without it a verb stem would reach declension.
+        /// </remarks>
+        [TestMethod]
+        public void GetEntry_StemColumn_IsReadPerCategory()
+        {
+            var noun = provider.GetEntry("město", WordCategory.Noun);
+            var verb = provider.GetEntry("vidět", WordCategory.Verb);
+
+            Assert.IsNotNull(noun);
+            Assert.IsNotNull(verb);
+            Assert.AreEqual("mest", noun.Stem);
+            Assert.IsNull(verb.Stem, "Sloveso má přepsaný jen minulý kmen, obecný ne.");
+        }
+
         private static CzechVerbConjugationService BuildService(SqliteValencyProvider valencyProvider)
         {
             var verbDataProvider = new JsonVerbDataProvider();
@@ -223,6 +298,33 @@ namespace Grammar.Czech.Test
                 structureResolver,
                 prefixService,
                 registry,
+                valencyProvider);
+        }
+
+        private static CzechNounDeclensionService BuildNounService(SqliteValencyProvider valencyProvider)
+        {
+            var nounDataProvider = new JsonNounDataProvider();
+            var registry = new CzechPhonemeRegistry();
+            var phonologyService = new CzechPhonologyService(registry);
+            var epenthesisEvaluator = new CzechEpenthesisRuleEvaluator(registry);
+
+            var structureResolver = new CzechWordStructureResolver(
+                new JsonVerbDataProvider(),
+                nounDataProvider,
+                new CzechPrefixService(new JsonPrefixDataProvider()),
+                phonologyService,
+                registry,
+                epenthesisEvaluator);
+
+            return new CzechNounDeclensionService(
+                nounDataProvider,
+                structureResolver,
+                phonologyService,
+                new CzechSofteningRuleEvaluator(nounDataProvider),
+                epenthesisEvaluator,
+                new CzechJotationRuleEvaluator(registry, structureResolver),
+                new CzechSyncretismRuleEvaluator(),
+                new CzechOrthographyService(registry),
                 valencyProvider);
         }
     }

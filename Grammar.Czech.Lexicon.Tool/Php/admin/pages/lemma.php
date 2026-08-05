@@ -309,12 +309,15 @@ if (!$isNew) {
         říct se časuje podle 1. třídy a minulý čas přesto tvoří na <code>řek-</code>. Píše se bez
         koncovky a bez pomlčky, a vždycky celý za tohle heslo — u odvozeného slovesa tedy i s
         předponou (<code>odnes</code>, ne <code>nes</code>).</p>
+    <p class="hint">Obecný kmen platí pro slovesa i pro podstatná jména. Zbytek políček je slovesný;
+        u podstatného jména by se nikdy nepřečetl a <code>validate</code> ho hlásí jako chybu.</p>
 
     <div class="grid">
         <p class="field">
             <label for="stem">Kmen</label>
             <input type="text" id="stem" name="stem" value="<?= h((string) $value('stem')) ?>" class="mono">
-            <small>Obecný kmen, ze kterého se odvozují ostatní — nes, ber.</small>
+            <small>U sloves kmen, ze kterého se odvozují ostatní — nes, ber. U podstatných jmen kmen
+                po alternaci — dům → dom, nůž → nož.</small>
         </p>
         <p class="field">
             <label for="present_stem">Kmen přítomný</label>

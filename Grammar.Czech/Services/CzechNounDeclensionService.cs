@@ -138,6 +138,14 @@ namespace Grammar.Czech.Services
                 stem = pattern.Stem!;
             }
 
+            // Kmen z hesla ve slovníku má poslední slovo, ve stejném pořadí jako u sloves: vzor <
+            // irregulars.json < slovník. U substantiv jde skoro vždy o krácení ů→o, které je lexikální
+            // a ne pravidlo — dům dává domu, ale kůra dává kůry.
+            if (ResolveLexiconStem(word) is { } lexiconStem)
+            {
+                stem = lexiconStem;
+            }
+
             // Softening rules see the resolved stem, not just the lemma: the ending attaches to the stem
             // and the two diverge whenever an alternation fired above (nůž → noz-, dům → dom-, otec → otc-).
             var resolvedStem = stem;
@@ -182,6 +190,31 @@ namespace Grammar.Czech.Services
                     $"Lemma '{lemma}' found in lexicon but Pattern is null.");
 
             return (gender, pattern, Number.Singular, entry.IsAnimate ?? false, entry.HasMobileE);
+        }
+
+        /// <summary>
+        /// Vrátí kmen zapsaný na hesle, nebo <see langword="null"/>, když žádný nemá.
+        /// </summary>
+        /// <param name="word">Request, z jehož lemmatu se heslo hledá.</param>
+        /// <returns>Kmen ze slovníku, jinak <see langword="null"/>.</returns>
+        /// <remarks>
+        /// Kategorie se předává explicitně: bez ní by stát jako sloveso vrátil slovesný řádek a kmen by
+        /// se do skloňování dostal z časování. Lookup je v provideru cachovaný.
+        /// <para>
+        /// Ze slovesných sloupců čte jen <c>stem</c> — ostatní kmeny substantivum nemá kam dát a
+        /// validátor je na jiné kategorii než sloveso hlásí jako chybu.
+        /// </para>
+        /// </remarks>
+        private string? ResolveLexiconStem(CzechWordRequest word)
+        {
+            if (string.IsNullOrEmpty(word.Lemma))
+            {
+                return null;
+            }
+
+            var entry = _valencyProvider.GetEntry(word.Lemma, WordCategory.Noun);
+
+            return string.IsNullOrEmpty(entry?.Stem) ? null : entry.Stem;
         }
     }
 }
