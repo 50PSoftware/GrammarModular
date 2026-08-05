@@ -33,18 +33,29 @@ if ($frame === null) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     switch ((string) ($_POST['action'] ?? '')) {
         case 'frame':
-            admin_run(
-                'UPDATE valency_frame SET kind = ?, diathesis = ?, is_default = ?, reflexive_type = ?
-                 WHERE frame_id = ?',
-                [
-                    admin_enum('kind', 'kind') ?? 'Verbal',
-                    admin_enum('diathesis', 'diathesis') ?? 'Active',
-                    admin_flag('is_default') === 1 ? 1 : 0,
-                    admin_enum('reflexive_type', 'reflexive_type') ?? 'None',
-                    $id,
-                ]
-            );
-            admin_flash('Uloženo.');
+            // Diateze je půlka unikátního klíče, takže ji nejde přepsat na tu, kterou význam už má.
+            // Dřív to nemohlo nastat — dokud byl každý rámec Active, měl význam nejvýš jeden.
+            try {
+                admin_run(
+                    'UPDATE valency_frame SET kind = ?, diathesis = ?, is_default = ?, reflexive_type = ?
+                     WHERE frame_id = ?',
+                    [
+                        admin_enum('kind', 'kind') ?? 'Verbal',
+                        admin_enum('diathesis', 'diathesis') ?? 'Active',
+                        admin_flag('is_default') === 1 ? 1 : 0,
+                        admin_enum('reflexive_type', 'reflexive_type') ?? 'None',
+                        $id,
+                    ]
+                );
+                admin_flash('Uloženo.');
+            } catch (PDOException $exception) {
+                if ($exception->getCode() === '23000') {
+                    admin_flash('Ten význam už rámec pro tuhle diatezi má. Jeden rámec na diatezi.', 'err');
+                    break;
+                }
+
+                throw $exception;
+            }
             break;
 
         case 'slot':
@@ -148,7 +159,10 @@ $hasActor = array_filter($slots, static fn (array $s): bool => $s['functor'] ===
 <p class="crumbs">
     <a href="<?= h(admin_url(['p' => 'list'])) ?>">Hesla</a> /
     <a href="<?= h(admin_url(['p' => 'lexeme', 'id' => (int) $frame['lexeme_id']])) ?>">lexém</a> /
-    rámec <?= h((string) ($frame['sense_label'] ?? '')) ?>
+    <?php /* Diateze patří do drobečku, ne jen do formuláře: jeden význam může mít rámců víc a bez ní
+             by činný a trpný byly dvě stránky se stejným nadpisem. */ ?>
+    rámec <?= h((string) ($frame['sense_label'] ?? '(bez názvu)')) ?>
+    <span class="muted"><?= h(LEXICON_ENUMS['diathesis'][$frame['diathesis']] ?? (string) $frame['diathesis']) ?></span>
 </p>
 
 <?php if (!$hasActor): ?>
@@ -167,7 +181,8 @@ $hasActor = array_filter($slots, static fn (array $s): bool => $s['functor'] ===
             <?= admin_select('diathesis', 'diathesis', (string) $frame['diathesis'], allowEmpty: false) ?></p>
         <p class="field"><label>Výchozí rámec</label>
             <?= admin_flag_field('is_default', (int) $frame['is_default']) ?>
-            <small>Sloveso s víc významy nechává obojí na „ne“ — pak si volající musí říct o konkrétní.</small></p>
+            <small>Rozhoduje mezi významy, ne mezi diatezemi — o tu si generátor říká sám. Sloveso
+                s víc významy nechává obojí na „ne“ a volající pak musí jmenovat konkrétní.</small></p>
         <p class="field"><label for="reflexive_type">Reflexivita významu</label>
             <?= admin_select('reflexive_type', 'reflexive_type', (string) $frame['reflexive_type'], allowEmpty: false) ?>
             <small>Jen když částice patří tomuhle významu — dát si kávu, ale dát knihu ne. U reflexiva
