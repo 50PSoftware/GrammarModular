@@ -24,6 +24,7 @@ namespace Grammar.Czech.Services
         private readonly ICzechAdverbService adverbService;
         private readonly ICzechParticleService particleService;
         private readonly ICzechInterjectionService interjectionService;
+        private readonly CzechLexiconEnricher lexiconEnricher;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechSentenceBuilder"/> type.
@@ -38,7 +39,8 @@ namespace Grammar.Czech.Services
             ICzechValencyService valencyService,
             ICzechAdverbService adverbService,
             ICzechParticleService particleService,
-            ICzechInterjectionService interjectionService)
+            ICzechInterjectionService interjectionService,
+            CzechLexiconEnricher lexiconEnricher)
         {
             this.adverbService = adverbService;
             this.composer = composer;
@@ -50,6 +52,7 @@ namespace Grammar.Czech.Services
             this.valencyService = valencyService;
             this.particleService = particleService;
             this.interjectionService = interjectionService;
+            this.lexiconEnricher = lexiconEnricher;
         }
 
         /// <summary>
@@ -311,7 +314,33 @@ namespace Grammar.Czech.Services
 
             var frame = valencyService.GetFrame(clause.Predicate.Lemma, clause.FrameLabel);
 
-            return clause with { Elements = clause.Elements.Select(element => ApplySlot(element, frame, clause.Predicate.Lemma)).ToList() };
+            return clause with
+            {
+                Predicate = WithReflexive(clause.Predicate, frame),
+                Elements = clause.Elements.Select(element => ApplySlot(element, frame, clause.Predicate.Lemma)).ToList()
+            };
+        }
+
+        // Precedence: caller, then frame, then entry. None doubles as "not stated" at every step, the
+        // same rule CzechLexiconEnricher follows — the frame speaks for one sense (dát si kávu, but
+        // dát knihu Pavlovi), the entry for the whole lemma (starat se, which has no other form).
+        //
+        // The entry is read here rather than left to the enricher, because that one runs inside
+        // MorphologyEngine on a copy of the request that never comes back, and the clitic cluster is
+        // assembled before it. Anything set there would reach the verb form and nothing else.
+        private CzechWordRequest WithReflexive(CzechWordRequest predicate, ValencyFrame? frame)
+        {
+            if (predicate.ReflexiveType == ReflexiveType.None && frame is not null)
+            {
+                predicate.ReflexiveType = frame.ReflexiveType;
+            }
+
+            if (predicate.ReflexiveType == ReflexiveType.None)
+            {
+                predicate.ReflexiveType = lexiconEnricher.Enrich(predicate).ReflexiveType;
+            }
+
+            return predicate;
         }
 
         private ClauseElement ApplySlot(ClauseElement element, ValencyFrame? frame, string verbLemma)

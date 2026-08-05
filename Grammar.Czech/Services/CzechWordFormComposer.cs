@@ -37,7 +37,17 @@ namespace Grammar.Czech.Services
             if (request.WordCategory == WordCategory.Verb)
             {
                 var verbForm = morphologyEngine.GetBasicForm(request).Form;
-                if (request.Modus == Modus.Imperative) return new WordForm(verbForm);
+                // The particle is added here rather than by the conjugation service, which sees a copy
+                // the lexicon has already enriched. Every other tense reads it off this request, and a
+                // caller that cleared the field — CzechSentenceBuilder does, to put se in the clitic
+                // cluster instead — has to be believed by the imperative too, or it lands twice.
+                if (request.Modus == Modus.Imperative)
+                {
+                    return new WordForm(request.ReflexiveType == ReflexiveType.None
+                        ? verbForm
+                        : verbPhraseBuilderService.BuildReflexivePhrase(
+                            verbForm, request.ReflexiveType, request.HasPrecedingConstituent.GetValueOrDefault()));
+                }
 
                 if (request.Aspect == VerbAspect.Imperfective && request.Tense == Tense.Future)
                 {

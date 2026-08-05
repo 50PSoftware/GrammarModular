@@ -107,6 +107,7 @@ namespace Grammar.Czech
             services.AddSingleton<ICzechInterjectionService, CzechInterjectionService>();
             services.AddSingleton<ICzechValencyService, CzechValencyService>();
 
+            services.AddSingleton<CzechLexiconEnricher>();
             services.AddSingleton<CzechAuxiliaryVerbService>();
             services.AddSingleton<CzechVerbPhraseBuilderService>();
             services.AddSingleton<INegationService<CzechWordRequest>, CzechNegationService>();

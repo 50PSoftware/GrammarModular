@@ -39,7 +39,6 @@ namespace Grammar.Czech.Test
             service = new CzechVerbConjugationService(
                 verbDataProvider,
                 verbStructureResolver,
-                cliticService,
                 prefixService,
                 registry,
                 valencyProvider);

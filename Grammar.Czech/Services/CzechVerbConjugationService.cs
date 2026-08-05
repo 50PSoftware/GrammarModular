@@ -16,7 +16,6 @@ namespace Grammar.Czech.Services
     {
         private readonly IVerbDataProvider _dataProvider;
         private readonly IVerbStructureResolver<CzechWordRequest> _verbStructureResolver;
-        private readonly ICzechCliticService _cliticService;
         private readonly ICzechPrefixService _czechPrefixService;
         private readonly IPhonemeRegistry _phonemeRegistry;
         private readonly IValencyProvider<CzechLexicalEntry> _valencyProvider;
@@ -45,14 +44,12 @@ namespace Grammar.Czech.Services
         public CzechVerbConjugationService(
             IVerbDataProvider dataProvider,
             IVerbStructureResolver<CzechWordRequest> verbStructureResolver,
-            ICzechCliticService cliticService,
             ICzechPrefixService czechPrefixService,
             IPhonemeRegistry phonemeRegistry,
             IValencyProvider<CzechLexicalEntry> valencyProvider)
         {
             this._dataProvider = dataProvider;
             this._verbStructureResolver = verbStructureResolver;
-            this._cliticService = cliticService;
             this._czechPrefixService = czechPrefixService;
             this._phonemeRegistry = phonemeRegistry;
             this._valencyProvider = valencyProvider;
@@ -307,8 +304,9 @@ namespace Grammar.Czech.Services
                     "Imperative exists only for 2nd person (sg/pl) and 1st person plural.")
             };
 
-            if (word.ReflexiveType != ReflexiveType.None)
-                result += $" {_cliticService.GetReflexive(word.ReflexiveType)}";
+            // The reflexive particle is CzechWordFormComposer's, like it is for every other tense. It
+            // used to be appended here, off a request the lexicon had already enriched, so a clause
+            // that had deliberately moved se into the clitic cluster got it back a second time.
 
             // No exclamation mark: this returns a word form and the punctuation belongs to the sentence.
             // Baking it in gave "Dělej!!" and put the reflexive behind it as "Dělej! se".

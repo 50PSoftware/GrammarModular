@@ -65,6 +65,17 @@ namespace Grammar.Czech.Test
             Gender = Gender.Masculine
         };
 
+        // Present rather than past, because the l-participle of dát currently comes out as dál. That is a
+        // vowel-quantity fault of its own and nothing to do with the particle these tests are about.
+        private static CzechWordRequest PerfectivePresent(string lemma, string pattern)
+        {
+            var verb = Verb(lemma, pattern);
+            verb.Aspect = VerbAspect.Perfective;
+            verb.Tense = Tense.Present;
+
+            return verb;
+        }
+
         #region Case from the frame
 
         /// <summary>
@@ -157,6 +168,75 @@ namespace Grammar.Czech.Test
         }
 
         #endregion Case from the frame
+
+        #region Reflexive particle
+
+        /// <summary>
+        /// The particle comes from the frame when the reflexivity belongs to the sense.
+        /// </summary>
+        /// <remarks>
+        /// Same lemma as <see cref="Build_PatientAndAddressee_EachTakeTheirOwnCase"/>, which takes none:
+        /// dá si kávu against dával ženě knihu. That is the whole reason the frame needs a say — an
+        /// answer on the entry would have to be the same for both.
+        /// </remarks>
+        [TestMethod]
+        public void Build_FrameStatingAParticle_PutsItInTheCluster()
+        {
+            var clause = new CzechClause
+            {
+                Predicate = PerfectivePresent("dát", "trida5"),
+                FrameLabel = "konzumace",
+                Elements = [Argument("káva", "žena", Gender.Feminine, FgdFunctor.PAT)]
+            };
+
+            Assert.AreEqual("Dá si kávu.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// A reflexivum tantum keeps its particle under a frame that states none.
+        /// </summary>
+        /// <remarks>
+        /// starat se has no non-reflexive form, so the particle is on the entry and the frame is silent.
+        /// The entry has to be read by the builder: the enricher fills the same field, but it runs inside
+        /// MorphologyEngine on a copy, by which point the cluster has already been assembled.
+        /// </remarks>
+        [TestMethod]
+        public void Build_EntryStatingAParticle_SurvivesAFrameThatStatesNone()
+        {
+            var clause = new CzechClause
+            {
+                Predicate = Verb("starat", "trida5"),
+                Elements = [Argument("žena", "žena", Gender.Feminine, FgdFunctor.PAT, isAnimate: true)]
+            };
+
+            Assert.AreEqual("Staral se o ženu.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// What the caller states is not overruled by the frame.
+        /// </summary>
+        /// <remarks>
+        /// The sentence is here for the precedence and not for the Czech: se on this frame is wrong, and
+        /// that it comes out anyway is exactly the assertion. None is what "not stated" looks like on a
+        /// non-nullable field, so anything else has to be treated as the caller's decision.
+        /// </remarks>
+        [TestMethod]
+        public void Build_CallerStatingAParticle_IsNotOverruledByTheFrame()
+        {
+            var predicate = PerfectivePresent("dát", "trida5");
+            predicate.ReflexiveType = ReflexiveType.DerivedReflexive_Se;
+
+            var clause = new CzechClause
+            {
+                Predicate = predicate,
+                FrameLabel = "konzumace",
+                Elements = [Argument("káva", "žena", Gender.Feminine, FgdFunctor.PAT)]
+            };
+
+            Assert.AreEqual("Dá se kávu.", builder.Build(clause));
+        }
+
+        #endregion Reflexive particle
 
         #region Licensing
 

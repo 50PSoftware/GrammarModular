@@ -73,6 +73,27 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// A reflexivum tantum out of the lexicon lands in the cluster once, not twice.
+        /// </summary>
+        /// <remarks>
+        /// starat se states its particle on the entry rather than on the request, and the imperative used
+        /// to add one of its own off the enriched copy — on top of the one the cluster already carried,
+        /// giving "Starej se se". Every other tense read the request the builder had cleared and so was
+        /// never affected, which is why the whole thing stayed invisible until an entry set the field.
+        /// </remarks>
+        [TestMethod]
+        public void RenderClause_ImperativeOfALexiconReflexive_AddsTheParticleOnce()
+        {
+            var predicate = Imperative();
+            predicate.Lemma = "starat";
+            predicate.Pattern = "trida5";
+
+            var clause = new CzechClause { Predicate = predicate, Terminator = "!" };
+
+            Assert.AreEqual("Starej se!", builder.Build(clause));
+        }
+
+        /// <summary>
         /// An addressee written out is a vocative, not a subject, so it must not drive agreement — the verb
         /// stays in the second person it was asked for.
         /// </summary>
