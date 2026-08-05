@@ -204,8 +204,22 @@ namespace Grammar.Czech.Test
         [DataTestMethod]
         [DataRow("dát", "dát", "Masculine", "Singular", "dán", DisplayName = "dát – trpný sg m")]
         [DataRow("dát", "dát", "Feminine", "Singular", "dána", DisplayName = "dát – trpný sg f")]
-        // Obecná trida5 sem zatím nepatří: dělat dává *dělan, protože odvození z infinitivu kmen
-        // neprodlužuje. To je vada trpného rodu celé třídy, ne tohohle vzoru, a řeší se jinde.
+        // Kmen na -a se v trpném rodě dlouží, ať přijde odkudkoli — z pojmenovaného vzoru i z odvození
+        // třídy.
+        [DataRow("dělat", "dělá", "Masculine", "Singular", "dělán", DisplayName = "dělat – trpný sg m")]
+        [DataRow("dělat", "dělá", "Feminine", "Singular", "dělána", DisplayName = "dělat – trpný sg f")]
+        [DataRow("volat", "trida5", "Masculine", "Singular", "volán", DisplayName = "volat – trpný sg m")]
+        [DataRow("zpívat", "trida5", "Masculine", "Singular", "zpíván", DisplayName = "zpívat – trpný sg m")]
+        [DataRow("dávat", "trida5", "Masculine", "Singular", "dáván", DisplayName = "dávat – trpný sg m")]
+        [DataRow("kupovat", "kupuje", "Masculine", "Singular", "kupován", DisplayName = "kupovat – trpný sg m")]
+        [DataRow("pracovat", "trida3", "Masculine", "Singular", "pracován", DisplayName = "pracovat – trpný sg m")]
+        [DataRow("brát", "bere", "Masculine", "Singular", "brán", DisplayName = "brát – trpný sg m")]
+        [DataRow("mazat", "maže", "Masculine", "Singular", "mazán", DisplayName = "mazat – trpný sg m")]
+        // Kmeny, které na -a nekončí, se dloužit nesmí — jsou tu proto, že pravidlo je vidět jen proti nim.
+        [DataRow("prosit", "prosí", "Masculine", "Singular", "prošen", DisplayName = "prosit – trpný sg m")]
+        [DataRow("nést", "nese", "Masculine", "Singular", "nesen", DisplayName = "nést – trpný sg m")]
+        [DataRow("tisknout", "tiskne", "Masculine", "Singular", "tištěn", DisplayName = "tisknout – trpný sg m")]
+        [DataRow("vidět", "trida4", "Masculine", "Singular", "viděn", DisplayName = "vidět – trpný sg m")]
         public void GetBasicForm_PassiveParticiple_KeepsItsOwnStem(
             string lemma, string pattern, string gender, string number, string expected)
         {

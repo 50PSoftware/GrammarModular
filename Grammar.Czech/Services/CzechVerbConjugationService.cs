@@ -234,6 +234,13 @@ namespace Grammar.Czech.Services
             var genderKey = ResolveGenderKey(word.Gender);
             var stem = verbStruct.PassiveStem ?? verbStruct.PastStem;
 
+            // Participium na -án u sloves s kmenem na -a: dělán, brán, mazán, kupován, dán. Délka patří
+            // jen trpnému rodu — l-ové příčestí týchž sloves zůstává krátké (dělal, bral) — takže se
+            // dodává tady a ne na kmeni, který podává resolver. Kmen sem přitom přichází ze dvou stran,
+            // z odvození třídy i z pojmenovaného vzoru, a oprava jen v jedné z nich by tu druhou minula.
+            if (stem.EndsWith('a') && _phonemeRegistry.Get('a')?.LongCounterpart is { } longA)
+                stem = stem[..^1] + longA;
+
             // Heuristické úpravy kmene pasiva.
             // Jde o lexikální výjimky, které nelze pokrýt obecným pravidlem přes phoneme registry.
             if (stem.EndsWith("sk"))
