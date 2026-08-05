@@ -44,5 +44,24 @@ namespace Grammar.Czech.Interfaces
         /// </para>
         /// </remarks>
         bool IsInnerParticipant(FgdFunctor functor);
+
+        /// <summary>
+        /// Determines whether the frame licenses the periphrastic passive.
+        /// </summary>
+        /// <param name="frame">The frame to judge.</param>
+        /// <returns><see langword="true"/> when the verb can be passivized in this sense; otherwise, <see langword="false"/>.</returns>
+        /// <remarks>
+        /// NESČ states the condition on the -n-/-t- participle as a valency one — it is formed from a stem
+        /// "s agentem a aspoň jedním pravým doplněním" — and the aktanty are exactly what
+        /// <see cref="IsInnerParticipant"/> already recognizes. A verb with an agent and nothing else is a
+        /// neergativum, which NESČ says does not passivize at all: <c>*Je běženo (Petrem)</c>.
+        /// <para>
+        /// This judges the construction, not the word. The participle of jít exists — IJP and Wikislovník
+        /// both give <c>jit</c> — while the clause built on it does not, because the frame of jít holds a
+        /// direction and no complement. That is why the answer lives here and not in the conjugation
+        /// service, which only ever produces a form.
+        /// </para>
+        /// </remarks>
+        bool LicensesPeriphrasticPassive(ValencyFrame frame);
     }
 }

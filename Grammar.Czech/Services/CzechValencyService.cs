@@ -77,5 +77,20 @@ namespace Grammar.Czech.Services
         /// <param name="functor">The functor to classify.</param>
         /// <returns><see langword="true"/> for an inner participant; otherwise, <see langword="false"/>.</returns>
         public bool IsInnerParticipant(FgdFunctor functor) => InnerParticipants.Contains(functor);
+
+        /// <summary>
+        /// Determines whether the frame licenses the periphrastic passive.
+        /// </summary>
+        /// <param name="frame">The frame to judge.</param>
+        /// <returns><see langword="true"/> when the verb can be passivized in this sense; otherwise, <see langword="false"/>.</returns>
+        public bool LicensesPeriphrasticPassive(ValencyFrame frame)
+        {
+            var functors = frame.Slots.Select(slot => slot.Functor).ToList();
+
+            // The agent and one more aktant. A direction or a place does not count — those attach to any
+            // verb at all, so counting them would license every verb there is.
+            return functors.Contains(FgdFunctor.ACT)
+                && functors.Any(functor => functor != FgdFunctor.ACT && IsInnerParticipant(functor));
+        }
     }
 }

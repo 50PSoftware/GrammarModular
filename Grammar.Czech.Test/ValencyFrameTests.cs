@@ -1,4 +1,4 @@
-using Grammar.Core.Enums;
+﻿using Grammar.Core.Enums;
 using Grammar.Core.Interfaces;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
@@ -234,6 +234,84 @@ namespace Grammar.Czech.Test
         }
 
         #endregion Reflexive particle
+
+
+        #region Passive licensing
+
+        /// <summary>
+        /// A frame with an agent and nothing else does not license the passive.
+        /// </summary>
+        /// <remarks>
+        /// NESČ puts the condition on valency — the participle wants an agent and at least one true
+        /// complement — and stars <c>*Je běženo</c> for the verbs that have neither. The frame of jít in
+        /// its motion sense holds a direction, which any verb can take, so it does not count.
+        /// <para>
+        /// The word form is a separate question and is left alone: IJP and Wikislovník both give jít the
+        /// participle jit. What does not exist is the clause, which is why this is answered here.
+        /// </para>
+        /// </remarks>
+        [TestMethod]
+        public void Build_PassiveOfAFrameWithNoComplement_IsRefused()
+        {
+            var predicate = Verb("jít", "jít");
+            predicate.Voice = Voice.Passive;
+
+            var clause = new CzechClause
+            {
+                Predicate = predicate,
+                FrameLabel = "motion",
+                Elements = [Argument("škola", "žena", Gender.Feminine, FgdFunctor.DIR3)]
+            };
+
+            var exception = Assert.ThrowsException<InvalidOperationException>(() => builder.Build(clause));
+
+            StringAssert.Contains(exception.Message, "jít");
+            StringAssert.Contains(exception.Message, "motion");
+        }
+
+        /// <summary>
+        /// A verb the lexicon does not know is left alone rather than refused.
+        /// </summary>
+        /// <remarks>
+        /// No frame is not the same answer as no complement. A caller who works from a vzor and never
+        /// opens the dictionary has to keep working, the same rule the reflexive particle follows.
+        /// </remarks>
+        [TestMethod]
+        public void Build_PassiveOfVerbOutsideTheLexicon_IsNotRefused()
+        {
+            var predicate = Verb("dělat", "dělá");
+            predicate.Voice = Voice.Passive;
+
+            Assert.AreEqual("Byl dělán.", builder.Build(new CzechClause { Predicate = predicate }));
+        }
+
+        /// <summary>
+        /// The condition reads the aktanty of the frame and ignores everything else.
+        /// </summary>
+        /// <remarks>
+        /// Asserted on the service rather than on a sentence, because a licensed passive is not yet a
+        /// well-formed one: nothing remaps the slots for the diathesis, so dát comes out as "Byl dán
+        /// knihu" with the patient still in the accusative. Licensing is the question this answers;
+        /// promoting the patient is what valency_frame.diathesis is for and nothing reads it yet.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("dát", "transfer", true, DisplayName = "dát/transfer — konatel a patiens")]
+        [DataRow("dát", "konzumace", true, DisplayName = "dát/konzumace — konatel a patiens")]
+        [DataRow("vidět", "perception", true, DisplayName = "vidět/perception — konatel a patiens")]
+        [DataRow("starat", "care", true, DisplayName = "starat/care — patiens s předložkou se počítá")]
+        [DataRow("jít", "motion", false, DisplayName = "jít/motion — jen směr")]
+        [DataRow("jít", "process", false, DisplayName = "jít/process — jen konatel")]
+        [DataRow("stát", "position", false, DisplayName = "stát/position — konatel a místo")]
+        public void LicensesPeriphrasticPassive_ReadsTheAktantyOnly(
+            string lemma, string label, bool expected)
+        {
+            var frame = valency.GetFrame(lemma, label);
+
+            Assert.IsNotNull(frame, $"Rámec '{lemma}/{label}' v lexikonu není.");
+            Assert.AreEqual(expected, valency.LicensesPeriphrasticPassive(frame));
+        }
+
+        #endregion Passive licensing
 
         #region Licensing
 

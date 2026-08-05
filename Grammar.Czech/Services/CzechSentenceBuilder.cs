@@ -314,11 +314,35 @@ namespace Grammar.Czech.Services
 
             var frame = valencyService.GetFrame(clause.Predicate.Lemma, clause.FrameLabel);
 
+            ValidatePassive(clause.Predicate, frame);
+
             return clause with
             {
                 Predicate = WithReflexive(clause.Predicate, frame),
                 Elements = clause.Elements.Select(element => ApplySlot(element, frame, clause.Predicate.Lemma)).ToList()
             };
+        }
+
+        // Which verbs can stand in the passive is a valency question, and the frame is where valency is
+        // written down — so it is asked here rather than answered a second time somewhere else.
+        //
+        // A verb the lexicon does not know has no frame and is left alone. Silence is not a refusal, the
+        // same rule the reflexive particle follows: a caller who works from a vzor and never opens the
+        // dictionary has to keep working.
+        private void ValidatePassive(CzechWordRequest predicate, ValencyFrame? frame)
+        {
+            if (predicate.Voice != Voice.Passive
+                || frame is null
+                || valencyService.LicensesPeriphrasticPassive(frame))
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                $"Sloveso '{predicate.Lemma}' se v tomhle významu do trpného rodu nedá převést. Trpný "
+                + "rod chce konatele a aspoň jedno pravé doplnění, a rámec "
+                + $"'{frame.FrameLabel ?? "bez popisku"}' má jen konatele — směr ani místo se nepočítají, "
+                + "ty bere každé sloveso. Tvar příčestí existovat může; věta z něj ne.");
         }
 
         // Precedence: caller, then frame, then entry. None doubles as "not stated" at every step, the
