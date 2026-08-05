@@ -35,9 +35,13 @@ namespace Grammar.Czech.Services
         /// process — and the two take different arguments, so guessing would silently pick a reading. The
         /// label has to say which.
         /// </remarks>
-        public ValencyFrame? GetFrame(string verbLemma, string? frameLabel)
+        public ValencyFrame? GetFrame(string verbLemma, string? frameLabel, Diathesis diathesis = Diathesis.Active)
         {
-            var frames = _valencyProvider.GetFrames(verbLemma).ToList();
+            // Filtered before anything else is counted, so a sense that has gained a passive frame does
+            // not start reading as ambiguous to every caller who only ever wanted the active one.
+            var frames = _valencyProvider.GetFrames(verbLemma)
+                .Where(frame => frame.Diathesis == diathesis)
+                .ToList();
 
             if (frames.Count == 0)
             {

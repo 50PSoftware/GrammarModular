@@ -314,12 +314,25 @@ namespace Grammar.Czech.Services
 
             var frame = valencyService.GetFrame(clause.Predicate.Lemma, clause.FrameLabel);
 
-            ValidatePassive(clause.Predicate, frame);
+            // A diathesis remaps every slot at once, so the passive is a frame of its own rather than the
+            // active one recomputed: ACT drops to an instrumental adjunct and PAT rises to the subject.
+            var passive = clause.Predicate.Voice == Voice.Passive
+                ? valencyService.GetFrame(clause.Predicate.Lemma, clause.FrameLabel, Diathesis.PassivePeriphrastic)
+                : null;
+
+            // Having a passive frame is the licence, and it is the better answer of the two because it also
+            // says how the arguments come out. The check speaks only for a sense that has none yet.
+            if (clause.Predicate.Voice == Voice.Passive && passive is null)
+            {
+                ValidatePassive(clause.Predicate, frame);
+            }
+
+            var governing = passive ?? frame;
 
             return clause with
             {
-                Predicate = WithReflexive(clause.Predicate, frame),
-                Elements = clause.Elements.Select(element => ApplySlot(element, frame, clause.Predicate.Lemma)).ToList()
+                Predicate = WithReflexive(clause.Predicate, governing),
+                Elements = clause.Elements.Select(element => ApplySlot(element, governing, clause.Predicate.Lemma)).ToList()
             };
         }
 
@@ -742,10 +755,15 @@ namespace Grammar.Czech.Services
         {
             var predicate = clause.Predicate;
 
+            // The passive is what the promotion is for: the patient becomes the subject and the verb agrees
+            // with it, so "Kniha byla dána" is feminine off kniha and not off whatever the caller stated.
+            // The agent is still ACT, but it stands in the instrumental and governs nothing.
+            var subjectFunctor = predicate.Voice == Voice.Passive ? FgdFunctor.PAT : FgdFunctor.ACT;
+
             // A counted subject stands in the nominative as a phrase while its head noun is genitive, so the
             // phrase case is what identifies it — "pět studentů" is the subject of "pět studentů přišlo".
             var subject = clause.Elements
-                .Where(element => element.Functor == FgdFunctor.ACT
+                .Where(element => element.Functor == subjectFunctor
                     && (element.PhraseCase ?? element.Word.Case) == Case.Nominative)
                 .Select(element => (ClauseElement?)element)
                 .FirstOrDefault();

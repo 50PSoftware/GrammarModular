@@ -17,7 +17,7 @@ namespace Grammar.Czech.Interfaces
         /// <exception cref="System.InvalidOperationException">
         /// Thrown when the verb has several frames and the label does not identify one of them.
         /// </exception>
-        ValencyFrame? GetFrame(string verbLemma, string? frameLabel);
+        ValencyFrame? GetFrame(string verbLemma, string? frameLabel, Diathesis diathesis = Diathesis.Active);
 
         /// <summary>
         /// Gets the slot filling the supplied functor in the frame.

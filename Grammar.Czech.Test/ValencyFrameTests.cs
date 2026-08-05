@@ -37,7 +37,9 @@ namespace Grammar.Czech.Test
         }
 
         // Deliberately carries no Case — that is the point: the frame supplies it.
-        private static ClauseElement Argument(string lemma, string pattern, Gender gender, FgdFunctor functor, bool isAnimate = false) =>
+        private static ClauseElement Argument(
+            string lemma, string pattern, Gender gender, FgdFunctor functor,
+            bool isAnimate = false, InformationStatus status = InformationStatus.New) =>
             ClauseElement.Of(
                 new CzechWordRequest
                 {
@@ -49,7 +51,7 @@ namespace Grammar.Czech.Test
                     IsAnimate = isAnimate
                 },
                 functor,
-                InformationStatus.New);
+                status);
 
         private static CzechWordRequest Verb(string lemma, string pattern) => new()
         {
@@ -289,10 +291,9 @@ namespace Grammar.Czech.Test
         /// The condition reads the aktanty of the frame and ignores everything else.
         /// </summary>
         /// <remarks>
-        /// Asserted on the service rather than on a sentence, because a licensed passive is not yet a
-        /// well-formed one: nothing remaps the slots for the diathesis, so dát comes out as "Byl dán
-        /// knihu" with the patient still in the accusative. Licensing is the question this answers;
-        /// promoting the patient is what valency_frame.diathesis is for and nothing reads it yet.
+        /// Asserted on the service rather than on a sentence, because licensing is the only question it
+        /// answers. Where a sense has a passive frame of its own, that frame is the better answer and the
+        /// builder takes it instead — see <see cref="Build_PassiveFrame_PromotesThePatientToSubject"/>.
         /// </remarks>
         [DataTestMethod]
         [DataRow("dát", "transfer", true, DisplayName = "dát/transfer — konatel a patiens")]
@@ -309,6 +310,60 @@ namespace Grammar.Czech.Test
 
             Assert.IsNotNull(frame, $"Rámec '{lemma}/{label}' v lexikonu není.");
             Assert.AreEqual(expected, valency.LicensesPeriphrasticPassive(frame));
+        }
+
+        /// <summary>
+        /// The passive frame promotes the patient and demotes the agent, and the verb agrees with the new
+        /// subject.
+        /// </summary>
+        /// <remarks>
+        /// Against <see cref="Build_PatientAndAddressee_EachTakeTheirOwnCase"/>, which is the same sense in
+        /// the active: there kniha is accusative and the verb is masculine off an unexpressed agent, here
+        /// it is nominative and the verb is feminine off kniha. Nothing computes that from the active
+        /// frame — a diathesis remaps every slot at once, so it is a row of its own, which is what the
+        /// UNIQUE on (lu_id, diathesis) has been reserving since the schema was written.
+        /// </remarks>
+        [TestMethod]
+        public void Build_PassiveFrame_PromotesThePatientToSubject()
+        {
+            var predicate = Perfective("dát", "dát");
+            predicate.Voice = Voice.Passive;
+
+            var clause = new CzechClause
+            {
+                Predicate = predicate,
+                FrameLabel = "transfer",
+                Elements =
+                [
+                    Argument("kniha", "žena", Gender.Feminine, FgdFunctor.PAT, status: InformationStatus.Given),
+                    Argument("žena", "žena", Gender.Feminine, FgdFunctor.ADDR)
+                ]
+            };
+
+            Assert.AreEqual("Kniha byla dána ženě.", builder.Build(clause));
+        }
+
+        /// <summary>
+        /// The agent survives the passive as an instrumental adjunct rather than as the subject.
+        /// </summary>
+        [TestMethod]
+        public void Build_PassiveFrame_LeavesTheAgentInTheInstrumental()
+        {
+            var predicate = Perfective("dát", "dát");
+            predicate.Voice = Voice.Passive;
+
+            var clause = new CzechClause
+            {
+                Predicate = predicate,
+                FrameLabel = "transfer",
+                Elements =
+                [
+                    Argument("kniha", "žena", Gender.Feminine, FgdFunctor.PAT, status: InformationStatus.Given),
+                    Argument("studentka", "žena", Gender.Feminine, FgdFunctor.ACT, isAnimate: true)
+                ]
+            };
+
+            Assert.AreEqual("Kniha byla dána studentkou.", builder.Build(clause));
         }
 
         #endregion Passive licensing

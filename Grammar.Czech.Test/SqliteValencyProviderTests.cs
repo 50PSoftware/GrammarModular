@@ -1,4 +1,4 @@
-using Grammar.Core.Enums;
+﻿using Grammar.Core.Enums;
 using Grammar.Czech.Providers.SqliteProviders;
 
 namespace Grammar.Czech.Test
@@ -134,7 +134,9 @@ namespace Grammar.Czech.Test
         [TestMethod]
         public void GetFrames_Dát_ReturnsTheTransferFrame()
         {
-            var frame = provider.GetFrames("dát").Single(candidate => candidate.FrameLabel == "transfer");
+            var frame = provider.GetFrames("dát")
+                .Single(candidate => candidate.FrameLabel == "transfer"
+                    && candidate.Diathesis == Diathesis.Active);
 
             Assert.AreEqual("transfer", frame.FrameLabel);
             Assert.AreEqual(ValencyKind.Verbal, frame.Kind);
@@ -198,8 +200,10 @@ namespace Grammar.Czech.Test
         [DataRow("vidět", "uvidět", "perception")]
         public void GetFrames_AspectPair_SharesOneFrame(string first, string second, string label)
         {
-            var one = provider.GetFrames(first).Single(frame => frame.FrameLabel == label);
-            var other = provider.GetFrames(second).Single(frame => frame.FrameLabel == label);
+            var one = provider.GetFrames(first)
+                .Single(frame => frame.FrameLabel == label && frame.Diathesis == Diathesis.Active);
+            var other = provider.GetFrames(second)
+                .Single(frame => frame.FrameLabel == label && frame.Diathesis == Diathesis.Active);
 
             Assert.AreEqual(one.LuId, other.LuId, "Vidová dvojice nesdílí lexikální jednotku.");
 

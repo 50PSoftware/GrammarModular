@@ -1,4 +1,4 @@
-using Grammar.Core.Enums;
+﻿using Grammar.Core.Enums;
 using Grammar.Core.Interfaces;
 using Grammar.Czech.Enums;
 using Grammar.Czech.Interfaces;
@@ -351,7 +351,9 @@ namespace Grammar.Czech.Test
             Assert.IsTrue(valency.HasEntry("student"), "Lexikon se nenačetl.");
             Assert.IsTrue(valency.GetFrames("dát").Any(), "Valenční rámce se nenačetly.");
 
-            var slots = valency.GetFrames("dát").Single(frame => frame.FrameLabel == "transfer").Slots;
+            var slots = valency.GetFrames("dát")
+                .Single(frame => frame.FrameLabel == "transfer" && frame.Diathesis == Diathesis.Active)
+                .Slots;
             Assert.IsTrue(slots.Count > 0, "Rámec slovesa dát nemá sloty.");
 
             var patient = slots.Single(slot => slot.Functor == FgdFunctor.PAT);
