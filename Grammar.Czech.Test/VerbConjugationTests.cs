@@ -245,6 +245,9 @@ namespace Grammar.Czech.Test
         [DataRow("pomoci", "pomoci", "Masculine", "Singular", "pomožen", DisplayName = "pomoci – trpný sg m")]
         [DataRow("umřít", "umře", "Masculine", "Singular", "umřen", DisplayName = "umřít – trpný sg m")]
         [DataRow("chtít", "chtít", "Masculine", "Singular", "chtěn", DisplayName = "chtít – trpný sg m")]
+        // Jotace k→č na kmeni, který ji v žádném jiném tvaru neukáže: řekl, ale řečen.
+        [DataRow("říct", "říct", "Masculine", "Singular", "řečen", DisplayName = "říct – trpný sg m")]
+        [DataRow("říct", "říct", "Feminine", "Singular", "řečena", DisplayName = "říct – trpný sg f")]
         // Obecná 4. třída: -ět si téma nese do příčestí, -it ho zahazuje a místo něj jotuje.
         [DataRow("vidět", "trida4", "Masculine", "Singular", "viděn", DisplayName = "vidět – trpný sg m")]
         [DataRow("trpět", "trida4", "Masculine", "Singular", "trpěn", DisplayName = "trpět – trpný sg m")]
@@ -295,21 +298,24 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
-        /// The one verb that forms no passive participle says so instead of inventing one.
+        /// A verb that forms no passive participle says so instead of inventing one.
         /// </summary>
         /// <remarks>
         /// Being intransitive is not the reason and would be the wrong test: bylo pracováno is standard,
-        /// and IJP gives jít a passive participle too. moci is on the list because IJP leaves the row
-        /// empty for it, where the near-identical pomoci has pomožen — so it cannot be derived from
+        /// and IJP gives jít a passive participle too. These two are on the list because IJP leaves the
+        /// row empty for them, where the near-identical pomoci has pomožen — so it cannot be derived from
         /// anything the model holds and has to be stated.
         /// </remarks>
-        [TestMethod]
-        public void GetBasicForm_VerbWithNoPassiveParticiple_SaysSoRatherThanInventingOne()
+        [DataTestMethod]
+        [DataRow("moci", "moci", DisplayName = "moci netvoří trpné příčestí")]
+        [DataRow("mít", "mít", DisplayName = "mít netvoří trpné příčestí")]
+        public void GetBasicForm_VerbWithNoPassiveParticiple_SaysSoRatherThanInventingOne(
+            string lemma, string pattern)
         {
             var request = new CzechWordRequest
             {
-                Lemma = "moci",
-                Pattern = "moci",
+                Lemma = lemma,
+                Pattern = pattern,
                 WordCategory = WordCategory.Verb,
                 Tense = Tense.Past,
                 Modus = Modus.Indicative,
@@ -322,7 +328,7 @@ namespace Grammar.Czech.Test
             var exception = Assert.ThrowsException<InvalidOperationException>(
                 () => service.GetBasicForm(request));
 
-            StringAssert.Contains(exception.Message, "moci");
+            StringAssert.Contains(exception.Message, lemma);
         }
 
         /// <summary>

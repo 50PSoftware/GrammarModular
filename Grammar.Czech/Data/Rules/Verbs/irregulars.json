@@ -48,6 +48,7 @@
   "mít": {
     "inheritsFrom": "trida5",
     "aspect": "imperfective",
+    "formsPassive": false,
     "stem": "m",
     "pastStem": "mě",
     "imperativeStem": "měj"
@@ -270,7 +271,8 @@
   "říct": {
     "inheritsFrom": "trida2",
     "aspect": "perfective",
-    "stem": "řek"
+    "stem": "řek",
+    "passiveStem": "řeče"
   },
   "dát": {
     "inheritsFrom": "trida5",
