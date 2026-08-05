@@ -259,6 +259,7 @@
             Console.WriteLine(sentenceBuilder.Build(new CzechClause
             {
                 Predicate = davat,
+                FrameLabel = "transfer",
                 Elements =
                 [
                     subject,
