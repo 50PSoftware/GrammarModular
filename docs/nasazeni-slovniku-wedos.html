@@ -472,13 +472,21 @@
           </p>
           <p>
             <strong>Máš databázi už nasazenou z dřívějška?</strong> Pak tenhle krok přeskoč — schéma
-            zakládá tabulky od nuly a na existující data je k ničemu. Migruj místo toho ze schématu 2
-            na 3, což přidá jen sloupce s kmeny na <code>lemma_entry</code> a žádný řádek nepřepíše:
+            zakládá tabulky od nuly a na existující data je k ničemu. Nejdřív se zeptej, na čem server
+            stojí:
           </p>
-          <div class="code plain"><pre>Grammar.Czech.Lexicon.Tool/Schema/migrate.002-003.mysql.sql</pre></div>
+          <div class="code"><pre>SELECT meta_value FROM lexicon_meta WHERE meta_key = 'schema_version';</pre></div>
           <p>
-            Dokud migrace neproběhne, hlásí <code>pull</code> chybu na sloupci, který server nemá, a
-            <code>validate</code> nesouhlasnou <code>schema_version</code>.
+            a pak pusť migrace, které chybí, <strong>v tomhle pořadí</strong>. Žádná z nich nepřepisuje
+            řádky, jen přidává sloupce:
+          </p>
+          <div class="code plain"><pre>Grammar.Czech.Lexicon.Tool/Schema/migrate.001-002.mysql.sql
+Grammar.Czech.Lexicon.Tool/Schema/migrate.002-003.mysql.sql</pre></div>
+          <p>
+            Verzi si posune každý skript sám na konci, takže se pozná i běh, který spadl v půlce.
+            Dokud migrace neproběhne, hlásí <code>pull</code> chybu na sloupci, který server nemá,
+            <code>validate</code> nesouhlasnou <code>schema_version</code> a admin
+            <code>Undefined array key</code> na stránce, která ten sloupec čte.
           </p>
           <div class="check">
             <span class="check-label">Ověření</span>
