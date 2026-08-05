@@ -10,7 +10,7 @@ PRAGMA foreign_keys = ON;
 
 -- Written into the file header, so a build can tell a database matching the current schema from one
 -- left over from an earlier shape. Raise it whenever schema.sql changes.
-PRAGMA user_version = 2;
+PRAGMA user_version = 3;
 
 -- The lexicon is read far more often than it is written and ships as a single file, so the pages are
 -- laid out for reading rather than for concurrent writers.

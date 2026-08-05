@@ -470,6 +470,16 @@
             Soubor je psaný tak, aby prošel na MariaDB i na MySQL 8. Kolace <code>utf8mb4_0900_*</code>
             v něm schválně nejsou — ty umí jen MySQL 8 a MariaDB by celý skript odmítla.
           </p>
+          <p>
+            <strong>Máš databázi už nasazenou z dřívějška?</strong> Pak tenhle krok přeskoč — schéma
+            zakládá tabulky od nuly a na existující data je k ničemu. Migruj místo toho ze schématu 2
+            na 3, což přidá jen sloupce s kmeny na <code>lemma_entry</code> a žádný řádek nepřepíše:
+          </p>
+          <div class="code plain"><pre>Grammar.Czech.Lexicon.Tool/Schema/migrate.002-003.mysql.sql</pre></div>
+          <p>
+            Dokud migrace neproběhne, hlásí <code>pull</code> chybu na sloupci, který server nemá, a
+            <code>validate</code> nesouhlasnou <code>schema_version</code>.
+          </p>
           <div class="check">
             <span class="check-label">Ověření</span>
             <span>Vzniklo osm tabulek: <code>lexicon_meta</code>, <code>lexeme</code>,

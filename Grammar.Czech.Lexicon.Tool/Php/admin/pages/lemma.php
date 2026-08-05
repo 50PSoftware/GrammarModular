@@ -91,6 +91,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         admin_text('aspect_counterpart'),
         admin_enum('reflexive_type', 'reflexive_type') ?? 'None',
         admin_text('base_verb_lemma'),
+        admin_text('stem'),
+        admin_text('present_stem'),
+        admin_text('past_stem'),
+        admin_text('future_stem'),
+        admin_text('imperative_stem'),
+        admin_text('passive_stem'),
+        admin_text('infinitive'),
+        admin_flag('forms_passive'),
         $lexemeId,
         admin_text('source'),
         admin_flag('is_verified') === 1 ? 1 : 0,
@@ -101,8 +109,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'lemma', 'lemma_key', 'homonym_index', 'category', 'gender', 'pattern', 'is_animate',
         'has_mobile_e', 'has_genitive_plural_shortening', 'has_epenthesis_in_genitive_plural',
         'is_indeclinable', 'is_plural_only', 'is_countable', 'prefers_short_form', 'verb_class',
-        'aspect', 'aspect_counterpart', 'reflexive_type', 'base_verb_lemma', 'lexeme_id', 'source',
-        'is_verified', 'note',
+        'aspect', 'aspect_counterpart', 'reflexive_type', 'base_verb_lemma', 'stem', 'present_stem',
+        'past_stem', 'future_stem', 'imperative_stem', 'passive_stem', 'infinitive', 'forms_passive',
+        'lexeme_id', 'source', 'is_verified', 'note',
     ];
 
     try {
@@ -292,6 +301,55 @@ if (!$isNew) {
             <label for="base_verb_lemma">Odvozeno ze slovesa</label>
             <input type="text" id="base_verb_lemma" name="base_verb_lemma" value="<?= h((string) $value('base_verb_lemma')) ?>">
             <small>U dějových substantiv — příjezd ← přijet. Rámec pak dědí.</small>
+        </p>
+    </div>
+
+    <h2>Kmeny</h2>
+    <p class="hint">Prázdné je běžný stav — kmen si určí vzor. Vyplňuje se jen to, co vzor netrefí:
+        říct se časuje podle 1. třídy a minulý čas přesto tvoří na <code>řek-</code>. Píše se bez
+        koncovky a bez pomlčky, a vždycky celý za tohle heslo — u odvozeného slovesa tedy i s
+        předponou (<code>odnes</code>, ne <code>nes</code>).</p>
+
+    <div class="grid">
+        <p class="field">
+            <label for="stem">Kmen</label>
+            <input type="text" id="stem" name="stem" value="<?= h((string) $value('stem')) ?>" class="mono">
+            <small>Obecný kmen, ze kterého se odvozují ostatní — nes, ber.</small>
+        </p>
+        <p class="field">
+            <label for="present_stem">Kmen přítomný</label>
+            <input type="text" id="present_stem" name="present_stem" value="<?= h((string) $value('present_stem')) ?>" class="mono">
+            <small>Jen když se liší od obecného — moci → můž.</small>
+        </p>
+        <p class="field">
+            <label for="past_stem">Kmen minulý</label>
+            <input type="text" id="past_stem" name="past_stem" value="<?= h((string) $value('past_stem')) ?>" class="mono">
+            <small>říct → řek, jíst → jed. Příčestí je pak řekl, jedl.</small>
+        </p>
+        <p class="field">
+            <label for="future_stem">Kmen budoucí</label>
+            <input type="text" id="future_stem" name="future_stem" value="<?= h((string) $value('future_stem')) ?>" class="mono">
+            <small>Jen u sloves s vlastním budoucím tvarem — jít → půjd.</small>
+        </p>
+        <p class="field">
+            <label for="imperative_stem">Kmen rozkazovací</label>
+            <input type="text" id="imperative_stem" name="imperative_stem" value="<?= h((string) $value('imperative_stem')) ?>" class="mono">
+            <small>být → buď, jíst → jez.</small>
+        </p>
+        <p class="field">
+            <label for="passive_stem">Kmen trpný</label>
+            <input type="text" id="passive_stem" name="passive_stem" value="<?= h((string) $value('passive_stem')) ?>" class="mono">
+            <small>Základ trpného příčestí — dát → dán, vzít → vzat.</small>
+        </p>
+        <p class="field">
+            <label for="infinitive">Infinitiv</label>
+            <input type="text" id="infinitive" name="infinitive" value="<?= h((string) $value('infinitive')) ?>" class="mono">
+            <small>Jen když se liší od lemmatu — říct vedle říci.</small>
+        </p>
+        <p class="field">
+            <label>Tvoří pasivum</label>
+            <?= admin_flag_field('forms_passive', $value('forms_passive') === null ? null : (int) $value('forms_passive')) ?>
+            <small>„Ne“ jen u sloves bez trpného příčestí — moci ho nemá, pomoci má pomožen.</small>
         </p>
     </div>
 

@@ -102,6 +102,7 @@ namespace Grammar.Czech.Lexicon.Tool
                 CheckReferentialIntegrity(connection, errors);
                 CheckEnums(connection, errors);
                 CheckPatterns(connection, errors);
+                CheckStems(connection, errors);
                 CheckLemmaKeys(connection, errors);
                 CheckFrames(connection, errors);
                 CheckSlots(connection, errors);
@@ -195,6 +196,26 @@ namespace Grammar.Czech.Lexicon.Tool
                         $"lemma_entry.pattern obsahuje '{pattern}', což mezi vzory kategorie {category} není. "
                         + "Povolené: " + string.Join(", ", known.OrderBy(name => name, StringComparer.Ordinal)) + ".");
                 }
+            }
+        }
+
+        // Only CzechVerbConjugationService reads the stems, and it is reached by category. A stem on a
+        // noun is therefore not a harmless extra: it is an edit that will never do anything, and the row
+        // looks finished. The CHECK constraints cannot see this — the columns are legal on every row.
+        private static void CheckStems(SqliteConnection connection, List<string> errors)
+        {
+            string[] columns =
+                ["stem", "present_stem", "past_stem", "future_stem", "imperative_stem",
+                 "passive_stem", "infinitive", "forms_passive"];
+
+            var conditions = string.Join(" OR ", columns.Select(column => $"{column} IS NOT NULL"));
+            var sql = $"SELECT lemma, category FROM lemma_entry WHERE category <> 'Verb' AND ({conditions})";
+
+            foreach (var row in Query(connection, sql))
+            {
+                errors.Add(
+                    $"Heslo '{row[0]}' je {row[1]} a má vyplněný kmen. Kmeny čte jen časování sloves, "
+                    + "takže tam nikdy nedojde.");
             }
         }
 

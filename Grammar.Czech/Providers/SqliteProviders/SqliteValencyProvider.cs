@@ -44,7 +44,7 @@ namespace Grammar.Czech.Providers.SqliteProviders
         /// <summary>
         /// The schema version this provider reads, matching schema_version in lexicon_meta.
         /// </summary>
-        public const int SupportedSchemaVersion = 2;
+        public const int SupportedSchemaVersion = 3;
 
         private const string SchemaVersionQuery =
             "SELECT meta_value FROM lexicon_meta WHERE meta_key = 'schema_version'";
@@ -53,7 +53,9 @@ namespace Grammar.Czech.Providers.SqliteProviders
             SELECT lemma, category, gender, pattern, is_animate, has_mobile_e,
                    has_genitive_plural_shortening, has_epenthesis_in_genitive_plural,
                    is_indeclinable, is_plural_only, is_countable, prefers_short_form,
-                   verb_class, aspect, aspect_counterpart, reflexive_type, base_verb_lemma
+                   verb_class, aspect, aspect_counterpart, reflexive_type, base_verb_lemma,
+                   stem, present_stem, past_stem, future_stem, imperative_stem, passive_stem,
+                   infinitive, forms_passive
             FROM lemma_entry
 
             """;
@@ -391,7 +393,15 @@ namespace Grammar.Czech.Providers.SqliteProviders
             Aspect = reader.IsDBNull(13) ? null : ParseEnum<VerbAspect>(reader.GetString(13), "aspect"),
             AspectCounterpart = GetNullableString(reader, 14),
             ReflexiveType = ParseEnum<ReflexiveType>(reader.GetString(15), "reflexive_type"),
-            BaseVerbLemma = GetNullableString(reader, 16)
+            BaseVerbLemma = GetNullableString(reader, 16),
+            Stem = GetNullableString(reader, 17),
+            PresentStem = GetNullableString(reader, 18),
+            PastStem = GetNullableString(reader, 19),
+            FutureStem = GetNullableString(reader, 20),
+            ImperativeStem = GetNullableString(reader, 21),
+            PassiveStem = GetNullableString(reader, 22),
+            Infinitive = GetNullableString(reader, 23),
+            FormsPassive = GetNullableBoolean(reader, 24)
         };
 
         private DbConnection OpenConnection()

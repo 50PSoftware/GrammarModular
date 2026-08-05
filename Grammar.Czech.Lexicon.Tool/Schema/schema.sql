@@ -90,6 +90,24 @@ CREATE TABLE lemma_entry (
     reflexive_type                     VARCHAR(32)  NOT NULL DEFAULT 'None',
     base_verb_lemma                    VARCHAR(64),
 
+    -- Stems the word inflects on, for verbs whose pattern does not predict them — říct conjugates by
+    -- class 1 but forms its past on řek-. Empty is the ordinary case: the pattern decides. They live
+    -- on the entry rather than in the embedded irregulars.json so that correcting one verb is an edit
+    -- in the admin instead of a rebuild and a release of the library.
+    stem                               VARCHAR(32),
+    present_stem                       VARCHAR(32),
+    past_stem                          VARCHAR(32),
+    future_stem                        VARCHAR(32),
+    imperative_stem                    VARCHAR(32),
+    passive_stem                       VARCHAR(32),
+
+    -- The infinitive when it is not the lemma, as with říct beside říci.
+    infinitive                         VARCHAR(64),
+
+    -- 0 for the few verbs that form no passive participle at all — moci has none where pomoci has
+    -- pomožen. NULL leaves the answer to the pattern, which is that the verb does form one.
+    forms_passive                      SMALLINT,
+
     -- NULL for a word that takes no arguments, which is most nouns and adjectives.
     lexeme_id                          INTEGER,
 
@@ -123,6 +141,7 @@ CREATE TABLE lemma_entry (
     CONSTRAINT ck_lemma_entry_plural_only CHECK (is_plural_only IS NULL OR is_plural_only IN (0, 1)),
     CONSTRAINT ck_lemma_entry_countable CHECK (is_countable IS NULL OR is_countable IN (0, 1)),
     CONSTRAINT ck_lemma_entry_short_form CHECK (prefers_short_form IS NULL OR prefers_short_form IN (0, 1)),
+    CONSTRAINT ck_lemma_entry_forms_passive CHECK (forms_passive IS NULL OR forms_passive IN (0, 1)),
     CONSTRAINT ck_lemma_entry_verified CHECK (is_verified IN (0, 1))
 );
 

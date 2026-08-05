@@ -85,6 +85,16 @@ namespace Grammar.Czech.Services
 
             var pattern = ResolvePattern(word);
             var verbStruct = _verbStructureResolver.AnalyzeVerbStructure(word);
+
+            // Kmeny z hesla ve slovníku mají poslední slovo. Přepisují se obě strany, protože každá
+            // nese jinou část odpovědi: budoucí kmen, infinitiv a tvoření pasiva čte builder ze vzoru,
+            // kdežto minulý, přítomný, rozkazovací a trpný kmen z rozboru.
+            if (LookupLexiconEntry(word) is { } entry)
+            {
+                pattern = ApplyLexiconStems(pattern, entry);
+                ApplyLexiconStems(verbStruct, entry);
+            }
+
             var numberKey = word.Number == Number.Singular ? "singular" : "plural";
 
             if (word.Tense == null && word.Modus == Modus.Indicative)
@@ -167,6 +177,10 @@ namespace Grammar.Czech.Services
         /// Named patterns (nese, dělá, být...) → irregulars.json,
         /// případně Merge s bázovým vzorem přes <c>inheritsFrom</c>.
         /// </para>
+        /// <para>
+        /// Nakonec kmeny z hesla ve slovníku, které přebijí obojí — viz
+        /// <see cref="ApplyLexiconStems"/>.
+        /// </para>
         /// </summary>
         private VerbPattern ResolvePattern(CzechWordRequest word)
         {
@@ -197,6 +211,86 @@ namespace Grammar.Czech.Services
 
             throw new NotSupportedException($"Verb pattern '{word.Pattern}' not found.");
         }
+
+        /// <summary>
+        /// Najde heslo, jehož kmeny mají přebít vzor, nebo <see langword="null"/>, když žádné nemá.
+        /// </summary>
+        /// <param name="word">Request, z jehož lemmatu se heslo hledá.</param>
+        /// <returns>Heslo se zapsaným kmenem, jinak <see langword="null"/>.</returns>
+        /// <remarks>
+        /// Kategorie se předává explicitně: bez ní by stát jako země vrátil substantivní řádek a kmeny
+        /// by se hledaly na hesle, které žádné nemá. Lookup je v provideru cachovaný.
+        /// </remarks>
+        private CzechLexicalEntry? LookupLexiconEntry(CzechWordRequest word)
+        {
+            if (string.IsNullOrEmpty(word.Lemma))
+                return null;
+
+            var entry = _valencyProvider.GetEntry(word.Lemma, WordCategory.Verb);
+
+            // Většina hesel žádný kmen nezapsaný nemá — u nich není co přebíjet a volající si ušetří
+            // dvojí kopii vzoru i rozboru.
+            return entry?.HasStems == true ? entry : null;
+        }
+
+        /// <summary>
+        /// Přebije kmeny vzoru tím, co o slově říká slovník.
+        /// </summary>
+        /// <param name="pattern">Vzor, jak vyšel z patterns.json a irregulars.json.</param>
+        /// <param name="entry">Heslo ze slovníku.</param>
+        /// <returns>Vzor s doplněnými kmeny.</returns>
+        /// <remarks>
+        /// Pořadí přebíjení je třída &lt; irregulars.json &lt; slovník. Slovník je editovatelná kopie,
+        /// takže opravit sloveso znamená uložit heslo v adminu, ne přeložit knihovnu znovu.
+        /// <para>
+        /// Nelze na to použít <see cref="Merge"/>: ten bere Aspect a FormsPassive z přebíjející strany
+        /// nepodmíněně, protože tam je přebíjející strana celý záznam vzoru. Tady je to řídká sada
+        /// oprav a nepodmíněné převzetí by každému slovesu s kmenem ve slovníku přepsalo vid na výchozí
+        /// Perfective.
+        /// </para>
+        /// </remarks>
+        private static VerbPattern ApplyLexiconStems(VerbPattern pattern, CzechLexicalEntry entry) =>
+            pattern with
+            {
+                Stem = entry.Stem ?? pattern.Stem,
+                PresentStem = entry.PresentStem ?? pattern.PresentStem,
+                PastStem = entry.PastStem ?? pattern.PastStem,
+                FutureStem = entry.FutureStem ?? pattern.FutureStem,
+                ImperativeStem = entry.ImperativeStem ?? pattern.ImperativeStem,
+                PassiveStem = entry.PassiveStem ?? pattern.PassiveStem,
+                Infinitive = entry.Infinitive ?? pattern.Infinitive,
+                FormsPassive = entry.FormsPassive ?? pattern.FormsPassive,
+            };
+
+        /// <summary>
+        /// Přebije kmeny rozboru tím, co o slově říká slovník.
+        /// </summary>
+        /// <param name="verbStruct">Rozbor slova, jak vyšel z <see cref="IVerbStructureResolver{T}"/>.</param>
+        /// <param name="entry">Heslo ze slovníku.</param>
+        /// <remarks>
+        /// Minulý, přítomný, rozkazovací a trpný tvar se staví z rozboru, ne ze vzoru, takže samotné
+        /// přepsání vzoru by se na výsledku neprojevilo.
+        /// <para>
+        /// Kmen ze slovníku je psaný pro heslo, jak stojí — u odvozeného slovesa tedy i s předponou.
+        /// Rozbor ji přitom drží zvlášť a builder ji prependuje ke každému kmeni, takže by ji přepsaný
+        /// kmen dostal podruhé. Vtáhne se proto do kmenů, které slovník nepřepisuje, a pak se zahodí:
+        /// jinak by heslo, které opravuje jen minulý kmen, přišlo o předponu v přítomném čase.
+        /// </para>
+        /// </remarks>
+        private static void ApplyLexiconStems(VerbStructure verbStruct, CzechLexicalEntry entry)
+        {
+            var prefix = verbStruct.Prefix ?? string.Empty;
+
+            verbStruct.PresentStem = entry.PresentStem ?? entry.Stem ?? prefix + verbStruct.PresentStem;
+            verbStruct.PastStem = entry.PastStem ?? entry.Stem ?? prefix + verbStruct.PastStem;
+            verbStruct.PassiveStem = entry.PassiveStem ?? Prepend(prefix, verbStruct.PassiveStem);
+            verbStruct.ImperativeStem = entry.ImperativeStem ?? Prepend(prefix, verbStruct.ImperativeStem);
+            verbStruct.Prefix = null;
+        }
+
+        // Předponu nemá smysl vtahovat do kmene, který neexistuje — z null by udělala "od".
+        private static string? Prepend(string prefix, string? stem) =>
+            stem is null ? null : prefix + stem;
 
         /// <summary>
         /// Přepíše vlastnosti bázového vzoru hodnotami z nepravidelného vzoru

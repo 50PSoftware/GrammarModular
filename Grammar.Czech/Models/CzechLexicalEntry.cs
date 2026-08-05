@@ -93,5 +93,78 @@ namespace Grammar.Czech.Models
         /// nominative actor to genitive, accusative patient to genitive — apply on top.
         /// </remarks>
         public string? BaseVerbLemma { get; init; }
+
+        // Stems the word inflects on, for the verbs whose pattern does not predict them. Null is the
+        // ordinary case and means the pattern decides; only what the pattern gets wrong is stated.
+        // They sit on the entry rather than in the embedded irregulars.json because říct is a
+        // dictionary word like any other, and correcting it should be an edit in the admin instead of
+        // a rebuild and a release of the library.
+
+        /// <summary>
+        /// Gets the general stem, or <see langword="null"/> to keep the one the pattern carries.
+        /// </summary>
+        public string? Stem { get; init; }
+
+        /// <summary>
+        /// Gets the stem the present forms are built on, or <see langword="null"/> for the pattern's.
+        /// </summary>
+        public string? PresentStem { get; init; }
+
+        /// <summary>
+        /// Gets the stem the past forms are built on, or <see langword="null"/> for the pattern's.
+        /// </summary>
+        /// <remarks>
+        /// The one that earns the rest of them: říct conjugates by the first class and still forms its
+        /// past on řek-, which no rule reaches from the infinitive.
+        /// </remarks>
+        public string? PastStem { get; init; }
+
+        /// <summary>
+        /// Gets the stem the future forms are built on, or <see langword="null"/> for the pattern's.
+        /// </summary>
+        public string? FutureStem { get; init; }
+
+        /// <summary>
+        /// Gets the stem the imperative is built on, or <see langword="null"/> for the pattern's.
+        /// </summary>
+        public string? ImperativeStem { get; init; }
+
+        /// <summary>
+        /// Gets the stem the passive participle is built on, or <see langword="null"/> for the pattern's.
+        /// </summary>
+        public string? PassiveStem { get; init; }
+
+        /// <summary>
+        /// Gets the infinitive when it is not the lemma, as with říct beside říci.
+        /// </summary>
+        public string? Infinitive { get; init; }
+
+        /// <summary>
+        /// Gets a value indicating whether the verb forms a passive participle at all.
+        /// </summary>
+        /// <remarks>
+        /// Nullable where <see cref="VerbPattern.FormsPassive"/> is not, for the same reason as the
+        /// flags above: null is the gap the pattern fills, and only a verb that refuses — moci has no
+        /// passive participle where pomoci has pomožen — has to say so.
+        /// </remarks>
+        public bool? FormsPassive { get; init; }
+
+        /// <summary>
+        /// Gets a value indicating whether the entry states anything the pattern would otherwise decide.
+        /// </summary>
+        /// <remarks>
+        /// Almost no entry does — a stem is written only where the pattern gets the word wrong — so this
+        /// is what lets conjugation skip the override for the ordinary verb instead of rebuilding the
+        /// pattern and the structure on every form.
+        /// </remarks>
+        public bool HasStems =>
+            Stem is not null
+            || PresentStem is not null
+            || PastStem is not null
+            || FutureStem is not null
+            || ImperativeStem is not null
+            || PassiveStem is not null
+            || Infinitive is not null
+            || FormsPassive is not null;
     }
 }

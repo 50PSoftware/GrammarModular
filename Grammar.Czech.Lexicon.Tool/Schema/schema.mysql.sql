@@ -82,6 +82,15 @@ CREATE TABLE lemma_entry (
     reflexive_type                     VARCHAR(32)  COLLATE utf8mb4_bin NOT NULL DEFAULT 'None',
     base_verb_lemma                    VARCHAR(64)  COLLATE utf8mb4_bin,
 
+    stem                               VARCHAR(32)  COLLATE utf8mb4_bin,
+    present_stem                       VARCHAR(32)  COLLATE utf8mb4_bin,
+    past_stem                          VARCHAR(32)  COLLATE utf8mb4_bin,
+    future_stem                        VARCHAR(32)  COLLATE utf8mb4_bin,
+    imperative_stem                    VARCHAR(32)  COLLATE utf8mb4_bin,
+    passive_stem                       VARCHAR(32)  COLLATE utf8mb4_bin,
+    infinitive                         VARCHAR(64)  COLLATE utf8mb4_bin,
+    forms_passive                      SMALLINT,
+
     lexeme_id                          INT,
 
     source                             VARCHAR(64),
@@ -112,6 +121,7 @@ CREATE TABLE lemma_entry (
     CONSTRAINT ck_lemma_entry_plural_only CHECK (is_plural_only IS NULL OR is_plural_only IN (0, 1)),
     CONSTRAINT ck_lemma_entry_countable CHECK (is_countable IS NULL OR is_countable IN (0, 1)),
     CONSTRAINT ck_lemma_entry_short_form CHECK (prefers_short_form IS NULL OR prefers_short_form IN (0, 1)),
+    CONSTRAINT ck_lemma_entry_forms_passive CHECK (forms_passive IS NULL OR forms_passive IN (0, 1)),
     CONSTRAINT ck_lemma_entry_verified CHECK (is_verified IN (0, 1))
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
