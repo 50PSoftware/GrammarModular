@@ -165,6 +165,13 @@ namespace Grammar.Czech.Test
         [DataRow("být", "být", "Feminine", "Singular", "byla", DisplayName = "být – min. sg f")]
         [DataRow("být", "být", "Neuter", "Singular", "bylo", DisplayName = "být – min. sg n")]
         [DataRow("být", "být", "Masculine", "Plural", "byli", DisplayName = "být – min. pl m")]
+        // Krácení á→a je lexikální, ne pravidlo: dát/dal proti hrát/hrál. Obecná trida5 odvozuje
+        // minulý kmen z infinitivu a dala by *dál, proto má dát vlastní vzor.
+        [DataRow("dát", "dát", "Masculine", "Singular", "dal", DisplayName = "dát – min. sg m")]
+        [DataRow("dát", "dát", "Feminine", "Singular", "dala", DisplayName = "dát – min. sg f")]
+        [DataRow("dát", "dát", "Masculine", "Plural", "dali", DisplayName = "dát – min. pl m")]
+        [DataRow("dávat", "trida5", "Masculine", "Singular", "dával", DisplayName = "dávat – min. sg m")]
+        [DataRow("hrát", "hrát", "Masculine", "Singular", "hrál", DisplayName = "hrát – min. sg m")]
         public void GetBasicForm_PastTense_ReturnsCorrectForm(
             string lemma, string pattern, string gender, string number, string expected)
         {
@@ -176,6 +183,40 @@ namespace Grammar.Czech.Test
                 Tense = Tense.Past,
                 Modus = Modus.Indicative,
                 Voice = Voice.Active,
+                Person = Person.Third,
+                Gender = Enum.Parse<Gender>(gender),
+                Number = Enum.Parse<Number>(number),
+            };
+
+            var result = service.GetBasicForm(request);
+
+            Assert.AreEqual(expected, result.Form);
+        }
+
+        /// <summary>
+        /// The passive participle keeps the long vowel the l-participle drops.
+        /// </summary>
+        /// <remarks>
+        /// dán against dal, off one lemma. The passive stem falls back to the past one when the pattern
+        /// states none, which for dát would have given *dan — the shortening belongs to the l-participle
+        /// alone, so the pattern has to say both.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("dát", "dát", "Masculine", "Singular", "dán", DisplayName = "dát – trpný sg m")]
+        [DataRow("dát", "dát", "Feminine", "Singular", "dána", DisplayName = "dát – trpný sg f")]
+        // Obecná trida5 sem zatím nepatří: dělat dává *dělan, protože odvození z infinitivu kmen
+        // neprodlužuje. To je vada trpného rodu celé třídy, ne tohohle vzoru, a řeší se jinde.
+        public void GetBasicForm_PassiveParticiple_KeepsItsOwnStem(
+            string lemma, string pattern, string gender, string number, string expected)
+        {
+            var request = new CzechWordRequest
+            {
+                Lemma = lemma,
+                Pattern = pattern,
+                WordCategory = WordCategory.Verb,
+                Tense = Tense.Past,
+                Modus = Modus.Indicative,
+                Voice = Voice.Passive,
                 Person = Person.Third,
                 Gender = Enum.Parse<Gender>(gender),
                 Number = Enum.Parse<Number>(number),

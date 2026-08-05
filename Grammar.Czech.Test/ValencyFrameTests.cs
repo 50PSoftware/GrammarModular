@@ -65,13 +65,10 @@ namespace Grammar.Czech.Test
             Gender = Gender.Masculine
         };
 
-        // Present rather than past, because the l-participle of dát currently comes out as dál. That is a
-        // vowel-quantity fault of its own and nothing to do with the particle these tests are about.
-        private static CzechWordRequest PerfectivePresent(string lemma, string pattern)
+        private static CzechWordRequest Perfective(string lemma, string pattern)
         {
             var verb = Verb(lemma, pattern);
             verb.Aspect = VerbAspect.Perfective;
-            verb.Tense = Tense.Present;
 
             return verb;
         }
@@ -176,7 +173,7 @@ namespace Grammar.Czech.Test
         /// </summary>
         /// <remarks>
         /// Same lemma as <see cref="Build_PatientAndAddressee_EachTakeTheirOwnCase"/>, which takes none:
-        /// dá si kávu against dával ženě knihu. That is the whole reason the frame needs a say — an
+        /// dal si kávu against dával ženě knihu. That is the whole reason the frame needs a say — an
         /// answer on the entry would have to be the same for both.
         /// </remarks>
         [TestMethod]
@@ -184,12 +181,12 @@ namespace Grammar.Czech.Test
         {
             var clause = new CzechClause
             {
-                Predicate = PerfectivePresent("dát", "trida5"),
+                Predicate = Perfective("dát", "dát"),
                 FrameLabel = "konzumace",
                 Elements = [Argument("káva", "žena", Gender.Feminine, FgdFunctor.PAT)]
             };
 
-            Assert.AreEqual("Dá si kávu.", builder.Build(clause));
+            Assert.AreEqual("Dal si kávu.", builder.Build(clause));
         }
 
         /// <summary>
@@ -223,7 +220,7 @@ namespace Grammar.Czech.Test
         [TestMethod]
         public void Build_CallerStatingAParticle_IsNotOverruledByTheFrame()
         {
-            var predicate = PerfectivePresent("dát", "trida5");
+            var predicate = Perfective("dát", "dát");
             predicate.ReflexiveType = ReflexiveType.DerivedReflexive_Se;
 
             var clause = new CzechClause
@@ -233,7 +230,7 @@ namespace Grammar.Czech.Test
                 Elements = [Argument("káva", "žena", Gender.Feminine, FgdFunctor.PAT)]
             };
 
-            Assert.AreEqual("Dá se kávu.", builder.Build(clause));
+            Assert.AreEqual("Dal se kávu.", builder.Build(clause));
         }
 
         #endregion Reflexive particle

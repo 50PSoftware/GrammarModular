@@ -45,7 +45,10 @@ VALUES
     (5,  'otec',      'otec',      1, 'Noun', 'Masculine', 'muž',   1, 1, NULL, NULL, NULL, 'IJP', 1, NULL),
     (6,  'město',     'město',     1, 'Noun', 'Neuter',    'město', 0, 0, NULL, NULL, NULL, 'IJP', 1, NULL),
 
-    (7,  'dát',       'dát',       1, 'Verb', NULL, 'trida5', NULL, NULL, 'Perfective',   'dávat', 1, 'IJP', 1, NULL),
+    -- Vzor je 'dát', ne trida5. Obecná třída odvozuje minulý kmen z infinitivu, takže dát dostalo
+    -- 'dá' a příčestí vyšlo jako *dál. Krácení á→a je u těchhle sloves lexikální — dát/dal, ale
+    -- hrát/hrál — a irregulars.json ho pro dát říká. Dávat obecnou třídou projde, dával je správně.
+    (7,  'dát',       'dát',       1, 'Verb', NULL, 'dát',    NULL, NULL, 'Perfective',   'dávat', 1, 'IJP', 1, NULL),
     (8,  'dávat',     'dávat',     1, 'Verb', NULL, 'trida5', NULL, NULL, 'Imperfective', 'dát',   1, 'IJP', 1, NULL),
 
     -- No counterpart, and the NULL is the claim rather than a gap. Verbs of motion perfectivize only by

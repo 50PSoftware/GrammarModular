@@ -56,7 +56,7 @@ namespace Grammar.Czech.Test
         /// Every verb keeps its aspect and its counterpart.
         /// </summary>
         [DataTestMethod]
-        [DataRow("dát", "trida5", VerbAspect.Perfective, "dávat")]
+        [DataRow("dát", "dát", VerbAspect.Perfective, "dávat")]
         [DataRow("dávat", "trida5", VerbAspect.Imperfective, "dát")]
         [DataRow("vidět", "trida4", VerbAspect.Imperfective, "uvidět")]
         [DataRow("uvidět", "trida4", VerbAspect.Perfective, "vidět")]
