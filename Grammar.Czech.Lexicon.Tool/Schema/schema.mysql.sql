@@ -138,6 +138,10 @@ CREATE TABLE valency_frame (
     kind        VARCHAR(32)  COLLATE utf8mb4_bin NOT NULL DEFAULT 'Verbal',
     diathesis   VARCHAR(32)  COLLATE utf8mb4_bin NOT NULL DEFAULT 'Active',
     is_default  SMALLINT     NOT NULL DEFAULT 0,
+    -- Derived reflexivity, which holds for one sense: dát si kávu needs the particle, dát knihu
+    -- Pavlovi does not, and both are the same lemma. Inherent reflexivity — bát se, where no
+    -- non-reflexive verb exists — stays on lemma_entry, because there it holds under every frame.
+    reflexive_type  VARCHAR(32)  COLLATE utf8mb4_bin NOT NULL DEFAULT 'None',
     CONSTRAINT pk_valency_frame PRIMARY KEY (frame_id),
     CONSTRAINT uq_valency_frame_diathesis UNIQUE (lu_id, diathesis),
     CONSTRAINT fk_valency_frame_lu FOREIGN KEY (lu_id) REFERENCES lexical_unit (lu_id),
@@ -147,7 +151,10 @@ CREATE TABLE valency_frame (
     CONSTRAINT ck_valency_frame_diathesis CHECK (diathesis IN (
         'Active', 'PassivePeriphrastic', 'ReflexivePassive', 'RecipientDeobjective',
         'Dispositional', 'Resultative')),
-    CONSTRAINT ck_valency_frame_default CHECK (is_default IN (0, 1))
+    CONSTRAINT ck_valency_frame_default CHECK (is_default IN (0, 1)),
+    CONSTRAINT ck_valency_frame_reflexive CHECK (reflexive_type IN (
+        'None', 'ReflexivumTantum_Se', 'ReflexivumTantum_Si', 'DerivedReflexive_Se',
+        'DerivedBenefactive_Si', 'Reciprocal_Se', 'DeagentivePassive_Se'))
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────────────────────────────────────────

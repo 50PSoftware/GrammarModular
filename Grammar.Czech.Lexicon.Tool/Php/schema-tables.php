@@ -28,7 +28,7 @@ const LEXICON_TABLES = [
         'base_verb_lemma', 'lexeme_id', 'source', 'is_verified', 'note',
     ],
     'lexical_unit' => ['lu_id', 'lexeme_id', 'sense_label', 'gloss', 'ssc_class_id'],
-    'valency_frame' => ['frame_id', 'lu_id', 'kind', 'diathesis', 'is_default'],
+    'valency_frame' => ['frame_id', 'lu_id', 'kind', 'diathesis', 'is_default', 'reflexive_type'],
     'valency_slot' => [
         'slot_id', 'frame_id', 'functor', 'canonical_order', 'obligatoriness',
         'can_drop_contextual', 'can_drop_generic', 'control_target',

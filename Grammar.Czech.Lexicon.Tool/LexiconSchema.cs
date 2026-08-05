@@ -29,7 +29,8 @@ namespace Grammar.Czech.Lexicon.Tool
                 "prefers_short_form", "verb_class", "aspect", "aspect_counterpart", "reflexive_type",
                 "base_verb_lemma", "lexeme_id", "source", "is_verified", "note"]),
             new("lexical_unit", ["lu_id", "lexeme_id", "sense_label", "gloss", "ssc_class_id"]),
-            new("valency_frame", ["frame_id", "lu_id", "kind", "diathesis", "is_default"]),
+            new("valency_frame", [
+                "frame_id", "lu_id", "kind", "diathesis", "is_default", "reflexive_type"]),
             new("valency_slot", [
                 "slot_id", "frame_id", "functor", "canonical_order", "obligatoriness",
                 "can_drop_contextual", "can_drop_generic", "control_target"]),

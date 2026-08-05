@@ -34,6 +34,7 @@ namespace Grammar.Czech.Lexicon.Tool
             ("lemma_entry", "reflexive_type", typeof(ReflexiveType)),
             ("valency_frame", "kind", typeof(ValencyKind)),
             ("valency_frame", "diathesis", typeof(Diathesis)),
+            ("valency_frame", "reflexive_type", typeof(ReflexiveType)),
             ("valency_slot", "functor", typeof(FgdFunctor)),
             ("valency_slot", "control_target", typeof(FgdFunctor)),
             ("valency_slot", "obligatoriness", typeof(Obligatoriness)),
