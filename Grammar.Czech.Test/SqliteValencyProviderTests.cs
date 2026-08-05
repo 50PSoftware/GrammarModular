@@ -134,7 +134,7 @@ namespace Grammar.Czech.Test
         [TestMethod]
         public void GetFrames_Dát_ReturnsTheTransferFrame()
         {
-            var frame = provider.GetFrames("dát").Single();
+            var frame = provider.GetFrames("dát").Single(candidate => candidate.FrameLabel == "transfer");
 
             Assert.AreEqual("transfer", frame.FrameLabel);
             Assert.AreEqual(ValencyKind.Verbal, frame.Kind);
@@ -155,6 +155,34 @@ namespace Grammar.Czech.Test
 
             Assert.AreEqual("na", directional.PreferredRealization!.Preposition);
             Assert.AreEqual(Case.Accusative, directional.PreferredRealization.Case);
+
+            Assert.AreEqual(ReflexiveType.None, frame.ReflexiveType, "Dát knihu Pavlovi žádnou částici nebere.");
+        }
+
+        /// <summary>
+        /// The other sense of the same lemma carries the particle the transfer sense does not.
+        /// </summary>
+        /// <remarks>
+        /// The slot assertion is the point of the test as much as the particle is. reflexive_type is read
+        /// by a hard-coded column ordinal, so a column added to the query in the wrong place would shift
+        /// every field after it — and the particle could still come out right by luck where the slots
+        /// could not.
+        /// </remarks>
+        [TestMethod]
+        public void GetFrames_Dát_ReadsTheParticleOffTheConsumptionSense()
+        {
+            var frame = provider.GetFrames("dát").Single(candidate => candidate.FrameLabel == "konzumace");
+
+            Assert.AreEqual(ReflexiveType.DerivedBenefactive_Si, frame.ReflexiveType);
+            Assert.IsFalse(frame.IsDefault, "Výchozí zůstává transfer.");
+
+            CollectionAssert.AreEqual(
+                new[] { FgdFunctor.ACT, FgdFunctor.PAT },
+                frame.Slots.Select(slot => slot.Functor).ToArray());
+
+            Assert.AreEqual(
+                Case.Accusative,
+                frame.Slots.Single(slot => slot.Functor == FgdFunctor.PAT).PreferredRealization!.Case);
         }
 
         /// <summary>
@@ -166,12 +194,12 @@ namespace Grammar.Czech.Test
         /// that dávat did not — which is what a shared row makes impossible.
         /// </remarks>
         [DataTestMethod]
-        [DataRow("dát", "dávat")]
-        [DataRow("vidět", "uvidět")]
-        public void GetFrames_AspectPair_SharesOneFrame(string first, string second)
+        [DataRow("dát", "dávat", "transfer")]
+        [DataRow("vidět", "uvidět", "perception")]
+        public void GetFrames_AspectPair_SharesOneFrame(string first, string second, string label)
         {
-            var one = provider.GetFrames(first).Single();
-            var other = provider.GetFrames(second).Single();
+            var one = provider.GetFrames(first).Single(frame => frame.FrameLabel == label);
+            var other = provider.GetFrames(second).Single(frame => frame.FrameLabel == label);
 
             Assert.AreEqual(one.LuId, other.LuId, "Vidová dvojice nesdílí lexikální jednotku.");
 

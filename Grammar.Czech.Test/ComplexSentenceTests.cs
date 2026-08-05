@@ -587,6 +587,7 @@ namespace Grammar.Czech.Test
                     Aspect = VerbAspect.Perfective,
                     Voice = Voice.Active
                 },
+                FrameLabel = "transfer",
                 Elements =
                 [
                     subject,

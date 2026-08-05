@@ -91,6 +91,7 @@ namespace Grammar.Czech.Test
             var clause = new CzechClause
             {
                 Predicate = Verb("dávat", "trida5"),
+                FrameLabel = "transfer",
                 Elements =
                 [
                     Argument("žena", "žena", Gender.Feminine, FgdFunctor.ADDR),
