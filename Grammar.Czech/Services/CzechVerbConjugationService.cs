@@ -234,6 +234,8 @@ namespace Grammar.Czech.Services
             var genderKey = ResolveGenderKey(word.Gender);
             var stem = verbStruct.PassiveStem ?? verbStruct.PastStem;
 
+            RequireParticiple(pattern, pattern.PassiveParticiple, "trpné");
+
             if (!pattern.PassiveParticiple.TryGetValue(genderKey, out var passiveDict)
                 || !passiveDict.TryGetValue(numberKey, out var ending))
                 throw new InvalidOperationException(
@@ -273,6 +275,8 @@ namespace Grammar.Czech.Services
             string numberKey, Gender? gender)
         {
             var genderKey = ResolveGenderKey(gender);
+
+            RequireParticiple(pattern, pattern.PastParticiple, "minulé");
 
             if (!pattern.PastParticiple.TryGetValue(genderKey, out var participleDict)
                 || !participleDict.TryGetValue(numberKey, out var ending))
@@ -326,6 +330,34 @@ namespace Grammar.Czech.Services
         }
 
         /// <summary>
+        /// Reports a pattern that states no endings for the participle being built.
+        /// </summary>
+        /// <param name="pattern">The resolved pattern the form is being built from.</param>
+        /// <param name="participle">The ending block to check.</param>
+        /// <param name="name">The Czech name of the participle, for the message.</param>
+        /// <exception cref="InvalidOperationException">The pattern states no endings for it.</exception>
+        /// <remarks>
+        /// A pattern in irregulars.json inherits its endings through inheritsFrom, and one that names no
+        /// base has to carry every block itself. Where it does neither, this used to be a
+        /// <see cref="NullReferenceException"/> from inside the lookup, naming neither the pattern nor
+        /// which block was missing — jíst answered that way for both the past and the passive.
+        /// </remarks>
+        private static void RequireParticiple(
+            VerbPattern pattern,
+            IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> participle,
+            string name)
+        {
+            if (participle is not null)
+            {
+                return;
+            }
+
+            throw new InvalidOperationException(
+                $"Vzor '{pattern.Infinitive ?? "?"}' nemá {name} příčestí. Buď mu v irregulars.json "
+                + "doplň inheritsFrom na třídu, ze které ho zdědí, nebo mu koncovky napiš přímo.");
+        }
+
+        /// <summary>
         /// Sestaví tvar minulého času (l-ové participium).
         /// </summary>
         private static WordForm BuildPastForm(
@@ -333,6 +365,8 @@ namespace Grammar.Czech.Services
             string numberKey, Gender? gender)
         {
             var genderKey = ResolveGenderKey(gender);
+
+            RequireParticiple(pattern, pattern.PastParticiple, "minulé");
 
             if (!pattern.PastParticiple.TryGetValue(genderKey, out var participleDict)
                 || !participleDict.TryGetValue(numberKey, out var ending))

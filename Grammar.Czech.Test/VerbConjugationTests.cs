@@ -172,6 +172,12 @@ namespace Grammar.Czech.Test
         [DataRow("dát", "dát", "Masculine", "Plural", "dali", DisplayName = "dát – min. pl m")]
         [DataRow("dávat", "trida5", "Masculine", "Singular", "dával", DisplayName = "dávat – min. sg m")]
         [DataRow("hrát", "hrát", "Masculine", "Singular", "hrál", DisplayName = "hrát – min. sg m")]
+        // Činný rod týchž vzorů byl rozbitý stejně jako trpný, jen si toho nikdo nevšiml.
+        [DataRow("jíst", "jíst", "Masculine", "Singular", "jedl", DisplayName = "jíst – min. sg m")]
+        [DataRow("jíst", "jíst", "Feminine", "Singular", "jedla", DisplayName = "jíst – min. sg f")]
+        [DataRow("jmout", "jmout", "Masculine", "Singular", "jal", DisplayName = "jmout – min. sg m")]
+        [DataRow("dojmout", "dojme", "Masculine", "Singular", "dojal", DisplayName = "dojmout – min. sg m")]
+        [DataRow("dojmout", "dojme", "Feminine", "Singular", "dojala", DisplayName = "dojmout – min. sg f")]
         public void GetBasicForm_PastTense_ReturnsCorrectForm(
             string lemma, string pattern, string gender, string number, string expected)
         {
@@ -227,6 +233,10 @@ namespace Grammar.Czech.Test
         [DataRow("vzít", "vzít", "Feminine", "Singular", "vzata", DisplayName = "vzít – trpný sg f")]
         [DataRow("minout", "mine", "Masculine", "Singular", "minut", DisplayName = "minout – trpný sg m")]
         [DataRow("krýt", "kryje", "Masculine", "Singular", "kryt", DisplayName = "krýt – trpný sg m")]
+        // Vzor dojme nese -a- už v koncovce (-al, -at), takže kmen ho nesmí mít taky.
+        [DataRow("jmout", "jmout", "Masculine", "Singular", "jat", DisplayName = "jmout – trpný sg m")]
+        [DataRow("dojmout", "dojme", "Masculine", "Singular", "dojat", DisplayName = "dojmout – trpný sg m")]
+        [DataRow("jíst", "jíst", "Masculine", "Singular", "jeden", DisplayName = "jíst – trpný sg m")]
         // Obecná 4. třída: -ět si téma nese do příčestí, -it ho zahazuje a místo něj jotuje.
         [DataRow("vidět", "trida4", "Masculine", "Singular", "viděn", DisplayName = "vidět – trpný sg m")]
         [DataRow("trpět", "trida4", "Masculine", "Singular", "trpěn", DisplayName = "trpět – trpný sg m")]
@@ -276,6 +286,38 @@ namespace Grammar.Czech.Test
             Assert.AreEqual(expected, result.Form);
         }
 
+        /// <summary>
+        /// A pattern that states no endings for the participle says so, rather than throwing from inside
+        /// the lookup.
+        /// </summary>
+        /// <remarks>
+        /// vědět forms no passive participle in Czech and carries no endings for one, which is the honest
+        /// state of the data. What was wrong was the answer: a NullReferenceException naming neither the
+        /// pattern nor the missing block. jíst answered the same way for the past tense until it was given
+        /// a base to inherit from.
+        /// </remarks>
+        [TestMethod]
+        public void GetBasicForm_PatternWithoutParticipleEndings_SaysWhichPatternAndWhich()
+        {
+            var request = new CzechWordRequest
+            {
+                Lemma = "vědět",
+                Pattern = "vědět",
+                WordCategory = WordCategory.Verb,
+                Tense = Tense.Past,
+                Modus = Modus.Indicative,
+                Voice = Voice.Passive,
+                Person = Person.Third,
+                Gender = Gender.Masculine,
+                Number = Number.Singular,
+            };
+
+            var exception = Assert.ThrowsException<InvalidOperationException>(
+                () => service.GetBasicForm(request));
+
+            StringAssert.Contains(exception.Message, "trpné");
+            StringAssert.Contains(exception.Message, "inheritsFrom");
+        }
 
         #endregion Past Tense
 

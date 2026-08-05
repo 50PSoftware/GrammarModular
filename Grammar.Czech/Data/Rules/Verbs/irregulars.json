@@ -127,9 +127,11 @@
     "pastStem": "umě"
   },
   "jíst": {
+    "inheritsFrom": "trida1",
     "aspect": "imperfective",
     "stem": "jez",
     "pastStem": "jed",
+    "passiveStem": "jede",
     "imperativeStem": "jez",
     "present": {
       "singular": {
@@ -419,6 +421,6 @@
     "inheritsFrom": "dojme",
     "aspect": "perfective",
     "stem": "jm",
-    "pastStem": "ja"
+    "pastStem": "j"
   }
 }
