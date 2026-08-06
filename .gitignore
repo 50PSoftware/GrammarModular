@@ -375,3 +375,5 @@ FodyWeavers.xsd
 # Nastaveni nastroje lexikon. Sablona (lexikon.json.example) je commitnuta, skutecny soubor ne —
 # muze nest token, i kdyz by nemel.
 lexikon.json
+/docs/nasazeni-slovniku-wedos.html
+/docs/pridavani-slov-do-slovniku.html
