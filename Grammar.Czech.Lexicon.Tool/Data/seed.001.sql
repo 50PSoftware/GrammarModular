@@ -209,7 +209,9 @@ INSERT INTO lexical_unit (lu_id, lexeme_id, sense_label, gloss) VALUES
     (12, 11, 'think',      'Provádět myšlenkovou činnost.'),
     (13, 12, 'reside',     'Mít někde trvalé bydliště.'),
     (14, 13, 'sit',        'Být v sedě.'),
-    (15, 14, 'copula',     'Existovat, nebo být v nějakém stavu či vlastnosti.'),
+    -- Ten původní popis — „Existovat, nebo být v nějakém stavu či vlastnosti“ — popisoval tři
+    -- konstrukce najednou. Zbylé dvě dostaly vlastní význam v seed.010.sql.
+    (15, 14, 'copula_nominal', 'Být někým nebo něčím — jmenný přísudek.'),
     (16, 15, 'possess',    'Vlastnit nebo disponovat něčím.'),
     (17, 16, 'want',       'Přát si něco, nebo si přát něco udělat.'),
     (18, 17, 'modal',      'Mít schopnost nebo možnost něco udělat.'),
@@ -229,7 +231,9 @@ INSERT INTO valency_frame (frame_id, lu_id, kind, diathesis, is_default) VALUES
     (12, 12, 'Verbal', 'Active', 1),
     (13, 13, 'Verbal', 'Active', 1),
     (14, 14, 'Verbal', 'Active', 1),
-    (15, 15, 'Copular_AdjectivalPred', 'Active', 1),
+    -- Jmenný, ne adjektivní: instrumentál u slotu PAT je tvar jména (lev je králem zvířat).
+    -- Výchozí je teď 0 — být má významy tři a žádný z nich se nesmí vybrat hádáním.
+    (15, 15, 'Copular_NominalPred', 'Active', 0),
     (16, 16, 'Verbal', 'Active', 1),
     (17, 17, 'Verbal', 'Active', 1),
     (18, 18, 'Modal',  'Active', 1),
@@ -281,22 +285,24 @@ VALUES
     (28, 14, 'ACT', 1, 'Obligatory', 1, 0, NULL),
     (29, 14, 'LOC', 2, 'Optional',   0, 0, NULL),
 
-    -- být — copular, ACT + adjectival/nominal complement
-    (30, 15, 'ACT',   1, 'Obligatory', 1, 0, NULL),
-    (31, 15, 'COMPL', 2, 'Obligatory', 0, 0, NULL),
+    -- být — spona, ACT + jmenná část přísudku. Ta je podle tektogramatiky PDT PAT: verbonominální
+    -- predikát je spona plus jméno a to jméno nese funktor patientu, ne doplňku.
+    (30, 15, 'ACT', 1, 'Obligatory', 1, 0, NULL),
+    (31, 15, 'PAT', 2, 'Obligatory', 0, 0, NULL),
 
     -- mít
     (32, 16, 'ACT', 1, 'Obligatory', 1, 0, NULL),
     (33, 16, 'PAT', 2, 'Obligatory', 0, 0, NULL),
 
-    -- chtít — chce dort (PAT) or chce jít (COMPL infinitive, control on ACT)
-    (34, 17, 'ACT',   1, 'Obligatory', 1, 0, NULL),
-    (35, 17, 'COMPL', 2, 'Typical',    1, 0, 'ACT'),
-    (36, 17, 'PAT',   3, 'Optional',   1, 0, NULL),
+    -- chtít — chce jít (infinitiv) i chce dort (4. pád). Jeden slot se dvěma realizacemi, ne dva
+    -- sloty: aktant se v jednom rámci opakovat nemůže, a obojí je týž druhý participant slovesa.
+    (34, 17, 'ACT', 1, 'Obligatory', 1, 0, NULL),
+    (35, 17, 'PAT', 2, 'Typical',    1, 0, 'ACT'),
 
-    -- moci — modal, controlled infinitive only
-    (37, 18, 'ACT',   1, 'Obligatory', 1, 0, NULL),
-    (38, 18, 'COMPL', 2, 'Obligatory', 0, 0, 'ACT'),
+    -- moci — modální, řízený infinitiv. Ten je druhý valenční participant, tedy PAT; COMPL je
+    -- v PDT vyhrazený doplňku s dvojí závislostí (odcházela poražena), což tohle není.
+    (37, 18, 'ACT', 1, 'Obligatory', 1, 0, NULL),
+    (38, 18, 'PAT', 2, 'Obligatory', 0, 0, 'ACT'),
 
     -- vědět — ví to (PAT) or ví, že... (clausal)
     (39, 19, 'ACT', 1, 'Obligatory', 1, 0, NULL),
@@ -328,19 +334,23 @@ VALUES
     (28, 28, 'Nominative', NULL, NULL, 0, 1),
     (29, 29, 'Locative',   'na', NULL, 0, 1),
     (30, 30, 'Nominative', NULL, NULL, 0, 1),
-    (31, 31, 'Nominative', NULL, NULL, 0, 1),
+    -- Jmenná část přísudku stojí v 1. i v 7. pádě — kočka je savec, lev je králem zvířat. Nominativ
+    -- se generuje, instrumentál se přijímá.
+    --
+    -- Identifikátor 77 pokračuje za posledním seedem, ne za tímhle souborem: uvnitř 001 volné číslo
+    -- není a přečíslovat řádek, na který ukazuje cizí klíč, nejde. Další volná realizace je proto 78,
+    -- ne 77 — a to se pozná dotazem na max(realization_id), ne z hlavičky seedu 009.
+    (31, 31, 'Nominative',   NULL, NULL, 0, 1),
+    (77, 31, 'Instrumental', NULL, NULL, 0, 2),
     (32, 32, 'Nominative', NULL, NULL, 0, 1),
     (33, 33, 'Accusative', NULL, NULL, 0, 1),
     (34, 34, 'Nominative', NULL, NULL, 0, 1),
+    -- Preference řadí realizace uvnitř jednoho slotu, ne sloty proti sobě — a tady je to přesně ta
+    -- úloha, na kterou je: PAT slovesa chtít se realizuje infinitivem i 4. pádem a preference říká,
+    -- že chtít tíhne spíš k infinitivu (chci jít) než k předmětu (chci vodu). Dokud to byly dva
+    -- sloty, musela tenhle vztah nést obligatornost, protože přes dva sloty preference nesahá.
     (35, 35, NULL,         NULL, NULL, 1, 1),
-
-    -- Preference řadí realizace uvnitř jednoho slotu, ne sloty proti sobě. Tohle je jediná realizace
-    -- slotu PAT, takže musí být 1; s dvojkou by se PAT slovesa chtít nevygeneroval vůbec.
-    --
-    -- Že chtít tíhne spíš k infinitivu (chci jít) než k předmětu (chci vodu), je vztah mezi slotem 35
-    -- a slotem 36 — a ten tímhle sloupcem vyjádřit nejde. Nese ho obligatornost: COMPL je Typical,
-    -- PAT je Optional.
-    (36, 36, 'Accusative', NULL, NULL, 0, 1),
+    (36, 35, 'Accusative', NULL, NULL, 0, 2),
     (37, 37, 'Nominative', NULL, NULL, 0, 1),
     (38, 38, NULL,         NULL, NULL, 1, 1),
     (39, 39, 'Nominative', NULL, NULL, 0, 1),

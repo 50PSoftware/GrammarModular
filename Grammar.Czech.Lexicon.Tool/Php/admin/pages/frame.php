@@ -181,8 +181,9 @@ $hasActor = array_filter($slots, static fn (array $s): bool => $s['functor'] ===
             <?= admin_select('diathesis', 'diathesis', (string) $frame['diathesis'], allowEmpty: false) ?></p>
         <p class="field"><label>Výchozí rámec</label>
             <?= admin_flag_field('is_default', (int) $frame['is_default']) ?>
-            <small>Rozhoduje mezi významy, ne mezi diatezemi — o tu si generátor říká sám. Sloveso
-                s víc významy nechává obojí na „ne“ a volající pak musí jmenovat konkrétní.</small></p>
+            <small>Rozhoduje mezi významy, ne mezi diatezemi — o tu si generátor říká sám. Který
+                význam sloveso má, když ho volající nejmenuje. Nejvýš jeden na sloveso a diatezi;
+                když výchozí nemá žádný, musí volající význam jmenovat vždycky.</small></p>
         <p class="field"><label for="reflexive_type">Reflexivita významu</label>
             <?= admin_select('reflexive_type', 'reflexive_type', (string) $frame['reflexive_type'], allowEmpty: false) ?>
             <small>Jen když částice patří tomuhle významu — dát si kávu, ale dát knihu ne. U reflexiva

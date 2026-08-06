@@ -1,4 +1,4 @@
-using Grammar.Core.Enums;
+﻿using Grammar.Core.Enums;
 using Grammar.Czech.Models;
 using Grammar.Czech.Models.Syntax;
 using Grammar.Czech.Services;
@@ -57,6 +57,11 @@ namespace Grammar.Czech.Test
 
         // "být" in the past: the auxiliary is dropped in the third person, so what surfaces is the
         // participle alone — which is exactly where the neuter singular of "pět žáků bylo" shows up.
+        //
+        // The clauses below name the existence frame because být has three of them — the nominal and
+        // the adjectival predicate are the other two — and a verb with several is not guessed at. It is
+        // the right one here in its own right: "Pět studentů bylo" says that they were, not what they
+        // were, so there is no predicate complement to fill.
         private static CzechWordRequest WasPredicate() => new()
         {
             Lemma = "být",
@@ -80,6 +85,7 @@ namespace Grammar.Czech.Test
             var clause = new CzechClause
             {
                 Predicate = WasPredicate(),
+                FrameLabel = "existence",
                 Elements =
                 [
                     ClauseElement.Of(
@@ -151,6 +157,7 @@ namespace Grammar.Czech.Test
             var clause = new CzechClause
             {
                 Predicate = WasPredicate(),
+                FrameLabel = "existence",
                 Elements =
                 [
                     ClauseElement.Of(
@@ -225,6 +232,7 @@ namespace Grammar.Czech.Test
             var clause = new CzechClause
             {
                 Predicate = WasPredicate(),
+                FrameLabel = "existence",
                 Elements =
                 [
                     new ClauseElement
@@ -281,6 +289,7 @@ namespace Grammar.Czech.Test
             var clause = new CzechClause
             {
                 Predicate = WasPredicate(),
+                FrameLabel = "existence",
                 Elements = [ClauseElement.Of(numeral, FgdFunctor.ACT, InformationStatus.Given)]
             };
 
@@ -301,6 +310,7 @@ namespace Grammar.Czech.Test
             var clause = new CzechClause
             {
                 Predicate = WasPredicate(),
+                FrameLabel = "existence",
                 Elements = [ClauseElement.Of(numeral, FgdFunctor.ACT, InformationStatus.Given)]
             };
 
@@ -320,6 +330,7 @@ namespace Grammar.Czech.Test
             var clause = new CzechClause
             {
                 Predicate = WasPredicate(),
+                FrameLabel = "existence",
                 Elements = [ClauseElement.Of(Noun("student", "pán", Gender.Masculine), FgdFunctor.ACT, InformationStatus.Given)]
             };
 

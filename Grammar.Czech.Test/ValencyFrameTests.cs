@@ -294,15 +294,29 @@ namespace Grammar.Czech.Test
         /// Asserted on the service rather than on a sentence, because licensing is the only question it
         /// answers. Where a sense has a passive frame of its own, that frame is the better answer and the
         /// builder takes it instead — see <see cref="Build_PassiveFrame_PromotesThePatientToSubject"/>.
+        /// <para>
+        /// moci and být are the cases that show counting functors is not enough, and they fail the count
+        /// for different reasons. The patient of moci is the infinitive it governs, and an infinitive
+        /// cannot be a subject — *je mohnut jít — so the aktant has to offer a realization with a case,
+        /// which the patient of chtít has beside its infinitive and the patient of moci has not. The
+        /// patient of být is the nominal predicate, which no case test can catch: it comes in the
+        /// nominative and in the instrumental, and the second one looks exactly like a promotable
+        /// object. That one is settled by the kind of predicate instead.
+        /// </para>
         /// </remarks>
         [DataTestMethod]
         [DataRow("dát", "transfer", true, DisplayName = "dát/transfer — konatel a patiens")]
         [DataRow("dát", "konzumace", true, DisplayName = "dát/konzumace — konatel a patiens")]
         [DataRow("vidět", "perception", true, DisplayName = "vidět/perception — konatel a patiens")]
         [DataRow("starat", "care", true, DisplayName = "starat/care — patiens s předložkou se počítá")]
+        [DataRow("chtít", "want", true, DisplayName = "chtít/want — patiens umí i 4. pád")]
         [DataRow("jít", "motion", false, DisplayName = "jít/motion — jen směr")]
         [DataRow("jít", "process", false, DisplayName = "jít/process — jen konatel")]
         [DataRow("stát", "position", false, DisplayName = "stát/position — konatel a místo")]
+        [DataRow("moci", "modal", false, DisplayName = "moci/modal — patiens je jen infinitiv")]
+        [DataRow("být", "copula_nominal", false, DisplayName = "být/jmenný přísudek — spona nepasivizuje")]
+        [DataRow("být", "copula_adjectival", false, DisplayName = "být/adjektivní přísudek — spona nepasivizuje")]
+        [DataRow("být", "existence", false, DisplayName = "být/existence — jen konatel")]
         public void LicensesPeriphrasticPassive_ReadsTheAktantyOnly(
             string lemma, string label, bool expected)
         {
@@ -410,13 +424,33 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
-        /// A verb with several frames has to be told which one, because they take different arguments.
+        /// A verb with several frames and no default has to be told which one, because they take
+        /// different arguments and nothing in the dictionary settles it.
         /// </summary>
         [TestMethod]
         public void GetFrame_AmbiguousVerbWithoutLabel_Throws()
         {
             var exception = Assert.ThrowsException<InvalidOperationException>(() => valency.GetFrame("jít", null));
             StringAssert.Contains(exception.Message, "motion");
+        }
+
+        /// <summary>
+        /// Where the dictionary does settle it, the default frame is what an unlabelled call returns.
+        /// </summary>
+        /// <remarks>
+        /// The counterpart of <see cref="GetFrame_AmbiguousVerbWithoutLabel_Throws"/>, and the reason the
+        /// column exists: dát has two senses and says outright that transfer is the one meant by default,
+        /// where jít says nothing and keeps refusing. Both verbs have exactly two active frames, so the
+        /// difference between them is the mark and nothing else.
+        /// </remarks>
+        [TestMethod]
+        public void GetFrame_SeveralFramesWithADefault_ReturnsTheDefault()
+        {
+            var frame = valency.GetFrame("dát", null);
+
+            Assert.IsNotNull(frame);
+            Assert.AreEqual("transfer", frame.FrameLabel);
+            Assert.IsTrue(frame.IsDefault);
         }
 
         /// <summary>

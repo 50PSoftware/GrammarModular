@@ -31,9 +31,12 @@ namespace Grammar.Czech.Services
         /// <param name="frameLabel">The frame to pick when the verb has several, or null for the only one.</param>
         /// <returns>The frame, or <see langword="null"/> when the verb has none registered.</returns>
         /// <remarks>
-        /// A verb with several frames is genuinely ambiguous — jít has one frame for motion and one for a
-        /// process — and the two take different arguments, so guessing would silently pick a reading. The
-        /// label has to say which.
+        /// A verb with several frames is genuinely ambiguous, and the two take different arguments, so
+        /// the reading cannot be picked by guessing. It can be picked by the dictionary, which is not the
+        /// same thing: a frame marked default is the lexicographer saying outright which reading wins
+        /// when nobody asks, and dát is transfer unless the caller says konzumace. Where the dictionary
+        /// has not said — jít is motion and jít is a process, with nothing to choose between them — the
+        /// caller still has to.
         /// </remarks>
         public ValencyFrame? GetFrame(string verbLemma, string? frameLabel, Diathesis diathesis = Diathesis.Active)
         {
@@ -58,8 +61,18 @@ namespace Grammar.Czech.Services
 
             if (frames.Count > 1)
             {
+                // Two defaults are a contradiction rather than a tie to be broken, so they fall through
+                // to the same refusal as none. The lexicon tool reports them at validate time.
+                var preferred = frames.Where(frame => frame.IsDefault).ToList();
+
+                if (preferred.Count == 1)
+                {
+                    return preferred[0];
+                }
+
                 throw new InvalidOperationException(
-                    $"Sloveso '{verbLemma}' má víc rámců, vyber jeden přes FrameLabel. Dostupné rámce: "
+                    $"Sloveso '{verbLemma}' má víc rámců a žádný z nich není jednoznačně výchozí, "
+                    + "vyber jeden přes FrameLabel. Dostupné rámce: "
                     + string.Join(", ", frames.Select(frame => frame.FrameLabel ?? "(bez názvu)")) + ".");
             }
 
@@ -89,12 +102,26 @@ namespace Grammar.Czech.Services
         /// <returns><see langword="true"/> when the verb can be passivized in this sense; otherwise, <see langword="false"/>.</returns>
         public bool LicensesPeriphrasticPassive(ValencyFrame frame)
         {
-            var functors = frame.Slots.Select(slot => slot.Functor).ToList();
-
             // The agent and one more aktant. A direction or a place does not count — those attach to any
             // verb at all, so counting them would license every verb there is.
-            return functors.Contains(FgdFunctor.ACT)
-                && functors.Any(functor => functor != FgdFunctor.ACT && IsInnerParticipant(functor));
+            //
+            // A copula has an aktant and still does not passivize: its patient is the nominal predicate
+            // itself. Asked of the case it comes in, the answer would be wrong either way — Petr je
+            // učitel is nominative and already in the subject position, while lev je králem zvířat is
+            // instrumental and would read as a promotable object. The kind of predicate is what settles
+            // it, which is what the column is for.
+            if (frame.Kind is ValencyKind.Copular_NominalPred or ValencyKind.Copular_AdjectivalPred)
+            {
+                return false;
+            }
+
+            // The other aktant also has to be something the passive can lift into the subject, which an
+            // infinitive is not: the patient of moci is the infinitive it governs, and *je mohnut jít is
+            // not a sentence. So the slot has to offer at least one realization carrying a case.
+            return frame.Slots.Any(slot => slot.Functor == FgdFunctor.ACT)
+                && frame.Slots.Any(slot => slot.Functor != FgdFunctor.ACT
+                    && IsInnerParticipant(slot.Functor)
+                    && slot.Realizations.Any(realization => realization.Case is not null));
         }
     }
 }

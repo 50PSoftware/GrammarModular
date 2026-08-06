@@ -281,6 +281,27 @@ namespace Grammar.Czech.Lexicon.Tool
             {
                 errors.Add($"Rámec {row[0]} ({row[1] ?? "bez názvu"}) nemá slot ACT.");
             }
+
+            // A frame marked default is what CzechValencyService.GetFrame hands back when the caller names
+            // no sense. Two of them under one lemma and diathesis say two different things win, so the
+            // service refuses both and the verb becomes unreachable without a label — silently, because
+            // nothing about the row it was asked for looks wrong.
+            const string rivalDefaults = """
+                SELECT x.primary_lemma, f.diathesis, COUNT(*)
+                FROM valency_frame f
+                JOIN lexical_unit u ON u.lu_id = f.lu_id
+                JOIN lexeme x ON x.lexeme_id = u.lexeme_id
+                WHERE f.is_default = 1
+                GROUP BY x.lexeme_id, f.diathesis
+                HAVING COUNT(*) > 1
+                """;
+
+            foreach (var row in Query(connection, rivalDefaults))
+            {
+                errors.Add(
+                    $"Lexém '{row[0]}' má {row[2]} výchozí rámce pro diatezi {row[1]}. Výchozí smí být "
+                    + "nejvýš jeden — jinak se bez uvedení významu nevybere žádný.");
+            }
         }
 
         private static void CheckSlots(SqliteConnection connection, List<string> errors)
