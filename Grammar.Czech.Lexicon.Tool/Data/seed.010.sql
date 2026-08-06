@@ -12,7 +12,7 @@
 -- tectogrammatical annotation manual of the Prague Dependency Treebank, §7.2.1. Every `source`
 -- value stays 'IJP'.
 --
--- What this round is FOR: rozdělit sponu. Sloveso být neslo jeden význam pojmenovaný „copula“,
+-- What this round is FOR, část první: rozdělit sponu. Sloveso být neslo jeden význam pojmenovaný „copula“,
 -- jehož popis zněl „Existovat, nebo být v nějakém stavu či vlastnosti“ — tři konstrukce v jedné
 -- řádce. Rámec u nich přitom nemůže být týž, protože každá má jiný druh predikátu a ValencyKind
 -- je má rozlišené:
@@ -30,6 +30,10 @@
 -- Žádný z nich není výchozí. GetFrame u slovesa s víc rámci úmyslně hází výjimku místo hádání —
 -- viz jeho vlastní komentář o jít/motion proti jít/process — takže volající musí jmenovat, kterou
 -- sponu chce. Původní frame 15 proto v seed.001.sql přišel o is_default.
+--
+-- What this round is FOR, část druhá: doplnit slovesu mluvit aktanty, které mu chyběly. Rámec
+-- licencoval jen ACT, takže „mluvit s někým“ i „mluvit o něčem“ končily hláškou, že sloveso nemá
+-- slot pro funktor ADDR. VALLEX má mluvit jako ACT(1) ADDR(s+7) PAT(o+6) a tohle to dorovnává.
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Významy
@@ -74,3 +78,29 @@ VALUES
     (80, 75, 'Nominative', NULL, NULL, 0, 1),
     (81, 76, 'Locative',   'v',  NULL, 0, 1),
     (82, 76, 'Locative',   'na', NULL, 0, 2);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- mluvit — chybějící aktanty
+-- ─────────────────────────────────────────────────────────────────────────────
+--
+-- Frame 11 je „mluvit“ ve významu speak. Identifikátory se píšou natvrdo, i když by je SQLite
+-- u INTEGER primárního klíče přidělila sama: na SQLite je zadává pisatel, seed je má vyslovit
+-- a pull přenáší serverová beze změny. Dopočítané by se rozešly s tím, co má admin.
+INSERT INTO valency_slot (
+    slot_id, frame_id, functor, canonical_order, obligatoriness,
+    can_drop_contextual, can_drop_generic, control_target)
+VALUES
+    -- Pořadí ADDR před PAT je pořadí ve větě: mluvil s Janou o práci.
+    (77, 11, 'ADDR', 2, 'Optional', 1, 1, NULL),
+    (78, 11, 'PAT',  3, 'Optional', 1, 1, NULL);
+
+INSERT INTO slot_realization (
+    realization_id, slot_id, morph_case, preposition, clause_type, takes_infinitive, preference)
+VALUES
+    -- ADDR: běžně „s Janou“. Řečnické „k lidem“ je varianta, kterou stačí přijímat — s dvojkou
+    -- se rozpozná, ale negeneruje.
+    (83, 77, 'Instrumental', 's', NULL, 0, 1),
+    (84, 77, 'Dative',       'k', NULL, 0, 2),
+
+    -- PAT: o čem se mluví, tedy obsah řeči.
+    (85, 78, 'Locative',     'o', NULL, 0, 1);

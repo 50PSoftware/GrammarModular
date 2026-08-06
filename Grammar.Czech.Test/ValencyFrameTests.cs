@@ -309,6 +309,7 @@ namespace Grammar.Czech.Test
         [DataRow("dát", "konzumace", true, DisplayName = "dát/konzumace — konatel a patiens")]
         [DataRow("vidět", "perception", true, DisplayName = "vidět/perception — konatel a patiens")]
         [DataRow("starat", "care", true, DisplayName = "starat/care — patiens s předložkou se počítá")]
+        [DataRow("mluvit", "speak", true, DisplayName = "mluvit/speak — adresát a patiens s předložkou")]
         [DataRow("chtít", "want", true, DisplayName = "chtít/want — patiens umí i 4. pád")]
         [DataRow("jít", "motion", false, DisplayName = "jít/motion — jen směr")]
         [DataRow("jít", "process", false, DisplayName = "jít/process — jen konatel")]
