@@ -181,7 +181,7 @@ O soubor se stará `Grammar.Czech.Lexicon.Tool`:
 | příkaz | co dělá |
 |---|---|
 | `pull --url <api>` | stáhne slovník z API a nahradí jím lokální kopii |
-| `validate` | ohlásí, co rozbil špatný řádek — rámec bez konatele, slot, který se nemůže vyjádřit, `lemma_key`, který žádné vyhledání netrefí |
+| `validate` | ohlásí, co rozbil špatný řádek — rámec bez konatele, slot, který se nemůže vyjádřit, dva rámce jednoho slovesa označené jako výchozí, `lemma_key`, který žádné vyhledání netrefí |
 | `build` | vytvoří lexikon ze schématu a seedu, pro práci bez serveru |
 | `dump --out <sql>` | vypíše databázi jako přenositelné `INSERT`y k revizi |
 | `export-json --out <adresář>` | vypíše stejný JSON, jaký posílá API, pro naplnění serveru |
@@ -285,9 +285,15 @@ Záznam se použije jen tehdy, když jeho slovní druh odpovídá tomu, na co se
 
 Lexikon slouží hlavně jako provider metadat pro vybrané resolvery, není to úplný český slovník.
 
-Valenční rámec říká, jak se realizují argumenty daného slovesa, a `CzechSentenceBuilder` z něj bere pád i předložku: u `vidět` je `PAT` akuzativ, u `dávat` je `ADDR` dativ a `PAT` akuzativ, u `jít` je `DIR3` předložka `do` s genitivem. Pád zadaný explicitně zůstává — rámec doplňuje mezery. Sloveso s víc rámci se vybírá přes `CzechClause.FrameLabel`, protože `jít` má jiné argumenty jako pohyb a jiné jako proces.
+Valenční rámec říká, jak se realizují argumenty daného slovesa, a `CzechSentenceBuilder` z něj bere pád i předložku: u `vidět` je `PAT` akuzativ, u `dávat` je `ADDR` dativ a `PAT` akuzativ, u `jít` je `DIR3` předložka `do` s genitivem. Pád zadaný explicitně zůstává — rámec doplňuje mezery.
+
+Sloveso s víc významy se vybírá přes `CzechClause.FrameLabel`, protože `jít` má jiné argumenty jako pohyb a jiné jako proces. Když je jeden význam ve slovníku označený jako výchozí, dostane ho volání bez labelu — `dát` je transfer, dokud volající neřekne konzumace. Když výchozí nemá žádný, jako `jít` a tři významy slovesa `být`, volání skončí výjimkou místo výběru: dvojznačnost smí rozhodnout slovník, ne kód.
 
 Vnitřní participanty (`ACT`, `PAT`, `ADDR`, `ORIG`, `EFF` — aktanty FGP) může licencovat jen rámec, takže `vidět` s adresátem skončí výjimkou. Volná doplnění se pojí s kterýmkoli slovesem a pád si u nich zadává volající.
+
+Funktory se řídí čtením FGP, ne intuicí, což se projeví na dvou místech, která vypadají na `COMPL` a nejsou to: infinitiv řízený modálním slovesem je jeho `PAT` (*chce jít*, *může přijít*) a totéž platí pro neslovesnou část přísudku u spony, jak to má tektogramatický manuál PDT. `COMPL` je doplněk s dvojí závislostí — nepovinný infinitiv u `pomoci`, kde nese ten, komu se pomáhá, takže kontrola míří na `PAT`, ne na `ACT`.
+
+Které sloveso může stát v opisném pasivu, se čte z rámce. Význam, který má vlastní trpný rámec, je licencovaný tím, že ho má; u ostatních je podmínkou konatel a ještě jeden aktant, který by pasivum mohlo povýšit na podmět. Infinitiv jím není — patiens slovesa `moci` je infinitiv, který řídí, a *\*je mohnut jít* není věta — a není jím ani sponový přísudek, který se odmítá podle `kind` rámce, protože jeho patiens chodí v nominativu i instrumentálu a ani jeden pád ho neprozradí.
 
 ### Věty a souvětí
 
@@ -607,16 +613,18 @@ Console.WriteLine(builder.Build(new CzechClause
 // Studentka vidí studenta.
 ```
 
-Sloveso s víc rámci si o výběr řekne výjimkou; rámec se pak zadá přes `FrameLabel`:
+Sloveso s víc významy, mezi nimiž není žádný výchozí, si o výběr řekne výjimkou; význam se pak zadá přes `FrameLabel`:
 
 ```csharp
 new CzechClause
 {
-    Predicate = goes,          // jít — rámce motion a process
+    Predicate = goes,          // jít — významy motion a process, výchozí ani jeden
     Elements = [subject, toSchool],
     FrameLabel = "motion",
 };
 ```
+
+`být` je týž případ se třemi: `copula_nominal` pro *lev je králem zvířat*, `copula_adjectival` pro *Petr je veselý*, `existence` pro *je tam problém*. Každý má jiný `ValencyKind` a rámec je jeden na význam a diatezi, takže si jeden sdílet nemohou. `dát` je ten druhý případ — `transfer` je označený jako výchozí, takže ho věta bez labelu dostane.
 
 ### Přídavné jméno se stupňováním
 
@@ -690,7 +698,7 @@ Pravidlová data v projektu `Grammar.Czech` jsou embedded JSON resources. Výjim
 - Číslovky nepodporují ustrnulou variantu úhrnných číslovek (*bez patero ponožek*), kterou IJP id=792 uvádí vedle skloňované jako rovněž spisovnou; generuje se vždy skloňovaná.
 - Ukazovací zájmeno před číslovkou (*těch pět studentů*) se shoduje s hlavou fráze, ne s celou frází.
 - `CzechNumeralComposer.ComposeOrdinal` a `ComposeOfType` skládají jen z lemmat ve slovníku; hodnota vyžadující chybějící složku (např. *dvoutisící*) selže s výjimkou, místo aby si tvar vymyslela.
-- Lexikon obsahuje rámce jen pro čtyři slovesa. Mechanismus je hotový, data ne — u slovesa bez rámce si pády zadává volající jako dřív.
+- Lexikon obsahuje rámce pro třicet lexémů — čtyřicet šest slovesných lemmat, počítá-li se každý člen vidové dvojice — z dvou set padesáti pěti hesel. Mechanismus je hotový, data ne: u slovesa bez rámce si pády zadává volající jako dřív.
 - Slot se dá uložit jako realizovaný `že`-větou nebo infinitivem, ale nic takový tvar zatím negeneruje: to potřebuje plánovač klauzí, a dokud neexistuje, `CzechSentenceBuilder` takový konstituent nechá na volajícím.
 - Databáze je binární, takže git neukáže, co se v ní změnilo. `dump` vyrobí čitelnou textovou podobu; napojení na commitovací postup hotové není.
 - Pull stahuje pokaždé celý slovník. Přírůstková synchronizace neexistuje a vyžadovala by na serveru sledování změn a náhrobní záznamy — smazané řádky by přírůstkový pull jinak neviděl. Přepis celého souboru je řeší zadarmo, proto se začíná tam.

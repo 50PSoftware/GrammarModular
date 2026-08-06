@@ -181,7 +181,7 @@ The schema in `Grammar.Czech.Lexicon.Tool/Schema/schema.sql` is deliberately por
 | command | what it does |
 |---|---|
 | `pull --url <api>` | downloads the dictionary from the API and replaces the local copy |
-| `validate` | reports what a bad row broke — a frame with no actor, a slot that can never surface, a `lemma_key` no lookup will match, a vzor no pattern data knows |
+| `validate` | reports what a bad row broke — a frame with no actor, a slot that can never surface, two frames of one verb both marked default, a `lemma_key` no lookup will match, a vzor no pattern data knows |
 | `build` | creates a lexicon from the schema and the seed, for working without a server |
 | `dump --out <sql>` | writes the database out as portable `INSERT`s, for review |
 | `export-json --out <dir>` | writes the same JSON the API serves, for seeding the server |
@@ -287,9 +287,15 @@ An entry is used only when its word class matches the one asked about. `GetEntry
 
 The lexicon serves mainly as a metadata provider for selected resolvers; it is not a complete dictionary of Czech.
 
-A valency frame states how a given verb's arguments are realized, and `CzechSentenceBuilder` takes both case and preposition from it: for `vidět` the `PAT` is accusative, for `dávat` the `ADDR` is dative and the `PAT` accusative, for `jít` the `DIR3` is the preposition `do` with the genitive. A case set explicitly is left alone — the frame only fills the gaps. A verb with several frames is disambiguated through `CzechClause.FrameLabel`, because `jít` takes different arguments as motion than as a process.
+A valency frame states how a given verb's arguments are realized, and `CzechSentenceBuilder` takes both case and preposition from it: for `vidět` the `PAT` is accusative, for `dávat` the `ADDR` is dative and the `PAT` accusative, for `jít` the `DIR3` is the preposition `do` with the genitive. A case set explicitly is left alone — the frame only fills the gaps.
+
+A verb with several senses is disambiguated through `CzechClause.FrameLabel`, because `jít` takes different arguments as motion than as a process. Where one sense is marked default in the dictionary, an unlabelled call gets it — `dát` is transfer unless the caller says konzumace. Where none is, as with `jít` and the three senses of `být`, the call throws instead of picking one; the dictionary is allowed to settle the ambiguity, the code is not.
 
 Inner participants (`ACT`, `PAT`, `ADDR`, `ORIG`, `EFF` — the FGD actants) can only be licensed by a frame, so `vidět` with an addressee throws. Free modifications combine with any verb, and there the caller supplies the case.
+
+Functors follow the FGD reading rather than the intuitive one, which matters in two places that look like they want `COMPL` and do not: the infinitive a modal verb governs is its `PAT` (*chce jít*, *může přijít*), and so is the non-verbal part of the predicate under the copula, per the tectogrammatical manual of the PDT. `COMPL` is the doplněk with its double dependency — the optional infinitive of `pomoci`, where the one who carries is the one being helped, so its control points at `PAT` rather than at `ACT`.
+
+Which verbs can stand in the periphrastic passive is read off the frame. A sense with a passive frame of its own is licensed by having one; for the rest the test is an actor plus one more actant that the passive could lift into the subject. An infinitive is not one — the patient of `moci` is the infinitive it governs, and *\*je mohnut jít* is not a sentence — and neither is a copular predicate, which is refused on the frame's `kind` because its patient comes in both the nominative and the instrumental and neither case gives it away.
 
 ### Sentences and complex sentences
 
@@ -612,16 +618,18 @@ Console.WriteLine(builder.Build(new CzechClause
 // Studentka vidí studenta.
 ```
 
-A verb with several frames asks for a choice by throwing; the frame is then named through `FrameLabel`:
+A verb with several senses and no default among them asks for a choice by throwing; the sense is then named through `FrameLabel`:
 
 ```csharp
 new CzechClause
 {
-    Predicate = goes,          // jít — frames motion and process
+    Predicate = goes,          // jít — senses motion and process, neither default
     Elements = [subject, toSchool],
     FrameLabel = "motion",
 };
 ```
+
+`být` is the same case with three: `copula_nominal` for *lev je králem zvířat*, `copula_adjectival` for *Petr je veselý*, `existence` for *je tam problém*. Each is a different `ValencyKind`, and a frame is one per sense and diathesis, so they cannot share one. `dát` is the other case — `transfer` is marked default, so an unlabelled clause gets it.
 
 ### An adjective with degree
 
@@ -694,7 +702,7 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 - Numerals do not support the frozen variant of aggregate numerals (*bez patero ponožek*), which IJP id=792 lists as standard alongside the declined one; the declined form is always generated.
 - A demonstrative in front of a numeral (*těch pět studentů*) agrees with the head of the phrase, not with the phrase as a whole.
 - `CzechNumeralComposer.ComposeOrdinal` and `ComposeOfType` build only from lemmas present in the dictionary; a value that needs a missing component (e.g. *dvoutisící*) throws rather than inventing a form.
-- The lexicon contains frames for four verbs only. The mechanism is finished, the data is not — for a verb without a frame the caller supplies the cases as before.
+- The lexicon contains frames for thirty lexemes — forty-six verb lemmas, counting both members of each aspect pair — out of two hundred and fifty-five entries. The mechanism is finished, the data is not: for a verb without a frame the caller supplies the cases as before.
 - A slot can be stored as realized by a `že`-clause or an infinitive, but nothing generates one yet: that needs a clause planner, and until it exists `CzechSentenceBuilder` leaves such a constituent to the caller.
 - The database is binary, so git cannot show what changed inside it. `dump` produces the reviewable text form; wiring that into the commit workflow is not done.
 - A pull downloads the whole dictionary every time. There is no incremental sync, and adding one would need change tracking and tombstones on the server — deletions are invisible to a delta pull otherwise. Rewriting the file handles them for free, which is why it is the starting point.
