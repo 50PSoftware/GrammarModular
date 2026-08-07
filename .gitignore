@@ -378,5 +378,6 @@ lexikon.json
 /docs/nasazeni-slovniku-wedos.html
 /docs/pridavani-slov-do-slovniku.html
 
-# Pamet a nastaveni Claude Code — lokalni pracovni soubory, do repozitare nepatri.
+# Pamet, nastaveni a pracovni pokyny pro Claude Code — lokalni soubory, do repozitare nepatri.
 /.claude/
+/CLAUDE.md
