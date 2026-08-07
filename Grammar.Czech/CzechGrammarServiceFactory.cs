@@ -71,6 +71,7 @@ namespace Grammar.Czech
             // ── Phonological rule evaluators ─────────────────────────────────────────
             services.AddSingleton<ISofteningRuleEvaluator<CzechWordRequest>, CzechSofteningRuleEvaluator>();
             services.AddSingleton<IEpenthesisRuleEvaluator<CzechWordRequest>, CzechEpenthesisRuleEvaluator>();
+            services.AddSingleton<IAlternationRuleEvaluator<CzechWordRequest>, CzechAlternationRuleEvaluator>();
             services.AddSingleton<IJotationRuleEvaluator<CzechWordRequest>, CzechJotationRuleEvaluator>();
             services.AddSingleton<ISyncretismRuleEvaluator<CzechWordRequest>, CzechSyncretismRuleEvaluator>();
             services.AddSingleton<ICzechOrthographyService, CzechOrthographyService>();

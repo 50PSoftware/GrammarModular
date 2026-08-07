@@ -18,6 +18,7 @@ namespace Grammar.Czech.Services
         private readonly ICzechPhonologyService _phonologyService;
         private readonly ISofteningRuleEvaluator<CzechWordRequest> _softeningRuleEvaluator;
         private readonly IEpenthesisRuleEvaluator<CzechWordRequest> _epenthesisRuleEvaluator;
+        private readonly IAlternationRuleEvaluator<CzechWordRequest> _alternationRuleEvaluator;
         private readonly IJotationRuleEvaluator<CzechWordRequest> _jotationRuleEvaluator;
         private readonly ISyncretismRuleEvaluator<CzechWordRequest> _syncretismRuleEvaluator;
         private readonly ICzechOrthographyService _orthographyService;
@@ -26,13 +27,14 @@ namespace Grammar.Czech.Services
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechNounDeclensionService"/> type.
         /// </summary>
-        public CzechNounDeclensionService(INounDataProvider dataProvider, IWordStructureResolver<CzechWordRequest> wordStructureResolver, ICzechPhonologyService phonologyService, ISofteningRuleEvaluator<CzechWordRequest> softeningRuleEvaluator, IEpenthesisRuleEvaluator<CzechWordRequest> epenthesisRuleEvaluator, IJotationRuleEvaluator<CzechWordRequest> jotationRuleEvaluator, ISyncretismRuleEvaluator<CzechWordRequest> syncretismRuleEvaluator, ICzechOrthographyService orthographyService, IValencyProvider<CzechLexicalEntry> valencyProvider)
+        public CzechNounDeclensionService(INounDataProvider dataProvider, IWordStructureResolver<CzechWordRequest> wordStructureResolver, ICzechPhonologyService phonologyService, ISofteningRuleEvaluator<CzechWordRequest> softeningRuleEvaluator, IEpenthesisRuleEvaluator<CzechWordRequest> epenthesisRuleEvaluator, IAlternationRuleEvaluator<CzechWordRequest> alternationRuleEvaluator, IJotationRuleEvaluator<CzechWordRequest> jotationRuleEvaluator, ISyncretismRuleEvaluator<CzechWordRequest> syncretismRuleEvaluator, ICzechOrthographyService orthographyService, IValencyProvider<CzechLexicalEntry> valencyProvider)
         {
             this._dataProvider = dataProvider;
             this._wordStructureResolver = wordStructureResolver;
             this._phonologyService = phonologyService;
             this._softeningRuleEvaluator = softeningRuleEvaluator;
             this._epenthesisRuleEvaluator = epenthesisRuleEvaluator;
+            this._alternationRuleEvaluator = alternationRuleEvaluator;
             this._jotationRuleEvaluator = jotationRuleEvaluator;
             this._syncretismRuleEvaluator = syncretismRuleEvaluator;
             this._orthographyService = orthographyService;
@@ -144,6 +146,12 @@ namespace Grammar.Czech.Services
             if (ResolveLexiconStem(word) is { } lexiconStem)
             {
                 stem = lexiconStem;
+            }
+
+            // Až za kmenem ze slovníku, protože krátí ten kmen, na který koncovka opravdu sedne.
+            if (_alternationRuleEvaluator.ShouldShortenStem(stem, word))
+            {
+                stem = _phonologyService.ShortenVowel(stem);
             }
 
             // Softening rules see the resolved stem, not just the lemma: the ending attaches to the stem

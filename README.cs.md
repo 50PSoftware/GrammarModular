@@ -140,11 +140,12 @@ Mezi veřejně používané části patří:
 - `IPhonemeRegistry` / `CzechPhonemeRegistry`,
 - `ISofteningRuleEvaluator<CzechWordRequest>`,
 - `IEpenthesisRuleEvaluator<CzechWordRequest>`,
+- `IAlternationRuleEvaluator<CzechWordRequest>`,
 - `IJotationRuleEvaluator<CzechWordRequest>`,
 - `ISyncretismRuleEvaluator<CzechWordRequest>`,
 - `ICzechOrthographyService`.
 
-`CzechAlternationRuleEvaluator` pro krácení genitivu plurálu existuje, ale aktuálně není registrovaný v `AddCzechGrammarServices()` a není zapojený v `CzechNounDeclensionService`.
+`CzechAlternationRuleEvaluator` krátí kmen před koncovkou genitivu plurálu. Jestli slovo krátí, je věc lexikální, ne fonologická — *kráva* dává *krav*, ale *káva* dává *káv* — takže rozhoduje `has_genitive_plural_shortening` na hesle, a `HasGenitivePluralShortening` na requestu ho přebije. Krátí se jen *á* a *í*; zbytek registr fonémů odmítne, takže špatně vyplněné heslo neudělá ze *sfér* *sfer*.
 
 ### Lexikon a valence
 
@@ -691,7 +692,7 @@ Pravidlová data v projektu `Grammar.Czech` jsou embedded JSON resources. Výjim
 - Volající často musí dodat `Pattern`, `Gender`, `Number`, `Case`, `Person`, `Tense`, `Aspect`, `Modus` a `Voice`; projekt zatím není analyzátor přirozeného textu.
 - `MorphologyEngine.GetForm` vrací jedno slovo, takže u slovesa dá jen základní tvar. Slovesné tvary o víc slovech — opisné futurum, pasivum s pomocným slovesem, kondicionál, negace, reflexivum — potřebují `CzechWordFormComposer.GetFullForm`.
 - Pojmenovaný vzor z `irregulars.json` nese kmeny doslova, takže sedí na sloveso samotného vzoru a na jeho předponové odvozeniny — `nese` pokrývá *nést* i *odnést*, `dělá` pokrývá *dělat* i *dodělat*. Nepříbuzné sloveso potřebuje třídní vzor: *prodávat* se vzorem `dělá` vrátí *dělá*, s `trida5` správné *prodává*.
-- `CzechAlternationRuleEvaluator` není registrovaný v DI a krácení genitivu plurálu není aktivně napojené ve skloňování substantiv.
+- Krácení v genitivu plurálu umí jen *á* a *í*. Typ *ou* → *u* (*houba* → *hub*, *smlouva* → *smluv*) implementovaný není: `ou` je digraf, ne jeden foném, a `CzechPhonologyService.ShortenVowel` prochází kmen po znacích.
 - Lexikon není úplný slovník češtiny; `ResolveGenderAndPattern` a `ResolveVerbAspect` fungují jen pro lemmata, která databáze obsahuje.
 - `IValencyProvider.GetEntry` bere lemma a nic víc, takže neumí rozlišit homonyma. Schéma je nese ve sloupci `homonym_index` a provider vrátí to s nejnižším.
 - CLI je demo, ne uživatelský nástroj pro obecné dotazování.

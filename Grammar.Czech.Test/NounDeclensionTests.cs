@@ -35,8 +35,9 @@ namespace Grammar.Czech.Test
             var syncretismEvaluator = new CzechSyncretismRuleEvaluator();
             var orthographyService = new CzechOrthographyService(registry);
             var valencyProvider = new SqliteValencyProvider();
+            var alternationEvaluator = new CzechAlternationRuleEvaluator(registry, valencyProvider);
 
-            nounDeclensionService = new CzechNounDeclensionService(nounDataPrvider, wordStructureResolver, phonologyService, softeningEvaluator, epenthesisEvaluator, jotationEvaluator, syncretismEvaluator, orthographyService, valencyProvider);
+            nounDeclensionService = new CzechNounDeclensionService(nounDataPrvider, wordStructureResolver, phonologyService, softeningEvaluator, epenthesisEvaluator, alternationEvaluator, jotationEvaluator, syncretismEvaluator, orthographyService, valencyProvider);
         }
 
         [TestMethod]
@@ -84,6 +85,36 @@ namespace Grammar.Czech.Test
                 Pattern = "píseň",
                 Gender = Gender.Feminine,
                 Number = Number.Singular,
+                Case = Case.Genitive
+            };
+
+            var result = nounDeclensionService.GetForm(request);
+            Assert.AreEqual(expected, result.Form);
+        }
+
+        /// <summary>
+        /// Verifies that genitive-plural shortening follows the lexicon entry, not the shape of the word.
+        /// </summary>
+        /// <param name="lemma">The dictionary form to inflect.</param>
+        /// <param name="expected">The expected genitive plural.</param>
+        [TestMethod]
+        [DataRow("kráva", "krav")]
+        [DataRow("brána", "bran")]
+        [DataRow("lípa", "lip")]
+        [DataRow("síla", "sil")]
+        // Stejný vzor i délka jako kráva — nekrátí, protože to má zapsané heslo.
+        [DataRow("káva", "káv")]
+        // Ve slovníku bez vlajky: bez odpovědi se délka nechává být.
+        [DataRow("škola", "škol")]
+        public void GetForm_ŽenaPatternGenPlFor_Returns(string lemma, string expected)
+        {
+            var request = new CzechWordRequest
+            {
+                Lemma = lemma,
+                WordCategory = WordCategory.Noun,
+                Pattern = "žena",
+                Gender = Gender.Feminine,
+                Number = Number.Plural,
                 Case = Case.Genitive
             };
 

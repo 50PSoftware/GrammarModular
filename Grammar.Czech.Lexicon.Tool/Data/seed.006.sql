@@ -73,7 +73,7 @@
 --     nothing to do with vzor král beyond a surface resemblance. Left out rather than forced
 --     into a pattern that doesn't actually fit — see the note above.
 --   * sníh, nůž, oheň, déšť and the sestra/matka genitive-plural epenthesis — unchanged
---     since seed_002, still waiting on CzechAlternationRuleEvaluator.
+--     since seed_002. Oprava k seed_011: ani jedno na krácení nečeká, viz seed.004.sql.
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Lemma entries — nouns, vzor syn (masc. anim., tvrdý, gen. -a, N/V pl. -ové)

@@ -322,6 +322,7 @@ namespace Grammar.Czech.Test
                 phonologyService,
                 new CzechSofteningRuleEvaluator(nounDataProvider),
                 epenthesisEvaluator,
+                new CzechAlternationRuleEvaluator(registry, valencyProvider),
                 new CzechJotationRuleEvaluator(registry, structureResolver),
                 new CzechSyncretismRuleEvaluator(),
                 new CzechOrthographyService(registry),

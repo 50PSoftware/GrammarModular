@@ -42,10 +42,11 @@
 --     -i (lékaři), and NounPattern doesn't yet carry that as a variant. Not a bare
 --     lemma_entry row until the pattern data grows a slot for it.
 --   * sníh, nůž, oheň, déšť — each has a kmenová vowel alternation on top of the
---     mobile-e/DTN machinery already proven (sníh→sněhu í→ě, nůž→nože ů→o), which
---     is exactly what czech-alternations flags as CzechAlternationRuleEvaluator's
---     job, and that evaluator doesn't exist yet (see PROJECT memory). Same
+--     mobile-e/DTN machinery already proven (sníh→sněhu í→ě, nůž→nože ů→o). Same
 --     "needs a rule/lexicon decision first" bucket as dům/stůl/rok in seed_001.
+--     Oprava k seed_011: tohle je dloužení v nom. sg., uzavřená lexikální množina, a jede
+--     přes lemma_entry.stem — ne přes CzechAlternationRuleEvaluator, na který to tady
+--     původně čekalo. Ta cesta funguje od commitu 26a9e1e a chybí jí jen vlastní seed.
 --   * sestra, matka, okno-style genitive-plural epenthesis (sester, matek) — okno
 --     in seed_001 already accepted this gap once (has_mobile_e=0 even though real
 --     gen. pl. is "oken") rather than compound it. zahrada/hodina below were

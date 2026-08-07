@@ -30,8 +30,8 @@
 --     five-word sample. Every addition below is a real, IJP-attested agent noun in -tel with
 --     a productive N/V pl. -é and no further irregularity beyond what the "učitel" sub-pattern
 --     already inherits from muž — no new mobile-e, no new alternation, nothing that would ask
---     anything of CzechAlternationRuleEvaluator, which still doesn't exist. That's precisely
---     why this class was safe to grow wide in one pass and -ista/-an/-ové (seed.005.sql,
+--     anything of CzechAlternationRuleEvaluator, which at the time did nothing (zapojen až
+--     v seed_011). That's precisely why this class was safe to grow wide in one pass and -ista/-an/-ové (seed.005.sql,
 --     seed.006.sql) were grown separately: each is its own closed decision, not a shared risk.
 --
 -- The -ista/-ita group seed_003 left out for the same reason is handled in seed.005.sql,
@@ -48,7 +48,9 @@
 --     so it stays a comment here rather than a row — nothing about vzor "učitel" needs it
 --     seeded to be correct.
 --   * sníh, nůž, oheň, déšť and the sestra/matka genitive-plural epenthesis — unchanged from
---     seed_002 and seed_003, still waiting on CzechAlternationRuleEvaluator.
+--     seed_002 and seed_003. Oprava k seed_011: ani jedno nečeká na krácení. Ta čtyři slova
+--     jsou dloužení v nom. sg. a jedou přes lemma_entry.stem; epenteze u sestra/matka se
+--     vyhodnocuje z has_epenthesis_in_genitive_plural a funguje.
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Lemma entries — nouns, vzor učitel (masc. anim., měkký, gen. -e, N/V pl. -é)

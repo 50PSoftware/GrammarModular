@@ -65,7 +65,7 @@
 --     change, not a data one. Left alone rather than half-done — same bucket as seed_001's
 --     syn and král. (Now closed in seed.006.sql.)
 --   * sníh, nůž, oheň, déšť and the sestra/matka genitive-plural epenthesis — unchanged
---     since seed_002, still waiting on CzechAlternationRuleEvaluator.
+--     since seed_002. Oprava k seed_011: ani jedno na krácení nečeká, viz seed.004.sql.
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Lemma entries — nouns, vzor občan (masc. anim., tvrdý, gen. -a, N/V pl. -é)

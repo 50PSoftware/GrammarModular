@@ -1,18 +1,18 @@
-using Grammar.Czech.Models;
+using Grammar.Core.Interfaces;
 
 namespace Grammar.Czech.Interfaces
 {
     /// <summary>
     /// Defines operations for evaluating alternation Rule rules.
     /// </summary>
-    public interface IAlternationRuleEvaluator
+    public interface IAlternationRuleEvaluator<TWord> where TWord : IWordRequest
     {
         /// <summary>
-        /// Determines whether should shorten genitive plural.
+        /// Determines whether the stem shortens its long vowel before the genitive plural ending.
         /// </summary>
-        /// <param name="request">The Czech word request to process.</param>
-        /// <param name="pattern">The inflection pattern used to choose the rule.</param>
+        /// <param name="stem">The stem to transform.</param>
+        /// <param name="wordRequest">The word request to analyze or inflect.</param>
         /// <returns>True when the condition is met; otherwise, false.</returns>
-        bool ShouldShortenGenitivePlural(CzechWordRequest request, NounPattern pattern);
+        bool ShouldShortenStem(string stem, TWord wordRequest);
     }
 }
