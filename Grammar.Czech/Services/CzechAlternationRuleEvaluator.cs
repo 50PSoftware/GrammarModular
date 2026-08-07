@@ -72,23 +72,68 @@ namespace Grammar.Czech.Services
         /// reach is one that actually shortens in the genitive plural.
         /// </summary>
         /// <remarks>
-        /// Only á and í shorten dependably. é, ý and ú/ů keep their length here (sféra → sfér,
-        /// rýha → rýh, kúra → kúr), yet the registry gives all of them a short counterpart because
-        /// other alternations need it. The scan therefore has to walk the stem the same way
-        /// ShortenVowel does, or the veto would judge a different vowel than the one that changes.
+        /// Only á, í and ou shorten here. é, ó, ý and ú/ů keep their length (sféra → sfér,
+        /// móda → mód, rýha → rýh, kúra → kúr), yet the registry gives some of them a short
+        /// counterpart because other alternations need it. The scan therefore has to walk the stem
+        /// the same way ShortenVowel does, or the veto would judge a different vowel than the one
+        /// that changes.
+        /// <para>
+        /// Shortening also fails when a consonant cluster follows the long vowel — brázda gives
+        /// brázd, not *brazd.
+        /// </para>
         /// </remarks>
         private bool ShortensReliably(string stem)
         {
             for (int i = stem.Length - 1; i >= 0; i--)
             {
-                var phoneme = _registry.Get(stem[i]);
-                if (phoneme?.ShortCounterpart is not null)
+                var symbol = FindShortenableVowel(stem, i);
+
+                if (symbol is null)
                 {
-                    return stem[i] is 'á' or 'í';
+                    continue;
                 }
+
+                return symbol is "á" or "í" or "ou" && !HasClusterAfter(stem, i + 1);
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Vrátí samohlásku končící na dané pozici, pokud má krátký protějšek — diftong přednostně.
+        /// </summary>
+        private string? FindShortenableVowel(string stem, int index)
+        {
+            if (index > 0 && _registry.Get(stem[(index - 1)..(index + 1)])?.ShortCounterpart is not null)
+            {
+                return stem[(index - 1)..(index + 1)];
+            }
+
+            return _registry.Get(stem[index])?.ShortCounterpart is null ? null : stem[index].ToString();
+        }
+
+        /// <summary>
+        /// Determines whether more than one consonant phoneme follows the supplied position.
+        /// </summary>
+        /// <remarks>
+        /// Counted in phonemes, not letters: ch is one, which is why moucha shortens to much while
+        /// brázda keeps its length.
+        /// </remarks>
+        private bool HasClusterAfter(string stem, int start)
+        {
+            var count = 0;
+
+            for (int i = start; i < stem.Length; i++)
+            {
+                if (i + 1 < stem.Length && _registry.Get(stem[i..(i + 2)]) is not null)
+                {
+                    i++;
+                }
+
+                count++;
+            }
+
+            return count > 1;
         }
 
         #endregion Private Rules

@@ -145,7 +145,9 @@ Mezi veřejně používané části patří:
 - `ISyncretismRuleEvaluator<CzechWordRequest>`,
 - `ICzechOrthographyService`.
 
-`CzechAlternationRuleEvaluator` krátí kmen před koncovkou genitivu plurálu. Jestli slovo krátí, je věc lexikální, ne fonologická — *kráva* dává *krav*, ale *káva* dává *káv* — takže rozhoduje `has_genitive_plural_shortening` na hesle, a `HasGenitivePluralShortening` na requestu ho přebije. Krátí se jen *á* a *í*; zbytek registr fonémů odmítne, takže špatně vyplněné heslo neudělá ze *sfér* *sfer*.
+`CzechAlternationRuleEvaluator` krátí kmen před koncovkou genitivu plurálu. Jestli slovo krátí, je věc lexikální, ne fonologická — *kráva* dává *krav*, ale *káva* dává *káv* — takže rozhoduje `has_genitive_plural_shortening` na hesle, a `HasGenitivePluralShortening` na requestu ho přebije.
+
+Registr fonémů pak odmítne, co krátit nejde, ať si heslo říká co chce, takže špatně vyplněný řádek nevyrobí neexistující tvar. Krátí se jen *á*, *í* a *ou*; *é*, *ó*, *ý* a *ú/ů* si délku drží (*sféra* → *sfér*, *móda* → *mód*, *rýha* → *rýh*). Krácení taky nenastane, stojí-li za dlouhou samohláskou souhláskový shluk: *brázda* → *brázd*. Veto počítá fonémy, ne písmena — proto *moucha* → *much* projde, protože *ch* je jeden foném, kdežto *zd* dva.
 
 ### Lexikon a valence
 
@@ -692,7 +694,7 @@ Pravidlová data v projektu `Grammar.Czech` jsou embedded JSON resources. Výjim
 - Volající často musí dodat `Pattern`, `Gender`, `Number`, `Case`, `Person`, `Tense`, `Aspect`, `Modus` a `Voice`; projekt zatím není analyzátor přirozeného textu.
 - `MorphologyEngine.GetForm` vrací jedno slovo, takže u slovesa dá jen základní tvar. Slovesné tvary o víc slovech — opisné futurum, pasivum s pomocným slovesem, kondicionál, negace, reflexivum — potřebují `CzechWordFormComposer.GetFullForm`.
 - Pojmenovaný vzor z `irregulars.json` nese kmeny doslova, takže sedí na sloveso samotného vzoru a na jeho předponové odvozeniny — `nese` pokrývá *nést* i *odnést*, `dělá` pokrývá *dělat* i *dodělat*. Nepříbuzné sloveso potřebuje třídní vzor: *prodávat* se vzorem `dělá` vrátí *dělá*, s `trida5` správné *prodává*.
-- Krácení v genitivu plurálu umí jen *á* a *í*. Typ *ou* → *u* (*houba* → *hub*, *smlouva* → *smluv*) implementovaný není: `ou` je digraf, ne jeden foném, a `CzechPhonologyService.ShortenVowel` prochází kmen po znacích.
+- Krácení v genitivu plurálu je jen kvantitativní. Typ *í* → *ě* (*míra* → *měr*, *díra* → *děr*) je jiná alternace a `has_genitive_plural_shortening` o ní nic neříká; taková slova patří na `lemma_entry.stem`. Krátí se jen lemmata, která mají vlajku nasazenou v seedu — zbytek slovníku délku nechává být.
 - Lexikon není úplný slovník češtiny; `ResolveGenderAndPattern` a `ResolveVerbAspect` fungují jen pro lemmata, která databáze obsahuje.
 - `IValencyProvider.GetEntry` bere lemma a nic víc, takže neumí rozlišit homonyma. Schéma je nese ve sloupci `homonym_index` a provider vrátí to s nejnižším.
 - CLI je demo, ne uživatelský nástroj pro obecné dotazování.

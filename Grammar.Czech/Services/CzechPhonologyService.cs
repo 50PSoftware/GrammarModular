@@ -113,6 +113,13 @@ namespace Grammar.Czech.Services
         {
             for (int i = stem.Length - 1; i >= 0; i--)
             {
+                // Diftong se zkouší dřív než jeho druhý znak, jinak by se ou rozpadlo a zkrátil by
+                // se jen ten kus, který zbyde.
+                if (i > 0 && _registry.Get(stem[(i - 1)..(i + 1)])?.ShortCounterpart is { } diphthong)
+                {
+                    return stem[..(i - 1)] + diphthong + stem[(i + 1)..];
+                }
+
                 var phoneme = _registry.Get(stem[i]);
                 if (phoneme?.ShortCounterpart is not null)
                 {

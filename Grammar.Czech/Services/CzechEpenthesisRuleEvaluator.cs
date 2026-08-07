@@ -66,6 +66,13 @@ namespace Grammar.Czech.Services
         /// </remarks>
         private bool IsEpenthesisCluster(char c1, char c2)
         {
+            // Digraf není shluk. Bez tohohle se ch rozpadne na c+h, které jsou heterorganní, a
+            // moucha dostane epentezi, kterou nemá: gen. pl. je much, ne *mouceh.
+            if (_registry.Get($"{c1}{c2}") is not null)
+            {
+                return false;
+            }
+
             var p1 = _registry.Get(c1);
             var p2 = _registry.Get(c2);
             var p2Czech = p2 as CzechPhoneme;

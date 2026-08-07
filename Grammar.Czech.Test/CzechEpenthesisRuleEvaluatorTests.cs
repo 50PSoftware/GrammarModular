@@ -248,6 +248,8 @@ namespace Grammar.Czech.Test
             [
                 // Homorganní: s+t — oba Alveolar
                 ["měs", "t", "město", "město", Gender.Neuter],
+                // Digraf, ne shluk: ch je jeden foném, takže moucha dává much, ne *mouceh.
+                ["mouc", "h", "moucha", "žena", Gender.Feminine],
             ];
         }
 

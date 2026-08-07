@@ -104,6 +104,14 @@ namespace Grammar.Czech.Test
         [DataRow("síla", "sil")]
         // Stejný vzor i délka jako kráva — nekrátí, protože to má zapsané heslo.
         [DataRow("káva", "káv")]
+        // ou je jeden foném, krátí se na u.
+        [DataRow("houba", "hub")]
+        [DataRow("smlouva", "smluv")]
+        [DataRow("touha", "tuh")]
+        // ch je taky jeden foném, takže za ou nestojí shluk a krácení projde.
+        [DataRow("moucha", "much")]
+        // Za á stojí shluk zd — délka zůstává.
+        [DataRow("brázda", "brázd")]
         // Ve slovníku bez vlajky: bez odpovědi se délka nechává být.
         [DataRow("škola", "škol")]
         public void GetForm_ŽenaPatternGenPlFor_Returns(string lemma, string expected)

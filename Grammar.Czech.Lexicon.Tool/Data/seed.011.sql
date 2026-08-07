@@ -23,9 +23,11 @@
 --
 -- What is deliberately left OUT:
 --
---   * houba → hub, smlouva → smluv a spol. Je to ou→u, a `ou` je digraf, ne jeden foném —
---     ShortenVowel prochází kmen po znacích a krátký protějšek k němu nenajde. Vlajka by byla
---     zapsaná správně a neudělala by nic. Až bude ou→u umět fonologie, jsou to první přírůstky.
+--   * houba → hub, smlouva → smluv a spol. Je to ou→u, a ShortenVowel prochází kmen po znacích,
+--     takže krátký protějšek k němu nenajde. Vlajka by byla zapsaná správně a neudělala by nic.
+--     Oprava k seed_012: důvod tady původně stál na tvrzení, že `ou` je digraf, a ne jeden foném.
+--     To je špatně — /ou̯/ se hodnotí monofonematicky, viz seed.012.sql, kde jsou tahle slova
+--     doplněná. Omezení bylo v jednom chybějícím údaji v registru, ne ve fonologii.
 --   * Polysylabika (zahrádka → zahrádek) a výpůjčky (káva už je tady jako nula). Nekrátí,
 --     a tendence je taková, že novější slova nekrátí vůbec.
 --   * sníh, nůž, oheň, déšť. Tři z předchozích seedů je odkládaly „na CzechAlternationRuleEvaluator“,

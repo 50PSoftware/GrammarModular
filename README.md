@@ -145,7 +145,9 @@ The parts in public use include:
 - `ISyncretismRuleEvaluator<CzechWordRequest>`,
 - `ICzechOrthographyService`.
 
-`CzechAlternationRuleEvaluator` shortens the stem before the genitive plural ending. Whether a noun shortens is lexical, not phonological — *kráva* gives *krav* where *káva* gives *káv* — so the decision comes from `has_genitive_plural_shortening` on the entry, with `HasGenitivePluralShortening` on the request overriding it. Only *á* and *í* shorten; the phoneme registry vetoes the rest, so a wrongly flagged entry cannot turn *sfér* into *sfer*.
+`CzechAlternationRuleEvaluator` shortens the stem before the genitive plural ending. Whether a noun shortens is lexical, not phonological — *kráva* gives *krav* where *káva* gives *káv* — so the decision comes from `has_genitive_plural_shortening` on the entry, with `HasGenitivePluralShortening` on the request overriding it.
+
+The phoneme registry then vetoes what cannot shorten regardless of the flag, so a wrongly filled entry cannot invent a form. Only *á*, *í* and *ou* shorten; *é*, *ó*, *ý* and *ú/ů* keep their length (*sféra* → *sfér*, *móda* → *mód*, *rýha* → *rýh*). Shortening also fails when a consonant cluster follows the long vowel: *brázda* → *brázd*. The veto counts phonemes rather than letters, which is why *moucha* → *much* passes — *ch* is one phoneme where *zd* is two.
 
 ### Lexicon and valency
 
@@ -696,7 +698,7 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 - The caller often has to supply `Pattern`, `Gender`, `Number`, `Case`, `Person`, `Tense`, `Aspect`, `Modus` and `Voice`; the project is not yet an analyzer of natural text.
 - `MorphologyEngine.GetForm` returns a single word, so for a verb it gives the basic form only. The verb forms that are several words — the periphrastic future, the passive with an auxiliary, the conditional, negation, the reflexive — need `CzechWordFormComposer.GetFullForm`.
 - A named pattern from `irregulars.json` carries the stems literally, so it fits the pattern's own verb and its prefixed derivatives — `nese` covers *nést* and *odnést*, `dělá` covers *dělat* and *dodělat*. An unrelated verb needs a class pattern: *prodávat* with `dělá` returns *dělá*, with `trida5` the correct *prodává*.
-- Genitive-plural shortening covers *á* and *í* only. The *ou* → *u* type (*houba* → *hub*, *smlouva* → *smluv*) is not implemented: `ou` is a digraph rather than one phoneme, and `CzechPhonologyService.ShortenVowel` walks the stem character by character.
+- Genitive-plural shortening is quantity only. The *í* → *ě* type (*míra* → *měr*, *díra* → *děr*) is a different alternation and `has_genitive_plural_shortening` does not describe it; those words belong on `lemma_entry.stem`. Only the lemmas seeded with the flag shorten at all — the rest of the lexicon leaves the length alone.
 - The lexicon is not a complete dictionary of Czech; `ResolveGenderAndPattern` and `ResolveVerbAspect` only work for lemmas the database holds.
 - `IValencyProvider.GetEntry` takes a lemma and nothing else, so it cannot tell homonyms apart. The schema carries `homonym_index` and the provider returns the lowest one.
 - The CLI is a demo, not a general-purpose query tool.

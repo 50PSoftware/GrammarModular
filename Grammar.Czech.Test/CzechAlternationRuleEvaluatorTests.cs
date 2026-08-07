@@ -208,6 +208,12 @@ namespace Grammar.Czech.Test
                 ["líp",  "lípa",  "žena"],
                 ["síl",  "síla",  "žena"],
                 ["brán", "brána", "žena"],
+                // ou je jeden foném a krátí se na u.
+                ["houb",  "houba",   "žena"],
+                ["smlouv", "smlouva", "žena"],
+                ["touh",  "touha",   "žena"],
+                // ch je taky jeden foném, takže za ou nestojí shluk.
+                ["mouch", "moucha",  "žena"],
             ];
         }
 
@@ -227,8 +233,12 @@ namespace Grammar.Czech.Test
                 ["sfér", "sféra", "žena"],
                 ["rýh",  "rýha",  "žena"],
                 ["půr",  "půra",  "žena"],
-                // ú krátký protějšek nemá vůbec — kúra dává kúr.
+                // ú a ó krátký protějšek nemají vůbec — kúra dává kúr, móda mód.
                 ["kúr",  "kúra",  "žena"],
+                ["mód",  "móda",  "žena"],
+                // Za dlouhou samohláskou stojí shluk souhlásek — délka zůstává.
+                ["brázd", "brázda", "žena"],
+                ["nádrž", "nádrž",  "píseň"],
             ];
         }
 

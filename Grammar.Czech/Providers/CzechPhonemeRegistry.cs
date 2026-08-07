@@ -101,7 +101,10 @@ namespace Grammar.Czech.Providers
             ["ó"] = new Phoneme { Symbol = "ó", Backness = VowelBackness.Back, Height = VowelHeight.Mid, IsRounded = true },
             ["ú"] = new Phoneme { Symbol = "ú", Backness = VowelBackness.Back, Height = VowelHeight.Close, IsRounded = true },
             ["ů"] = new Phoneme { Symbol = "ů", Backness = VowelBackness.Back, Height = VowelHeight.Close, IsRounded = true, ShortCounterpart = "o" },
-            ["ou"] = new Phoneme { Symbol = "ou", Backness = VowelBackness.Back },
+            // Krátký protějšek u, ne o: ou je dlouhý člen kvantitativní dvojice u/ou (houba → hub,
+            // plul → plout). Že jde o jeden foném, a ne o spojení o+u, stojí právě na téhle
+            // alternaci — viz heslo DIFTONG v Novém encyklopedickém slovníku češtiny.
+            ["ou"] = new Phoneme { Symbol = "ou", Backness = VowelBackness.Back, ShortCounterpart = "u" },
             ["eu"] = new Phoneme { Symbol = "eu", Backness = VowelBackness.Front },
             ["au"] = new Phoneme { Symbol = "au", Backness = VowelBackness.Central },
             ["ě"] = new Phoneme { Symbol = "ě", Backness = VowelBackness.Front, Height = VowelHeight.Mid, IsRounded = false },
