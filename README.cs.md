@@ -639,28 +639,41 @@ Pravidlová data v projektu `Grammar.Czech` jsou embedded JSON resources. Výjim
 
 ## Známá omezení
 
+### Data, ne mechanismus
+
+- Lexikon není úplný slovník češtiny; `ResolveGenderAndPattern` a `ResolveVerbAspect` fungují jen pro lemmata, která databáze obsahuje.
+- Lexikon obsahuje rámce pro třicet lexémů — čtyřicet šest slovesných lemmat, počítá-li se každý člen vidové dvojice — z dvou set šedesáti čtyř hesel. Mechanismus je hotový, data ne: u slovesa bez rámce si pády zadává volající jako dřív.
+- Krácení v genitivu plurálu je jen kvantitativní a vlajku nese osm lemmat. Typ *í* → *ě* (*míra* → *měr*, *díra* → *děr*) je jiná alternace, o které `has_genitive_plural_shortening` nic neříká; taková slova potřebují `lemma_entry.stem`, který kód čte, ale který zatím žádné heslo ve slovníku nevyplňuje.
+- Slot se dá uložit jako realizovaný `že`-větou nebo infinitivem, ale nic takový tvar zatím negeneruje: to potřebuje plánovač klauzí, a dokud neexistuje, `CzechSentenceBuilder` takový konstituent nechá na volajícím.
+- `CzechNumeralComposer.ComposeOrdinal` a `ComposeOfType` skládají jen z lemmat ve slovníku; hodnota vyžadující chybějící složku (např. *dvoutisící*) selže s výjimkou, místo aby si tvar vymyslela.
+
+### Co modelované není
+
+- Vztažná věta musí být jedna klauze; souvětí uvnitř vztažné věty podporované není.
+- `IValencyProvider.GetEntry` bere lemma, volitelně s `WordCategory`, takže homonyma napříč kategoriemi rozlišit umí, ale homonyma uvnitř jedné ne. Schéma je nese ve sloupci `homonym_index` a provider vrátí to s nejnižším.
+- Klitický klastr nezná volný dativ (*To ti byla legrace*), který podle NESČ stojí mezi pomocným slovesem a reflexivem. Ostatní pozice pořadí odpovídají.
+- Ukazovací zájmeno před číslovkou (*těch pět studentů*) se shoduje s hlavou fráze, ne s celou frází.
+- Že se vnitřní participant pojí se slovesem nejvýš jednou, se nevynucuje — dva `PAT` konstituenty v jedné klauzi nic nezastaví.
+- Aktuální členění se promítá jen do slovosledu. NESČ ho nese i intonací a dvě čtení lišící se prozodií považuje za dvě různé věty; to modelované není.
+
+### Kde rozhoduje úzus a vybralo se jedno čtení
+
+- Vokalizace předložek není podle IJP ustálený jev a rozhoduje úzus. Pravidla pokrývají uváděné tendence, zbytek je výčtem v `vocalizeBefore`.
+- Čárka u `nebo` a `či` závisí na poměru vět, ne na spojce. Data nesou jen běžnější čtení; vylučovací poměr se musí říct přes `Coordination.RequiresComma`.
+- Číslovky generují skloňovanou úhrnnou číslovku; ustrnulou variantu (*bez patero ponožek*), kterou IJP id=792 uvádí vedle ní jako rovněž spisovnou, si vyžádat nejde.
+- U vzoru `sto` se generuje skloněná varianta s genitivem (*ke stu korun*); nesklonná se shodou (*ke sto korunám*), kterou IJP uvádí vedle ní, vyjádřit nejde.
+
+### Jak se API používá
+
 - Volající často musí dodat `Pattern`, `Gender`, `Number`, `Case`, `Person`, `Tense`, `Aspect`, `Modus` a `Voice`; projekt zatím není analyzátor přirozeného textu.
 - `MorphologyEngine.GetForm` vrací jedno slovo, takže u slovesa dá jen základní tvar. Slovesné tvary o víc slovech — opisné futurum, pasivum s pomocným slovesem, kondicionál, negace, reflexivum — potřebují `CzechWordFormComposer.GetFullForm`.
 - Pojmenovaný vzor z `irregulars.json` nese kmeny doslova, takže sedí na sloveso samotného vzoru a na jeho předponové odvozeniny — `nese` pokrývá *nést* i *odnést*, `dělá` pokrývá *dělat* i *dodělat*. Nepříbuzné sloveso potřebuje třídní vzor: *prodávat* se vzorem `dělá` vrátí *dělá*, s `trida5` správné *prodává*.
-- Krácení v genitivu plurálu je jen kvantitativní. Typ *í* → *ě* (*míra* → *měr*, *díra* → *děr*) je jiná alternace a `has_genitive_plural_shortening` o ní nic neříká; taková slova patří na `lemma_entry.stem`. Krátí se jen lemmata, která mají vlajku nasazenou v seedu — zbytek slovníku délku nechává být.
-- Lexikon není úplný slovník češtiny; `ResolveGenderAndPattern` a `ResolveVerbAspect` fungují jen pro lemmata, která databáze obsahuje.
-- `IValencyProvider.GetEntry` bere lemma a nic víc, takže neumí rozlišit homonyma. Schéma je nese ve sloupci `homonym_index` a provider vrátí to s nejnižším.
 - CLI je demo, ne uživatelský nástroj pro obecné dotazování.
-- Číslovky nepodporují ustrnulou variantu úhrnných číslovek (*bez patero ponožek*), kterou IJP id=792 uvádí vedle skloňované jako rovněž spisovnou; generuje se vždy skloňovaná.
-- Ukazovací zájmeno před číslovkou (*těch pět studentů*) se shoduje s hlavou fráze, ne s celou frází.
-- `CzechNumeralComposer.ComposeOrdinal` a `ComposeOfType` skládají jen z lemmat ve slovníku; hodnota vyžadující chybějící složku (např. *dvoutisící*) selže s výjimkou, místo aby si tvar vymyslela.
-- Lexikon obsahuje rámce pro třicet lexémů — čtyřicet šest slovesných lemmat, počítá-li se každý člen vidové dvojice — z dvou set padesáti pěti hesel. Mechanismus je hotový, data ne: u slovesa bez rámce si pády zadává volající jako dřív.
-- Slot se dá uložit jako realizovaný `že`-větou nebo infinitivem, ale nic takový tvar zatím negeneruje: to potřebuje plánovač klauzí, a dokud neexistuje, `CzechSentenceBuilder` takový konstituent nechá na volajícím.
+
+### Slovníkový provoz
+
 - Databáze je binární, takže git neukáže, co se v ní změnilo. `dump` vyrobí čitelnou textovou podobu; napojení na commitovací postup hotové není.
 - Pull stahuje pokaždé celý slovník. Přírůstková synchronizace neexistuje a vyžadovala by na serveru sledování změn a náhrobní záznamy — smazané řádky by přírůstkový pull jinak neviděl. Přepis celého souboru je řeší zadarmo, proto se začíná tam.
-- Klitický klastr nezná volný dativ (*To ti byla legrace*), který podle NESČ stojí mezi pomocným slovesem a reflexivem. Ostatní pozice pořadí odpovídají.
-- Spojky `aby` a `kdyby` podporované nejsou — splývají s kondicionálovým pomocným slovesem a časují se podle osoby (*abych*, *abys*, *abychom*). Stejně tak `však`, které je samo druhopozicové, ne uvozovací.
-- Čárka u `nebo` a `či` závisí na poměru vět, ne na spojce. Data nesou jen běžnější čtení; vylučovací poměr se musí říct přes `Coordination.RequiresComma`.
-- Vokalizace předložek není podle IJP ustálený jev a rozhoduje úzus. Pravidla pokrývají uváděné tendence, zbytek je výčtem v `vocalizeBefore`.
-- Aktuální členění se promítá jen do slovosledu. NESČ ho nese i intonací a dvě čtení lišící se prozodií považuje za dvě různé věty; to modelované není.
-- Že se vnitřní participant pojí se slovesem nejvýš jednou, se nevynucuje — dva `PAT` konstituenty v jedné klauzi nic nezastaví.
-- Vztažná věta musí být jedna klauze; souvětí uvnitř vztažné věty podporované není.
-- U vzoru `sto` se generuje skloněná varianta s genitivem (*ke stu korun*); nesklonná se shodou (*ke sto korunám*), kterou IJP uvádí vedle ní, vyjádřit nejde.
 
 ## Licence
 

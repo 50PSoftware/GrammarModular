@@ -641,28 +641,41 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 
 ## Known limitations
 
+### The data, not the mechanism
+
+- The lexicon is not a complete dictionary of Czech; `ResolveGenderAndPattern` and `ResolveVerbAspect` only work for lemmas the database holds.
+- The lexicon contains frames for thirty lexemes — forty-six verb lemmas, counting both members of each aspect pair — out of two hundred and sixty-four entries. The mechanism is finished, the data is not: for a verb without a frame the caller supplies the cases as before.
+- Genitive-plural shortening is quantity only, and eight lemmas carry the flag. The *í* → *ě* type (*míra* → *měr*, *díra* → *děr*) is a different alternation that `has_genitive_plural_shortening` does not describe; such words need `lemma_entry.stem`, which the code reads but which no lemma in the dictionary fills in yet.
+- A slot can be stored as realized by a `že`-clause or an infinitive, but nothing generates one yet: that needs a clause planner, and until it exists `CzechSentenceBuilder` leaves such a constituent to the caller.
+- `CzechNumeralComposer.ComposeOrdinal` and `ComposeOfType` build only from lemmas present in the dictionary; a value that needs a missing component (e.g. *dvoutisící*) throws rather than inventing a form.
+
+### Not modelled
+
+- A relative clause must be a single clause; a complex sentence inside a relative clause is not supported.
+- `IValencyProvider.GetEntry` takes a lemma, optionally with a `WordCategory`, so homonyms across categories can be told apart but homonyms inside one cannot. The schema carries `homonym_index` and the provider returns the lowest one.
+- The clitic cluster does not know the free dative (*To ti byla legrace*), which per NESČ stands between the auxiliary and the reflexive. The remaining positions match the described order.
+- A demonstrative in front of a numeral (*těch pět studentů*) agrees with the head of the phrase, not with the phrase as a whole.
+- The rule that an inner participant combines with a verb at most once is not enforced — nothing stops two `PAT` constituents in one clause.
+- Information structure is reflected in word order only. NESČ carries it in intonation too, and treats two readings differing in prosody as two different sentences; that is not modelled.
+
+### Where usage decides and one reading was chosen
+
+- Preposition vocalization is, per IJP, not a settled phenomenon and usage decides. The rules cover the documented tendencies; the rest is an enumeration in `vocalizeBefore`.
+- The comma before `nebo` and `či` depends on the relation between the clauses, not on the conjunction. The data carries only the commoner reading; the exclusive one has to be stated through `Coordination.RequiresComma`.
+- Numerals generate the declined aggregate numeral; the frozen variant (*bez patero ponožek*), which IJP id=792 lists as standard alongside it, cannot be requested.
+- For the pattern `sto`, the declined variant with the genitive is generated (*ke stu korun*); the indeclinable one with agreement (*ke sto korunám*), which IJP lists alongside it, cannot be expressed.
+
+### How the API is used
+
 - The caller often has to supply `Pattern`, `Gender`, `Number`, `Case`, `Person`, `Tense`, `Aspect`, `Modus` and `Voice`; the project is not yet an analyzer of natural text.
 - `MorphologyEngine.GetForm` returns a single word, so for a verb it gives the basic form only. The verb forms that are several words — the periphrastic future, the passive with an auxiliary, the conditional, negation, the reflexive — need `CzechWordFormComposer.GetFullForm`.
 - A named pattern from `irregulars.json` carries the stems literally, so it fits the pattern's own verb and its prefixed derivatives — `nese` covers *nést* and *odnést*, `dělá` covers *dělat* and *dodělat*. An unrelated verb needs a class pattern: *prodávat* with `dělá` returns *dělá*, with `trida5` the correct *prodává*.
-- Genitive-plural shortening is quantity only. The *í* → *ě* type (*míra* → *měr*, *díra* → *děr*) is a different alternation and `has_genitive_plural_shortening` does not describe it; those words belong on `lemma_entry.stem`. Only the lemmas seeded with the flag shorten at all — the rest of the lexicon leaves the length alone.
-- The lexicon is not a complete dictionary of Czech; `ResolveGenderAndPattern` and `ResolveVerbAspect` only work for lemmas the database holds.
-- `IValencyProvider.GetEntry` takes a lemma and nothing else, so it cannot tell homonyms apart. The schema carries `homonym_index` and the provider returns the lowest one.
 - The CLI is a demo, not a general-purpose query tool.
-- Numerals do not support the frozen variant of aggregate numerals (*bez patero ponožek*), which IJP id=792 lists as standard alongside the declined one; the declined form is always generated.
-- A demonstrative in front of a numeral (*těch pět studentů*) agrees with the head of the phrase, not with the phrase as a whole.
-- `CzechNumeralComposer.ComposeOrdinal` and `ComposeOfType` build only from lemmas present in the dictionary; a value that needs a missing component (e.g. *dvoutisící*) throws rather than inventing a form.
-- The lexicon contains frames for thirty lexemes — forty-six verb lemmas, counting both members of each aspect pair — out of two hundred and fifty-five entries. The mechanism is finished, the data is not: for a verb without a frame the caller supplies the cases as before.
-- A slot can be stored as realized by a `že`-clause or an infinitive, but nothing generates one yet: that needs a clause planner, and until it exists `CzechSentenceBuilder` leaves such a constituent to the caller.
+
+### The dictionary workflow
+
 - The database is binary, so git cannot show what changed inside it. `dump` produces the reviewable text form; wiring that into the commit workflow is not done.
 - A pull downloads the whole dictionary every time. There is no incremental sync, and adding one would need change tracking and tombstones on the server — deletions are invisible to a delta pull otherwise. Rewriting the file handles them for free, which is why it is the starting point.
-- The clitic cluster does not know the free dative (*To ti byla legrace*), which per NESČ stands between the auxiliary and the reflexive. The remaining positions match the described order.
-- The conjunctions `aby` and `kdyby` are not supported — they fuse with the conditional auxiliary and inflect by person (*abych*, *abys*, *abychom*). Nor is `však`, which is itself second-position rather than clause-initial.
-- The comma before `nebo` and `či` depends on the relation between the clauses, not on the conjunction. The data carries only the commoner reading; the exclusive one has to be stated through `Coordination.RequiresComma`.
-- Preposition vocalization is, per IJP, not a settled phenomenon and usage decides. The rules cover the documented tendencies; the rest is an enumeration in `vocalizeBefore`.
-- Information structure is reflected in word order only. NESČ carries it in intonation too, and treats two readings differing in prosody as two different sentences; that is not modelled.
-- The rule that an inner participant combines with a verb at most once is not enforced — nothing stops two `PAT` constituents in one clause.
-- A relative clause must be a single clause; a complex sentence inside a relative clause is not supported.
-- For the pattern `sto`, the declined variant with the genitive is generated (*ke stu korun*); the indeclinable one with agreement (*ke sto korunám*), which IJP lists alongside it, cannot be expressed.
 
 ## License
 
