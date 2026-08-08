@@ -1,29 +1,51 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-  </PropertyGroup>
+    <RootNamespace>Grammar.Czech.Cli</RootNamespace>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DebugType>none</DebugType>
-  </PropertyGroup>
+    <!--
+      Balí se jako .NET tool: `dotnet tool install` a pak `gramatika veta student cist kniha` odkudkoli.
+    -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>gramatika</ToolCommandName>
+    <PackageId>50PSoftware.GrammarModular.Cli</PackageId>
+    <Version>1.0.0-preview.1</Version>
+    <Authors>Vojtěch Pchálek</Authors>
+    <Company>50PSoftware</Company>
+    <Description>Klientská aplikace nad Grammar Modular — ze zadaných lemmat poskládá českou větu.</Description>
+    <PackageTags>czech;nlp;morphology;syntax;cli</PackageTags>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DebugType>none</DebugType>
+    <!--
+      Nápovědu System.CommandLine překládá satelitní assembly. Rozhraní je české, takže ostatní jazyky
+      by se do balíčku nesly jen jako mrtvá váha.
+    -->
+    <SatelliteResourceLanguages>cs</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.3" />
+    <PackageReference Include="System.CommandLine" Version="2.0.10" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Grammar.Czech\Grammar.Czech.csproj" />
-    <!--<ProjectReference Include="..\Grammar.Core\Grammar.Core.csproj" />-->
   </ItemGroup>
+
+  <!--
+    Slovník ven z balíčku nástroje — ze stejného důvodu jako u Grammar.Czech.Lexicon.Tool. Přes
+    ProjectReference se sem zkopíruje jako Content a `dotnet tool` balí publish výstup, takže by ho
+    dostal každý, kdo si nástroj nainstaluje. Nainstalovaná `gramatika` si ho najde přes
+    GRAMMAR_CZECH_LEXICON nebo přes přepínač se slovníkem; ze zdrojáků leží v bin a najde se sám.
+  -->
+  <Target Name="DropLexiconFromToolPackage" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+                             Condition="'%(Filename)%(Extension)' == 'grammar.czech.lexicon.db'" />
+    </ItemGroup>
+  </Target>
 
 </Project>

@@ -35,6 +35,7 @@ Projekt generuje české slovní tvary z lemmatu, gramatických kategorií, vzor
 
 - **.NET 8 SDK** — všechny projekty cílí na `net8.0`.
 - Závislosti knihovny `Grammar.Czech`: `Microsoft.Extensions.DependencyInjection.Abstractions` a `Microsoft.Extensions.Logging`.
+- `Grammar.Czech.Cli` závisí na `System.CommandLine` a balí se jako .NET tool `gramatika` — viz [CLI](#cli).
 
 Projekt se balí sám: `GeneratePackageOnBuild` je zapnutý a build vedle sestavení vytvoří `50PSoftware.GrammarModular.Czech.<verze>.nupkg`. Na nuget.org balíček není — bere se z privátního nebo lokálního feedu, případně projektovou referencí:
 
@@ -303,7 +304,7 @@ Třída je otevřenější než všechny ostatní — zvukomalba se tvoří ad h
 Grammar.sln
 |-- Grammar.Core/               jazykově nezávislé enumy, rozhraní a modely
 |-- Grammar.Czech/              česká implementace: servisy, providery, embedded JSON pravidla a databáze lexikonu
-|-- Grammar.Czech.Cli/          konzolové demo s hardcodovanými příklady
+|-- Grammar.Czech.Cli/          klientská aplikace `gramatika`: z lemmat poskládá větu
 |-- Grammar.Czech.Lexicon.Tool/ stahuje, staví, kontroluje a vypisuje databázi lexikonu; drží schémata a PHP API
 `-- Grammar.Czech.Test/         MSTest testy pro skloňování, časování, fonologii a stavbu vět
 ```
@@ -597,11 +598,42 @@ adjectives.GetForm(new CzechWordRequest
 
 ## CLI
 
-`Grammar.Czech.Cli` je zatím demo aplikace. Nemá obecné zpracování argumentů; po spuštění vypíše tvary několika pevně zapsaných příkladů z `Program.cs`.
+`Grammar.Czech.Cli` je klientská aplikace `gramatika`. Zadají se jí lemmata a ona z nich poskládá větu: sloveso se stane přísudkem, valenční rámec ze slovníku rozdá zbytku role a pády, a co ze slovníku nevyplyne, to se odhadne ze zakončení.
 
 ```bash
-dotnet run --project Grammar.Czech.Cli
+dotnet run --project Grammar.Czech.Cli -- veta student číst kniha
 ```
+
+Než něco vypíše, ukáže, jak si zadání vyložila, a nechá to opravit — proto je to potvrzovací dialog a ne jednorázový příkaz. Špatně přiřazená role dá dobře utvořenou větu o něčem jiném, a to je horší než otázka.
+
+```text
+Přísudek  dávat — nedokonavý, přítomný čas, oznamovací způsob, činný rod, 3. os. jednotné č.
+Rámec     transfer (ACT, PAT, ADDR, DIR3)
+
+  #  slovo  role            členění  pád                tvar   zdroj
+  1  Klára  ACT (konatel)   dané     nominativ (rámec)  Klára  odhad
+  3  žena   ADDR (adresát)  nové     dativ (rámec)      ženě   slovník
+  4  kniha  PAT (patiens)   nové     akuzativ (rámec)   knihu  slovník
+Pozn.: Slovník nezná: Klára. Vzor a rod jsou odhadnuté ze zakončení.
+
+Věta: Klára dává ženě knihu.
+
+[Enter] potvrdit · 1 role=ADDR · p cas=minuly · ? nápověda · q konec
+>
+```
+
+Sloupec `zdroj` je tam kvůli rozdílu mezi odpovědí a odhadem: vzor ze slovníku platí jako slovník, vzor odvozený ze zakončení je návrh nástroje. Pád označený `(rámec)` v requestu nestojí — doplní ho až builder ze slovesa, a proto zmizí ve chvíli, kdy se pád zadá natvrdo.
+
+Na každou otázku dialogu existuje přepínač, který ji zodpoví dopředu; obojí zapisuje do téhož místa, takže sezení jde přepsat na jeden příkaz. To je zároveň to, co dělá z nástroje něco použitelného ve skriptu, kde se není koho ptát: `--bez-dotazu` udělá z otevřené otázky chybu, která pojmenuje přepínač, jímž se řeší, a `--json` k větě přidá i rozbor.
+
+```bash
+gramatika veta Klára dávat žena kniha --role kniha=PAT --cas minulý --bez-dotazu
+gramatika veta student jít --ramec motion --json
+```
+
+Slovník se s balíčkem nástroje nerozdává, stejně jako s balíčkem knihovny. Cesta k němu se bere z `--slovnik`, z `GRAMMAR_CZECH_LEXICON`, nebo z adresáře aplikace; když není nikde, řekne to nástroj rovnou při startu a poradí `lexikon pull`.
+
+Souvětí zatím neskládá — víc sloves ve vstupu je chyba, ne návod ke koordinaci.
 
 ## Testy
 

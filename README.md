@@ -35,6 +35,7 @@ The project generates Czech word forms from a lemma, grammatical categories, a p
 
 - **.NET 8 SDK** — every project targets `net8.0`.
 - `Grammar.Czech` depends on `Microsoft.Extensions.DependencyInjection.Abstractions` and `Microsoft.Extensions.Logging`.
+- `Grammar.Czech.Cli` depends on `System.CommandLine` and packs as a .NET tool named `gramatika` — see [CLI](#cli).
 
 The project packs itself: `GeneratePackageOnBuild` is on, and a build drops `50PSoftware.GrammarModular.Czech.<version>.nupkg` next to the assembly. The package is not on nuget.org — it is consumed from a private or local feed, or through a project reference:
 
@@ -305,7 +306,7 @@ The class is more open than any other here — onomatopoeia is coined on the spo
 Grammar.sln
 |-- Grammar.Core/               language-independent enums, interfaces and models
 |-- Grammar.Czech/              the Czech implementation: services, providers, embedded JSON rules and the lexicon database
-|-- Grammar.Czech.Cli/          console demo with hard-coded examples
+|-- Grammar.Czech.Cli/          the `gramatika` client application: lemmas in, a sentence out
 |-- Grammar.Czech.Lexicon.Tool/ pulls, builds, validates and dumps the lexicon database; holds the schemas and the PHP API
 `-- Grammar.Czech.Test/         MSTest tests for declension, conjugation, phonology and sentence building
 ```
@@ -600,11 +601,42 @@ adjectives.GetForm(new CzechWordRequest
 
 ## CLI
 
-`Grammar.Czech.Cli` is still a demo application. It has no general argument handling; on start it prints the forms of a few hard-coded examples from `Program.cs`.
+`Grammar.Czech.Cli` is the `gramatika` client application. Give it lemmas and it assembles a sentence from them: the verb becomes the predicate, the valency frame from the dictionary hands out the roles and the cases to the rest, and whatever the dictionary does not settle is inferred from the ending.
 
 ```bash
-dotnet run --project Grammar.Czech.Cli
+dotnet run --project Grammar.Czech.Cli -- veta student číst kniha
 ```
+
+Before it prints anything it shows how it read the input and lets that be corrected — which is why this is a confirm step rather than a one-shot command. A misassigned role produces a well-formed sentence about something else, and that is worse than a question.
+
+```text
+Přísudek  dávat — nedokonavý, přítomný čas, oznamovací způsob, činný rod, 3. os. jednotné č.
+Rámec     transfer (ACT, PAT, ADDR, DIR3)
+
+  #  slovo  role            členění  pád                tvar   zdroj
+  1  Klára  ACT (konatel)   dané     nominativ (rámec)  Klára  odhad
+  3  žena   ADDR (adresát)  nové     dativ (rámec)      ženě   slovník
+  4  kniha  PAT (patiens)   nové     akuzativ (rámec)   knihu  slovník
+Pozn.: Slovník nezná: Klára. Vzor a rod jsou odhadnuté ze zakončení.
+
+Věta: Klára dává ženě knihu.
+
+[Enter] potvrdit · 1 role=ADDR · p cas=minuly · ? nápověda · q konec
+>
+```
+
+The `zdroj` column is there for the difference between an answer and a guess: a pattern from the dictionary is as good as the dictionary, a pattern inferred from the ending is the tool's proposal. A case marked `(rámec)` is not on the request at all — the builder fills it from the verb — which is why it disappears the moment a case is stated outright.
+
+Every question the dialog asks has a switch that answers it in advance, and both write to the same place, so a session can be rewritten as a single command. That is also what makes the tool usable in a script, where there is nobody to ask: `--bez-dotazu` turns an open question into an error naming the switch that settles it, and `--json` adds the analysis to the sentence.
+
+```bash
+gramatika veta Klára dávat žena kniha --role kniha=PAT --cas minulý --bez-dotazu
+gramatika veta student jít --ramec motion --json
+```
+
+The dictionary does not ship inside the tool package, the same as with the library package. Its path comes from `--slovnik`, from `GRAMMAR_CZECH_LEXICON`, or from the application directory; when it is nowhere, the tool says so at startup and points at `lexikon pull`.
+
+Complex sentences are not assembled yet — several verbs in the input are an error, not an instruction to coordinate.
 
 ## Tests
 

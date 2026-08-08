@@ -22,6 +22,9 @@
 
     <!-- For the embedded .sql files, so the schema variants can be compared against each other. -->
     <ProjectReference Include="..\Grammar.Czech.Lexicon.Tool\Grammar.Czech.Lexicon.Tool.csproj" />
+
+    <!-- The client application: what it makes of a bare list of lemmas is behaviour like any other. -->
+    <ProjectReference Include="..\Grammar.Czech.Cli\Grammar.Czech.Cli.csproj" />
   </ItemGroup>
 
   <ItemGroup>
