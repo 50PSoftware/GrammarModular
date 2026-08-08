@@ -230,6 +230,12 @@ CREATE TABLE valency_slot (
 -- morph_case is NULL exactly when the slot surfaces as a clause or an infinitive, which is why the
 -- column is nullable and why clause_type and takes_infinitive sit beside it. The name avoids the
 -- reserved word CASE.
+--
+-- clause_type holds the lemma of the conjunction that introduces the dependent clause — že, aby, zda
+-- — the way VALLEX records it, and not the name of a kind of clause. The word carries more: "ví, že
+-- přijde" and "ví, zda přijde" are both content clauses and mean different things, so a column that
+-- only said "content" would leave the generator nothing to choose between them. No CHECK can enforce
+-- it, because the conjunctions live in Grammar.Czech's embedded JSON; `lexikon validate` does.
 CREATE TABLE slot_realization (
     realization_id    INTEGER      NOT NULL,
     slot_id           INTEGER      NOT NULL,

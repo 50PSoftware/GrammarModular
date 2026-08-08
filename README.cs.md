@@ -178,6 +178,8 @@ Databáze má tři vrstvy, oddělené proto, že jedno lemma má právě jednu m
 - `lexeme` a `lexical_unit` — abstraktní slovo a jeho významy. Vidová dvojice je jeden lexém, takže `dát` a `dávat` sdílejí jeden rámec, místo aby si každé neslo vlastní kopii,
 - `valency_frame`, `valency_slot`, `slot_realization` — samotné rámce. Slot může mít víc realizací s preferencí pro generování, což je to, co dovolí jednomu slotu být v jednom vyjádření holým pádem a v jiném vedlejší větou nebo infinitivem.
 
+Slot se může vyjádřit vedlejší větou a `slot_realization.clause_type` nese, která spojka ji uvozuje — `že`, `aby`, `zda` — jako lemma samotné, tak jak to zapisuje VALLEX. Slovo nese víc než druh věty: *ví, že přijde* a *ví, zda přijde* jsou obě obsahové a znamenají každá něco jiného. Žádný `CHECK` to nepohlídá, protože spojky žijí v embedded JSON pravidlech; hlídá to `lexikon validate`.
+
 Schéma v `Grammar.Czech.Lexicon.Tool/Schema/schema.sql` je záměrně přenositelné SQL — SQLite je první backend, ne poslední, a MySQL, Microsoft SQL i Firebird mají vzít stejné DDL. Vše specifické pro SQLite je v `schema.sqlite.sql`; `schema.mysql.sql` je varianta pro server.
 
 O soubor se stará `Grammar.Czech.Lexicon.Tool`:

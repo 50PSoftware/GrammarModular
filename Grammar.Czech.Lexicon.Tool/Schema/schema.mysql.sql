@@ -201,6 +201,9 @@ CREATE TABLE valency_slot (
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Slot realization — the surface forms one slot may take
 -- ─────────────────────────────────────────────────────────────────────────────
+-- clause_type holds the lemma of the conjunction that introduces the dependent clause — že, aby, zda
+-- — the way VALLEX records it, and not the name of a kind of clause. See schema.sql for why, and
+-- repair.001.clause-type.mysql.sql for the script that brought an already-seeded server into line.
 CREATE TABLE slot_realization (
     realization_id    INT          NOT NULL AUTO_INCREMENT,
     slot_id           INT          NOT NULL,

@@ -178,6 +178,8 @@ The database holds three layers, kept apart because one lemma has exactly one mo
 - `lexeme` and `lexical_unit` — the abstract word and its senses. An aspect pair is one lexeme, so `dát` and `dávat` share a single frame instead of each carrying a copy,
 - `valency_frame`, `valency_slot`, `slot_realization` — the frames themselves. A slot may have several realizations with a generation preference, which is what lets one slot be a bare case in one wording and a `že`-clause or an infinitive in another.
 
+A slot may surface as a dependent clause, and `slot_realization.clause_type` records which conjunction introduces it — `že`, `aby`, `zda` — as the lemma itself, the way VALLEX does. The word carries more than the kind of clause would: *ví, že přijde* and *ví, zda přijde* are both content clauses and mean different things. No `CHECK` can enforce it, because the conjunctions live in the embedded JSON rules; `lexikon validate` does.
+
 The schema in `Grammar.Czech.Lexicon.Tool/Schema/schema.sql` is deliberately portable SQL — SQLite is the first backend, and MySQL, Microsoft SQL or Firebird are meant to take the same DDL. Everything SQLite-specific sits in `schema.sqlite.sql`, and `schema.mysql.sql` is the server's variant: the same tables with `AUTO_INCREMENT` and, importantly, binary collation on every column that is matched rather than read — the usual `utf8mb4_0900_ai_ci` is accent-insensitive and would make `dát` and `dat` the same string.
 
 `Grammar.Czech.Lexicon.Tool` maintains the file:
