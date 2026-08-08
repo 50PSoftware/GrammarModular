@@ -380,12 +380,15 @@ namespace Grammar.Czech.Services
 
             // A subject counted from five up stops behaving like a plural: the predicate goes neuter singular
             // regardless of the noun's own gender — "pět žáků bylo", against "tři žáci byli".
+            //
+            // A subject that states neither leaves what the predicate already carries: agreeing with a gap
+            // is not agreement, and copying it across turned a past tense into "Unsupported gender".
             (predicate.Number, predicate.Gender) = subject.Agreement switch
             {
                 CardinalAgreement.GenitivePluralInDirectCases
                     or CardinalAgreement.AlwaysGenitivePlural
                     or CardinalAgreement.GenitiveSingular => (Number.Singular, Gender.Neuter),
-                _ => (subject.Word.Number, subject.Word.Gender)
+                _ => (subject.Word.Number ?? predicate.Number, subject.Word.Gender ?? predicate.Gender)
             };
 
             return predicate;

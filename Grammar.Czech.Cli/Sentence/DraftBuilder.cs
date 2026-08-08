@@ -403,7 +403,13 @@ namespace Grammar.Czech.Cli.Sentence
                 ? Diathesis.PassivePeriphrastic
                 : Diathesis.Active;
 
-            var selection = _frames.Select(draft.PredicateLemma, overrides.FrameLabel, diathesis);
+            // Se slovy kolem slovesa, protože mít zájem je jiný rámec než mít — a přehled má ukazovat
+            // ten, ze kterého se věta staví.
+            var selection = _frames.Select(
+                draft.PredicateLemma,
+                overrides.FrameLabel,
+                draft.Constituents.Select(constituent => constituent.Lemma),
+                diathesis);
 
             draft.Frame = selection.Frame;
             draft.FrameChoices = selection.Choices;

@@ -61,7 +61,12 @@ namespace Grammar.Czech.Services
                 ? Diathesis.PassivePeriphrastic
                 : Diathesis.Active;
 
-            var frame = frameSelector.Select(plan.Predicate.Lemma, plan.FrameLabel, diathesis).Frame;
+            // Slova kolem slovesa se předávají, protože rámec nemusí patřit slovesu samotnému: mít zájem
+            // váže 'o něco', co žádný význam slovesa mít nemá.
+            var frame = frameSelector
+                .Select(plan.Predicate.Lemma, plan.FrameLabel, Companions(plan), diathesis)
+                .Frame;
+
             var resolved = plan.Participants.ToList();
 
             // Sloty, které rámec nabízí a nikdo si je ještě nevzal. Beze jmenného vyjádření se nepočítají:
@@ -94,6 +99,14 @@ namespace Grammar.Czech.Services
         /// <returns>The participants still without a functor.</returns>
         public static IReadOnlyList<PlannedParticipant> Unresolved(SentencePlan plan) =>
             [.. plan.Participants.Where(participant => participant.Functor is null)];
+
+        /// <summary>
+        /// Lists the lemmas standing with the predicate, which is what a construction is recognized from.
+        /// </summary>
+        /// <param name="plan">The plan to read.</param>
+        /// <returns>The lemmas of the participants filled by a word.</returns>
+        public static IReadOnlyList<string> Companions(SentencePlan plan) =>
+            [.. plan.Participants.Where(participant => participant.Content is null).Select(participant => participant.Word.Lemma)];
 
         // A preposition the caller wrote names the slot on its own where the frame distinguishes its
         // arguments that way: mluvit takes its addressee as s + instrumental and its patient as o +

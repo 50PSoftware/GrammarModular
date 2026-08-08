@@ -180,6 +180,17 @@ Databáze má tři vrstvy, oddělené proto, že jedno lemma má právě jednu m
 
 Slot se může vyjádřit vedlejší větou a `slot_realization.clause_type` nese, která spojka ji uvozuje — `že`, `aby`, `zda` — jako lemma samotné, tak jak to zapisuje VALLEX. Slovo nese víc než druh věty: *ví, že přijde* a *ví, zda přijde* jsou obě obsahové a znamenají každá něco jiného. Žádný `CHECK` to nepohlídá, protože spojky žijí v embedded JSON pravidlech; hlídá to `lexikon validate`.
 
+Konstrukce s kategoriálním slovesem je přísudek, jehož význam sedí ve jméně, zatímco sloveso přidává málo víc než čas — a `construction` ji vede proto, že její valence není slovesa. *Mít* řídí akuzativ a nic dalšího, jenže *mít zájem* řídí i *o* s akuzativem; přečteno přes rámec possess zůstane *o knihu* nezařazené. Sloty jsou v `template_json` v témž tvaru, jaký mají `valency_slot` a `slot_realization`, takže se konstrukce čte jako rámec, kterým se stává; jméno je jedním z nich, pod `CPHR`, tak jak jmennou část takového přísudku značí Pražský závislostní korpus.
+
+```csharp
+var constructions = provider.GetRequiredService<ICzechConstructionService>();
+
+constructions.Find("mít", ["student", "zájem", "kniha"]);   // LVC.mít.zájem
+constructions.Find("mít", ["student", "kniha"]);            // null
+```
+
+Poznává se dvojice, takže konstrukce nepřeteče do běžných užití téhož slovesa: *Student má zájem o knihu* a *Student má knihu* se staví z různých rámců. Naseedované jsou tři vzorce — `mít zájem o`, `dávat pozor na`, `mít strach z` — a doplnit inventář je práce s korpusem, ne po paměti.
+
 Schéma v `Grammar.Czech.Lexicon.Tool/Schema/schema.sql` je záměrně přenositelné SQL — SQLite je první backend, ne poslední, a MySQL, Microsoft SQL i Firebird mají vzít stejné DDL. Vše specifické pro SQLite je v `schema.sqlite.sql`; `schema.mysql.sql` je varianta pro server.
 
 O soubor se stará `Grammar.Czech.Lexicon.Tool`:

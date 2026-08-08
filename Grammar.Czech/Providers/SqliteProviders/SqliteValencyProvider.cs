@@ -24,7 +24,7 @@ namespace Grammar.Czech.Providers.SqliteProviders
     /// stops after the row it wants.
     /// </para>
     /// </remarks>
-    public sealed class SqliteValencyProvider : IValencyProvider<CzechLexicalEntry>
+    public sealed class SqliteValencyProvider : IValencyProvider<CzechLexicalEntry>, IConstructionProvider
     {
         /// <summary>
         /// The file name looked for beside the application when no path is given.
@@ -111,10 +111,20 @@ namespace Grammar.Czech.Providers.SqliteProviders
         // anything above it, and this list is the only thing standing between the query and silence.
         private const int FrameReflexiveType = 19;
 
+        // Constructions are few and every one of them is read the moment any of them is, so the whole
+        // table is loaded at once rather than queried per lemma.
+        private const string ConstructionQuery = """
+            SELECT pattern_name, light_verb_lemma, pred_noun_lemma, template_json
+            FROM construction
+            ORDER BY pattern_name
+            """;
+
         private readonly Func<DbConnection> _connectionFactory;
         private readonly string _sourceDescription;
+
         private readonly ConcurrentDictionary<string, CzechLexicalEntry?> _entryCache = new(StringComparer.Ordinal);
         private readonly ConcurrentDictionary<string, IReadOnlyList<ValencyFrame>> _frameCache = new(StringComparer.Ordinal);
+        private readonly Lazy<IReadOnlyList<ConstructionTemplate>> _constructions;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SqliteValencyProvider"/> type over a lexicon file.
@@ -157,6 +167,8 @@ namespace Grammar.Czech.Providers.SqliteProviders
             _connectionFactory = () => new SqliteConnection(connectionString);
             _sourceDescription = path;
 
+            _constructions = new(LoadConstructions);
+
             VerifySchemaVersion();
         }
 
@@ -175,6 +187,8 @@ namespace Grammar.Czech.Providers.SqliteProviders
         {
             _connectionFactory = connectionFactory;
             _sourceDescription = sourceDescription;
+
+            _constructions = new(LoadConstructions);
 
             VerifySchemaVersion();
         }
@@ -257,6 +271,24 @@ namespace Grammar.Czech.Providers.SqliteProviders
             => _frameCache.GetOrAdd(ToKey(verbLemma), LoadFrames);
 
         /// <summary>
+        /// Gets the light verb constructions headed by the supplied verb.
+        /// </summary>
+        /// <param name="verbLemma">The verb lemma whose constructions are requested.</param>
+        /// <returns>The constructions, or an empty sequence when the verb heads none.</returns>
+        public IEnumerable<ConstructionTemplate> GetConstructions(string verbLemma) =>
+            _constructions.Value.Where(construction =>
+                string.Equals(construction.LightVerbLemma, verbLemma, StringComparison.OrdinalIgnoreCase));
+
+        /// <summary>
+        /// Gets the construction registered under the supplied pattern name.
+        /// </summary>
+        /// <param name="patternName">The name of the pattern.</param>
+        /// <returns>The construction, or null when nothing is registered under it.</returns>
+        public ConstructionTemplate? GetConstruction(string patternName) =>
+            _constructions.Value.FirstOrDefault(construction =>
+                string.Equals(construction.Name, patternName, StringComparison.Ordinal));
+
+        /// <summary>
         /// Determines whether the lexicon contains an entry for the supplied lemma.
         /// </summary>
         /// <param name="lemma">The dictionary form to resolve or analyze.</param>
@@ -285,6 +317,35 @@ namespace Grammar.Czech.Providers.SqliteProviders
             using var reader = command.ExecuteReader();
 
             return reader.Read() ? ReadEntry(reader) : null;
+        }
+
+        // The slots live in template_json rather than in columns of their own, because a construction is
+        // the one thing here that is not a row per fact: the pattern is the unit, it is edited whole, and
+        // splitting it across three tables would buy joins and lose the ability to read one at a glance.
+        private IReadOnlyList<ConstructionTemplate> LoadConstructions()
+        {
+            using var connection = OpenConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText = ConstructionQuery;
+
+            using var reader = command.ExecuteReader();
+
+            var constructions = new List<ConstructionTemplate>();
+
+            while (reader.Read())
+            {
+                var name = reader.GetString(0);
+
+                constructions.Add(new ConstructionTemplate
+                {
+                    Name = name,
+                    LightVerbLemma = reader.GetString(1),
+                    PredicativeNounLemma = reader.IsDBNull(2) ? null : reader.GetString(2),
+                    Slots = ConstructionSlots.Parse(reader.GetString(3), name),
+                });
+            }
+
+            return constructions;
         }
 
         private IReadOnlyList<ValencyFrame> LoadFrames(string key)

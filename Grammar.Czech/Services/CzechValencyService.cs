@@ -15,13 +15,17 @@ namespace Grammar.Czech.Services
             [FgdFunctor.ACT, FgdFunctor.PAT, FgdFunctor.ADDR, FgdFunctor.ORIG, FgdFunctor.EFF];
 
         private readonly IValencyProvider<CzechLexicalEntry> _valencyProvider;
+        private readonly ICzechConstructionService _constructionService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechValencyService"/> type.
         /// </summary>
-        public CzechValencyService(IValencyProvider<CzechLexicalEntry> valencyProvider)
+        public CzechValencyService(
+            IValencyProvider<CzechLexicalEntry> valencyProvider,
+            ICzechConstructionService constructionService)
         {
             _valencyProvider = valencyProvider;
+            _constructionService = constructionService;
         }
 
         /// <summary>
@@ -40,6 +44,14 @@ namespace Grammar.Czech.Services
         /// </remarks>
         public ValencyFrame? GetFrame(string verbLemma, string? frameLabel, Diathesis diathesis = Diathesis.Active)
         {
+            // Konstrukce se pojmenovává jako každý jiný rámec, takže klauze na ni ukáže popiskem
+            // a stupně pod plánovačem — které už slova kolem slovesa nevidí — s ní dál pracují stejně
+            // jako s významem slovesa.
+            if (frameLabel is not null && _constructionService.GetFrame(frameLabel) is { } construction)
+            {
+                return construction;
+            }
+
             // Filtered before anything else is counted, so a sense that has gained a passive frame does
             // not start reading as ambiguous to every caller who only ever wanted the active one.
             var frames = _valencyProvider.GetFrames(verbLemma)

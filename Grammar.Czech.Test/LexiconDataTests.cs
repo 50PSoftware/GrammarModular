@@ -51,6 +51,10 @@ namespace Grammar.Czech.Test
             // -eň drops as well — píseň → písně, třešeň → třešně — but adding it to the rule would take
             // every other -eň noun with it, and the rule has no lemma list to check against.
             "píseň", "třešeň",
+
+            // zájem → zájmu. The -em ending is no guide at all: sedm, problém and nájem all end in it
+            // and only the last two behave alike, so this one is the entry's word against no rule.
+            "zájem",
         ];
 
         private static List<Entry> entries = null!;

@@ -180,6 +180,17 @@ The database holds three layers, kept apart because one lemma has exactly one mo
 
 A slot may surface as a dependent clause, and `slot_realization.clause_type` records which conjunction introduces it — `že`, `aby`, `zda` — as the lemma itself, the way VALLEX does. The word carries more than the kind of clause would: *ví, že přijde* and *ví, zda přijde* are both content clauses and mean different things. No `CHECK` can enforce it, because the conjunctions live in the embedded JSON rules; `lexikon validate` does.
 
+A light verb construction is a predicate whose meaning sits in a noun while the verb contributes little beyond tense, and `construction` records it because its valency is not the verb's. *Mít* governs an accusative and nothing else, yet *mít zájem* governs *o* with the accusative as well — reading it through the possess frame leaves *o knihu* unaccounted for. The slots live in `template_json` in the same shape `valency_slot` and `slot_realization` use, so a construction reads as the frame it becomes; the noun is one of them, under `CPHR`, the way the Prague Dependency Treebank annotates the nominal half of such a predicate.
+
+```csharp
+var constructions = provider.GetRequiredService<ICzechConstructionService>();
+
+constructions.Find("mít", ["student", "zájem", "kniha"]);   // LVC.mít.zájem
+constructions.Find("mít", ["student", "kniha"]);            // null
+```
+
+The pair is what is recognized, so the construction never leaks into ordinary uses of the same verb: *Student má zájem o knihu* and *Student má knihu* are built from different frames. Three patterns are seeded — `mít zájem o`, `dávat pozor na`, `mít strach z` — and the inventory is a corpus job rather than a memory one.
+
 The schema in `Grammar.Czech.Lexicon.Tool/Schema/schema.sql` is deliberately portable SQL — SQLite is the first backend, and MySQL, Microsoft SQL or Firebird are meant to take the same DDL. Everything SQLite-specific sits in `schema.sqlite.sql`, and `schema.mysql.sql` is the server's variant: the same tables with `AUTO_INCREMENT` and, importantly, binary collation on every column that is matched rather than read — the usual `utf8mb4_0900_ai_ci` is accent-insensitive and would make `dát` and `dat` the same string.
 
 `Grammar.Czech.Lexicon.Tool` maintains the file:

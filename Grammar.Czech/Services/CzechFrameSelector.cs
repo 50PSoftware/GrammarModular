@@ -1,6 +1,7 @@
 using Grammar.Core.Enums;
 using Grammar.Core.Interfaces;
 using Grammar.Core.Models.Valency;
+using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
 
 namespace Grammar.Czech.Services
@@ -18,14 +19,49 @@ namespace Grammar.Czech.Services
     public class CzechFrameSelector
     {
         private readonly IValencyProvider<CzechLexicalEntry> valencyProvider;
+        private readonly ICzechConstructionService constructionService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechFrameSelector"/> type.
         /// </summary>
         /// <param name="valencyProvider">The dictionary to read the frames from.</param>
-        public CzechFrameSelector(IValencyProvider<CzechLexicalEntry> valencyProvider)
+        /// <param name="constructionService">The service that recognizes a light verb construction.</param>
+        public CzechFrameSelector(
+            IValencyProvider<CzechLexicalEntry> valencyProvider,
+            ICzechConstructionService constructionService)
         {
             this.valencyProvider = valencyProvider;
+            this.constructionService = constructionService;
+        }
+
+        /// <summary>
+        /// Selects the frame for the verb, preferring the light verb construction it makes with one of
+        /// the words standing beside it.
+        /// </summary>
+        /// <param name="verbLemma">The verb lemma.</param>
+        /// <param name="frameLabel">The sense to take, or null to let the dictionary decide.</param>
+        /// <param name="companions">The lemmas standing with the verb, which may form a construction.</param>
+        /// <param name="diathesis">The diathesis the frame has to state.</param>
+        /// <returns>The selection.</returns>
+        /// <remarks>
+        /// A construction wins over the verb's own senses, because that is what a construction is: the
+        /// pair means something the verb alone does not, and reading <em>mít zájem o knihu</em> as
+        /// ordinary possession would leave the argument unaccounted for.
+        /// </remarks>
+        public FrameSelection Select(
+            string verbLemma,
+            string? frameLabel,
+            IEnumerable<string> companions,
+            Diathesis diathesis = Diathesis.Active)
+        {
+            if (diathesis == Diathesis.Active
+                && frameLabel is null
+                && constructionService.Find(verbLemma, companions) is { } construction)
+            {
+                return new FrameSelection(construction.ToFrame(), [construction.ToFrame()]);
+            }
+
+            return Select(verbLemma, frameLabel, diathesis);
         }
 
         /// <summary>
@@ -39,6 +75,13 @@ namespace Grammar.Czech.Services
         public FrameSelection Select(
             string verbLemma, string? frameLabel, Diathesis diathesis = Diathesis.Active)
         {
+            // Konstrukce je pojmenovaný rámec slovesa jako každý jiný, takže se na ni dá ukázat
+            // popiskem — a díky tomu jí rozumí i to, co dostane hotovou klauzi a slova k ní už nevidí.
+            if (frameLabel is not null && constructionService.GetFrame(frameLabel) is { } construction)
+            {
+                return new FrameSelection(construction, [construction]);
+            }
+
             var frames = valencyProvider.GetFrames(verbLemma)
                 .Where(frame => frame.Diathesis == diathesis)
                 .ToList();

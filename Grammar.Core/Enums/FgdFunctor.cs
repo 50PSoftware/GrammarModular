@@ -1,4 +1,4 @@
-﻿namespace Grammar.Core.Enums
+namespace Grammar.Core.Enums
 {
     /// <summary>
     /// Specifies Functional Generative Description (FGD) functors — language-independent
@@ -129,6 +129,17 @@
         /// <summary>
         /// Complement (jako co) — the state a participant holds during the event: pracuje jako učitel.
         /// </summary>
-        COMPL
+        COMPL,
+
+        /// <summary>
+        /// Compound phraseme — the nominal half of a light verb construction: the zájem of mít zájem.
+        /// </summary>
+        /// <remarks>
+        /// Not a patient. The meaning of the predicate sits in the noun and the verb contributes little
+        /// beyond tense, which is why the arguments of the whole belong to the noun — mít zájem <em>o
+        /// něco</em>, where mít on its own governs no such thing. The Prague Dependency Treebank
+        /// annotates it as CPHR, and this is that.
+        /// </remarks>
+        CPHR
     }
 }

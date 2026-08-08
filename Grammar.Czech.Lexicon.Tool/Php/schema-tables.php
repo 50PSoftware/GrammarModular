@@ -142,6 +142,7 @@ const LEXICON_ENUMS = [
         'CRIT' => 'CRIT – podle čeho',
         'ACMP' => 'ACMP – s kým',
         'COMPL' => 'COMPL – jako co',
+        'CPHR' => 'CPHR – jmenná část (mít zájem)',
     ],
     'obligatoriness' => [
         'Obligatory' => 'obligatorní',

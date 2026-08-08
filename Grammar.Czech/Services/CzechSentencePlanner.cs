@@ -146,6 +146,7 @@ namespace Grammar.Czech.Services
             var selection = frameSelector.Select(
                 plan.Predicate.Lemma,
                 plan.FrameLabel,
+                CzechRoleResolver.Companions(plan),
                 voice == Voice.Passive ? Diathesis.PassivePeriphrastic : Diathesis.Active);
 
             if (selection.IsAmbiguous)
