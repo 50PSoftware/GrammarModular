@@ -137,7 +137,7 @@
   "v": {
     "originType": "Original",
     "vocalized": "ve",
-    "vocalizeBefore": [ "čtyřech", "dne" ],
+    "vocalizeBefore": [ "čtyřech", "dne", "měst" ],
     "variants": [
       { "case": "Locative", "semanticGroup": "Location" },
       { "case": "Accusative", "semanticGroup": "Time" }

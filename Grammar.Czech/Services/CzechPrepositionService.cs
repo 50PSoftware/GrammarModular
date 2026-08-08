@@ -89,6 +89,12 @@ namespace Grammar.Czech.Services
         /// (beze všeho, nade vše, přede všemi, pode mnou, beze mne), which is a rule rather than a list,
         /// and in a few settled cases registered per preposition: ode dveří, ode dneška, beze studu.
         /// <para>
+        /// The same list carries combinations usage settled against the rules: ve městě has one consonant
+        /// in front of it and no rule would vocalize it, while v měsíci — the same ⟨mě⟩, the same
+        /// [mɲ] behind it — does not vocalize at all. Phonology cannot tell the two apart, so the entry
+        /// decides, which is why it is data and not a condition.
+        /// </para>
+        /// <para>
         /// Two things stay out of reach. The archaic ku survives only in fixed expressions before a labial
         /// (ku příkladu, ku prospěchu) and in ratios, so it is not generated. And "s sebou" resists the
         /// same-consonant rule; it is registered in <see cref="PrepositionData.DoNotVocalizeBefore"/>

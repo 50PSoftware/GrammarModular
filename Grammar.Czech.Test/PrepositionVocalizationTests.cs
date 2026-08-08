@@ -168,7 +168,11 @@ namespace Grammar.Czech.Test
             // settled combinations the rules do not reach
             ("s", "dvěma", "se"), ("v", "dvou", "ve"), ("v", "čtyřech", "ve"), ("s", "čtyřmi", "se"),
             ("z", "dveří", "ze"), ("v", "dne", "ve"), ("k", "dnu", "ke"),
+            ("v", "městě", "ve"), ("v", "města", "ve"), ("v", "městech", "ve"),
             ("od", "dneška", "ode"), ("od", "dveří", "ode"), ("bez", "studu", "beze"),
+            // the same ⟨mě⟩ the other way round: ve městě is settled, v měsíci is not, so the entry has
+            // to reach the forms of město and stop there
+            ("v", "měsíci", "v"),
             // s sebou keeps the bare preposition against the same-consonant rule
             ("s", "sebou", "s"),
             // a syllabic preposition keeps its own vowel, even before the same consonant
@@ -237,7 +241,7 @@ namespace Grammar.Czech.Test
         // test is to compare the data against an independent statement of it.
         private static readonly Dictionary<string, string[]> LexicalizedPrefixes = new()
         {
-            ["v"] = ["čtyřech", "dne"],
+            ["v"] = ["čtyřech", "dne", "měst"],
             ["s"] = ["dvěma", "dvěmi", "čtyřmi"],
             ["z"] = ["čtyř", "dvou", "dveří"],
             ["k"] = ["dnu", "dnům"],
