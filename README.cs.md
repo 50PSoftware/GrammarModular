@@ -311,6 +311,26 @@ Grammar.sln
 
 Hlavní registrace pro DI je `AddCzechGrammarServices()` v `Grammar.Czech/CzechGrammarServiceFactory.cs`.
 
+Stavba věty jde čtyřmi stupni; každý je samostatná služba a každý se dá testovat zvlášť:
+
+```text
+CzechClause
+   |  CzechClausePlanner      je slot slovo, infinitiv, nebo vedlejší věta?
+   v
+CzechClause / Subordination
+   |  CzechMicroplanner       rámec řídí pád, číslovka ho přepíše, přísudek se shodne
+   v
+PlannedClause
+   |  CzechWordOrderResolver  aktuální členění, pak Wackernagelova druhá pozice
+   v
+slova
+   |  CzechSentenceBuilder    spojí klauze, napíše čárky, uzavře větu
+   v
+věta
+```
+
+Řez vede tam, kde se mění, co který stupeň smí měnit. Nad `PlannedClause` se ještě rozhoduje o slovech, pod ním už jen o jejich pořadí — a právě to dovoluje českému slovosledu se volně měnit, aniž by se s ním hnul jediný tvar. Vstupním bodem zůstává `CzechSentenceBuilder` a drží si rekurzi, protože klauze může obsahovat větu: vztažná věta visí na konstituentu.
+
 Hlavní vstupy:
 
 - `CzechSentenceBuilder` pro větu nebo souvětí z klauzí,
@@ -485,6 +505,45 @@ Console.WriteLine(builder.Build(new Subordination(mainClause, "protože", subCla
 Console.WriteLine(builder.Build(new Coordination("ale", [mainClause, subClause])));
 // Student dělal, ale učil se.
 ```
+
+### Slot obsazený propozicí
+
+Některá slovesa berou celý děj tam, kde jiná berou věc. Jakým tvarem to vyjde, není na volajícím — má to zapsané rámec, takže stejné zavolání dá u jednoho slovesa infinitiv a u druhého vedlejší větu.
+
+```csharp
+var reading = new CzechClause { Predicate = Verb("číst") };
+
+Console.WriteLine(builder.Build(new CzechClause
+{
+    Predicate = Verb("chtít"),
+    Elements = [student, ClauseElement.Of(reading, FgdFunctor.PAT)]
+}));
+// Student chce číst.
+
+Console.WriteLine(builder.Build(new CzechClause
+{
+    Predicate = Verb("vědět"),
+    Elements = [student, ClauseElement.Of(reading, FgdFunctor.PAT)]
+}));
+// Student ví, že čte.
+```
+
+Infinitiv nemá vlastní podmět — na povrchu je vyloučený — takže rámec nese, se kterým participantem je koreferenční: kdo chce, ten jde. Zadej jiný podmět a věta se odmítne, protože čeština pro ni infinitiv nemá a ta vazba je vedlejší věta s *aby*.
+
+Jeho klitika se šplhají do věty řídící, kde je ten jediný klastr klauze:
+
+```csharp
+Console.WriteLine(builder.Build(new CzechClause
+{
+    Predicate = Verb("chtít"),
+    Elements = [student, ClauseElement.Of(
+        new CzechClause { Predicate = Verb("učit") with { ReflexiveType = ReflexiveType.ReflexivumTantum_Se } },
+        FgdFunctor.PAT)]
+}));
+// Student se chce učit.
+```
+
+Vedlejší věta si drží čas, který dostala. Čeština nezná souslednost časovou, takže *věděl, že čte* zůstává v přítomném čase — posunout ho dozadu by hlásilo něco jiného.
 
 ### Číslovky slovy
 
@@ -676,7 +735,8 @@ Pravidlová data v projektu `Grammar.Czech` jsou embedded JSON resources. Výjim
 - Lexikon není úplný slovník češtiny; `ResolveGenderAndPattern` a `ResolveVerbAspect` fungují jen pro lemmata, která databáze obsahuje.
 - Lexikon obsahuje rámce pro třicet lexémů — čtyřicet šest slovesných lemmat, počítá-li se každý člen vidové dvojice — z dvou set šedesáti čtyř hesel. Mechanismus je hotový, data ne: u slovesa bez rámce si pády zadává volající jako dřív.
 - Krácení v genitivu plurálu je jen kvantitativní a vlajku nese osm lemmat. Typ *í* → *ě* (*míra* → *měr*, *díra* → *děr*) je jiná alternace, o které `has_genitive_plural_shortening` nic neříká; taková slova potřebují `lemma_entry.stem`, který kód čte, ale který zatím žádné heslo ve slovníku nevyplňuje.
-- Slot se dá uložit jako realizovaný `že`-větou nebo infinitivem, ale nic takový tvar zatím negeneruje: to potřebuje plánovač klauzí, a dokud neexistuje, `CzechSentenceBuilder` takový konstituent nechá na volajícím.
+- Slot realizovaný infinitivem nebo obsahovou větou skládá `CzechClausePlanner`, ale jen jeden na klauzi: sloveso, které jich řídí víc najednou, se odmítne, místo aby se poskládalo.
+- Zvratný infinitiv dává svoje se/si do klastru věty řídící, což je u jednoho správně — *chce se učit* — a u dvou se odmítne, protože klastr je v klauzi jeden a *se* v něm nemůže být dvakrát.
 - `CzechNumeralComposer.ComposeOrdinal` a `ComposeOfType` skládají jen z lemmat ve slovníku; hodnota vyžadující chybějící složku (např. *dvoutisící*) selže s výjimkou, místo aby si tvar vymyslela.
 
 ### Co modelované není

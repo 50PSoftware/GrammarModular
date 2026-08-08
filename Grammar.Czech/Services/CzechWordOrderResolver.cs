@@ -128,6 +128,15 @@ namespace Grammar.Czech.Services
         // so the string returned here is what the cluster attaches after.
         private string Realize(ClauseElement element, Func<CzechClause, bool, string> renderEmbedded)
         {
+            // A slot filled by a proposition is one constituent however many words it runs to, so the
+            // cluster of the clause above attaches after the whole of it: "chce jít do školy". Its first
+            // position counts as taken, because the clause it belongs to owns the only cluster there is
+            // and the infinitive's clitics have already climbed into it.
+            if (element.Content is { } content)
+            {
+                return renderEmbedded(content, true);
+            }
+
             var head = element.Word;
             var afterPreposition = element.Preposition is not null;
 

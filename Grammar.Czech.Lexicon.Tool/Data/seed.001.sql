@@ -355,4 +355,4 @@ VALUES
     (38, 38, NULL,         NULL, NULL, 1, 1),
     (39, 39, 'Nominative', NULL, NULL, 0, 1),
     (40, 40, 'Accusative', NULL, NULL, 0, 1),
-    (41, 40, NULL,         NULL, 'Declarative', 0, 2);
+    (41, 40, NULL,         NULL, 'že',          0, 2);

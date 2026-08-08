@@ -23,6 +23,7 @@ namespace Grammar.Czech.Services
     /// </remarks>
     public class CzechSentenceBuilder
     {
+        private readonly CzechClausePlanner clausePlanner;
         private readonly CzechMicroplanner microplanner;
         private readonly CzechWordOrderResolver wordOrderResolver;
         private readonly ICzechConjunctionService conjunctionService;
@@ -34,10 +35,12 @@ namespace Grammar.Czech.Services
         /// <param name="wordOrderResolver">The stage that puts the words of a clause in order.</param>
         /// <param name="conjunctionService">The conjunction service, for commas and the conditional fusion.</param>
         public CzechSentenceBuilder(
+            CzechClausePlanner clausePlanner,
             CzechMicroplanner microplanner,
             CzechWordOrderResolver wordOrderResolver,
             ICzechConjunctionService conjunctionService)
         {
+            this.clausePlanner = clausePlanner;
             this.microplanner = microplanner;
             this.wordOrderResolver = wordOrderResolver;
             this.conjunctionService = conjunctionService;
@@ -82,8 +85,14 @@ namespace Grammar.Czech.Services
             string? secondPositionConjunction = null,
             bool suppressConditional = false) => sentence switch
         {
-            SimpleSentence simple =>
-                RenderClause(simple.Clause, firstPositionTaken, secondPositionConjunction, suppressConditional),
+            // A clause whose slot turned out to be a dependent clause is no longer one clause, so
+            // planning runs before anything else and its result goes back through this switch.
+            SimpleSentence simple => clausePlanner.Plan(simple.Clause) switch
+            {
+                SimpleSentence planned =>
+                    RenderClause(planned.Clause, firstPositionTaken, secondPositionConjunction, suppressConditional),
+                var grown => RenderNode(grown, firstPositionTaken, secondPositionConjunction, suppressConditional),
+            },
             Coordination coordination => RenderCoordination(coordination, firstPositionTaken, suppressConditional),
             Subordination subordination => RenderSubordination(subordination),
             _ => throw new NotSupportedException($"Neznámý typ větného uzlu: {sentence.GetType().Name}.")

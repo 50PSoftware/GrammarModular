@@ -102,6 +102,7 @@ namespace Grammar.Czech.Lexicon.Tool
                 CheckReferentialIntegrity(connection, errors);
                 CheckEnums(connection, errors);
                 CheckPatterns(connection, errors);
+                CheckSubordinators(connection, errors);
                 CheckStems(connection, errors);
                 CheckLemmaKeys(connection, errors);
                 CheckFrames(connection, errors);
@@ -168,6 +169,38 @@ namespace Grammar.Czech.Lexicon.Tool
                 }
             }
         }
+
+        // clause_type names the conjunction that introduces the dependent clause — že, aby, zda — the
+        // way VALLEX records it, because the word says more than the kind of clause does: "ví, že
+        // přijde" and "ví, zda přijde" are both content clauses and mean different things.
+        //
+        // Checked here because nothing else can. The column is free text to the schema, and a value no
+        // conjunction matches surfaces only when a sentence is built out of that slot.
+        private static void CheckSubordinators(SqliteConnection connection, List<string> errors)
+        {
+            const string sql = "SELECT DISTINCT clause_type FROM slot_realization WHERE clause_type IS NOT NULL";
+
+            foreach (var row in Query(connection, sql))
+            {
+                var value = row[0]?.ToString() ?? string.Empty;
+
+                if (!subordinators.Value.Contains(value))
+                {
+                    errors.Add(
+                        $"slot_realization.clause_type obsahuje '{value}', což není podřadicí spojka. "
+                        + "Patří sem spojka, kterou se ta věta uvozuje (že, aby, zda).");
+                }
+            }
+        }
+
+        // The conjunctions live in Grammar.Czech's embedded JSON, the same as the vzory, so the set has
+        // to be read rather than restated.
+        private static readonly Lazy<IReadOnlySet<string>> subordinators = new(() =>
+            new JsonConjunctionDataProvider().GetConjunctions()
+                .Where(entry => entry.Value.Type == ConjunctionType.Subordinating
+                    || entry.Value.AlsoReads.Any(reading => reading.Type == ConjunctionType.Subordinating))
+                .Select(entry => entry.Key)
+                .ToHashSet(StringComparer.Ordinal));
 
         // Nothing else refuses a misspelled vzor; it surfaces the first time something declines the word.
         // Folded, because the inflection services look it up through ToLower().

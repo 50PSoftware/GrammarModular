@@ -343,6 +343,13 @@ namespace Grammar.Czech.Services
         {
             var predicate = clause.Predicate;
 
+            // Infinitiv je neurčitý tvar: nemá s čím se shodovat a osobu ani číslo nenese. Jeho podmět
+            // je koreferenční s větou řídící a na povrchu chybí, což je to, co z něj infinitiv dělá.
+            if (predicate.Modus == Modus.Infinitive)
+            {
+                return predicate;
+            }
+
             // The passive is what the promotion is for: the patient becomes the subject and the verb agrees
             // with it, so "Kniha byla dána" is feminine off kniha and not off whatever the caller stated.
             // The agent is still ACT, but it stands in the instrumental and governs nothing.

@@ -313,6 +313,26 @@ Grammar.sln
 
 The main DI registration is `AddCzechGrammarServices()` in `Grammar.Czech/CzechGrammarServiceFactory.cs`.
 
+Building a sentence runs through four stages, each a separate service and each testable on its own:
+
+```text
+CzechClause
+   |  CzechClausePlanner      is the slot a word, an infinitive, or a dependent clause?
+   v
+CzechClause / Subordination
+   |  CzechMicroplanner       the frame governs the case, the numeral rewrites it, the predicate agrees
+   v
+PlannedClause
+   |  CzechWordOrderResolver  functional sentence perspective, then Wackernagel's second position
+   v
+words
+   |  CzechSentenceBuilder    joins the clauses, writes the commas, closes the sentence
+   v
+sentence
+```
+
+The split follows what each stage is allowed to change. Above `PlannedClause` the words are still being decided; below it only their order is, which is what lets Czech word order vary freely without any form moving with it. `CzechSentenceBuilder` remains the entry point and owns the recursion, because a clause can contain a sentence — a relative clause hangs off a constituent.
+
 The main entry points:
 
 - `CzechSentenceBuilder` for a sentence or a complex sentence built from clauses,
@@ -487,6 +507,45 @@ Console.WriteLine(builder.Build(new Subordination(mainClause, "protože", subCla
 Console.WriteLine(builder.Build(new Coordination("ale", [mainClause, subClause])));
 // Student dělal, ale učil se.
 ```
+
+### A slot filled by a proposition
+
+Some verbs take a whole event where another takes a thing. Which shape it comes out in is not the caller's to say — the frame records it, so the same call produces an infinitive for one verb and a dependent clause for another.
+
+```csharp
+var reading = new CzechClause { Predicate = Verb("číst") };
+
+Console.WriteLine(builder.Build(new CzechClause
+{
+    Predicate = Verb("chtít"),
+    Elements = [student, ClauseElement.Of(reading, FgdFunctor.PAT)]
+}));
+// Student chce číst.
+
+Console.WriteLine(builder.Build(new CzechClause
+{
+    Predicate = Verb("vědět"),
+    Elements = [student, ClauseElement.Of(reading, FgdFunctor.PAT)]
+}));
+// Student ví, že čte.
+```
+
+The infinitive has no subject of its own — it is structurally excluded — so the frame records which participant it corefers with: whoever wants is whoever goes. State a different subject and the sentence is refused, because Czech has no infinitive for it and the construction is an *aby*-clause instead.
+
+Its clitics climb into the governing clause, where the one cluster of the clause is:
+
+```csharp
+Console.WriteLine(builder.Build(new CzechClause
+{
+    Predicate = Verb("chtít"),
+    Elements = [student, ClauseElement.Of(
+        new CzechClause { Predicate = Verb("učit") with { ReflexiveType = ReflexiveType.ReflexivumTantum_Se } },
+        FgdFunctor.PAT)]
+}));
+// Student se chce učit.
+```
+
+The dependent clause keeps the tense it was given. Czech has no sequence of tenses, so *věděl, že čte* stays present — backshifting it would report something else.
 
 ### Numerals spelled out
 
@@ -678,7 +737,8 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 - The lexicon is not a complete dictionary of Czech; `ResolveGenderAndPattern` and `ResolveVerbAspect` only work for lemmas the database holds.
 - The lexicon contains frames for thirty lexemes — forty-six verb lemmas, counting both members of each aspect pair — out of two hundred and sixty-four entries. The mechanism is finished, the data is not: for a verb without a frame the caller supplies the cases as before.
 - Genitive-plural shortening is quantity only, and eight lemmas carry the flag. The *í* → *ě* type (*míra* → *měr*, *díra* → *děr*) is a different alternation that `has_genitive_plural_shortening` does not describe; such words need `lemma_entry.stem`, which the code reads but which no lemma in the dictionary fills in yet.
-- A slot can be stored as realized by a `že`-clause or an infinitive, but nothing generates one yet: that needs a clause planner, and until it exists `CzechSentenceBuilder` leaves such a constituent to the caller.
+- A slot realized by an infinitive or a content clause is built by `CzechClausePlanner`, but only one such slot per clause: a verb governing two of them at once is refused rather than assembled.
+- A reflexive infinitive puts its particle in the governing clause's cluster, which is right for one — *chce se učit* — and refused for two, because a clause has one cluster and *se* cannot be in it twice.
 - `CzechNumeralComposer.ComposeOrdinal` and `ComposeOfType` build only from lemmas present in the dictionary; a value that needs a missing component (e.g. *dvoutisící*) throws rather than inventing a form.
 
 ### Not modelled

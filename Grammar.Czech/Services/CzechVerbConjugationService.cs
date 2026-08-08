@@ -73,6 +73,14 @@ namespace Grammar.Czech.Services
                 throw new InvalidOperationException(
                     "Impossible to create passive for verb 'být'.");
 
+            // Před rozlišením vzoru: infinitiv žádný nepotřebuje, protože je to samo lemma. Kdyby se
+            // řešil až ve switchi níž, sloveso mimo slovník a bez zadaného vzoru by na svůj vlastní
+            // slovníkový tvar neodpovědělo.
+            if (word.Modus == Modus.Infinitive)
+            {
+                return BuildInfinitiveForm(word);
+            }
+
             // VerbClass hint → přepiš Pattern na klíč třídy, pokud pattern ještě není znám
             if (word.VerbClass.HasValue
                 && (word.Pattern == null || !_dataProvider.GetPatterns().ContainsKey(word.Pattern.ToLower())))
@@ -119,6 +127,24 @@ namespace Grammar.Czech.Services
                 _ => BuildPresentFutureForm(word, pattern, verbStruct, numberKey, effectiveTense),
             };
         }
+
+        /// <summary>
+        /// Builds the infinitive, which is the dictionary form itself unless the pattern or the entry
+        /// records a different one.
+        /// </summary>
+        /// <param name="word">The request, whose lemma is the infinitive in the ordinary case.</param>
+        /// <returns>The infinitive form.</returns>
+        /// <remarks>
+        /// It takes no person, number, tense or gender, so nothing is read off the request beyond the
+        /// lemma. The entry is consulted because a lemma is not always its own infinitive — one may
+        /// record the literary <c>-ti</c> variant — but none states one today, so in practice this
+        /// hands the lemma straight back.
+        /// </remarks>
+        private WordForm BuildInfinitiveForm(CzechWordRequest word) =>
+            new(LookupLexiconEntry(word)?.Infinitive is { Length: > 0 } stated ? stated : word.Lemma)
+            {
+                Description = "infinitiv"
+            };
 
         /// <summary>
         /// Resolves the verb aspect stored for the lemma in the lexicon.

@@ -62,6 +62,22 @@ namespace Grammar.Czech.Models.Syntax
         public RelativeAttachment? Relative { get; init; }
 
         /// <summary>
+        /// Gets the proposition filling this slot, or null when an ordinary word fills it.
+        /// </summary>
+        /// <remarks>
+        /// A valency slot need not be realized as a case at all: the patient of <em>vědět</em> can be a
+        /// <em>že</em>-clause and the patient of <em>chtít</em> an infinitive. Which of the two it comes
+        /// out as is not the caller's to state — the frame says it, and
+        /// <see cref="Services.CzechClausePlanner"/> reads it off the frame before anything is
+        /// linearized. The caller states the proposition and nothing more.
+        /// <para>
+        /// When this is set, <see cref="Word"/> is not read. A constituent is either a thing or a
+        /// proposition, never both.
+        /// </para>
+        /// </remarks>
+        public CzechClause? Content { get; init; }
+
+        /// <summary>
         /// Gets the FGD functor the constituent fills.
         /// </summary>
         public FgdFunctor Functor { get; init; }
@@ -121,5 +137,20 @@ namespace Grammar.Czech.Models.Syntax
         /// <returns>The clause element.</returns>
         public static ClauseElement Of(string preposition, CzechWordRequest word, FgdFunctor functor, InformationStatus status = InformationStatus.New)
             => new() { Preposition = preposition, Word = word, Functor = functor, Status = status };
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ClauseElement"/> type for a slot filled by a
+        /// proposition rather than by a word.
+        /// </summary>
+        /// <param name="content">The proposition filling the slot.</param>
+        /// <param name="functor">The FGD functor the constituent fills.</param>
+        /// <param name="status">The communicative status of the constituent.</param>
+        /// <returns>The clause element.</returns>
+        /// <remarks>
+        /// Whether it surfaces as an infinitive or as a dependent clause is read off the verb's frame,
+        /// so the same call produces <em>chce jít</em> for one verb and <em>ví, že jde</em> for another.
+        /// </remarks>
+        public static ClauseElement Of(CzechClause content, FgdFunctor functor, InformationStatus status = InformationStatus.New)
+            => new() { Content = content, Functor = functor, Status = status };
     }
 }

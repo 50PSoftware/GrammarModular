@@ -116,6 +116,7 @@ namespace Grammar.Czech
             // ── Top-level entry points ───────────────────────────────────────────────
             services.AddSingleton<MorphologyEngine>();
             services.AddSingleton<CzechWordFormComposer>();
+            services.AddSingleton<CzechClausePlanner>();
             services.AddSingleton<CzechMicroplanner>();
             services.AddSingleton<CzechWordOrderResolver>();
             services.AddSingleton<CzechSentenceBuilder>();
