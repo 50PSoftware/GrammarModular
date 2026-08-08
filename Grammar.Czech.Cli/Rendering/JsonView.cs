@@ -30,13 +30,21 @@ namespace Grammar.Czech.Cli.Rendering
         /// <summary>
         /// Renders the draft and the sentence built from it.
         /// </summary>
-        /// <param name="draft">The draft the sentence was built from.</param>
+        /// <param name="draft">The sentence draft the sentence was built from.</param>
         /// <param name="sentence">The assembled sentence.</param>
         /// <returns>The JSON document.</returns>
-        public static string Render(ClauseDraft draft, string sentence) => JsonSerializer.Serialize(
+        public static string Render(SentenceDraft draft, string sentence) => JsonSerializer.Serialize(
             new
             {
                 veta = sentence,
+                klauze = draft.Clauses.Select(Describe).ToList(),
+                poznamky = draft.Notes.ToList(),
+            },
+            Options);
+
+        private static object Describe(ClauseDraft draft) => new
+            {
+                spojka = draft.Conjunction,
                 prisudek = new
                 {
                     lemma = draft.PredicateLemma,
@@ -75,9 +83,7 @@ namespace Grammar.Czech.Cli.Rendering
                     privlastky = constituent.Modifiers.Select(modifier => modifier.Lemma).ToList(),
                     zdroj = Source(constituent.Origin),
                 }).ToList(),
-                poznamky = draft.Notes.Distinct().ToList(),
-            },
-            Options);
+            };
 
         private static string Source(MetadataOrigin origin) => origin switch
         {

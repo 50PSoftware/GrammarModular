@@ -48,7 +48,7 @@ namespace Grammar.Czech.Cli.Interaction
         /// <param name="lemmas">The lemmas, in the order they were entered.</param>
         /// <param name="overrides">What the user stated on the command line, extended as the dialog goes.</param>
         /// <returns>The accepted draft, or <see langword="null"/> when the user gave up.</returns>
-        public ClauseDraft? Run(IReadOnlyList<string> lemmas, DraftOverrides overrides)
+        public SentenceDraft? Run(IReadOnlyList<string> lemmas, DraftOverrides overrides)
         {
             while (true)
             {
@@ -72,7 +72,7 @@ namespace Grammar.Czech.Cli.Interaction
 
                 // Číslo v nápovědě je číslo skutečného členu: pořadí odpovídá zadání, takže dvojka
                 // často připadne slovesu a příklad by ukazoval na přísudek.
-                var example = draft.Constituents.FirstOrDefault()?.Position ?? 1;
+                var example = draft.Clauses.SelectMany(clause => clause.Constituents).FirstOrDefault()?.Position ?? 1;
 
                 _output.WriteLine();
                 _output.WriteLine($"[Enter] potvrdit · {example} role=ADDR · p cas=minuly · ? nápověda · q konec");
@@ -114,7 +114,7 @@ namespace Grammar.Czech.Cli.Interaction
 
                 try
                 {
-                    OverrideParser.Apply(answer, lemmas, overrides, draft.PredicatePosition);
+                    OverrideParser.Apply(answer, lemmas, overrides, draft.PredicatePositions);
                 }
                 catch (CliException exception)
                 {

@@ -33,7 +33,7 @@ namespace Grammar.Czech.Test
             services = collection.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true });
         }
 
-        private static (ClauseDraft? Draft, string Dialog) Review(string answers, params string[] lemmas)
+        private static (SentenceDraft? Draft, string Dialog) Review(string answers, params string[] lemmas)
         {
             var output = new StringWriter();
 
@@ -73,7 +73,7 @@ namespace Grammar.Czech.Test
             var (draft, dialog) = Review("p cas=minuly\n\n", "student", "číst", "kniha");
 
             Assert.IsNotNull(draft);
-            Assert.AreEqual(Tense.Past, draft.Predicate.Tense);
+            Assert.AreEqual(Tense.Past, draft.Main.Predicate.Tense);
             Assert.IsTrue(dialog.Contains("Věta: Student četl knihu."));
         }
 
@@ -85,11 +85,11 @@ namespace Grammar.Czech.Test
         {
             Assert.AreEqual(
                 InformationStatus.Given,
-                Review("3 cleneni=dane\n\n", "student", "číst", "kniha").Draft!.Constituents[1].Status);
+                Review("3 cleneni=dane\n\n", "student", "číst", "kniha").Draft!.Main.Constituents[1].Status);
 
             Assert.AreEqual(
                 InformationStatus.Given,
-                Review("kniha cleneni=dane\n\n", "student", "číst", "kniha").Draft!.Constituents[1].Status);
+                Review("kniha cleneni=dane\n\n", "student", "číst", "kniha").Draft!.Main.Constituents[1].Status);
         }
 
         /// <summary>
@@ -116,7 +116,7 @@ namespace Grammar.Czech.Test
             Assert.IsTrue(dialog.Contains("není pád"));
 
             // Řádek se buď přijme celý, nebo vůbec: druhá dvojice byla v pořádku a přesto se nezapsala.
-            Assert.AreEqual(InformationStatus.New, draft.Constituents[1].Status);
+            Assert.AreEqual(InformationStatus.New, draft.Main.Constituents[1].Status);
         }
 
         /// <summary>

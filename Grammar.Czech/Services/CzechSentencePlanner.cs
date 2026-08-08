@@ -25,6 +25,7 @@ namespace Grammar.Czech.Services
         private readonly CzechFrameSelector frameSelector;
         private readonly ICzechValencyService valencyService;
         private readonly ICzechPronounService pronounService;
+        private readonly ICzechConjunctionService conjunctionService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechSentencePlanner"/> type.
@@ -32,14 +33,17 @@ namespace Grammar.Czech.Services
         /// <param name="frameSelector">The selector for the sense of the verb.</param>
         /// <param name="valencyService">The valency service, for what a frame licenses.</param>
         /// <param name="pronounService">The pronoun service, for recognizing a droppable subject.</param>
+        /// <param name="conjunctionService">The conjunction service, for how a joined clause attaches.</param>
         public CzechSentencePlanner(
             CzechFrameSelector frameSelector,
             ICzechValencyService valencyService,
-            ICzechPronounService pronounService)
+            ICzechPronounService pronounService,
+            ICzechConjunctionService conjunctionService)
         {
             this.frameSelector = frameSelector;
             this.valencyService = valencyService;
             this.pronounService = pronounService;
+            this.conjunctionService = conjunctionService;
         }
 
         /// <summary>
@@ -79,20 +83,62 @@ namespace Grammar.Czech.Services
             {
                 Participants = participants,
                 Predicate = WithDefaults(plan.Predicate, voice, subject),
+                Joined = [.. plan.Joined.Select(link => link with { Clause = Complete(link.Clause) })],
             };
         }
 
         /// <summary>
-        /// Plans the sentence into the clause the rest of the pipeline builds from.
+        /// Plans the sentence into the tree of clauses the rest of the pipeline builds from.
         /// </summary>
         /// <param name="plan">What is to be said.</param>
-        /// <returns>The clause.</returns>
+        /// <returns>
+        /// A single clause when nothing is joined to it, and a coordination or a subordination when
+        /// something is.
+        /// </returns>
         /// <exception cref="InvalidOperationException">
         /// Thrown when a participant has no functor, when the verb's sense is not settled, when a
         /// functor the verb has no slot for is used, or when the requested perspective is one the verb
         /// cannot take.
         /// </exception>
-        public CzechClause Plan(SentencePlan plan)
+        public SentenceNode Plan(SentencePlan plan)
+        {
+            SentenceNode node = new SimpleSentence(PlanClause(plan));
+
+            foreach (var link in plan.Joined)
+            {
+                node = Join(node, link);
+            }
+
+            return node;
+        }
+
+        // The conjunction decides how the two are joined, because that is what a conjunction is. Reading
+        // it off the data rather than asking also means a caller cannot write "subordinate them with a"
+        // — a combination the grammar has no reading for.
+        private SentenceNode Join(SentenceNode node, ClauseLink link)
+        {
+            var joined = Plan(link.Clause);
+
+            if (conjunctionService.GetType(link.Conjunction) == ConjunctionType.Subordinating)
+            {
+                return new Subordination(node, link.Conjunction, joined);
+            }
+
+            // Three clauses on one conjunction are one coordination, not two nested ones: "přišel,
+            // viděl a zvítězil" has a single relation running through it, and nesting would punctuate
+            // the inner one as though it were a member of the outer.
+            if (node is Coordination running
+                && string.Equals(running.Conjunction, link.Conjunction, StringComparison.Ordinal)
+                && !running.Paired
+                && !link.Paired)
+            {
+                return running with { Conjuncts = [.. running.Conjuncts, joined] };
+            }
+
+            return new Coordination(link.Conjunction, [node, joined], link.RequiresComma, link.Paired);
+        }
+
+        private CzechClause PlanClause(SentencePlan plan)
         {
             plan = Complete(plan);
 

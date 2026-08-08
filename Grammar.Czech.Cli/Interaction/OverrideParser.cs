@@ -34,7 +34,7 @@ namespace Grammar.Czech.Cli.Interaction
         /// <param name="line">The line the user typed.</param>
         /// <param name="lemmas">The lemmas of the clause, for resolving a target by name.</param>
         /// <param name="overrides">The record to write into.</param>
-        /// <param name="predicatePosition">The position of the predicate, which takes corrections of its own.</param>
+        /// <param name="predicatePositions">The positions of the predicates, which take corrections of their own.</param>
         /// <exception cref="CliException">Thrown when the line cannot be read.</exception>
         /// <remarks>
         /// Nothing is written until the whole line reads, so a refused correction leaves the state it
@@ -45,7 +45,7 @@ namespace Grammar.Czech.Cli.Interaction
             string line,
             IReadOnlyList<string> lemmas,
             DraftOverrides overrides,
-            int predicatePosition = 0)
+            IReadOnlyList<int>? predicatePositions = null)
         {
             var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
@@ -56,7 +56,7 @@ namespace Grammar.Czech.Cli.Interaction
 
             var target = Resolve(parts[0], lemmas);
 
-            if (target != "p" && target == predicatePosition.ToString())
+            if (target != "p" && predicatePositions?.Any(position => target == position.ToString()) == true)
             {
                 throw new CliException(
                     $"'{parts[0]}' je přísudek — ten se opravuje přes 'p', třeba p cas=minuly.");

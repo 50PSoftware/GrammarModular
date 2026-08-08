@@ -162,7 +162,7 @@ namespace Grammar.Czech.Cli.Commands
             // Poznámky jdou na chybový výstup, aby `gramatika veta … > soubor` obsahoval jen větu.
             if (!json)
             {
-                foreach (var note in draft.Notes.Distinct())
+                foreach (var note in draft.Notes)
                 {
                     Console.Error.WriteLine(note);
                 }

@@ -119,27 +119,63 @@ namespace Grammar.Czech.Services
             }
         }
 
-        // The actor and the addressee are filled first, out of the frame's canonical order, because both
-        // prefer an animate noun and the canonical order would let the only animate candidate go to a
-        // slot that does not care: dávat ženě knihu, not dávat knize ženu.
+        // The actor goes first out of the frame's canonical order, because it prefers an animate noun and
+        // the canonical order would let the only animate candidate go to a slot that does not care.
+        //
+        // The addressee prefers one too, but only takes it when there is one to take: a recipient is
+        // typically a person, so an animate candidate settles dávat ženě knihu against dávat knize ženu
+        // — and where none is left the slot sinks below the patient instead, since a three-place verb
+        // used with two arguments is far likelier to be naming what than to whom. Otherwise "žák píše
+        // dopis" comes out as a letter being written to.
         private static void ClaimByOrder(
             List<PlannedParticipant> resolved,
             List<(PlannedParticipant Participant, int Index)> open,
             List<ValencySlot> slots)
         {
-            foreach (var slot in slots.ToList())
+            Claim(FgdFunctor.ACT, requiresAnimate: false);
+            Claim(FgdFunctor.ADDR, requiresAnimate: true);
+
+            // Zbytek v kanonickém pořadí rámce, jen adresát až za ostatními — na ten už zbyl leda
+            // neživotný kandidát, a to je slabší čtení než patiens.
+            foreach (var slot in slots
+                .OrderBy(item => item.Functor == FgdFunctor.ADDR ? 1 : 0)
+                .ThenBy(item => item.CanonicalOrder)
+                .ToList())
             {
                 if (open.Count == 0)
                 {
                     break;
                 }
 
+                Take(slot, open[0]);
+            }
+
+            void Claim(FgdFunctor functor, bool requiresAnimate)
+            {
+                if (open.Count == 0 || slots.FirstOrDefault(slot => slot.Functor == functor) is not { } slot)
+                {
+                    return;
+                }
+
                 var animate = open.Where(item => item.Participant.Word.IsAnimate == true).ToList();
 
-                // Jen jeden životný kandidát rozhoduje; dva už ne — pes vidí kočku má životná obě
-                // a tam nezbývá než pořadí, ve kterém to volající zadal.
-                var chosen = Priority(slot) < 2 && animate.Count == 1 ? animate[0] : open[0];
+                // Jeden životný kandidát rozhoduje; dva už ne — pes vidí kočku má životná obě a tam
+                // nezbývá než pořadí, ve kterém to volající zadal.
+                if (animate.Count == 1)
+                {
+                    Take(slot, animate[0]);
 
+                    return;
+                }
+
+                if (!requiresAnimate)
+                {
+                    Take(slot, open[0]);
+                }
+            }
+
+            void Take(ValencySlot slot, (PlannedParticipant Participant, int Index) chosen)
+            {
                 resolved[chosen.Index] = chosen.Participant with { Functor = slot.Functor };
                 slots.Remove(slot);
                 open.Remove(chosen);

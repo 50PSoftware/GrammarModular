@@ -28,13 +28,48 @@ namespace Grammar.Czech.Cli.Rendering
         }
 
         /// <summary>
-        /// Renders the draft: the predicate, the constituents, and whatever is still open.
+        /// Renders the sentence: every clause, and whatever is still open across all of them.
         /// </summary>
-        /// <param name="draft">The draft to render.</param>
+        /// <param name="sentence">The sentence to render.</param>
+        /// <returns>The text to print.</returns>
+        public string Render(SentenceDraft sentence)
+        {
+            var text = new StringBuilder();
+
+            foreach (var clause in sentence.Clauses)
+            {
+                text.AppendLine(Render(clause));
+                text.AppendLine();
+            }
+
+            foreach (var note in sentence.Notes)
+            {
+                text.AppendLine($"Pozn.: {note}");
+            }
+
+            foreach (var gap in sentence.Gaps())
+            {
+                text.AppendLine($"Chybí: {gap}");
+            }
+
+            return text.ToString().TrimEnd();
+        }
+
+        /// <summary>
+        /// Renders one clause: the predicate, the constituents and the frame behind them.
+        /// </summary>
+        /// <param name="draft">The clause to render.</param>
         /// <returns>The text to print.</returns>
         public string Render(ClauseDraft draft)
         {
             var text = new StringBuilder();
+
+            // Spojka se ukazuje u klauze, kterou připojuje, protože to je to, co z ní dělá vedlejší
+            // nebo druhý souřadný člen — a uživatel ji zadal na tomhle místě.
+            if (draft.Conjunction is { } conjunction)
+            {
+                text.AppendLine($"Spojka    {conjunction}");
+            }
 
             text.AppendLine($"Přísudek  {draft.PredicateLemma} — {Describe(draft.Predicate)}");
 
@@ -50,16 +85,6 @@ namespace Grammar.Czech.Cli.Rendering
 
             text.AppendLine();
             text.AppendLine(Table(draft));
-
-            foreach (var note in draft.Notes.Distinct())
-            {
-                text.AppendLine($"Pozn.: {note}");
-            }
-
-            foreach (var gap in draft.Gaps())
-            {
-                text.AppendLine($"Chybí: {gap}");
-            }
 
             return text.ToString().TrimEnd();
         }

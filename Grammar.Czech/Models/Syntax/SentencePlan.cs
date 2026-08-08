@@ -81,5 +81,34 @@ namespace Grammar.Czech.Models.Syntax
         /// Gets the interjection that opens the sentence, or null when there is none.
         /// </summary>
         public string? Interjection { get; init; }
+
+        /// <summary>
+        /// Gets the clauses joined to this one, in the order they follow it.
+        /// </summary>
+        /// <remarks>
+        /// Whether each one is coordinated or subordinated is not stated here: the conjunction says it,
+        /// and conjunctions are a closed class the rule data enumerates. Naming both would let a caller
+        /// write a contradiction the grammar has no reading for.
+        /// </remarks>
+        public IReadOnlyList<ClauseLink> Joined { get; init; } = [];
     }
+
+    /// <summary>
+    /// Represents one clause joined to another by a conjunction.
+    /// </summary>
+    /// <param name="Conjunction">The conjunction joining them, which also says how.</param>
+    /// <param name="Clause">The clause being joined, itself a whole plan.</param>
+    /// <param name="RequiresComma">
+    /// Overrides the conjunction's default comma rule, for the conjunctions punctuated by the relation
+    /// between the clauses rather than by the word — nebo and či.
+    /// </param>
+    /// <param name="Paired">
+    /// Asks for the split construction: buď … nebo, ani … ani, nejen … ale i. Asked for rather than
+    /// inferred, because the same conjunction serves both and only the caller knows which was meant.
+    /// </param>
+    public sealed record ClauseLink(
+        string Conjunction,
+        SentencePlan Clause,
+        bool? RequiresComma = null,
+        bool Paired = false);
 }

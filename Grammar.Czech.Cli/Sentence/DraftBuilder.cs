@@ -25,6 +25,7 @@ namespace Grammar.Czech.Cli.Sentence
         private readonly CzechLexiconEnricher _enricher;
         private readonly ICzechPrepositionService _prepositions;
         private readonly ICzechPronounService _pronouns;
+        private readonly ICzechConjunctionService _conjunctions;
         private readonly CzechFrameSelector _frames;
         private readonly CzechRoleResolver _roles;
         private readonly CzechSentencePlanner _planner;
@@ -37,6 +38,7 @@ namespace Grammar.Czech.Cli.Sentence
         /// <param name="enricher">The service that fills a request from a dictionary entry.</param>
         /// <param name="prepositions">The preposition service, for recognizing one in the word list.</param>
         /// <param name="pronouns">The pronoun service, for recognizing one in the word list.</param>
+        /// <param name="conjunctions">The conjunction service, for finding where one clause ends.</param>
         /// <param name="frames">The frame selector, for the sense of the verb.</param>
         /// <param name="roles">The role resolver, which works out the functors.</param>
         /// <param name="planner">The sentence planner, for the values the plan leaves unsaid.</param>
@@ -46,6 +48,7 @@ namespace Grammar.Czech.Cli.Sentence
             CzechLexiconEnricher enricher,
             ICzechPrepositionService prepositions,
             ICzechPronounService pronouns,
+            ICzechConjunctionService conjunctions,
             CzechFrameSelector frames,
             CzechRoleResolver roles,
             CzechSentencePlanner planner,
@@ -55,6 +58,7 @@ namespace Grammar.Czech.Cli.Sentence
             _enricher = enricher;
             _prepositions = prepositions;
             _pronouns = pronouns;
+            _conjunctions = conjunctions;
             _frames = frames;
             _roles = roles;
             _planner = planner;
@@ -68,7 +72,7 @@ namespace Grammar.Czech.Cli.Sentence
         /// <param name="overrides">What the user has stated so far.</param>
         /// <returns>The draft, complete or with its open questions recorded.</returns>
         /// <exception cref="CliException">Thrown when the lemmas cannot form a clause at all.</exception>
-        public ClauseDraft Build(IReadOnlyList<string> lemmas, DraftOverrides overrides)
+        public SentenceDraft Build(IReadOnlyList<string> lemmas, DraftOverrides overrides)
         {
             if (lemmas.Count == 0)
             {
@@ -86,7 +90,59 @@ namespace Grammar.Czech.Cli.Sentence
                 .Select((lemma, index) => Resolve(lemma, index + 1, overrides))
                 .ToList();
 
-            var draft = new ClauseDraft();
+            var sentence = new SentenceDraft();
+
+            // Spojka je předěl mezi klauzemi. Pořadová čísla přitom zůstávají globální přes celý
+            // zadaný seznam, aby '--role kniha=PAT' i '4 pad=dativ' ukazovaly pořád na totéž slovo.
+            foreach (var segment in Split(words))
+            {
+                sentence.Clauses.Add(BuildClause(segment.Conjunction, segment.Words, overrides));
+            }
+
+            return sentence;
+        }
+
+        // A conjunction between two verbs is what makes this a complex sentence. It is recognized from
+        // the rule data rather than from a switch, the same as a preposition or a pronoun — conjunctions
+        // are a closed class and the file that lists them is also the file that says how each one joins.
+        private IEnumerable<(string? Conjunction, List<ResolvedWord> Words)> Split(List<ResolvedWord> words)
+        {
+            string? conjunction = null;
+            var current = new List<ResolvedWord>();
+
+            foreach (var word in words)
+            {
+                if (word.Request.WordCategory == WordCategory.Conjunction)
+                {
+                    if (current.Count == 0)
+                    {
+                        throw new CliException(
+                            $"Spojka '{word.Lemma}' stojí na začátku, ale spojuje se s tím, co je před ní.");
+                    }
+
+                    yield return (conjunction, current);
+
+                    conjunction = word.Lemma;
+                    current = [];
+
+                    continue;
+                }
+
+                current.Add(word);
+            }
+
+            if (current.Count == 0)
+            {
+                throw new CliException(
+                    $"Za spojkou '{conjunction}' už žádná slova nejsou, takže není co připojit.");
+            }
+
+            yield return (conjunction, current);
+        }
+
+        private ClauseDraft BuildClause(string? conjunction, List<ResolvedWord> words, DraftOverrides overrides)
+        {
+            var draft = new ClauseDraft { Conjunction = conjunction };
 
             AttachPredicate(draft, words, overrides);
             AttachConstituents(draft, words, overrides);
@@ -123,9 +179,9 @@ namespace Grammar.Czech.Cli.Sentence
             var known = _lexicon.HasEntry(lemma);
             var enriched = _enricher.Enrich(word);
 
-            // Předložky ani zájmena slovník nevede — jsou to uzavřené třídy a bydlí v pravidlech, ne
-            // v hesláři — takže se poznají podle toho, že o nich ta pravidla něco vědí. Bez toho by
-            // z 'já' bylo podstatné jméno vzoru hrad.
+            // Předložky, zájmena ani spojky slovník nevede — jsou to uzavřené třídy a bydlí
+            // v pravidlech, ne v hesláři — takže se poznají podle toho, že o nich ta pravidla něco
+            // vědí. Bez toho by z 'já' bylo podstatné jméno vzoru hrad.
             if (enriched.WordCategory is null && _pronouns.GetPronounType(lemma) is not null)
             {
                 enriched.WordCategory = WordCategory.Pronoun;
@@ -136,10 +192,17 @@ namespace Grammar.Czech.Cli.Sentence
                 enriched.WordCategory = WordCategory.Preposition;
             }
 
+            if (enriched.WordCategory is null && IsConjunction(lemma))
+            {
+                enriched.WordCategory = WordCategory.Conjunction;
+            }
+
             var origin = stated?.StatesMorphology == true
                 ? MetadataOrigin.User
                 : known ? MetadataOrigin.Lexicon
-                : enriched.WordCategory is WordCategory.Pronoun or WordCategory.Preposition
+                : enriched.WordCategory is WordCategory.Pronoun
+                    or WordCategory.Preposition
+                    or WordCategory.Conjunction
                     ? MetadataOrigin.Rules
                     : MetadataOrigin.Guess;
 
@@ -252,6 +315,19 @@ namespace Grammar.Czech.Cli.Sentence
                 throw new CliException(
                     $"Přívlastek '{pendingModifiers[^1].Lemma}' nemá co rozvíjet — shodný přívlastek stojí "
                     + "před svým jménem.");
+            }
+        }
+
+        // GetReadings vyhazuje na neznámé spojce místo prázdna, takže se to čte jako pokus.
+        private bool IsConjunction(string lemma)
+        {
+            try
+            {
+                return _conjunctions.GetReadings(lemma).Count > 0;
+            }
+            catch (Exception)
+            {
+                return false;
             }
         }
 

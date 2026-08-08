@@ -17,6 +17,16 @@ namespace Grammar.Czech.Cli.Sentence
     public sealed class ClauseDraft
     {
         /// <summary>
+        /// Gets or sets the conjunction that attaches this clause to the one before it, or null when
+        /// it is the first.
+        /// </summary>
+        /// <remarks>
+        /// Whether it coordinates or subordinates is not recorded: the conjunction says it, and the
+        /// library reads that off the rule data.
+        /// </remarks>
+        public string? Conjunction { get; set; }
+
+        /// <summary>
         /// Gets or sets the lemma of the predicate.
         /// </summary>
         public string PredicateLemma { get; set; } = string.Empty;

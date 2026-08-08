@@ -34,11 +34,15 @@ namespace Grammar.Czech.Test
             services = collection.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true });
         }
 
-        private static ClauseDraft Draft(DraftOverrides? overrides, params string[] lemmas) =>
+        private static SentenceDraft Whole(DraftOverrides? overrides, params string[] lemmas) =>
             services.GetRequiredService<DraftBuilder>().Build(lemmas, overrides ?? new DraftOverrides());
 
+        // Většina těchhle testů mluví o jedné klauzi, tak si sáhne rovnou na ni.
+        private static ClauseDraft Draft(DraftOverrides? overrides, params string[] lemmas) =>
+            Whole(overrides, lemmas).Main;
+
         private static string Sentence(DraftOverrides? overrides, params string[] lemmas) =>
-            services.GetRequiredService<SentenceComposer>().Compose(Draft(overrides, lemmas));
+            services.GetRequiredService<SentenceComposer>().Compose(Whole(overrides, lemmas));
 
         /// <summary>
         /// Verifies that the verb becomes the predicate wherever it stands among the lemmas.
@@ -172,6 +176,50 @@ namespace Grammar.Czech.Test
 
             Assert.IsNull(draft.Constituents[^1].Functor);
             Assert.IsTrue(draft.Gaps().Any(gap => gap.Contains("den")));
+        }
+
+        /// <summary>
+        /// Verifies that a conjunction in the word list splits the sentence into clauses, and that the
+        /// conjunction itself decides whether they are coordinated or subordinated.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow("a", "Student čte knihu a žák píše dopis.", DisplayName = "souřadné")]
+        [DataRow("protože", "Student čte knihu, protože žák píše dopis.", DisplayName = "podřadné")]
+        public void ConjunctionSplitsTheWordListIntoClauses(string conjunction, string expected)
+        {
+            var whole = Whole(null, "student", "číst", "kniha", conjunction, "žák", "psát", "dopis");
+
+            Assert.AreEqual(2, whole.Clauses.Count);
+            Assert.IsNull(whole.Clauses[0].Conjunction);
+            Assert.AreEqual(conjunction, whole.Clauses[1].Conjunction);
+            Assert.AreEqual(expected, Sentence(null, "student", "číst", "kniha", conjunction, "žák", "psát", "dopis"));
+        }
+
+        /// <summary>
+        /// Verifies that positions stay global across the whole word list, so a correction addresses the
+        /// same word whichever clause it ended up in.
+        /// </summary>
+        [TestMethod]
+        public void PositionsRunAcrossTheWholeSentence()
+        {
+            var overrides = new DraftOverrides();
+            overrides.For("7").Case = Case.Genitive;
+
+            var whole = Whole(overrides, "student", "číst", "kniha", "a", "žák", "psát", "dopis");
+
+            Assert.AreEqual(7, whole.Clauses[1].Constituents[^1].Position);
+            Assert.AreEqual(Case.Genitive, whole.Clauses[1].Constituents[^1].EffectiveCase);
+        }
+
+        /// <summary>
+        /// Verifies that a conjunction with nothing on one side of it is refused, since there is then
+        /// nothing to join.
+        /// </summary>
+        [TestMethod]
+        public void ConjunctionWithNothingToJoinIsRefused()
+        {
+            Assert.ThrowsException<CliException>(() => Whole(null, "student", "číst", "kniha", "a"));
+            Assert.ThrowsException<CliException>(() => Whole(null, "a", "student", "číst", "kniha"));
         }
 
         /// <summary>

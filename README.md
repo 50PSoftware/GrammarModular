@@ -747,7 +747,14 @@ gramatika veta student jít --ramec motion --json
 
 The dictionary does not ship inside the tool package, the same as with the library package. Its path comes from `--slovnik`, from `GRAMMAR_CZECH_LEXICON`, or from the application directory; when it is nowhere, the tool says so at startup and points at `lexikon pull`.
 
-Complex sentences are not assembled yet — several verbs in the input are an error, not an instruction to coordinate.
+A conjunction in the word list splits the sentence, and the conjunction itself says how the halves join — the rule data knows which are coordinating and which subordinate:
+
+```bash
+gramatika veta student cist kniha a zak psat dopis        # Student čte knihu a žák píše dopis.
+gramatika veta student cist kniha protoze zak psat dopis # Student čte knihu, protože žák píše dopis.
+```
+
+Positions run across the whole word list, so `--pad dopis=genitiv` and `7 pad=genitiv` address the same word whichever clause it landed in. Predicate switches (`--cas`, `--zpusob`) apply to every clause; correcting one clause's predicate on its own is not expressible yet.
 
 ## Tests
 

@@ -29,10 +29,10 @@ namespace Grammar.Czech.Cli.Sentence
         /// <summary>
         /// Builds the sentence, reporting a refusal instead of throwing it.
         /// </summary>
-        /// <param name="draft">The draft to build.</param>
+        /// <param name="draft">The sentence to build.</param>
         /// <param name="failure">The reason the sentence could not be built, or <see langword="null"/>.</param>
         /// <returns>The sentence, or an empty string when it could not be built.</returns>
-        public string Compose(ClauseDraft draft, out string? failure)
+        public string Compose(SentenceDraft draft, out string? failure)
         {
             try
             {
@@ -55,10 +55,10 @@ namespace Grammar.Czech.Cli.Sentence
         /// <summary>
         /// Builds the sentence, or throws with the reason it could not be built.
         /// </summary>
-        /// <param name="draft">The draft to build.</param>
+        /// <param name="draft">The sentence to build.</param>
         /// <returns>The sentence.</returns>
         /// <exception cref="CliException">Thrown when the sentence cannot be built.</exception>
-        public string Compose(ClauseDraft draft)
+        public string Compose(SentenceDraft draft)
         {
             var sentence = Compose(draft, out var failure);
 

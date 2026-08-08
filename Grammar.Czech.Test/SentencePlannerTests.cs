@@ -77,6 +77,22 @@ namespace Grammar.Czech.Test
 
         private static string Build(SentencePlan plan) => builder.Build(planner.Plan(plan));
 
+        private static SentencePlan Reads() => new()
+        {
+            Predicate = Verb("číst", "číst"),
+            Participants = [Student(FgdFunctor.ACT), Book(FgdFunctor.PAT)]
+        };
+
+        private static SentencePlan Writes() => new()
+        {
+            Predicate = Verb("psát", "psát"),
+            Participants =
+            [
+                Noun("žák", "pán", Gender.Masculine, animate: true, FgdFunctor.ACT),
+                Noun("dopis", "hrad", Gender.Masculine, functor: FgdFunctor.PAT)
+            ]
+        };
+
         /// <summary>
         /// What the plan leaves unsaid takes the unmarked value: the present indicative active, and the
         /// first participant as what the sentence is about.
@@ -271,6 +287,25 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// The addressee takes an animate noun where there is one and stands aside where there is not:
+        /// a three-place verb used with two arguments is far likelier to be naming what than to whom,
+        /// so "žák píše dopis" is a letter written and not a letter written to.
+        /// </summary>
+        [TestMethod]
+        public void AddresseeStandsAsideForThePatientWhenNothingAnimateIsLeft()
+        {
+            var plan = roles.Resolve(new SentencePlan
+            {
+                Predicate = Verb("psát", "psát"),
+                Participants = [Noun("žák", "pán", Gender.Masculine, animate: true), Noun("dopis", "hrad", Gender.Masculine)]
+            });
+
+            Assert.AreEqual(FgdFunctor.ACT, plan.Participants[0].Functor);
+            Assert.AreEqual(FgdFunctor.PAT, plan.Participants[1].Functor);
+            Assert.AreEqual("Žák píše dopis.", Build(plan));
+        }
+
+        /// <summary>
         /// A stated role is never overwritten by the guess.
         /// </summary>
         [TestMethod]
@@ -301,6 +336,71 @@ namespace Grammar.Czech.Test
 
             Assert.AreEqual(1, CzechRoleResolver.Unresolved(plan).Count);
             Assert.AreEqual("den", CzechRoleResolver.Unresolved(plan)[0].Word.Lemma);
+        }
+
+        /// <summary>
+        /// The conjunction is what says how two clauses are joined, so the caller names it and nothing
+        /// else: a coordinating one puts them side by side, a subordinating one hangs the second off the
+        /// first and takes the comma with it.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow("a", "Student čte knihu a žák píše dopis.", DisplayName = "souřadné bez čárky")]
+        [DataRow("ale", "Student čte knihu, ale žák píše dopis.", DisplayName = "odporovací s čárkou")]
+        [DataRow("protože", "Student čte knihu, protože žák píše dopis.", DisplayName = "podřadné")]
+        public void ConjunctionDecidesHowTheClausesJoin(string conjunction, string expected)
+        {
+            Assert.AreEqual(expected, Build(Reads() with { Joined = [new ClauseLink(conjunction, Writes())] }));
+        }
+
+        /// <summary>
+        /// Three clauses on one conjunction are one coordination rather than two nested ones, which is
+        /// what keeps the punctuation of the inner relation from being applied twice.
+        /// </summary>
+        [TestMethod]
+        public void ClausesOnOneConjunctionFormASingleCoordination()
+        {
+            var sentence = Build(Reads() with
+            {
+                Joined = [new ClauseLink("a", Writes()), new ClauseLink("a", Reads())]
+            });
+
+            Assert.AreEqual("Student čte knihu a žák píše dopis a student čte knihu.", sentence);
+        }
+
+        /// <summary>
+        /// The paired construction opens with the conjunction and joins with its correlate, which the
+        /// data supplies — the caller says that it is paired, not what the second half is.
+        /// </summary>
+        [TestMethod]
+        public void PairedCoordinationOpensWithItsConjunction()
+        {
+            var sentence = Build(Reads() with
+            {
+                Joined = [new ClauseLink("buď", Writes(), Paired: true)]
+            });
+
+            Assert.AreEqual("Buď student čte knihu, nebo žák píše dopis.", sentence);
+        }
+
+        /// <summary>
+        /// A joined clause is a plan in its own right, so it is planned in its own right: the second
+        /// clause here has a subject of its own and agrees with it, in its own tense.
+        /// </summary>
+        [TestMethod]
+        public void JoinedClauseIsPlannedOnItsOwnTerms()
+        {
+            var sentence = Build(Reads() with
+            {
+                Joined =
+                [
+                    new ClauseLink("a", Writes() with
+                    {
+                        Predicate = Verb("psát", "psát") with { Tense = Tense.Past }
+                    })
+                ]
+            });
+
+            Assert.AreEqual("Student čte knihu a žák psal dopis.", sentence);
         }
 
         /// <summary>

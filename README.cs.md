@@ -744,7 +744,14 @@ gramatika veta student jít --ramec motion --json
 
 Slovník se s balíčkem nástroje nerozdává, stejně jako s balíčkem knihovny. Cesta k němu se bere z `--slovnik`, z `GRAMMAR_CZECH_LEXICON`, nebo z adresáře aplikace; když není nikde, řekne to nástroj rovnou při startu a poradí `lexikon pull`.
 
-Souvětí zatím neskládá — víc sloves ve vstupu je chyba, ne návod ke koordinaci.
+Spojka ve vstupu rozdělí větu na klauze a sama říká, jak se spojují — pravidla vědí, které jsou souřadicí a které podřadicí:
+
+```bash
+gramatika veta student cist kniha a zak psat dopis        # Student čte knihu a žák píše dopis.
+gramatika veta student cist kniha protoze zak psat dopis # Student čte knihu, protože žák píše dopis.
+```
+
+Pořadová čísla běží přes celý zadaný seznam, takže `--pad dopis=genitiv` i `7 pad=genitiv` ukazují na totéž slovo, ať skončilo v kterékoli klauzi. Přepínače přísudku (`--cas`, `--zpusob`) platí pro všechny klauze; opravit přísudek jedné z nich zvlášť zatím vyslovit nejde.
 
 ## Testy
 
