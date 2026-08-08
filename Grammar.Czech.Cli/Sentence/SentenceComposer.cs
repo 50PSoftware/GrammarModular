@@ -6,20 +6,23 @@ namespace Grammar.Czech.Cli.Sentence
     /// Builds the sentence from a draft and turns a refusal by the library into something to read.
     /// </summary>
     /// <remarks>
-    /// The builder throws for things it is right to refuse — a functor the verb has no slot for, a
+    /// The library throws for things it is right to refuse — a functor the verb has no slot for, a
     /// passive the frame does not license — and in the review those are answers, not crashes. They come
     /// back as text so the dialog can print them and carry on taking corrections.
     /// </remarks>
     public sealed class SentenceComposer
     {
+        private readonly CzechSentencePlanner _planner;
         private readonly CzechSentenceBuilder _builder;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SentenceComposer"/> type.
         /// </summary>
+        /// <param name="planner">The planner that turns the plan into a clause.</param>
         /// <param name="builder">The sentence builder.</param>
-        public SentenceComposer(CzechSentenceBuilder builder)
+        public SentenceComposer(CzechSentencePlanner planner, CzechSentenceBuilder builder)
         {
+            _planner = planner;
             _builder = builder;
         }
 
@@ -35,7 +38,7 @@ namespace Grammar.Czech.Cli.Sentence
             {
                 failure = null;
 
-                return _builder.Build(draft.ToClause());
+                return _builder.Build(_planner.Plan(draft.ToPlan()));
             }
             catch (Exception exception) when (exception is InvalidOperationException
                 or NotSupportedException

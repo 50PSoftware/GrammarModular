@@ -197,6 +197,34 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that a pronoun is recognized from the rule data rather than declined as a noun, and
+        /// that the tool does not report a closed class as a word the dictionary is missing.
+        /// </summary>
+        [TestMethod]
+        public void PronounComesFromTheRulesRatherThanTheGuess()
+        {
+            var draft = Draft(null, "já", "číst", "kniha");
+
+            Assert.AreEqual(MetadataOrigin.Rules, draft.Constituents[0].Origin);
+            Assert.IsFalse(draft.Notes.Any(note => note.Contains("já")));
+            Assert.AreEqual("Já čtu knihu.", Sentence(null, "já", "číst", "kniha"));
+        }
+
+        /// <summary>
+        /// Verifies that the subject pronoun is kept unless dropping it is asked for — the tool prints
+        /// what it was given — and that asking for it produces the neutral Czech sentence.
+        /// </summary>
+        [TestMethod]
+        public void SubjectIsDroppedOnlyWhenAskedFor()
+        {
+            Assert.AreEqual("Já čtu knihu.", Sentence(null, "já", "číst", "kniha"));
+
+            Assert.AreEqual(
+                "Čtu knihu.",
+                Sentence(new DraftOverrides { DropSubject = true }, "já", "číst", "kniha"));
+        }
+
+        /// <summary>
         /// Verifies that the communicative status decides the word order, which is the whole reason the
         /// draft carries it.
         /// </summary>

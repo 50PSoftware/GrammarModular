@@ -16,6 +16,16 @@ namespace Grammar.Czech.Cli.Sentence
         Lexicon,
 
         /// <summary>
+        /// The word belongs to a closed class the rule data enumerates, which is where it was recognized.
+        /// </summary>
+        /// <remarks>
+        /// Pronouns and prepositions are not in the dictionary and never will be — they are closed
+        /// classes and live in the embedded JSON rules instead. Reporting them as unknown would be
+        /// wrong twice over: nothing about them was guessed, and nothing is missing.
+        /// </remarks>
+        Rules,
+
+        /// <summary>
         /// The lemma is not in the lexicon and the metadata was inferred from its ending.
         /// </summary>
         Guess,

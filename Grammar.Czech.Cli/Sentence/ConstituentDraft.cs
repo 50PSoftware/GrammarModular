@@ -54,6 +54,16 @@ namespace Grammar.Czech.Cli.Sentence
         public InformationStatus Status { get; set; } = InformationStatus.New;
 
         /// <summary>
+        /// Gets or sets a value indicating whether the user stated the status rather than the planner
+        /// filling it.
+        /// </summary>
+        /// <remarks>
+        /// The two have to be told apart on the way into the plan: an unstated status is the planner's
+        /// to decide, and passing the tool's own default down would take that decision away from it.
+        /// </remarks>
+        public bool HasStatedStatus { get; set; }
+
+        /// <summary>
         /// Gets or sets the preposition the user attached, or <see langword="null"/> when there is none.
         /// </summary>
         /// <remarks>

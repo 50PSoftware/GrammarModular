@@ -311,9 +311,15 @@ Grammar.sln
 
 Hlavní registrace pro DI je `AddCzechGrammarServices()` v `Grammar.Czech/CzechGrammarServiceFactory.cs`.
 
-Stavba věty jde čtyřmi stupni; každý je samostatná služba a každý se dá testovat zvlášť:
+Stavba věty jde šesti stupni; každý je samostatná služba a každý se dá testovat zvlášť:
 
 ```text
+SentencePlan                  co se má říct: predikát, participanti, komunikační záměr
+   |  CzechRoleResolver       který participant hraje kterou roli, když to volající neřekl
+   v
+SentencePlan
+   |  CzechSentencePlanner    význam slovesa, podmět, jeho vypuštění, co je dané
+   v
 CzechClause
    |  CzechClausePlanner      je slot slovo, infinitiv, nebo vedlejší věta?
    v
@@ -329,7 +335,42 @@ slova
 věta
 ```
 
-Řez vede tam, kde se mění, co který stupeň smí měnit. Nad `PlannedClause` se ještě rozhoduje o slovech, pod ním už jen o jejich pořadí — a právě to dovoluje českému slovosledu se volně měnit, aniž by se s ním hnul jediný tvar. Vstupním bodem zůstává `CzechSentenceBuilder` a drží si rekurzi, protože klauze může obsahovat větu: vztažná věta visí na konstituentu.
+Řez vede tam, kde se mění, co který stupeň smí měnit. Nad `PlannedClause` se ještě rozhoduje o slovech, pod ním už jen o jejich pořadí — a právě to dovoluje českému slovosledu se volně měnit, aniž by se s ním hnul jediný tvar. `CzechSentenceBuilder` zůstává vstupním bodem pro hotovou klauzi a drží si rekurzi, protože klauze může obsahovat větu: vztažná věta visí na konstituentu.
+
+`CzechRoleResolver` je samostatný stupeň, a ne součást plánovače, ze stejného důvodu: je to jediné místo, které hádá. Plánovač role dostává a participanta bez role odmítne, takže všechno odvozené zůstává tam, kde se to dá prohlédnout a přepsat dřív, než se z toho stane věta.
+
+### Od plánu k větě
+
+```csharp
+var roles = provider.GetRequiredService<CzechRoleResolver>();
+var planner = provider.GetRequiredService<CzechSentencePlanner>();
+
+var plan = new SentencePlan
+{
+    Predicate = new CzechWordRequest { Lemma = "dávat", Pattern = "trida5", WordCategory = WordCategory.Verb },
+    Participants = [Student, Woman, Book],   // bez zadaných funktorů
+};
+
+Console.WriteLine(builder.Build(planner.Plan(roles.Resolve(plan))));
+// Student dává ženě knihu.
+```
+
+Role plynou z rámce: konatel a adresát berou přednostně životné jméno, což je to, co udrží dva předměty slovesa dávání od sebe, aniž by je někdo pojmenoval. Participant, kterého nic nevysvětlí, si nechá prázdný funktor a vrátí se z `CzechRoleResolver.Unresolved` — špatná role dá dobře utvořenou větu o něčem jiném.
+
+Dvě rozhodnutí, která pod plánovačem udělat nejde:
+
+```csharp
+// Vypuštění podmětu: osobu nese koncovka, takže zájmeno je důraz, ne nepříznaková věta. Shoda,
+// kterou zájmeno neslo, se při tom přesune na přísudek.
+planner.Plan(plan with { Participants = [Me, Book] });                       // Čtu knihu.
+planner.Plan(plan with { Participants = [Me, Book], AllowSubjectDrop = false }); // Já čtu knihu.
+
+// Perspektiva: chtít patiens jako podmět znamená chtít pasivum, což je vlastní rámec — konatel
+// klesne do instrumentálu — a zároveň z patientu udělá téma, protože pasivum, které by nechalo
+// konatele vepředu, by proti aktivu nezískalo nic.
+planner.Plan(plan with { Perspective = FgdFunctor.PAT });
+// Kniha je dávána studentem ženě.
+```
 
 Hlavní vstupy:
 
@@ -681,7 +722,16 @@ Věta: Klára dává ženě knihu.
 >
 ```
 
-Sloupec `zdroj` je tam kvůli rozdílu mezi odpovědí a odhadem: vzor ze slovníku platí jako slovník, vzor odvozený ze zakončení je návrh nástroje. Pád označený `(rámec)` v requestu nestojí — doplní ho až builder ze slovesa, a proto zmizí ve chvíli, kdy se pád zadá natvrdo.
+Sloupec `zdroj` je tam kvůli rozdílu mezi odpovědí a odhadem: vzor ze slovníku platí jako slovník, `pravidla` je uzavřená třída (zájmena, předložky) a `odhad` je návrh nástroje odvozený ze zakončení. Pád označený `(rámec)` v requestu nestojí — doplní ho až builder ze slovesa, a proto zmizí ve chvíli, kdy se pád zadá natvrdo.
+
+Role ani pády si nástroj nevymýšlí sám: volá `CzechRoleResolver` a `CzechSentencePlanner`, tedy tentýž kód, jaký dostane konzument knihovny. Přehled ukazuje výsledek plánovače, ne druhý odhad vedle něj.
+
+Podmětové zájmeno nástroj proti knihovně nechává stát — vypsat míň slov, než dostal, by vypadalo, že se jedno ztratilo. `--vypustit-podmet` zapne nepříznakovou češtinu:
+
+```bash
+gramatika veta já číst kniha                     # Já čtu knihu.
+gramatika veta já číst kniha --vypustit-podmet   # Čtu knihu.
+```
 
 Na každou otázku dialogu existuje přepínač, který ji zodpoví dopředu; obojí zapisuje do téhož místa, takže sezení jde přepsat na jeden příkaz. To je zároveň to, co dělá z nástroje něco použitelného ve skriptu, kde se není koho ptát: `--bez-dotazu` udělá z otevřené otázky chybu, která pojmenuje přepínač, jímž se řeší, a `--json` k větě přidá i rozbor.
 

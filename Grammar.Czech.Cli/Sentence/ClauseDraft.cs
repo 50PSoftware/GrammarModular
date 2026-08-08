@@ -58,6 +58,15 @@ namespace Grammar.Czech.Cli.Sentence
         public IReadOnlyList<ValencyFrame> FrameChoices { get; set; } = [];
 
         /// <summary>
+        /// Gets or sets the plan the library completed, which is what the sentence is built from.
+        /// </summary>
+        /// <remarks>
+        /// Kept so that building goes through the same plan the review displayed, rather than through a
+        /// second one assembled from the draft afterwards.
+        /// </remarks>
+        public SentencePlan? Plan { get; set; }
+
+        /// <summary>
         /// Gets or sets the communicative force of the clause.
         /// </summary>
         public SentenceType SentenceType { get; set; } = SentenceType.Declarative;
@@ -103,16 +112,7 @@ namespace Grammar.Czech.Cli.Sentence
         /// </summary>
         /// <returns>The clause.</returns>
         /// <exception cref="CliException">Thrown when a decision is still open.</exception>
-        public CzechClause ToClause() => new()
-        {
-            Predicate = Predicate,
-            Elements = Constituents.Select(constituent => constituent.ToElement()).ToList(),
-
-            // Popisek jde do klauze jen tehdy, když sloveso má z čeho vybírat. U slovesa bez rámce by
-            // builder na nenulový popisek hledal rámec, který ve slovníku není.
-            FrameLabel = Frame?.FrameLabel,
-            SentenceType = SentenceType,
-            Terminator = Terminator,
-        };
+        public SentencePlan ToPlan() => Plan
+            ?? throw new CliException("Návrh ještě neprošel plánovačem, takže z něj větu postavit nejde.");
     }
 }

@@ -58,6 +58,11 @@ namespace Grammar.Czech.Cli.Commands
             var predicateNumber = new Option<string?>("--cislo-prisudku") { Description = "Číslo přísudku ve větě bez podmětu." };
             var reflexive = new Option<string?>("--zvratne") { Description = "Zvratné se/si u slovesa mimo slovník." };
             var negative = new Option<bool>("--zapor") { Description = "Zápor přísudku." };
+
+            var dropSubject = new Option<bool>("--vypustit-podmet")
+            {
+                Description = "Vypustit podmětové zájmeno, když nenese důraz: 'čtu' místo 'já čtu'.",
+            };
             var sentenceType = new Option<string?>("--typ") { Description = "Druh věty: oznamovaci, tazaci." };
             var terminator = new Option<string?>("--konec") { Description = "Koncové znaménko věty." };
 
@@ -76,7 +81,7 @@ namespace Grammar.Czech.Cli.Commands
                 lemmas,
                 role, status, kase, gender, number, pattern, animate, preposition, modifier,
                 verb, frame, tense, mood, voice, aspect, person, predicateNumber, reflexive, negative,
-                sentenceType, terminator, quiet, json,
+                dropSubject, sentenceType, terminator, quiet, json,
             };
 
             command.Aliases.Add("věta");
@@ -96,6 +101,7 @@ namespace Grammar.Czech.Cli.Commands
                     SentenceType = Optional(parse.GetValue(sentenceType), Terms.ParseSentenceType),
                     Terminator = parse.GetValue(terminator),
                     IsNegative = parse.GetValue(negative) ? true : null,
+                    DropSubject = parse.GetValue(dropSubject) ? true : null,
                 };
 
                 if (parse.GetValue(reflexive) is { } stated)

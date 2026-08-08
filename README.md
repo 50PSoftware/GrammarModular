@@ -313,9 +313,15 @@ Grammar.sln
 
 The main DI registration is `AddCzechGrammarServices()` in `Grammar.Czech/CzechGrammarServiceFactory.cs`.
 
-Building a sentence runs through four stages, each a separate service and each testable on its own:
+Building a sentence runs through six stages, each a separate service and each testable on its own:
 
 ```text
+SentencePlan                  what is to be said: a predicate, participants, an intent
+   |  CzechRoleResolver       which participant fills which role, when the caller did not say
+   v
+SentencePlan
+   |  CzechSentencePlanner    the sense of the verb, the subject, pro-drop, what is old information
+   v
 CzechClause
    |  CzechClausePlanner      is the slot a word, an infinitive, or a dependent clause?
    v
@@ -331,7 +337,42 @@ words
 sentence
 ```
 
-The split follows what each stage is allowed to change. Above `PlannedClause` the words are still being decided; below it only their order is, which is what lets Czech word order vary freely without any form moving with it. `CzechSentenceBuilder` remains the entry point and owns the recursion, because a clause can contain a sentence — a relative clause hangs off a constituent.
+The split follows what each stage is allowed to change. Above `PlannedClause` the words are still being decided; below it only their order is, which is what lets Czech word order vary freely without any form moving with it. `CzechSentenceBuilder` remains the entry point for a clause you have already built, and owns the recursion, because a clause can contain a sentence — a relative clause hangs off a constituent.
+
+`CzechRoleResolver` is a stage of its own rather than part of the planner for the same reason: it is the only one that guesses. The planner takes roles as given and refuses a participant without one, so everything worked out by inference stays where it can be inspected and overruled before it becomes a sentence.
+
+### Starting from a plan
+
+```csharp
+var roles = provider.GetRequiredService<CzechRoleResolver>();
+var planner = provider.GetRequiredService<CzechSentencePlanner>();
+
+var plan = new SentencePlan
+{
+    Predicate = new CzechWordRequest { Lemma = "dávat", Pattern = "trida5", WordCategory = WordCategory.Verb },
+    Participants = [Student, Woman, Book],   // no functors stated
+};
+
+Console.WriteLine(builder.Build(planner.Plan(roles.Resolve(plan))));
+// Student dává ženě knihu.
+```
+
+The roles come off the frame: the actor and the addressee prefer an animate noun, which is what keeps the two objects of a transfer verb apart without anyone naming either. A participant nothing accounts for keeps a null functor and comes back from `CzechRoleResolver.Unresolved`, because a wrong role produces a well-formed sentence that means something else.
+
+Two decisions the planner makes that nothing below it could:
+
+```csharp
+// Pro-drop: the ending already carries the person, so the pronoun is emphasis rather than the
+// neutral sentence. The agreement it was carrying moves onto the predicate as it goes.
+planner.Plan(plan with { Participants = [Me, Book] });                       // Čtu knihu.
+planner.Plan(plan with { Participants = [Me, Book], AllowSubjectDrop = false }); // Já čtu knihu.
+
+// Perspective: asking for the patient to be the subject asks for the passive, which is a frame of
+// its own — the agent drops to the instrumental — and makes the patient the theme as well, since a
+// passive that left the agent in front would have gained nothing over the active.
+planner.Plan(plan with { Perspective = FgdFunctor.PAT });
+// Kniha je dávána studentem ženě.
+```
 
 The main entry points:
 
@@ -684,7 +725,16 @@ Věta: Klára dává ženě knihu.
 >
 ```
 
-The `zdroj` column is there for the difference between an answer and a guess: a pattern from the dictionary is as good as the dictionary, a pattern inferred from the ending is the tool's proposal. A case marked `(rámec)` is not on the request at all — the builder fills it from the verb — which is why it disappears the moment a case is stated outright.
+The `zdroj` column is there for the difference between an answer and a guess: a pattern from the dictionary is as good as the dictionary, `pravidla` is a closed class (pronouns, prepositions) and `odhad` is the tool's own proposal from the ending. A case marked `(rámec)` is not on the request at all — the builder fills it from the verb — which is why it disappears the moment a case is stated outright.
+
+The tool works none of this out itself: it calls `CzechRoleResolver` and `CzechSentencePlanner`, the same code a library consumer gets. What the review shows is the planner's result rather than a second opinion beside it.
+
+The subject pronoun is kept where the library would drop it — printing fewer words than it was given would look like losing one. `--vypustit-podmet` asks for the neutral Czech sentence:
+
+```bash
+gramatika veta já číst kniha                     # Já čtu knihu.
+gramatika veta já číst kniha --vypustit-podmet   # Čtu knihu.
+```
 
 Every question the dialog asks has a switch that answers it in advance, and both write to the same place, so a session can be rewritten as a single command. That is also what makes the tool usable in a script, where there is nobody to ask: `--bez-dotazu` turns an open question into an error naming the switch that settles it, and `--json` adds the analysis to the sentence.
 

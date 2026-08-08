@@ -82,6 +82,7 @@ namespace Grammar.Czech.Cli.Rendering
         private static string Source(MetadataOrigin origin) => origin switch
         {
             MetadataOrigin.Lexicon => "slovník",
+            MetadataOrigin.Rules => "pravidla",
             MetadataOrigin.Guess => "odhad",
             _ => "zadáno",
         };

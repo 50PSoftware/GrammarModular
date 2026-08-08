@@ -137,6 +137,7 @@ namespace Grammar.Czech.Cli.Interaction
 
               p cas=minulý           čas, způsob, rod (činný/trpný), vid, osoba, číslo
               p zapor=ano            zápor přísudku
+              p podmet=vypustit      vypustit podmětové zájmeno: 'čtu' místo 'já čtu'
               p zvratne=se           zvratné se/si u slovesa, které slovník nevede
               p ramec=transfer       který význam slovesa se má vzít
               p typ=tázací           druh věty; 'p konec=?' mění koncové znaménko

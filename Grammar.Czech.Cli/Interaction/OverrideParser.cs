@@ -150,6 +150,7 @@ namespace Grammar.Czech.Cli.Interaction
             "osoba" => Assigning(Terms.ParsePerson(value), parsed => overrides.Person = parsed),
             "cislo" => Assigning(Terms.ParseNumber(value), parsed => overrides.Number = parsed),
             "zapor" => Assigning(Terms.ParseYesNo(value), parsed => overrides.IsNegative = parsed),
+            "podmet" => Assigning(ParseSubjectDrop(value), parsed => overrides.DropSubject = parsed),
             "zvratne" => Assigning(ParseReflexive(value), parsed => overrides.ReflexiveType = parsed),
             "ramec" => Assigning(value, parsed => overrides.FrameLabel = parsed),
             "sloveso" => Assigning(value, parsed => overrides.PredicateLemma = parsed),
@@ -157,7 +158,17 @@ namespace Grammar.Czech.Cli.Interaction
             "konec" => Assigning(value, parsed => overrides.Terminator = parsed),
             _ => throw new CliException(
                 $"U přísudku neznám '{property}'. Jde: cas, zpusob, rod, vid, osoba, cislo, "
-                + "zapor, zvratne, ramec, sloveso, typ, konec."),
+                + "zapor, podmet, zvratne, ramec, sloveso, typ, konec."),
+        };
+
+        // Vypuštění podmětu je vlastnost věty, ne slova: 'čtu' proti 'já čtu' je táž věta jednou
+        // nepříznaková a jednou důrazová.
+        private static bool ParseSubjectDrop(string value) => Terms.Plain(value) switch
+        {
+            "vypustit" or "vypusteny" or "ano" => true,
+            "ponechat" or "vyjadreny" or "ne" => false,
+            _ => throw new CliException(
+                $"Z '{value}' nepoznám, co s podmětem. Jde: vypustit, ponechat."),
         };
 
         private static Action Assigning<TValue>(TValue parsed, Action<TValue> write) => () => write(parsed);

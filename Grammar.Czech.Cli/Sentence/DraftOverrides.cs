@@ -70,6 +70,16 @@ namespace Grammar.Czech.Cli.Sentence
         public bool? IsNegative { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether a subject pronoun that adds nothing may be dropped.
+        /// </summary>
+        /// <remarks>
+        /// Off unless asked for, unlike the library's default. A tool that was handed a word and did not
+        /// print it looks like it lost it, whereas a library consumer is building a sentence and wants
+        /// the neutral Czech one.
+        /// </remarks>
+        public bool? DropSubject { get; set; }
+
+        /// <summary>
         /// Gets or sets the communicative force of the clause.
         /// </summary>
         public SentenceType? SentenceType { get; set; }

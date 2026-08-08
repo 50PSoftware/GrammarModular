@@ -1,45 +1,63 @@
 using Grammar.Core.Enums;
 using Grammar.Core.Interfaces;
-using Grammar.Core.Models.Valency;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Models;
+using Grammar.Czech.Models.Syntax;
 using Grammar.Czech.Services;
 
 namespace Grammar.Czech.Cli.Sentence
 {
     /// <summary>
-    /// Reads a list of lemmas as a clause: which word is the predicate, what role each of the others
-    /// fills, and what the lexicon already knows about them.
+    /// Reads a bare list of lemmas as a sentence plan: which word is the predicate, which words hang
+    /// off which, and what the lexicon already knows about each of them.
     /// </summary>
     /// <remarks>
-    /// Everything here is a proposal. The tool derives what it can and leaves the rest open rather than
-    /// picking for the user — an undecided functor stays <see langword="null"/> and comes back as a gap,
-    /// because a wrong role produces a well-formed sentence that means something else, which is worse
-    /// than a question.
+    /// What is left here is the part that is about a command line rather than about Czech: turning a
+    /// flat list of words into participants, guessing the metadata of a lemma the dictionary does not
+    /// hold, and applying what the user overruled. Everything grammatical — which participant fills
+    /// which role, which sense of the verb, what case follows — belongs to
+    /// <see cref="CzechRoleResolver"/> and <see cref="CzechSentencePlanner"/> and is asked of them, so
+    /// that the tool and a library consumer get the same answers from the same code.
     /// </remarks>
     public sealed class DraftBuilder
     {
         private readonly IValencyProvider<CzechLexicalEntry> _lexicon;
         private readonly CzechLexiconEnricher _enricher;
         private readonly ICzechPrepositionService _prepositions;
+        private readonly ICzechPronounService _pronouns;
+        private readonly CzechFrameSelector _frames;
+        private readonly CzechRoleResolver _roles;
+        private readonly CzechSentencePlanner _planner;
         private readonly LemmaGuess _guess;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DraftBuilder"/> type.
         /// </summary>
-        /// <param name="lexicon">The dictionary to read frames and entries from.</param>
+        /// <param name="lexicon">The dictionary to read entries from.</param>
         /// <param name="enricher">The service that fills a request from a dictionary entry.</param>
-        /// <param name="prepositions">The preposition service, for recognizing and governing them.</param>
+        /// <param name="prepositions">The preposition service, for recognizing one in the word list.</param>
+        /// <param name="pronouns">The pronoun service, for recognizing one in the word list.</param>
+        /// <param name="frames">The frame selector, for the sense of the verb.</param>
+        /// <param name="roles">The role resolver, which works out the functors.</param>
+        /// <param name="planner">The sentence planner, for the values the plan leaves unsaid.</param>
         /// <param name="guess">The fallback for lemmas the dictionary does not hold.</param>
         public DraftBuilder(
             IValencyProvider<CzechLexicalEntry> lexicon,
             CzechLexiconEnricher enricher,
             ICzechPrepositionService prepositions,
+            ICzechPronounService pronouns,
+            CzechFrameSelector frames,
+            CzechRoleResolver roles,
+            CzechSentencePlanner planner,
             LemmaGuess guess)
         {
             _lexicon = lexicon;
             _enricher = enricher;
             _prepositions = prepositions;
+            _pronouns = pronouns;
+            _frames = frames;
+            _roles = roles;
+            _planner = planner;
             _guess = guess;
         }
 
@@ -73,15 +91,14 @@ namespace Grammar.Czech.Cli.Sentence
             AttachPredicate(draft, words, overrides);
             AttachConstituents(draft, words, overrides);
 
-            // Slovesný rod musí být rozhodnutý dřív, než se hledá rámec: trpná diateze je jiný rámec,
-            // ne ten činný přepočítaný.
-            ApplyPredicateCategories(draft, overrides);
+            // Odtud dolů rozhoduje knihovna. Nejdřív se sestaví plán z toho, co uživatel zadal, pak
+            // se nechá doplnit role a výchozí hodnoty, a teprve výsledek se rozprostře zpátky do
+            // návrhu, aby přehled ukazoval přesně to, z čeho se bude stavět.
+            var plan = _planner.Complete(_roles.Resolve(ToPlan(draft, overrides)));
 
+            Absorb(draft, plan);
             ResolveFrame(draft, overrides);
-            AssignFunctors(draft);
             ApplyGovernment(draft);
-            ApplyStatus(draft, overrides);
-            AgreeWithSubject(draft, overrides);
             Report(draft);
 
             return draft;
@@ -106,8 +123,14 @@ namespace Grammar.Czech.Cli.Sentence
             var known = _lexicon.HasEntry(lemma);
             var enriched = _enricher.Enrich(word);
 
-            // Předložku slovník nevede — je v pravidlech, ne v hesláři — takže se pozná podle toho,
-            // že pro ni existuje rekce.
+            // Předložky ani zájmena slovník nevede — jsou to uzavřené třídy a bydlí v pravidlech, ne
+            // v hesláři — takže se poznají podle toho, že o nich ta pravidla něco vědí. Bez toho by
+            // z 'já' bylo podstatné jméno vzoru hrad.
+            if (enriched.WordCategory is null && _pronouns.GetPronounType(lemma) is not null)
+            {
+                enriched.WordCategory = WordCategory.Pronoun;
+            }
+
             if (enriched.WordCategory is null && _prepositions.GetAllowedCases(lemma).Any())
             {
                 enriched.WordCategory = WordCategory.Preposition;
@@ -115,7 +138,10 @@ namespace Grammar.Czech.Cli.Sentence
 
             var origin = stated?.StatesMorphology == true
                 ? MetadataOrigin.User
-                : known ? MetadataOrigin.Lexicon : MetadataOrigin.Guess;
+                : known ? MetadataOrigin.Lexicon
+                : enriched.WordCategory is WordCategory.Pronoun or WordCategory.Preposition
+                    ? MetadataOrigin.Rules
+                    : MetadataOrigin.Guess;
 
             var completed = _guess.Complete(enriched);
 
@@ -200,6 +226,8 @@ namespace Grammar.Czech.Cli.Sentence
                 {
                     Preposition = word.Stated?.Preposition ?? pendingPreposition,
                     Functor = word.Stated?.Functor,
+                    Status = word.Stated?.Status ?? InformationStatus.New,
+                    HasStatedStatus = word.Stated?.Status is not null,
                 };
 
                 constituent.Modifiers.AddRange(pendingModifiers);
@@ -230,157 +258,79 @@ namespace Grammar.Czech.Cli.Sentence
         private CzechWordRequest BuildModifier(string lemma) => _guess.Complete(
             _enricher.Enrich(new CzechWordRequest { Lemma = lemma, WordCategory = WordCategory.Adjective }));
 
+        /// <summary>
+        /// Builds the plan the library works from, out of what the user entered.
+        /// </summary>
+        /// <param name="draft">The draft assembled from the word list.</param>
+        /// <param name="overrides">What the user has stated.</param>
+        /// <returns>The plan.</returns>
+        public static SentencePlan ToPlan(ClauseDraft draft, DraftOverrides overrides)
+        {
+            var predicate = draft.Predicate;
+
+            predicate.Tense = overrides.Tense ?? predicate.Tense;
+            predicate.Modus = overrides.Mood ?? predicate.Modus;
+            predicate.Voice = overrides.Voice ?? predicate.Voice;
+            predicate.Aspect = overrides.Aspect ?? predicate.Aspect;
+            predicate.Person = overrides.Person ?? predicate.Person;
+            predicate.Number = overrides.Number ?? predicate.Number;
+            predicate.Gender = overrides.Gender ?? predicate.Gender;
+            predicate.IsNegative = overrides.IsNegative ?? predicate.IsNegative;
+
+            if (overrides.ReflexiveType is { } reflexive)
+            {
+                predicate.ReflexiveType = reflexive;
+            }
+
+            return new SentencePlan
+            {
+                Predicate = predicate,
+                Participants = [.. draft.Constituents.Select(ToParticipant)],
+                FrameLabel = overrides.FrameLabel,
+                SentenceType = overrides.SentenceType ?? draft.SentenceType,
+                Terminator = overrides.Terminator
+                    ?? ((overrides.SentenceType ?? draft.SentenceType) == SentenceType.Interrogative ? "?" : "."),
+
+                // Nástroj vypisuje, co dostal; vypustit podmět, který uživatel zadal, by vypadalo, že se
+                // slovo ztratilo. Knihovní konzument to má naopak zapnuté, protože staví větu.
+                AllowSubjectDrop = overrides.DropSubject ?? false,
+            };
+        }
+
+        private static PlannedParticipant ToParticipant(ConstituentDraft constituent) => new()
+        {
+            Word = constituent.Word,
+            Modifiers = constituent.Modifiers,
+            Preposition = constituent.Preposition,
+            Functor = constituent.Functor,
+            Status = constituent.HasStatedStatus ? constituent.Status : null,
+        };
+
+        // Zpátky do návrhu, aby přehled ukazoval přesně to, z čeho se bude stavět — role i členění tak,
+        // jak je doplnila knihovna, ne jak by si je nástroj domyslel podruhé.
+        private static void Absorb(ClauseDraft draft, SentencePlan plan)
+        {
+            draft.Predicate = plan.Predicate;
+            draft.Plan = plan;
+
+            foreach (var (constituent, participant) in draft.Constituents.Zip(plan.Participants))
+            {
+                constituent.Functor = participant.Functor;
+                constituent.Status = participant.Status ?? constituent.Status;
+                constituent.Word = participant.Word;
+            }
+        }
+
         private void ResolveFrame(ClauseDraft draft, DraftOverrides overrides)
         {
-            // Diatezi vybírá slovesný rod: trpný rámec přemapuje všechny slotry najednou, takže se do
-            // něj nedá nahlédnout přes ten činný.
             var diathesis = draft.Predicate.Voice == Voice.Passive
                 ? Diathesis.PassivePeriphrastic
                 : Diathesis.Active;
 
-            var frames = _lexicon.GetFrames(draft.PredicateLemma)
-                .Where(frame => frame.Diathesis == diathesis)
-                .ToList();
+            var selection = _frames.Select(draft.PredicateLemma, overrides.FrameLabel, diathesis);
 
-            draft.FrameChoices = frames;
-
-            if (frames.Count == 0)
-            {
-                return;
-            }
-
-            if (overrides.FrameLabel is { } label)
-            {
-                draft.Frame = frames.FirstOrDefault(frame =>
-                        string.Equals(frame.FrameLabel, label, StringComparison.OrdinalIgnoreCase))
-                    ?? throw new CliException(
-                        $"Sloveso '{draft.PredicateLemma}' rámec '{label}' nemá. Na výběr je: "
-                        + $"{string.Join(", ", frames.Select(frame => frame.FrameLabel ?? "bez popisku"))}.");
-
-                return;
-            }
-
-            // Když je rámec jeden, není co vybírat; když je jeden označený jako výchozí, slovník tu
-            // volbu udělal za nás. Jinak zůstane nerozhodnutá a zeptáme se — vybrat význam slovesa
-            // za uživatele je přesně to, co si tenhle projekt zakazuje.
-            draft.Frame = frames.Count == 1
-                ? frames[0]
-                : frames.FirstOrDefault(frame => frame.IsDefault);
-        }
-
-        private void AssignFunctors(ClauseDraft draft)
-        {
-            var open = draft.Constituents.Where(constituent => constituent.Functor is null).ToList();
-
-            if (draft.Frame is null)
-            {
-                foreach (var constituent in open)
-                {
-                    ResolveFree(constituent, draft);
-                }
-
-                return;
-            }
-
-            var slots = draft.Frame.Slots
-                .Where(slot => slot.Realizations.Any(realization => realization.Case is not null))
-                .Where(slot => draft.Constituents.All(constituent => constituent.Functor != slot.Functor))
-                .OrderBy(slot => slot.CanonicalOrder)
-                .ToList();
-
-            // 1. Předložka je nejsilnější vodítko: mluvit má ADDR jako 's' + instrumentál a PAT jako
-            //    'o' + lokál, takže zadaná předložka slot určí sama.
-            foreach (var constituent in open.Where(item => item.Preposition is not null).ToList())
-            {
-                var match = slots.FirstOrDefault(slot => slot.Realizations.Any(realization =>
-                    string.Equals(realization.Preposition, constituent.Preposition, StringComparison.OrdinalIgnoreCase)));
-
-                if (match is null)
-                {
-                    continue;
-                }
-
-                constituent.Functor = match.Functor;
-                slots.Remove(match);
-                open.Remove(constituent);
-            }
-
-            // 2. Konatel a adresát berou životné jméno, je-li ve zbytku právě jedno — dávat ženě knihu
-            //    a ne knize ženu. Proto se obsazují dřív než ostatní sloty, jinak by jim ten jediný
-            //    životný kandidát utekl podle kanonického pořadí rámce. Zbytek se páruje tak, jak byl
-            //    zadaný; pes vidí kočku má životná obě a rozhodne až pořadí — a proto se to potvrzuje.
-            foreach (var slot in slots.OrderBy(Priority).ThenBy(slot => slot.CanonicalOrder).ToList())
-            {
-                if (open.Count == 0)
-                {
-                    break;
-                }
-
-                var animate = open.Where(item => item.Word.IsAnimate == true).ToList();
-
-                var chosen = Priority(slot) < 2 && animate.Count == 1
-                    ? animate[0]
-                    : open[0];
-
-                chosen.Functor = slot.Functor;
-                slots.Remove(slot);
-                open.Remove(chosen);
-            }
-
-            // 3. Co rámec nepojmenoval, je volné určení — to k slovesu patří jakékoli, takže tady už
-            //    rozhoduje jen předložka, a bez ní nic.
-            foreach (var constituent in open)
-            {
-                ResolveFree(constituent, draft);
-            }
-        }
-
-        private static int Priority(ValencySlot slot) => slot.Functor switch
-        {
-            FgdFunctor.ACT => 0,
-            FgdFunctor.ADDR => 1,
-            _ => 2,
-        };
-
-        // Volné určení rámec neřídí — to k slovesu patří jakékoli — takže pád i role musí přijít
-        // odjinud a jediné vodítko je předložka: 've škole' je místo, 'do školy' směr. Bez předložky
-        // se neodhaduje nic; mezi 'večer' jako časem a 'večer' jako patiensem rozhoduje význam.
-        private void ResolveFree(ConstituentDraft constituent, ClauseDraft draft)
-        {
-            if (constituent.Preposition is not { } preposition)
-            {
-                return;
-            }
-
-            var allowed = _prepositions.GetAllowedCases(preposition).ToList();
-
-            if (constituent.Word.Case is null && allowed.Count == 1)
-            {
-                var word = constituent.Word;
-                word.Case = allowed[0];
-                constituent.Word = word;
-            }
-
-            if (constituent.Word.Case is not { } kase)
-            {
-                draft.Notes.Add(
-                    $"Předložka '{preposition}' u slova '{constituent.Lemma}' se pojí s víc pády "
-                    + $"({string.Join(", ", allowed.Select(Terms.Name))}) — vyber jeden přepínačem --pad.");
-
-                return;
-            }
-
-            constituent.Functor ??= _prepositions.GetSemanticGroup(preposition, kase) switch
-            {
-                PrepositionSemanticGroup.Location => FgdFunctor.LOC,
-                PrepositionSemanticGroup.Direction => FgdFunctor.DIR3,
-                PrepositionSemanticGroup.Time => FgdFunctor.TWHEN,
-                PrepositionSemanticGroup.Cause => FgdFunctor.CAUS,
-                PrepositionSemanticGroup.Purpose => FgdFunctor.AIM,
-                PrepositionSemanticGroup.Instrument => FgdFunctor.MEANS,
-                PrepositionSemanticGroup.Comparison => FgdFunctor.CRIT,
-                _ => null,
-            };
+            draft.Frame = selection.Frame;
+            draft.FrameChoices = selection.Choices;
         }
 
         // Pád, který doplní builder z rámce, si návrh nese jen pro výpis — request ho nemá a mít nemá,
@@ -408,56 +358,6 @@ namespace Grammar.Czech.Cli.Sentence
                         + "přepínačem --pad.");
                 }
             }
-        }
-
-        private static void ApplyStatus(ClauseDraft draft, DraftOverrides overrides)
-        {
-            for (var index = 0; index < draft.Constituents.Count; index++)
-            {
-                var constituent = draft.Constituents[index];
-                var stated = overrides.Find(constituent.Lemma, constituent.Position)?.Status;
-
-                // Výchozí členění je to nepříznakové: první konstituent je téma, zbytek réma. Slovosled
-                // z toho builder odvodí sám, takže tohle je jediné místo, kde se o pořadí rozhoduje.
-                constituent.Status = stated
-                    ?? (index == 0 ? InformationStatus.Given : InformationStatus.New);
-            }
-
-            draft.SentenceType = overrides.SentenceType ?? draft.SentenceType;
-            draft.Terminator = overrides.Terminator
-                ?? (draft.SentenceType == SentenceType.Interrogative ? "?" : ".");
-        }
-
-        private static void ApplyPredicateCategories(ClauseDraft draft, DraftOverrides overrides)
-        {
-            var predicate = draft.Predicate;
-
-            predicate.Tense = overrides.Tense ?? predicate.Tense ?? Tense.Present;
-            predicate.Modus = overrides.Mood ?? predicate.Modus ?? Modus.Indicative;
-            predicate.Voice = overrides.Voice ?? predicate.Voice ?? Voice.Active;
-            predicate.Aspect = overrides.Aspect ?? predicate.Aspect;
-            predicate.IsNegative = overrides.IsNegative ?? predicate.IsNegative;
-
-            if (overrides.ReflexiveType is { } reflexive)
-            {
-                predicate.ReflexiveType = reflexive;
-            }
-
-            draft.Predicate = predicate;
-        }
-
-        private static void AgreeWithSubject(ClauseDraft draft, DraftOverrides overrides)
-        {
-            var predicate = draft.Predicate;
-            var subject = draft.Constituents.FirstOrDefault(constituent => constituent.Functor == FgdFunctor.ACT);
-
-            // Shodu s podmětem dělá builder; tohle je výchozí kategorie pro větu, kde podmět není —
-            // a zároveň to, co se ukáže v přehledu, aby bylo vidět, v čem se to bude časovat.
-            predicate.Person = overrides.Person ?? Person.Third;
-            predicate.Number = overrides.Number ?? subject?.Word.Number ?? Number.Singular;
-            predicate.Gender = overrides.Gender ?? subject?.Word.Gender ?? Gender.Masculine;
-
-            draft.Predicate = predicate;
         }
 
         private void Report(ClauseDraft draft)
