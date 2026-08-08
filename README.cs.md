@@ -811,7 +811,7 @@ Pravidlová data v projektu `Grammar.Czech` jsou embedded JSON resources. Výjim
 
 ### Co modelované není
 
-- Vztažná věta musí být jedna klauze; souvětí uvnitř vztažné věty podporované není.
+- Vztažná věta musí být jedna klauze; souvětí uvnitř vztažné věty podporované není. Klauze spojené přes `SentencePlan.Joined` se vnořují, jak hluboko se napíšou, a řetěz na jedné úrovni (`[a: B, protože: C]`) je jiná věta než řetěz vnoření (`a: B { protože: C }`) — vyslovit jde obojí.
 - `IValencyProvider.GetEntry` bere lemma, volitelně s `WordCategory`, takže homonyma napříč kategoriemi rozlišit umí, ale homonyma uvnitř jedné ne. Schéma je nese ve sloupci `homonym_index` a provider vrátí to s nejnižším.
 - Klitický klastr nezná volný dativ (*To ti byla legrace*), který podle NESČ stojí mezi pomocným slovesem a reflexivem. Ostatní pozice pořadí odpovídají.
 - Ukazovací zájmeno před číslovkou (*těch pět studentů*) se shoduje s hlavou fráze, ne s celou frází.

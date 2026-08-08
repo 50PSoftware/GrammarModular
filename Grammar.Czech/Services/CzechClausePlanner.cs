@@ -122,7 +122,10 @@ namespace Grammar.Czech.Services
 
             // Vedlejší věta se v souvětí zavěsí za hlavní; první pozici si obsazuje spojka, což řeší
             // Subordination i s čárkou a s pohlcením kondicionálu u aby.
-            return new Subordination(new SimpleSentence(main), dependent[0].Conjunction, new SimpleSentence(dependent[0].Clause));
+            return new Subordination(
+                new SimpleSentence(main),
+                dependent[0].Conjunction,
+                new SimpleSentence(WithGovernedMood(dependent[0].Conjunction, dependent[0].Clause)));
         }
 
         // A propositional slot has to be licensed by the frame like any other: a verb whose patient is
@@ -151,6 +154,29 @@ namespace Grammar.Czech.Services
             return realization ?? throw new InvalidOperationException(
                 $"Slot {element.Functor} slovesa '{verbLemma}' se podle slovníku vyjadřuje jen pádem, "
                 + "ne vedlejší větou ani infinitivem. Obsaď ho slovem.");
+        }
+
+        // aby carries the conditional auxiliary inside itself, so the clause under it is in the
+        // conditional whatever the caller stated. A slot recorded as taking aby — říct, aby přišel —
+        // therefore governs the mood as well as the conjunction.
+        private CzechClause WithGovernedMood(string conjunction, CzechClause clause)
+        {
+            if (!conjunctionService.FusesWithConditional(conjunction))
+            {
+                return clause;
+            }
+
+            if (clause.Predicate.Modus is { } stated && stated != Modus.Conditional)
+            {
+                throw new InvalidOperationException(
+                    $"Spojka '{conjunction}' řídí podmiňovací způsob, ale věta pod ní má {stated}. "
+                    + "Kondicionál je v té spojce už obsažený, takže jiný způsob za ní stát nemůže.");
+            }
+
+            var predicate = clause.Predicate;
+            predicate.Modus = Modus.Conditional;
+
+            return clause with { Predicate = predicate };
         }
 
         private string Subordinator(SlotRealization realization, string verbLemma, FgdFunctor functor)

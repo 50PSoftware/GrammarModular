@@ -196,6 +196,29 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that a chain of conjunctions builds a chain of clauses, and that a conjunction which
+        /// governs a mood applies it even though the tool builds each clause on its own.
+        /// </summary>
+        [TestMethod]
+        public void SeveralConjunctionsChainAndGovernTheirClauses()
+        {
+            Assert.AreEqual(
+                3,
+                Whole(null, "student", "číst", "kniha", "a", "žák", "psát", "dopis", "a", "student", "pracovat")
+                    .Clauses.Count);
+
+            Assert.AreEqual(
+                "Student čte knihu a žák píše dopis a student pracuje.",
+                Sentence(null, "student", "číst", "kniha", "a", "žák", "psát", "dopis", "a", "student", "pracovat"));
+
+            // Kondicionál z 'aby', přestože nástroj staví každou klauzi zvlášť a spojku nad sebou
+            // v tu chvíli ještě nezná.
+            Assert.AreEqual(
+                "Student čte knihu, aby žák psal dopis.",
+                Sentence(null, "student", "číst", "kniha", "aby", "žák", "psát", "dopis"));
+        }
+
+        /// <summary>
         /// Verifies that positions stay global across the whole word list, so a correction addresses the
         /// same word whichever clause it ended up in.
         /// </summary>

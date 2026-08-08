@@ -150,7 +150,11 @@ namespace Grammar.Czech.Cli.Sentence
             // Odtud dolů rozhoduje knihovna. Nejdřív se sestaví plán z toho, co uživatel zadal, pak
             // se nechá doplnit role a výchozí hodnoty, a teprve výsledek se rozprostře zpátky do
             // návrhu, aby přehled ukazoval přesně to, z čeho se bude stavět.
-            var plan = _planner.Complete(_roles.Resolve(ToPlan(draft, overrides)));
+            // Způsob řízený spojkou se musí uplatnit dřív než doplnění výchozích hodnot: nástroj staví
+            // klauze po jedné a ta nad ní ještě neexistuje, takže by 'aby' zastihlo větu už v
+            // oznamovacím způsobu a hlásilo spor sám se sebou.
+            var plan = _planner.Complete(
+                _planner.WithGovernedMood(conjunction, _roles.Resolve(ToPlan(draft, overrides))));
 
             Absorb(draft, plan);
             ResolveFrame(draft, overrides);

@@ -94,7 +94,7 @@ namespace Grammar.Czech.Services
                 var grown => RenderNode(grown, firstPositionTaken, secondPositionConjunction, suppressConditional),
             },
             Coordination coordination => RenderCoordination(coordination, firstPositionTaken, suppressConditional),
-            Subordination subordination => RenderSubordination(subordination),
+            Subordination subordination => RenderSubordination(subordination, suppressConditional),
             _ => throw new NotSupportedException($"Neznámý typ větného uzlu: {sentence.GetType().Name}.")
         };
 
@@ -158,9 +158,15 @@ namespace Grammar.Czech.Services
 
         // The conjunction belongs to the dependent clause and fills its first position, which is why the
         // cluster follows the conjunction and not the verb: "Petr přišel, protože se bál".
-        private (string Text, CzechWordRequest? Predicate) RenderSubordination(Subordination subordination)
+        private (string Text, CzechWordRequest? Predicate) RenderSubordination(
+            Subordination subordination, bool suppressConditional = false)
         {
-            var (main, mainPredicate) = RenderNode(subordination.Main, firstPositionTaken: false);
+            // An inherited suppression reaches the main clause and stops there: aby above this one is
+            // carrying the auxiliary for it, while the clause below has its own conjunction and its own
+            // answer. Dropping it here instead gave "aby lékař by zpíval" the moment anything was nested
+            // under an aby.
+            var (main, mainPredicate) = RenderNode(
+                subordination.Main, firstPositionTaken: false, suppressConditional: suppressConditional);
             var conjunction = subordination.Conjunction;
             var fuses = conjunctionService.FusesWithConditional(conjunction);
 

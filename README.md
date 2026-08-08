@@ -813,7 +813,7 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 
 ### Not modelled
 
-- A relative clause must be a single clause; a complex sentence inside a relative clause is not supported.
+- A relative clause must be a single clause; a complex sentence inside a relative clause is not supported. Clauses joined through `SentencePlan.Joined` nest as deep as they are written, and a chain at one level (`[a: B, protože: C]`) is a different sentence from a chain of nestings (`a: B { protože: C }`) — both are expressible.
 - `IValencyProvider.GetEntry` takes a lemma, optionally with a `WordCategory`, so homonyms across categories can be told apart but homonyms inside one cannot. The schema carries `homonym_index` and the provider returns the lowest one.
 - The clitic cluster does not know the free dative (*To ti byla legrace*), which per NESČ stands between the auxiliary and the reflexive. The remaining positions match the described order.
 - A demonstrative in front of a numeral (*těch pět studentů*) agrees with the head of the phrase, not with the phrase as a whole.

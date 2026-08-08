@@ -383,6 +383,81 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// A clause joined to a joined clause nests: the link belongs to the plan it hangs off, so a
+        /// chain at one level and a chain of nestings are different sentences and both are expressible.
+        /// </summary>
+        [TestMethod]
+        public void ClausesNestAsDeepAsTheyAreWritten()
+        {
+            var flat = Build(Reads() with
+            {
+                Joined = [new ClauseLink("a", Writes()), new ClauseLink("protože", Reads())]
+            });
+
+            var nested = Build(Reads() with
+            {
+                Joined = [new ClauseLink("protože", Writes() with { Joined = [new ClauseLink("a", Reads())] })]
+            });
+
+            Assert.AreEqual("Student čte knihu a žák píše dopis, protože student čte knihu.", flat);
+            Assert.AreEqual("Student čte knihu, protože žák píše dopis a student čte knihu.", nested);
+        }
+
+        /// <summary>
+        /// aby has the conditional auxiliary welded into it, so the clause under it is in the conditional
+        /// whether the caller said so or not — otherwise the sentence comes out as "aby zpívá".
+        /// </summary>
+        [TestMethod]
+        public void AbyGovernsTheConditional()
+        {
+            Assert.AreEqual(
+                "Student čte knihu, aby žák psal dopis.",
+                Build(Reads() with { Joined = [new ClauseLink("aby", Writes())] }));
+        }
+
+        /// <summary>
+        /// The auxiliary the conjunction carries is not rendered again below it, however deeply the
+        /// clause it governs is nested — "aby žák psal" and never "aby žák by psal".
+        /// </summary>
+        [TestMethod]
+        public void ConditionalCarriedByAbyIsNotRepeatedWhenNested()
+        {
+            var sentence = Build(Reads() with
+            {
+                Joined =
+                [
+                    new ClauseLink("aby", Writes() with
+                    {
+                        Joined = [new ClauseLink("když", Reads())]
+                    })
+                ]
+            });
+
+            Assert.AreEqual("Student čte knihu, aby žák psal dopis, když student čte knihu.", sentence);
+        }
+
+        /// <summary>
+        /// Stating a mood aby cannot govern is a contradiction rather than a preference, so it is
+        /// reported instead of being rendered as one or the other.
+        /// </summary>
+        [TestMethod]
+        public void MoodAgainstTheConjunctionIsRefused()
+        {
+            var failure = Assert.ThrowsException<InvalidOperationException>(() => Build(Reads() with
+            {
+                Joined =
+                [
+                    new ClauseLink("aby", Writes() with
+                    {
+                        Predicate = Verb("psát", "psát") with { Modus = Modus.Imperative }
+                    })
+                ]
+            }));
+
+            StringAssert.Contains(failure.Message, "podmiňovací");
+        }
+
+        /// <summary>
         /// A joined clause is a plan in its own right, so it is planned in its own right: the second
         /// clause here has a subject of its own and agrees with it, in its own tense.
         /// </summary>
@@ -401,6 +476,47 @@ namespace Grammar.Czech.Test
             });
 
             Assert.AreEqual("Student čte knihu a žák psal dopis.", sentence);
+        }
+
+        /// <summary>
+        /// A relative clause hangs off a participant rather than off the sentence, so it says something
+        /// about a thing while a joined clause says something about the event — and the two combine.
+        /// </summary>
+        [TestMethod]
+        public void RelativeClauseHangsOffAParticipant()
+        {
+            var subject = Student(FgdFunctor.ACT) with
+            {
+                Relative = new RelativeAttachment
+                {
+                    Relativizer = "který",
+                    Case = Case.Nominative,
+                    Clause = new CzechClause
+                    {
+                        Predicate = Verb("pracovat", "trida3") with
+                        {
+                            Modus = Modus.Indicative,
+                            Tense = Tense.Present,
+                            Voice = Voice.Active,
+                            Person = Person.Third,
+                            Number = Number.Singular,
+                            Gender = Gender.Masculine
+                        }
+                    }
+                }
+            };
+
+            var plan = new SentencePlan
+            {
+                Predicate = Verb("číst", "číst"),
+                Participants = [subject, Book(FgdFunctor.PAT)]
+            };
+
+            Assert.AreEqual("Student, který pracuje, čte knihu.", Build(plan));
+
+            Assert.AreEqual(
+                "Student, který pracuje, čte knihu a žák píše dopis.",
+                Build(plan with { Joined = [new ClauseLink("a", Writes())] }));
         }
 
         /// <summary>

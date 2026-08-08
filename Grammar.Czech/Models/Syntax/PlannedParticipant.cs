@@ -45,6 +45,17 @@ namespace Grammar.Czech.Models.Syntax
         public string? Preposition { get; init; }
 
         /// <summary>
+        /// Gets the relative clause modifying this participant, or null when there is none.
+        /// </summary>
+        /// <remarks>
+        /// A relative clause hangs off a participant rather than off the sentence, which is what makes
+        /// it different from anything in <see cref="SentencePlan.Joined"/>: it says something about a
+        /// thing, not about the event. Its own clause is a <see cref="CzechClause"/>, so a complex
+        /// sentence inside a relative clause is still out of reach.
+        /// </remarks>
+        public RelativeAttachment? Relative { get; init; }
+
+        /// <summary>
         /// Gets the communicative status, or <see langword="null"/> to take the unmarked one.
         /// </summary>
         /// <remarks>
@@ -83,6 +94,7 @@ namespace Grammar.Czech.Models.Syntax
             Content = Content,
             Modifiers = Modifiers,
             Preposition = Preposition,
+            Relative = Relative,
             Functor = Functor ?? throw new InvalidOperationException(
                 $"Participant '{Describe()}' nemá funktor. Buď ho zadej, nebo nech doplnit "
                 + $"{nameof(Services.CzechRoleResolver)}em."),

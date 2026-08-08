@@ -83,7 +83,15 @@ namespace Grammar.Czech.Services
             {
                 Participants = participants,
                 Predicate = WithDefaults(plan.Predicate, voice, subject),
-                Joined = [.. plan.Joined.Select(link => link with { Clause = Complete(link.Clause) })],
+                // Způsob, který řídí spojka, se doplní dřív, než se doplní ten výchozí — jinak by
+                // oznamovací způsob obsadil mezeru, kterou má vyplnit kondicionál z 'aby'.
+                Joined =
+                [
+                    .. plan.Joined.Select(link => link with
+                    {
+                        Clause = Complete(WithGovernedMood(link.Conjunction, link.Clause)),
+                    }),
+                ],
             };
         }
 
@@ -102,6 +110,10 @@ namespace Grammar.Czech.Services
         /// </exception>
         public SentenceNode Plan(SentencePlan plan)
         {
+            // Doplněno na začátku, protože smyčka níž prochází Joined a potřebuje ty klauze už s tím,
+            // co jim spojka nad nimi řídí.
+            plan = Complete(plan);
+
             SentenceNode node = new SimpleSentence(PlanClause(plan));
 
             foreach (var link in plan.Joined)
@@ -136,6 +148,46 @@ namespace Grammar.Czech.Services
             }
 
             return new Coordination(link.Conjunction, [node, joined], link.RequiresComma, link.Paired);
+        }
+
+        /// <summary>
+        /// Applies the mood the conjunction governs to the clause it introduces.
+        /// </summary>
+        /// <param name="conjunction">The conjunction attaching the clause, or null when none does.</param>
+        /// <param name="clause">The clause being attached.</param>
+        /// <returns>The clause with the governed mood applied.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the clause states a mood the conjunction cannot govern.
+        /// </exception>
+        /// <remarks>
+        /// aby and kdyby have the conditional auxiliary welded into them — abych, abys, aby — so the verb
+        /// under them is an l-participle and the clause is in the conditional whether the caller said so
+        /// or not. The conjunction data already knows which ones do this, because the renderer has to
+        /// suppress the particle they carry; asking the same question here is what stops "aby zpívá".
+        /// <para>
+        /// Public because it has to run before <see cref="Complete"/> and a caller that completes its
+        /// clauses one at a time — as a tool showing them separately does — has nowhere else to ask.
+        /// Filling the gap with the indicative first would turn it into a contradiction.
+        /// </para>
+        /// </remarks>
+        public SentencePlan WithGovernedMood(string? conjunction, SentencePlan clause)
+        {
+            if (conjunction is null || !conjunctionService.FusesWithConditional(conjunction))
+            {
+                return clause;
+            }
+
+            if (clause.Predicate.Modus is { } stated && stated != Modus.Conditional)
+            {
+                throw new InvalidOperationException(
+                    $"Spojka '{conjunction}' řídí podmiňovací způsob, ale věta pod ní má {stated}. "
+                    + "Kondicionál je v té spojce už obsažený, takže jiný způsob za ní stát nemůže.");
+            }
+
+            var predicate = clause.Predicate;
+            predicate.Modus = Modus.Conditional;
+
+            return clause with { Predicate = predicate };
         }
 
         private CzechClause PlanClause(SentencePlan plan)
