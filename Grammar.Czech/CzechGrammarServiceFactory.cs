@@ -116,6 +116,8 @@ namespace Grammar.Czech
             // ── Top-level entry points ───────────────────────────────────────────────
             services.AddSingleton<MorphologyEngine>();
             services.AddSingleton<CzechWordFormComposer>();
+            services.AddSingleton<CzechMicroplanner>();
+            services.AddSingleton<CzechWordOrderResolver>();
             services.AddSingleton<CzechSentenceBuilder>();
 
             // Several services implement this and the last registration silently wins, so it is bound
