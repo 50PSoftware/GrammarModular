@@ -414,7 +414,19 @@ planner.Plan(new SentencePlan
 
 Model je rozlišuje podle toho, co je v plánu, ne podle povrchu. První a druhá osoba na slovese je shoda s podmětem, který se nevyslovil, takže slot konatele je obsazený a jméno na něj nemůže — bez toho by z *píšu dopis* vyšel dopis jako konatel, v nominativu.
 
-Jestli sloveso vůbec může mít podmět, je lexikální fakt, a bydlí tedy ve slovníku: rámec druhu `Impersonal` nemá žádný slot a participant k němu nabídnutý se odmítne, místo aby se vyskloňoval do *Prší student.* Naseedovaná jsou tři — `pršet`, `sněžit`, `svítat` — a sloveso, které slovník nevede, si svou dosavadní volnost drží, protože to říká rámec.
+Jestli sloveso vůbec může mít podmět, je lexikální fakt, a bydlí tedy ve slovníku: rámec druhu `Impersonal` nemá žádný slot a participant k němu nabídnutý se odmítne, místo aby se vyskloňoval do *Prší student.* Sloveso, které slovník nevede, si svou dosavadní volnost drží, protože to říká rámec.
+
+Bezpodměťovost patří významu, ne slovesu — proto je to rámec, a ne příznak na hesle. *Mrzne* a *Voda mrzne* jsou dva významy, takže `mrznout` nese dva rámce a ten o počasí je výchozí, protože to znamená holé sloveso:
+
+```bash
+gramatika veta mrznout                       # Mrzne.
+gramatika veta voda mrznout --ramec freeze   # Voda mrzne.
+gramatika veta voda mrznout
+# Sloveso 'mrznout' je bezpodměťové — 'voda' k němu nepatří a věta s ním nevznikne.
+# Jiný význam podmět bere: --ramec freeze.
+```
+
+Naseedováno: `pršet`, `sněžit`, `svítat` jen jako bezpodměťová; `mrznout`, `hřmít`, `blýskat` i s druhým významem, který konatele bere; `stmívat` a `blýskat` se zvratným, které jejich význam o počasí vyžaduje.
 
 Takové sloveso nemá s čím se shodovat, takže jeho příčestí jde do středního rodu jednotného čísla: *Pršelo*, ne mužský rod, který by dalo výchozí nastavení.
 

@@ -320,9 +320,15 @@ namespace Grammar.Czech.Services
                 {
                     // Bezpodměťové sloveso nemá kam participanta zařadit, a to je o něm to podstatné —
                     // říct místo toho jen 'nemá roli' by vypadalo, že se něco zapomnělo doplnit.
+                    var alternative = selection.Choices
+                        .FirstOrDefault(frame => frame.Kind != ValencyKind.Impersonal)?.FrameLabel;
+
                     throw new InvalidOperationException(selection.Frame?.Kind == ValencyKind.Impersonal
                         ? $"Sloveso '{plan.Predicate.Lemma}' je bezpodměťové a žádný účastník k němu "
                             + $"nepatří, takže '{Describe(participant)}' nemá kam."
+                            + (alternative is null
+                                ? string.Empty
+                                : $" Význam '{alternative}' účastníka bere — vyber ho přes {nameof(SentencePlan.FrameLabel)}.")
                         : $"Participant '{Describe(participant)}' nemá roli. Doplň ji, nebo nech plán projít "
                             + $"{nameof(CzechRoleResolver)}em, který ji odvodí z rámce.");
                 }

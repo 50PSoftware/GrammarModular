@@ -130,11 +130,20 @@ namespace Grammar.Czech.Cli.Sentence
             // rada 'doplň roli' by posílala uživatele za něčím, co neexistuje.
             var impersonal = Frame?.Kind == ValencyKind.Impersonal;
 
+            // Sloveso může být bezpodměťové jen v tom výchozím významu. Zadaný podmět je pak dobrá
+            // stopa, že šlo o ten druhý — ale vybrat význam za uživatele si tenhle projekt zakazuje,
+            // tak se to aspoň řekne.
+            var alternative = impersonal
+                ? FrameChoices
+                    .FirstOrDefault(frame => frame.Kind != ValencyKind.Impersonal)?.FrameLabel
+                : null;
+
             var gaps = Constituents
                 .Where(constituent => constituent.Functor is null)
                 .Select(constituent => impersonal
                     ? $"Sloveso '{PredicateLemma}' je bezpodměťové — '{constituent.Lemma}' (č. "
                         + $"{constituent.Position}) k němu nepatří a věta s ním nevznikne."
+                        + (alternative is null ? string.Empty : $" Jiný význam podmět bere: --ramec {alternative}.")
                     : $"U slova '{constituent.Lemma}' (č. {constituent.Position}) není jasná role. "
                         + "Doplň ji přepínačem --role.")
                 .ToList();

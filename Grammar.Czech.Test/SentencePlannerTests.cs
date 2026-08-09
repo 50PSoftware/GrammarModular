@@ -187,6 +187,52 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// A verb is impersonal in one sense and not in another, and the two are two frames. The bare
+        /// verb takes the weather sense because that is what it means on its own; the other is reached
+        /// by naming it.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow("mrznout", "trida2", "freeze", "Voda mrzne.")]
+        [DataRow("hřmít", "trida4", "sound", "Voda hřmí.")]
+        [DataRow("blýskat", "trida5", "flash", "Voda blýská.")]
+        public void ImpersonalIsASenseRatherThanAVerb(
+            string lemma, string pattern, string label, string expected)
+        {
+            var water = Noun("voda", "žena", Gender.Feminine);
+
+            Assert.AreEqual(expected, Build(roles.Resolve(new SentencePlan
+            {
+                Predicate = Verb(lemma, pattern),
+                Participants = [water],
+                FrameLabel = label
+            })));
+
+            // Bez popisku vyhrává výchozí význam, a ten je bezpodměťový.
+            var failure = Assert.ThrowsException<InvalidOperationException>(() => Build(roles.Resolve(
+                new SentencePlan { Predicate = Verb(lemma, pattern), Participants = [water] })));
+
+            StringAssert.Contains(failure.Message, label);
+        }
+
+        /// <summary>
+        /// The reflexive of an impersonal verb comes out where a reflexive comes out, with nothing in
+        /// front of the verb for the cluster to follow.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow("stmívat", "trida5", "Stmívá se.", "Stmívalo se.")]
+        [DataRow("blýskat", "trida5", "Blýská se.", "Blýskalo se.")]
+        public void ImpersonalVerbCarriesItsReflexive(
+            string lemma, string pattern, string present, string past)
+        {
+            Assert.AreEqual(present, Build(new SentencePlan { Predicate = Verb(lemma, pattern) }));
+
+            Assert.AreEqual(past, Build(new SentencePlan
+            {
+                Predicate = Verb(lemma, pattern) with { Tense = Tense.Past }
+            }));
+        }
+
+        /// <summary>
         /// The frame is what says so, so a verb the dictionary does not hold keeps its old freedom: an
         /// unlisted weather verb is not refused, it is simply not known to be impersonal.
         /// </summary>

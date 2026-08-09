@@ -416,7 +416,19 @@ planner.Plan(new SentencePlan
 
 The model tells them apart by what is in the plan, not by the surface. A first or second person on the verb is agreement with a subject that was not expressed, so the actor slot counts as taken and a noun cannot fill it — without that, *píšu dopis* would come out with the letter as the actor, in the nominative.
 
-Whether a verb can have a subject at all is a lexical fact, so it lives in the dictionary: a frame of kind `Impersonal` has no slots, and a participant offered to one is refused rather than declined into *Prší student.* Three are seeded — `pršet`, `sněžit`, `svítat` — and a verb the dictionary does not hold keeps its old freedom, since it is the frame that says so.
+Whether a verb can have a subject at all is a lexical fact, so it lives in the dictionary: a frame of kind `Impersonal` has no slots, and a participant offered to one is refused rather than declined into *Prší student.* A verb the dictionary does not hold keeps its old freedom, since it is the frame that says so.
+
+Being impersonal belongs to a sense and not to a verb, which is why it is a frame and not a flag on the entry. *Mrzne* and *Voda mrzne* are two senses, so `mrznout` carries two frames and the weather one is the default, because that is what the bare verb means:
+
+```bash
+gramatika veta mrznout                       # Mrzne.
+gramatika veta voda mrznout --ramec freeze   # Voda mrzne.
+gramatika veta voda mrznout
+# Sloveso 'mrznout' je bezpodměťové — 'voda' k němu nepatří a věta s ním nevznikne.
+# Jiný význam podmět bere: --ramec freeze.
+```
+
+Seeded: `pršet`, `sněžit`, `svítat` as impersonal only; `mrznout`, `hřmít`, `blýskat` with a second sense that takes an actor; `stmívat` and `blýskat` with the reflexive their weather sense needs.
 
 Such a verb has nothing to agree with, so its participle goes into the neuter singular: *Pršelo*, not the masculine the default would otherwise give.
 
