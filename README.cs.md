@@ -426,7 +426,9 @@ gramatika veta voda mrznout
 # Jiný význam podmět bere: --ramec freeze.
 ```
 
-Naseedováno: `pršet`, `sněžit`, `svítat` jen jako bezpodměťová; `mrznout`, `hřmít`, `blýskat` i s druhým významem, který konatele bere; `stmívat` a `blýskat` se zvratným, které jejich význam o počasí vyžaduje.
+Naseedováno: `pršet`, `sněžit`, `svítat` jen jako bezpodměťová; `mrznout`, `hřmít`, `blýskat` i s druhým významem, který konatele bere; `stmívat` a `blýskat` se zvratným, které jejich význam o počasí vyžaduje; a dokonavé protějšky `setmět`, `nasněžit`, `rozednít`, které stojí pod týmž lexémem a rámec dědí, místo aby nesly jeho kopii — *Setmělo se*, *Nasněžilo*.
+
+Druhý význam `blýskat` ukazuje patiens v holém instrumentálu, což je celá třída českých sloves — *mávat rukou*, *kroutit hlavou*, *házet kamenem*: `Meč blýská očima.`
 
 Takové sloveso nemá s čím se shodovat, takže jeho příčestí jde do středního rodu jednotného čísla: *Pršelo*, ne mužský rod, který by dalo výchozí nastavení.
 

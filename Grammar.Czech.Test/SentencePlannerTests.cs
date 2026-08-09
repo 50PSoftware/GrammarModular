@@ -215,6 +215,62 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// A perfective counterpart sits under the same lexeme, so it inherits the frames rather than
+        /// carrying a copy — which is the whole reason the lexeme layer exists.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow("setmět", "trida4", "Setmělo se.")]
+        [DataRow("nasněžit", "trida4", "Nasněžilo.")]
+        [DataRow("rozednít", "trida4", "Rozednilo se.")]
+        public void PerfectiveCounterpartInheritsTheImpersonalFrame(
+            string lemma, string pattern, string expected)
+        {
+            Assert.AreEqual(expected, Build(new SentencePlan
+            {
+                Predicate = Verb(lemma, pattern) with { Aspect = VerbAspect.Perfective, Tense = Tense.Past }
+            }));
+
+            // A dědí i to, co ten rámec zakazuje.
+            Assert.ThrowsException<InvalidOperationException>(() => Build(new SentencePlan
+            {
+                Predicate = Verb(lemma, pattern) with { Aspect = VerbAspect.Perfective },
+                Participants = [Student(FgdFunctor.ACT)]
+            }));
+        }
+
+        /// <summary>
+        /// A patient can stand in the bare instrumental — mávat rukou, blýskat očima — and the frame is
+        /// what says which verbs take it that way.
+        /// </summary>
+        [TestMethod]
+        public void PatientCanStandInTheInstrumental()
+        {
+            var plan = roles.Resolve(new SentencePlan
+            {
+                Predicate = Verb("blýskat", "trida5"),
+                Participants =
+                [
+                    Noun("meč", "stroj", Gender.Masculine),
+                    Noun("oko", "město", Gender.Neuter) with
+                    {
+                        Word = new CzechWordRequest
+                        {
+                            Lemma = "oko",
+                            Pattern = "město",
+                            WordCategory = WordCategory.Noun,
+                            Gender = Gender.Neuter,
+                            Number = Number.Plural
+                        }
+                    }
+                ],
+                FrameLabel = "flash"
+            });
+
+            Assert.AreEqual(FgdFunctor.PAT, plan.Participants[1].Functor);
+            Assert.AreEqual("Meč blýská očima.", Build(plan));
+        }
+
+        /// <summary>
         /// The reflexive of an impersonal verb comes out where a reflexive comes out, with nothing in
         /// front of the verb for the cluster to follow.
         /// </summary>

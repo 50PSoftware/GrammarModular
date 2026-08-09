@@ -428,7 +428,9 @@ gramatika veta voda mrznout
 # Jiný význam podmět bere: --ramec freeze.
 ```
 
-Seeded: `pršet`, `sněžit`, `svítat` as impersonal only; `mrznout`, `hřmít`, `blýskat` with a second sense that takes an actor; `stmívat` and `blýskat` with the reflexive their weather sense needs.
+Seeded: `pršet`, `sněžit`, `svítat` as impersonal only; `mrznout`, `hřmít`, `blýskat` with a second sense that takes an actor; `stmívat` and `blýskat` with the reflexive their weather sense needs; and the perfective counterparts `setmět`, `nasněžit`, `rozednít`, which sit under the same lexeme and inherit the frame rather than carrying a copy of it — *Setmělo se*, *Nasněžilo*.
+
+The other sense of `blýskat` shows a patient in the bare instrumental, which is a whole class of Czech verbs — *mávat rukou*, *kroutit hlavou*, *házet kamenem*: `Meč blýská očima.`
 
 Such a verb has nothing to agree with, so its participle goes into the neuter singular: *Pršelo*, not the masculine the default would otherwise give.
 
