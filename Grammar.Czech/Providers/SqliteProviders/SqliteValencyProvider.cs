@@ -44,7 +44,7 @@ namespace Grammar.Czech.Providers.SqliteProviders
         /// <summary>
         /// The schema version this provider reads, matching schema_version in lexicon_meta.
         /// </summary>
-        public const int SupportedSchemaVersion = 5;
+        public const int SupportedSchemaVersion = 6;
 
         private const string SchemaVersionQuery =
             "SELECT meta_value FROM lexicon_meta WHERE meta_key = 'schema_version'";
@@ -64,13 +64,20 @@ namespace Grammar.Czech.Providers.SqliteProviders
 
             """;
 
-        private const string EntryQuery = EntryColumns + """
-            WHERE lemma_key = @key
+        // Druhá pravopisná podoba téhož hesla se hledá spolu s ním: setmět je setmít, ne vlastní záznam,
+        // takže vyhledání pod ní vrátí heslo — varianta se poznává, ale negeneruje. Že se klíč varianty
+        // nesmí krýt s cizím lemmatem, hlídá validate; tady by ta kolize dala dvě hesla místo jednoho.
+        private const string VariantMatch = """
+            lemma_entry_id IN (SELECT lemma_entry_id FROM lemma_variant WHERE lemma_key = @key)
+            """;
+
+        private const string EntryQuery = EntryColumns + $"""
+            WHERE lemma_key = @key OR {VariantMatch}
             ORDER BY homonym_index
             """;
 
-        private const string EntryByCategoryQuery = EntryColumns + """
-            WHERE lemma_key = @key AND category = @category
+        private const string EntryByCategoryQuery = EntryColumns + $"""
+            WHERE (lemma_key = @key OR {VariantMatch}) AND category = @category
             ORDER BY homonym_index
             """;
 
@@ -79,13 +86,15 @@ namespace Grammar.Czech.Providers.SqliteProviders
                    s.slot_id, s.functor, s.canonical_order, s.obligatoriness,
                    s.can_drop_contextual, s.can_drop_generic, s.control_target,
                    r.morph_case, r.preposition, r.clause_type, r.takes_infinitive, r.preference,
-                   f.reflexive_type
+                   f.reflexive_type, ls.aktionsart
             FROM lemma_entry e
             JOIN lexical_unit u ON u.lexeme_id = e.lexeme_id
             JOIN valency_frame f ON f.lu_id = u.lu_id
+            LEFT JOIN lemma_sense ls ON ls.lemma_entry_id = e.lemma_entry_id AND ls.lu_id = u.lu_id
             LEFT JOIN valency_slot s ON s.frame_id = f.frame_id
             LEFT JOIN slot_realization r ON r.slot_id = s.slot_id
             WHERE e.lemma_key = @key
+               OR e.lemma_entry_id IN (SELECT lemma_entry_id FROM lemma_variant WHERE lemma_key = @key)
             ORDER BY f.frame_id, s.canonical_order, s.slot_id, r.preference, r.realization_id
             """;
 
@@ -114,6 +123,7 @@ namespace Grammar.Czech.Providers.SqliteProviders
         // Last rather than beside is_default, where it belongs by meaning: appending cannot shift
         // anything above it, and this list is the only thing standing between the query and silence.
         private const int FrameReflexiveType = 19;
+        private const int FrameAktionsart = 20;
 
         // Constructions are few and every one of them is read the moment any of them is, so the whole
         // table is loaded at once rather than queried per lemma.
@@ -380,7 +390,10 @@ namespace Grammar.Czech.Providers.SqliteProviders
                         Diathesis = ParseEnum<Diathesis>(reader.GetString(FrameDiathesis), "diathesis"),
                         IsDefault = reader.GetInt64(FrameIsDefault) != 0,
                         ReflexiveType = ParseEnum<ReflexiveType>(
-                            reader.GetString(FrameReflexiveType), "reflexive_type")
+                            reader.GetString(FrameReflexiveType), "reflexive_type"),
+                        Aktionsart = reader.IsDBNull(FrameAktionsart)
+                            ? null
+                            : ParseEnum<Aktionsart>(reader.GetString(FrameAktionsart), "aktionsart")
                     }));
 
                     slotIdsByFrame[frameId] = [];

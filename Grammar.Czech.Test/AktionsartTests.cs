@@ -101,9 +101,9 @@ namespace Grammar.Czech.Test
         /// "no group" — most of the lexicon is in this state and the column exists to be sparse.
         /// </summary>
         /// <remarks>
-        /// mrznout is not in this list and is null all the same, for a reason of its own: its two senses
-        /// belong to different groups and the column sits on the lemma. See
-        /// <see cref="LemmaWhoseSensesDisagreeStaysUnclassified"/>.
+        /// mrznout is not in this list and is null all the same, for a reason of its own: its readings
+        /// belong to different groups, so the entry has nothing to say and each reading says it instead.
+        /// See <see cref="LemmaWhoseReadingsDisagreeStaysUnclassified"/>.
         /// </remarks>
         [DataTestMethod]
         [DataRow("dělat")]
@@ -115,23 +115,75 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
-        /// A lemma whose senses belong to different groups carries none, because the column is on the
-        /// lemma and cannot hold two answers.
+        /// A lemma whose readings belong to different groups carries none on the entry, which is where
+        /// the word as a word is described.
         /// </summary>
         /// <remarks>
         /// mrznout is the counterexample to the usual description of způsob slovesného děje as a
         /// property of the verb: <em>mrzne</em> is a state of the air and <em>voda mrzne</em> a gradual
-        /// change of the water, which are different groups. Recording either would make one sense lie
-        /// about the other, so the entry stays unclassified — and this test says that is a decision
-        /// rather than an omission.
+        /// change of the water, which are different groups. Recording either on the entry would make one
+        /// reading lie about the other, so it stays null and the readings answer instead — see
+        /// <see cref="EachReadingCarriesItsOwnGroup"/>.
         /// </remarks>
         [TestMethod]
-        public void LemmaWhoseSensesDisagreeStaysUnclassified()
+        public void LemmaWhoseReadingsDisagreeStaysUnclassified()
         {
             var entry = lexicon.GetEntry("mrznout", WordCategory.Verb);
 
             Assert.IsNotNull(entry);
             Assert.IsNull(entry.Aktionsart);
+        }
+
+        /// <summary>
+        /// Where the entry is silent, each reading of the verb states its own group.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow("mrznout", "weather", Aktionsart.Stative)]
+        [DataRow("mrznout", "freeze", Aktionsart.Mutative)]
+        public void EachReadingCarriesItsOwnGroup(string lemma, string sense, Aktionsart expected)
+        {
+            var frame = lexicon.GetFrames(lemma).Single(candidate => candidate.FrameLabel == sense);
+
+            Assert.AreEqual(expected, frame.Aktionsart);
+        }
+
+        /// <summary>
+        /// The group belongs to the verb read in a sense, not to the sense — the perfective sharing that
+        /// sense answers differently.
+        /// </summary>
+        /// <remarks>
+        /// mrznout and zmrznout are one lexeme and therefore share both lexical units. <em>Zmrzlo</em>
+        /// is a result reached under either of them, which is what the entry already says, so nothing
+        /// overrides it. Had the group been recorded on the lexical unit instead, zmrznout would be
+        /// reading mrznout's answers — and a perfective verb would be claiming to be stative.
+        /// </remarks>
+        [TestMethod]
+        public void ThePerfectiveOfTheSameLexemeIsNotDraggedAlong()
+        {
+            foreach (var frame in lexicon.GetFrames("zmrznout"))
+            {
+                Assert.IsNull(frame.Aktionsart, frame.FrameLabel);
+            }
+
+            Assert.AreEqual(
+                Aktionsart.Resultative,
+                lexicon.GetEntry("zmrznout", WordCategory.Verb)?.Aktionsart);
+        }
+
+        /// <summary>
+        /// A verb whose readings agree says it once, on the entry, and states nothing per reading.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow("blýskat")]
+        [DataRow("hřmít")]
+        public void AgreeingReadingsAreStatedOnceOnTheEntry(string lemma)
+        {
+            Assert.IsNotNull(lexicon.GetEntry(lemma, WordCategory.Verb)?.Aktionsart);
+
+            foreach (var frame in lexicon.GetFrames(lemma))
+            {
+                Assert.IsNull(frame.Aktionsart, frame.FrameLabel);
+            }
         }
 
         /// <summary>

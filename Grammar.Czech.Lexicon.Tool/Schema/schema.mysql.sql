@@ -147,6 +147,41 @@ CREATE TABLE lexical_unit (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- Lemma variant — a second spelling of one headword
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE lemma_variant (
+    variant_id      INT          NOT NULL AUTO_INCREMENT,
+    lemma_entry_id  INT          NOT NULL,
+    lemma           VARCHAR(64)  NOT NULL,
+    lemma_key       VARCHAR(64)  COLLATE utf8mb4_bin NOT NULL,
+    note            VARCHAR(500),
+    CONSTRAINT pk_lemma_variant PRIMARY KEY (variant_id),
+    CONSTRAINT uq_lemma_variant_key UNIQUE (lemma_key),
+    CONSTRAINT fk_lemma_variant_entry FOREIGN KEY (lemma_entry_id) REFERENCES lemma_entry (lemma_entry_id)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Lemma sense — one headword read in one of its lexeme's senses
+-- ─────────────────────────────────────────────────────────────────────────────
+CREATE TABLE lemma_sense (
+    lemma_sense_id  INT          NOT NULL AUTO_INCREMENT,
+    lemma_entry_id  INT          NOT NULL,
+    lu_id           INT          NOT NULL,
+    aktionsart      VARCHAR(24)  COLLATE utf8mb4_bin,
+    note            VARCHAR(500),
+    CONSTRAINT pk_lemma_sense PRIMARY KEY (lemma_sense_id),
+    CONSTRAINT uq_lemma_sense UNIQUE (lemma_entry_id, lu_id),
+    CONSTRAINT fk_lemma_sense_entry FOREIGN KEY (lemma_entry_id) REFERENCES lemma_entry (lemma_entry_id),
+    CONSTRAINT fk_lemma_sense_unit FOREIGN KEY (lu_id) REFERENCES lexical_unit (lu_id),
+    CONSTRAINT ck_lemma_sense_aktionsart CHECK (aktionsart IS NULL OR aktionsart IN (
+        'Ingressive', 'Evolutive', 'Delimitative', 'Resultative', 'Terminative',
+        'Perdurative', 'Finitive', 'Egressive', 'Exhaustive', 'Total', 'Saturative',
+        'Extensive', 'Cumulative', 'Intensive', 'Excessive', 'Distributive', 'Attenuative',
+        'Semelfactive', 'Momentary', 'Iterative', 'Diminutive', 'Comitative', 'Frequentative',
+        'Stative', 'Decursive', 'Mutative'))
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- Valency frame — one per (lexical unit, diathesis)
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE valency_frame (

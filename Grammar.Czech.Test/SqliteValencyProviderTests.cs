@@ -291,6 +291,55 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// A doublet of the headword is looked up as the headword and answers as the headword.
+        /// </summary>
+        /// <remarks>
+        /// setmět se and setmít se are one verb — IJP leads with the second and marks the first "lze i".
+        /// The dictionary holds one entry and records the other spelling beside it, so both are
+        /// understood and only one is generated: what comes back is the lemma the dictionary leads with,
+        /// not the spelling that was asked for.
+        /// </remarks>
+        [TestMethod]
+        public void GetEntry_SpellingVariant_ReturnsTheHeadword()
+        {
+            var variant = provider.GetEntry("setmět", WordCategory.Verb);
+
+            Assert.IsNotNull(variant);
+            Assert.AreEqual("setmít", variant.Lemma);
+            Assert.AreEqual(Aktionsart.Resultative, variant.Aktionsart);
+        }
+
+        /// <summary>
+        /// The variant reaches the frames as well, not only the morphology.
+        /// </summary>
+        /// <remarks>
+        /// Frames are looked up by lemma in a query of their own, so recognizing the spelling in one
+        /// place and not the other would give a verb that inflects and takes no arguments.
+        /// </remarks>
+        [TestMethod]
+        public void GetFrames_SpellingVariant_ReturnsTheHeadwordsFrames()
+        {
+            CollectionAssert.AreEquivalent(
+                provider.GetFrames("setmít").Select(frame => frame.VerbLemma).ToList(),
+                provider.GetFrames("setmět").Select(frame => frame.VerbLemma).ToList());
+
+            Assert.IsTrue(provider.GetFrames("setmět").Any());
+        }
+
+        /// <summary>
+        /// A word that is neither a lemma nor a variant is still absent.
+        /// </summary>
+        /// <remarks>
+        /// The variant is matched in the same query as the lemma, so a mistake there would widen every
+        /// lookup rather than only the one that was meant.
+        /// </remarks>
+        [TestMethod]
+        public void GetEntry_WordThatIsNeitherLemmaNorVariant_IsAbsent()
+        {
+            Assert.IsNull(provider.GetEntry("setmnout", WordCategory.Verb));
+        }
+
+        /// <summary>
         /// A lexicon written for a different schema is refused when the provider is built, not later.
         /// </summary>
         /// <remarks>

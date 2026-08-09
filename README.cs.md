@@ -176,6 +176,8 @@ Databáze má tři vrstvy, oddělené proto, že jedno lemma má právě jednu m
 
 - `lemma_entry` — morfologická identita jednoho slovníkového tvaru: rod, vzor, životnost, pohybné `e`, krácení a vkladné `e` v genitivu plurálu, nesklonnost, pomnožnost, počitatelnost, slovesná třída, vid a jeho protějšek, reflexivní typ a sloupce o původu záznamu,
 - `lexeme` a `lexical_unit` — abstraktní slovo a jeho významy. Vidová dvojice je jeden lexém, takže `dát` a `dávat` sdílejí jeden rámec, místo aby si každé neslo vlastní kopii,
+- `lemma_sense` — co platí o jednom hesle v jednom významu, což ani jedna z předchozích tabulek říct neumí: `lemma_entry` je jeden řádek pro slovo přes všechny významy, `lexical_unit` jeden řádek pro význam přes všechna slova lexému. Řádky jsou jen výjimky,
+- `lemma_variant` — druhá spisovná podoba hesla, takže *setmět* se pozná a ven jde *setmít*,
 - `valency_frame`, `valency_slot`, `slot_realization` — samotné rámce. Slot může mít víc realizací s preferencí pro generování, což je to, co dovolí jednomu slotu být v jednom vyjádření holým pádem a v jiném vedlejší větou nebo infinitivem.
 
 Slot se může vyjádřit vedlejší větou a `slot_realization.clause_type` nese, která spojka ji uvozuje — `že`, `aby`, `zda` — jako lemma samotné, tak jak to zapisuje VALLEX. Slovo nese víc než druh věty: *ví, že přijde* a *ví, zda přijde* jsou obě obsahové a znamenají každá něco jiného. Žádný `CHECK` to nepohlídá, protože spojky žijí v embedded JSON pravidlech; hlídá to `lexikon validate`.
@@ -426,7 +428,7 @@ gramatika veta voda mrznout
 # Jiný význam podmět bere: --ramec freeze.
 ```
 
-Naseedováno: `pršet`, `sněžit`, `svítat`, `stmívat` jen jako bezpodměťová; `mrznout`, `hřmít`, `blýskat` i s druhým významem, který konatele bere; `stmívat` a `blýskat` se zvratným, které jejich význam o počasí vyžaduje. Každé z nich má dokonavý protějšek — `napršet`, `nasněžit`, `rozednít`, `setmět`, `zmrznout`, `zahřmět`, `blýsknout` — a ten stojí pod týmž lexémem a rámce dědí, místo aby nesl jejich kopii: *Napršelo*, *Zmrzlo*, *Blýsklo se*. Protějšek dědí všechny významy, takže `zmrznout` dosáhne na *Zmrzlo* i na *Voda zmrzla*.
+Naseedováno: `pršet`, `sněžit`, `svítat`, `stmívat` jen jako bezpodměťová; `mrznout`, `hřmít`, `blýskat` i s druhým významem, který konatele bere; `stmívat` a `blýskat` se zvratným, které jejich význam o počasí vyžaduje. Každé z nich má dokonavý protějšek — `napršet`, `nasněžit`, `rozednít`, `setmít`, `zmrznout`, `zahřmět`, `blýsknout` — a ten stojí pod týmž lexémem a rámce dědí, místo aby nesl jejich kopii: *Napršelo*, *Zmrzlo*, *Blýsklo se*. Protějšek dědí všechny významy, takže `zmrznout` dosáhne na *Zmrzlo* i na *Voda zmrzla*.
 
 Jaký druh děje sloveso pojmenovává, je jiná otázka než jeho vid, a bydlí v `lemma_entry.aktionsart` — způsob slovesného děje, celá dvacetišestiskupinová klasifikace z NESČ. Dvacet šest a ne dvacet pět: skupiny jsou značené českou abecedou, kde *ch* stojí mezi *h* a *i*.
 
@@ -434,7 +436,11 @@ Není to jemnější vid. Vid je gramatický, má dva členy a má ho každé č
 
 Nese ho třináct hesel: `blýsknout` semelfaktivum proti frekventativu `blýskat`, `zahřmět` ingresivum, `napršet` a `nasněžit` kumulativa, `pršet`, `sněžit` a `hřmít` dekurziva, `svítat` a `stmívat` mutativa, `setmít` a `zmrznout` rezultativa, `rozednít` evolutivum.
 
-`mrznout` nenese žádné, a to je rozhodnutí, ne mezera: *mrzne* je stav vzduchu a *voda mrzne* postupná změna vody, což jsou různé skupiny — jenže sloupec sedí na lemmatu a to má jeden řádek. Zapsat kterékoli z nich by znamenalo, že jeden význam lže o druhém. Je to protipříklad k obvyklému popisu způsobu slovesného děje jako vlastnosti slovesa a ukazuje na opravu: přesunout sloupec na `lexical_unit`, kde už bydlí rámce.
+`mrznout` na hesle nenese žádné, a to je rozhodnutí, ne mezera: *mrzne* je stav vzduchu a *voda mrzne* postupná změna vody, což jsou různé skupiny, a heslo má jeden řádek. Je to protipříklad k obvyklému popisu způsobu slovesného děje jako vlastnosti slovesa — sloveso samo jednu odpověď nemá a každé jeho čtení ano.
+
+Na to je `lemma_sense`. Páruje jedno heslo s jedním významem a skupinu zapisuje tam; přebíjí heslo stejně, jako `valency_frame.reflexive_type` přebíjí reflexivní typ na něm, a kde řádek není, platí heslo. `mrznout` má řádky dva, stativní pro *mrzne* a mutativní pro *voda mrzne*, a vracejí se jako `ValencyFrame.Aktionsart`.
+
+To párování je celý vtip a zkratka, která se nabízí, nefunguje: význam visí na lexému, lexém je vidová dvojice, takže skupina napsaná na `lexical_unit` by dopadla i na `zmrznout`. *Zmrzlo* je dosažený výsledek v obou čteních — což jeho heslo už říká — a dokonavé sloveso, které zdědí stativnost od *mrzne*, je prostě nepravda. Chytil to validátor: řádek drží proti vidu toho lemmatu, kterému patří.
 
 Druhý význam `blýskat` ukazuje patiens v holém instrumentálu, což je celá třída českých sloves — *mávat rukou*, *kroutit hlavou*, *házet kamenem*: `Meč blýská očima.`
 

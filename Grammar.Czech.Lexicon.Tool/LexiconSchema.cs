@@ -30,7 +30,9 @@ namespace Grammar.Czech.Lexicon.Tool
                 "base_verb_lemma", "stem", "present_stem", "past_stem", "future_stem",
                 "imperative_stem", "passive_stem", "infinitive", "forms_passive",
                 "lexeme_id", "source", "is_verified", "note"]),
+            new("lemma_variant", ["variant_id", "lemma_entry_id", "lemma", "lemma_key", "note"]),
             new("lexical_unit", ["lu_id", "lexeme_id", "sense_label", "gloss", "ssc_class_id"]),
+            new("lemma_sense", ["lemma_sense_id", "lemma_entry_id", "lu_id", "aktionsart", "note"]),
             new("valency_frame", [
                 "frame_id", "lu_id", "kind", "diathesis", "is_default", "reflexive_type"]),
             new("valency_slot", [

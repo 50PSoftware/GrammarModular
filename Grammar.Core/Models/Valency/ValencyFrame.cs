@@ -54,6 +54,23 @@ namespace Grammar.Core.Models.Valency
         public ReflexiveType ReflexiveType { get; init; } = ReflexiveType.None;
 
         /// <summary>
+        /// Gets the způsob slovesného děje this verb has in this sense, or <see langword="null"/> when
+        /// the sense adds nothing to what the lexical entry already says.
+        /// </summary>
+        /// <remarks>
+        /// The same division as <see cref="ReflexiveType"/>, and for the same reason. This holds for the
+        /// verb read in one sense; what holds for it under every sense is on the lexical entry, and where
+        /// both speak this one wins. Null is "nothing to add", not "no group" — fall back to the entry
+        /// before concluding the verb is unclassified.
+        /// <para>
+        /// <c>mrznout</c> is why it exists: <em>mrzne</em> is a state of the air and <em>voda mrzne</em>
+        /// a gradual change of the water. Those are different groups, so the lemma has no single answer
+        /// and each of its readings does.
+        /// </para>
+        /// </remarks>
+        public Aktionsart? Aktionsart { get; init; }
+
+        /// <summary>
         /// Gets or sets the valency slots required by the frame.
         /// </summary>
         public IReadOnlyList<ValencySlot> Slots { get; init; } = [];

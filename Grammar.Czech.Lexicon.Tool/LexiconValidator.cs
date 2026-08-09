@@ -32,6 +32,7 @@ namespace Grammar.Czech.Lexicon.Tool
             ("lemma_entry", "aspect", typeof(VerbAspect)),
             ("lemma_entry", "verb_class", typeof(VerbClass)),
             ("lemma_entry", "aktionsart", typeof(Aktionsart)),
+            ("lemma_sense", "aktionsart", typeof(Aktionsart)),
             ("lemma_entry", "reflexive_type", typeof(ReflexiveType)),
             ("valency_frame", "kind", typeof(ValencyKind)),
             ("valency_frame", "diathesis", typeof(Diathesis)),
@@ -107,6 +108,8 @@ namespace Grammar.Czech.Lexicon.Tool
                 CheckAktionsart(connection, errors);
                 CheckStems(connection, errors);
                 CheckLemmaKeys(connection, errors);
+                CheckLemmaVariants(connection, errors);
+                CheckLemmaSenses(connection, errors);
                 CheckFrames(connection, errors);
                 CheckSlots(connection, errors);
                 CheckDanglingLemmaReferences(connection, warnings);
@@ -177,32 +180,94 @@ namespace Grammar.Czech.Lexicon.Tool
         // imperfective is therefore a bad row rather than an unusual verb, and this is the only thing
         // that would notice — the two columns are filled in different places and nothing else compares
         // them.
+        //
+        // Obě úrovně naráz. Vid má jen lemma, a k lemmatu se dostanou obě: řádek v lemma_sense drží
+        // lemma_entry_id, takže se poměřuje s videm toho hesla, o kterém mluví.
         private static void CheckAktionsart(SqliteConnection connection, List<string> errors)
         {
-            const string sql = """
-                SELECT lemma, aspect, aktionsart
+            const string entrySql = """
+                SELECT lemma, aspect, aktionsart, ''
                 FROM lemma_entry
                 WHERE aktionsart IS NOT NULL AND aspect IS NOT NULL
                 """;
 
+            const string senseSql = """
+                SELECT e.lemma, e.aspect, ls.aktionsart, COALESCE(u.sense_label, ls.lu_id)
+                FROM lemma_sense ls
+                JOIN lemma_entry e ON e.lemma_entry_id = ls.lemma_entry_id
+                JOIN lexical_unit u ON u.lu_id = ls.lu_id
+                WHERE ls.aktionsart IS NOT NULL AND e.aspect IS NOT NULL
+                """;
+
+            foreach (var sql in new[] { entrySql, senseSql })
+            {
+                foreach (var row in Query(connection, sql))
+                {
+                    var lemma = row[0]?.ToString() ?? string.Empty;
+
+                    if (!Enum.TryParse<VerbAspect>(row[1]?.ToString(), out var aspect)
+                        || !Enum.TryParse<Aktionsart>(row[2]?.ToString(), out var aktionsart))
+                    {
+                        // Nečitelnou hodnotu hlásí CheckEnums; tady by z ní byla jen druhá hláška o témže.
+                        continue;
+                    }
+
+                    var required = AktionsartFacts.RequiredAspect(aktionsart);
+
+                    if (aspect == required)
+                    {
+                        continue;
+                    }
+
+                    var sense = row[3]?.ToString() ?? string.Empty;
+
+                    errors.Add(sense.Length == 0
+                        ? $"'{lemma}' je {aktionsart} a má vid {aspect}; ta skupina je {required}."
+                        : $"'{lemma}' ve významu '{sense}' je {aktionsart} a má vid {aspect}; "
+                            + $"ta skupina je {required}.");
+                }
+            }
+        }
+
+        // Obě cizí klíče lemma_sense drží, ale ani jeden neřekne, že spolu ty dva řádky mají co dělat:
+        // význam patří lexému a heslo taky, a nic nehlídá, že je to týž lexém. Řádek, který spáruje
+        // heslo s cizím významem, projde vložením i integritou a pak nikdy nic nepotká — dotaz na rámce
+        // spojuje heslo s významem přes lexém, takže se na ten řádek nedostane.
+        private static void CheckLemmaSenses(SqliteConnection connection, List<string> errors)
+        {
+            const string sql = """
+                SELECT e.lemma, COALESCE(u.sense_label, u.lu_id)
+                FROM lemma_sense ls
+                JOIN lemma_entry e ON e.lemma_entry_id = ls.lemma_entry_id
+                JOIN lexical_unit u ON u.lu_id = ls.lu_id
+                WHERE e.lexeme_id IS NULL OR e.lexeme_id <> u.lexeme_id
+                """;
+
             foreach (var row in Query(connection, sql))
             {
-                var lemma = row[0]?.ToString() ?? string.Empty;
+                errors.Add(
+                    $"lemma_sense páruje '{row[0]}' s významem '{row[1]}', který patří jinému lexému. "
+                    + "Význam se k heslu dostane jen přes společný lexém, takže tenhle řádek nikdo nepřečte.");
+            }
+        }
 
-                if (!Enum.TryParse<VerbAspect>(row[1]?.ToString(), out var aspect)
-                    || !Enum.TryParse<Aktionsart>(row[2]?.ToString(), out var aktionsart))
-                {
-                    // Nečitelnou hodnotu hlásí CheckEnums; tady by z ní byla jen druhá hláška o témže.
-                    continue;
-                }
+        // Varianta je druhý pravopis jednoho hesla, ne druhé heslo, takže jediné, co se o ní dá ověřit, je
+        // že se pod ní nic neschovává: klíč se nesmí krýt s žádným skutečným lemmatem. Kdyby se kryl,
+        // vrátilo by vyhledání dvě hesla místo jednoho a provider by mlčky vzal to první — dotaz na
+        // variantu i na lemma je jeden OR a rozdíl by se ukázal až na hotové větě.
+        private static void CheckLemmaVariants(SqliteConnection connection, List<string> errors)
+        {
+            const string sql = """
+                SELECT v.lemma, e.lemma
+                FROM lemma_variant v
+                JOIN lemma_entry e ON e.lemma_key = v.lemma_key
+                """;
 
-                var required = AktionsartFacts.RequiredAspect(aktionsart);
-
-                if (aspect != required)
-                {
-                    errors.Add(
-                        $"'{lemma}' je {aktionsart} a má vid {aspect}; ta skupina je {required}.");
-                }
+            foreach (var row in Query(connection, sql))
+            {
+                errors.Add(
+                    $"'{row[0]}' je zapsané jako varianta a zároveň existuje jako samostatné heslo "
+                    + $"'{row[1]}'. Buď je to dubleta, nebo vlastní heslo — obojí naráz ne.");
             }
         }
 
@@ -310,7 +375,13 @@ namespace Grammar.Czech.Lexicon.Tool
         // folds ASCII only and would pass Dát as correct.
         private static void CheckLemmaKeys(SqliteConnection connection, List<string> errors)
         {
-            foreach (var row in Query(connection, "SELECT lemma, lemma_key FROM lemma_entry"))
+            const string sql = """
+                SELECT lemma, lemma_key FROM lemma_entry
+                UNION ALL
+                SELECT lemma, lemma_key FROM lemma_variant
+                """;
+
+            foreach (var row in Query(connection, sql))
             {
                 var lemma = (string)row[0]!;
                 var key = (string)row[1]!;

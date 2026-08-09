@@ -56,8 +56,8 @@ namespace Grammar.Czech.Test
         {
             string[] expected =
             [
-                "lexicon_meta", "lexeme", "lemma_entry", "lexical_unit",
-                "valency_frame", "valency_slot", "slot_realization", "construction"
+                "lexicon_meta", "lexeme", "lemma_entry", "lemma_variant", "lexical_unit",
+                "lemma_sense", "valency_frame", "valency_slot", "slot_realization", "construction"
             ];
 
             CollectionAssert.AreEquivalent(expected, portable.Keys.ToArray(), "Parser nenašel očekávané tabulky.");

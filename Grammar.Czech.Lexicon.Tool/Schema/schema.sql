@@ -169,6 +169,71 @@ CREATE TABLE lexical_unit (
 );
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- Lemma variant — a second spelling of one headword
+-- ─────────────────────────────────────────────────────────────────────────────
+-- setmít se and setmět se are one verb: IJP leads with the first and marks the second "lze i", and
+-- both are standard. A row here makes the second findable without duplicating the morphology, which is
+-- why it is not a second lemma_entry — the two share every stem, every pattern and every frame, and a
+-- copy would be two rows to keep in step.
+--
+-- A lookup landing on a variant returns the entry it belongs to, so generation uses the headword. The
+-- variant is recognized, not preserved: what the dictionary leads with is what comes out.
+CREATE TABLE lemma_variant (
+    variant_id      INTEGER      NOT NULL,
+    lemma_entry_id  INTEGER      NOT NULL,
+
+    -- The same pair as on lemma_entry and for the same reason: one is the form as written, the other
+    -- the lookup key, lower-cased by the writer rather than by a collation.
+    lemma           VARCHAR(64)  NOT NULL,
+    lemma_key       VARCHAR(64)  NOT NULL,
+
+    note            VARCHAR(500),
+
+    CONSTRAINT pk_lemma_variant PRIMARY KEY (variant_id),
+    CONSTRAINT uq_lemma_variant_key UNIQUE (lemma_key),
+    CONSTRAINT fk_lemma_variant_entry FOREIGN KEY (lemma_entry_id) REFERENCES lemma_entry (lemma_entry_id)
+);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Lemma sense — one headword read in one of its lexeme's senses
+-- ─────────────────────────────────────────────────────────────────────────────
+-- What holds of a word in one meaning and not in another. Neither of the two tables it sits between
+-- can say that: lemma_entry is one row for the word under every sense, and lexical_unit is one row for
+-- the sense under every word of the lexeme — and a lexeme is an aspect pair, so a fact written there
+-- lands on the perfective and the imperfective alike.
+--
+-- mrznout and zmrznout are that pair, and they are why the table exists. In the weather sense mrzne is
+-- a state that holds and zmrzlo is a result reached; in the freezing sense voda mrzne is a gradual
+-- change and voda zmrzla again a result. Four readings, three groups, and no column above can hold
+-- them — one on lemma_entry has to pick a sense, one on lexical_unit has to pick an aspect.
+--
+-- Rows are the exceptions only. A verb whose senses agree says it once on lemma_entry and appears here
+-- not at all, which is nearly every verb.
+CREATE TABLE lemma_sense (
+    lemma_sense_id  INTEGER      NOT NULL,
+    lemma_entry_id  INTEGER      NOT NULL,
+    lu_id           INTEGER      NOT NULL,
+
+    -- Způsob slovesného děje of this word in this sense. Overrides lemma_entry.aktionsart, the same way
+    -- valency_frame.reflexive_type overrides the one on the entry. Where there is no row, the value on
+    -- the entry stands, and NULL there still means unclassified.
+    aktionsart      VARCHAR(24),
+
+    note            VARCHAR(500),
+
+    CONSTRAINT pk_lemma_sense PRIMARY KEY (lemma_sense_id),
+    CONSTRAINT uq_lemma_sense UNIQUE (lemma_entry_id, lu_id),
+    CONSTRAINT fk_lemma_sense_entry FOREIGN KEY (lemma_entry_id) REFERENCES lemma_entry (lemma_entry_id),
+    CONSTRAINT fk_lemma_sense_unit FOREIGN KEY (lu_id) REFERENCES lexical_unit (lu_id),
+    CONSTRAINT ck_lemma_sense_aktionsart CHECK (aktionsart IS NULL OR aktionsart IN (
+        'Ingressive', 'Evolutive', 'Delimitative', 'Resultative', 'Terminative',
+        'Perdurative', 'Finitive', 'Egressive', 'Exhaustive', 'Total', 'Saturative',
+        'Extensive', 'Cumulative', 'Intensive', 'Excessive', 'Distributive', 'Attenuative',
+        'Semelfactive', 'Momentary', 'Iterative', 'Diminutive', 'Comitative', 'Frequentative',
+        'Stative', 'Decursive', 'Mutative'))
+);
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- Valency frame — one per (lexical unit, diathesis)
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE valency_frame (

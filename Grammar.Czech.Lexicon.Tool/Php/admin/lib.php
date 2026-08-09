@@ -384,10 +384,19 @@ function admin_fail(string $message): never
 
 /**
  * Renders a select over the permitted values of a column.
+ *
+ * The id defaults to the name and can be given separately, for the pages that render the same field
+ * once per row. Two elements sharing an id is not a cosmetic problem there: a label points at the
+ * first one, so clicking the second row's label focuses the first row's select.
  */
-function admin_select(string $name, string $column, ?string $selected, bool $allowEmpty = true): string
-{
-    $html = '<select name="' . h($name) . '" id="' . h($name) . '">';
+function admin_select(
+    string $name,
+    string $column,
+    ?string $selected,
+    bool $allowEmpty = true,
+    ?string $id = null
+): string {
+    $html = '<select name="' . h($name) . '" id="' . h($id ?? $name) . '">';
 
     if ($allowEmpty) {
         $html .= '<option value="">— neuvedeno —</option>';

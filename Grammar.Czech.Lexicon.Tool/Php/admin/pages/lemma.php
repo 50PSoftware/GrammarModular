@@ -32,6 +32,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         admin_redirect(['p' => 'list']);
     }
 
+    // Dubleta a způsob děje po významech visí na existujícím heslu a se samotným formulářem nemají
+    // nic společného — vlastní akce, vlastní návrat. Kdyby propadly níž, přepsalo by uložení dublety
+    // heslo hodnotami, které v jejím formuláři nejsou, tedy prázdnem.
+    $action = (string) ($_POST['action'] ?? '');
+
+    if (!$isNew && in_array($action, ['variant', 'variant_delete', 'sense_aktionsart'], true)) {
+        switch ($action) {
+            case 'variant':
+                $variant = admin_text('variant_lemma');
+
+                if ($variant === null) {
+                    admin_flash('Podoba nesmí být prázdná.', 'err');
+                    break;
+                }
+
+                try {
+                    admin_run(
+                        'INSERT INTO lemma_variant (lemma_entry_id, lemma, lemma_key, note) VALUES (?, ?, ?, ?)',
+                        [(int) $id, $variant, admin_lemma_key($variant), admin_text('variant_note')]
+                    );
+                    admin_flash('Podoba přidána.');
+                } catch (PDOException $exception) {
+                    // UNIQUE na lemma_key. Buď je ta podoba dubletou jiného hesla, nebo tohohle —
+                    // obojí znamená, že se pod tím klíčem už hledá něco jiného.
+                    if ($exception->getCode() === '23000') {
+                        admin_flash(
+                            'Podoba „' . $variant . '“ už je vedená jinde. Jedna podoba, jedno heslo.',
+                            'err'
+                        );
+                        break;
+                    }
+
+                    throw $exception;
+                }
+                break;
+
+            case 'variant_delete':
+                // lemma_entry_id v podmínce ze stejného důvodu jako u významů na lexému: číslo přišlo
+                // z formuláře a bez něj by podvržené smazalo dubletu cizího hesla.
+                admin_run(
+                    'DELETE FROM lemma_variant WHERE variant_id = ? AND lemma_entry_id = ?',
+                    [(int) ($_POST['variant_id'] ?? 0), (int) $id]
+                );
+                admin_flash('Podoba smazána.');
+                break;
+
+            case 'sense_aktionsart':
+                $luId = (int) ($_POST['lu_id'] ?? 0);
+                $group = admin_enum('aktionsart', 'aktionsart');
+
+                // Prázdno neznamená „žádná skupina“, ale „tenhle význam k heslu nic nepřidává“, a to
+                // se zapisuje nepřítomností řádku. Uložený NULL by vypadal stejně a znamenal jiné.
+                admin_run(
+                    'DELETE FROM lemma_sense WHERE lemma_entry_id = ? AND lu_id = ?',
+                    [(int) $id, $luId]
+                );
+
+                if ($group !== null) {
+                    admin_run(
+                        'INSERT INTO lemma_sense (lemma_entry_id, lu_id, aktionsart, note) VALUES (?, ?, ?, ?)',
+                        [(int) $id, $luId, $group, admin_text('sense_note')]
+                    );
+                }
+
+                admin_flash('Uloženo.');
+                break;
+        }
+
+        admin_redirect(['p' => 'lemma', 'id' => $id]);
+    }
+
     $lemma = admin_text('lemma');
 
     if ($lemma === null) {
@@ -89,6 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $verbClass,
         admin_enum('aspect', 'aspect'),
         admin_text('aspect_counterpart'),
+        admin_enum('aktionsart', 'aktionsart'),
         admin_enum('reflexive_type', 'reflexive_type') ?? 'None',
         admin_text('base_verb_lemma'),
         admin_text('stem'),
@@ -109,7 +181,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'lemma', 'lemma_key', 'homonym_index', 'category', 'gender', 'pattern', 'is_animate',
         'has_mobile_e', 'has_genitive_plural_shortening', 'has_epenthesis_in_genitive_plural',
         'is_indeclinable', 'is_plural_only', 'is_countable', 'prefers_short_form', 'verb_class',
-        'aspect', 'aspect_counterpart', 'reflexive_type', 'base_verb_lemma', 'stem', 'present_stem',
+        'aspect', 'aspect_counterpart', 'aktionsart', 'reflexive_type', 'base_verb_lemma', 'stem',
+        'present_stem',
         'past_stem', 'future_stem', 'imperative_stem', 'passive_stem', 'infinitive', 'forms_passive',
         'lexeme_id', 'source', 'is_verified', 'note',
     ];
@@ -150,6 +223,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $value = static fn (string $column, mixed $default = null): mixed => $entry[$column] ?? $default;
 $lexemes = admin_all('SELECT lexeme_id, primary_lemma FROM lexeme ORDER BY primary_lemma');
 
+$variants = $isNew ? [] : admin_all(
+    'SELECT * FROM lemma_variant WHERE lemma_entry_id = ? ORDER BY lemma_key',
+    [(int) $id]
+);
+
+// Významy lexému spolu s tím, co o nich tohle heslo říká. LEFT JOIN, protože řádek je výjimka:
+// naprostá většina dvojic heslo–význam žádný nemá a stránka je má stejně ukázat.
+$senses = ($isNew || $value('lexeme_id') === null) ? [] : admin_all(
+    'SELECT u.lu_id, u.sense_label, u.gloss, ls.aktionsart, ls.note AS sense_note
+       FROM lexical_unit u
+       LEFT JOIN lemma_sense ls ON ls.lu_id = u.lu_id AND ls.lemma_entry_id = ?
+      WHERE u.lexeme_id = ?
+      ORDER BY u.lu_id',
+    [(int) $id, (int) $value('lexeme_id')]
+);
+
 // Skládací sekce. Formulář pokrývá všechny slovní druhy, takže u každého hesla jsou dvě třetiny
 // políček bezpředmětné — u substantiva vid a kmeny, u slovesa pomnožnost. Sekce, ve které heslo něco
 // má, se otevře sama; zbytek se dá rozbalit. Pole zůstávají ve formuláři i složená a odesílají se.
@@ -158,7 +247,7 @@ $foldColumns = [
         'has_mobile_e', 'has_genitive_plural_shortening', 'has_epenthesis_in_genitive_plural',
         'is_indeclinable', 'is_plural_only', 'is_countable', 'prefers_short_form',
     ],
-    'verb' => ['verb_class', 'aspect', 'aspect_counterpart', 'base_verb_lemma'],
+    'verb' => ['verb_class', 'aspect', 'aspect_counterpart', 'aktionsart', 'base_verb_lemma'],
     'stems' => [
         'stem', 'present_stem', 'past_stem', 'future_stem', 'imperative_stem', 'passive_stem',
         'infinitive', 'forms_passive',
@@ -320,6 +409,14 @@ if (!$isNew) {
             <input type="text" id="aspect_counterpart" name="aspect_counterpart" value="<?= h((string) $value('aspect_counterpart')) ?>">
             <small>Nech prázdné, když protějšek nemá — u sloves pohybu prefixace vid netvoří.</small>
         </p>
+        <p class="field wide">
+            <label for="aktionsart">Způsob slovesného děje</label>
+            <?= admin_select('aktionsart', 'aktionsart', $value('aktionsart')) ?>
+            <small>Není to jemnější vid: většina sloves do žádné skupiny nepatří a prázdno znamená
+                nezařazeno, ne „žádný“. Skupina vid určuje — (a)–(r) dokonavé, (s)–(y) nedokonavé —
+                a <code>validate</code> to hlídá. Když se skupina význam od významu liší, nech tohle
+                prázdné a zapiš ji níž, po významech.</small>
+        </p>
         <p class="field">
             <label for="reflexive_type">Reflexivita</label>
             <?= admin_select('reflexive_type', 'reflexive_type', (string) $value('reflexive_type', 'None'), allowEmpty: false) ?>
@@ -433,6 +530,85 @@ if (!$isNew) {
         <a href="<?= h(admin_url(['p' => 'list'])) ?>">Zpět</a>
     </div>
 </form>
+
+<?php if (!$isNew): ?>
+<section class="card">
+    <h2>Další spisovná podoba</h2>
+    <p class="hint">Druhý pravopis téhož hesla — <code>setmět</code> vedle <code>setmít</code>. Slovník
+        ho pozná, ale negeneruje: hledání pod ním vrátí tohle heslo a ven jde lemma nahoře. Není to
+        druhé heslo, protože obě podoby mají tytéž kmeny, týž vzor i tytéž rámce; a není to ani
+        <code>infinitiv</code>, který drží infinitiv lišící se od lemmatu (<code>říct</code> vedle
+        <code>říci</code>), ne rovnocennou dubletu.</p>
+
+    <?php if ($variants === []): ?>
+        <p class="empty">Žádná. To je běžný stav.</p>
+    <?php else: ?>
+        <ul class="chips">
+        <?php foreach ($variants as $variant): ?>
+            <li>
+                <strong><?= h((string) $variant['lemma']) ?></strong>
+                <?php if ($variant['note'] !== null): ?>
+                    <span class="muted"><?= h((string) $variant['note']) ?></span>
+                <?php endif; ?>
+                <form method="post" class="inline" onsubmit="return confirm('Smazat podobu?');">
+                    <input type="hidden" name="csrf" value="<?= h(admin_csrf_token()) ?>">
+                    <input type="hidden" name="action" value="variant_delete">
+                    <input type="hidden" name="variant_id" value="<?= (int) $variant['variant_id'] ?>">
+                    <button type="submit" class="del small">Smazat</button>
+                </form>
+            </li>
+        <?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
+
+    <form method="post" class="inline top">
+        <input type="hidden" name="csrf" value="<?= h(admin_csrf_token()) ?>">
+        <input type="hidden" name="action" value="variant">
+        <label for="variant_lemma" class="sr">Podoba</label>
+        <input type="text" id="variant_lemma" name="variant_lemma" placeholder="setmět">
+        <label for="variant_note" class="sr">Poznámka</label>
+        <input type="text" id="variant_note" name="variant_note" class="grow"
+               placeholder="odkud je — třeba „IJP: lze i“">
+        <button type="submit">Přidat podobu</button>
+    </form>
+</section>
+
+<?php if ($senses !== []): ?>
+<section class="card">
+    <h2>Způsob děje po významech</h2>
+    <p class="hint">Jen když se skupina význam od významu liší. <em>Mrzne</em> je stav vzduchu a
+        <em>voda mrzne</em> postupná změna vody — heslo pak nahoře zůstane prázdné a odpovídá se tady.
+        Prázdné pole znamená, že ten význam k heslu nic nepřidává, ne že sloveso do žádné skupiny
+        nepatří; to se říká nahoře.</p>
+    <p class="hint">Zapisuje se to na dvojici heslo–význam, ne na význam samotný: význam patří lexému a
+        lexém je vidová dvojice, takže hodnota u významu by dopadla i na dokonavý protějšek. <em>Zmrzlo</em>
+        je rezultativní v obou významech, kdežto <em>mrzne</em> stavové — jeden řádek by je nerozlišil.</p>
+
+    <?php foreach ($senses as $sense): ?>
+        <form method="post" class="inline">
+            <input type="hidden" name="csrf" value="<?= h(admin_csrf_token()) ?>">
+            <input type="hidden" name="action" value="sense_aktionsart">
+            <input type="hidden" name="lu_id" value="<?= (int) $sense['lu_id'] ?>">
+            <strong><?= h((string) ($sense['sense_label'] ?? '(bez názvu)')) ?></strong>
+            <?php if ($sense['gloss'] !== null): ?>
+                <span class="muted"><?= h((string) $sense['gloss']) ?></span>
+            <?php endif; ?>
+            <label class="sr" for="aktionsart_<?= (int) $sense['lu_id'] ?>">Způsob děje</label>
+            <?= admin_select(
+                'aktionsart',
+                'aktionsart',
+                $sense['aktionsart'] === null ? null : (string) $sense['aktionsart'],
+                id: 'aktionsart_' . (int) $sense['lu_id']
+            ) ?>
+            <label class="sr" for="sense_note_<?= (int) $sense['lu_id'] ?>">Poznámka</label>
+            <input type="text" id="sense_note_<?= (int) $sense['lu_id'] ?>" name="sense_note" class="grow"
+                   value="<?= h((string) $sense['sense_note']) ?>" placeholder="čím to je">
+            <button type="submit">Uložit</button>
+        </form>
+    <?php endforeach; ?>
+</section>
+<?php endif; ?>
+<?php endif; ?>
 
 <?php if (!$isNew): ?>
 <?php

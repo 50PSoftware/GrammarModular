@@ -176,6 +176,8 @@ The database holds three layers, kept apart because one lemma has exactly one mo
 
 - `lemma_entry` — morphological identity per dictionary form: gender, pattern, animacy, the mobile `e`, genitive-plural shortening and epenthesis, indeclinability, plural-only, countability, verb class, aspect and its counterpart, reflexive type, plus provenance columns,
 - `lexeme` and `lexical_unit` — the abstract word and its senses. An aspect pair is one lexeme, so `dát` and `dávat` share a single frame instead of each carrying a copy,
+- `lemma_sense` — what holds of one heslo read in one sense, which neither of the two above can say: `lemma_entry` is one row for the word under every sense, `lexical_unit` one row for the sense under every word of the lexeme. Rows are the exceptions only,
+- `lemma_variant` — a second standard spelling of a headword, so *setmět* is understood and *setmít* is what comes out,
 - `valency_frame`, `valency_slot`, `slot_realization` — the frames themselves. A slot may have several realizations with a generation preference, which is what lets one slot be a bare case in one wording and a `že`-clause or an infinitive in another.
 
 A slot may surface as a dependent clause, and `slot_realization.clause_type` records which conjunction introduces it — `že`, `aby`, `zda` — as the lemma itself, the way VALLEX does. The word carries more than the kind of clause would: *ví, že přijde* and *ví, zda přijde* are both content clauses and mean different things. No `CHECK` can enforce it, because the conjunctions live in the embedded JSON rules; `lexikon validate` does.
@@ -428,7 +430,7 @@ gramatika veta voda mrznout
 # Jiný význam podmět bere: --ramec freeze.
 ```
 
-Seeded: `pršet`, `sněžit`, `svítat`, `stmívat` as impersonal only; `mrznout`, `hřmít`, `blýskat` with a second sense that takes an actor; `stmívat` and `blýskat` with the reflexive their weather sense needs. Every one of them has its perfective counterpart — `napršet`, `nasněžit`, `rozednít`, `setmět`, `zmrznout`, `zahřmět`, `blýsknout` — sitting under the same lexeme and inheriting the frames rather than carrying a copy: *Napršelo*, *Zmrzlo*, *Blýsklo se*. A counterpart inherits every sense, so `zmrznout` reaches both *Zmrzlo* and *Voda zmrzla*.
+Seeded: `pršet`, `sněžit`, `svítat`, `stmívat` as impersonal only; `mrznout`, `hřmít`, `blýskat` with a second sense that takes an actor; `stmívat` and `blýskat` with the reflexive their weather sense needs. Every one of them has its perfective counterpart — `napršet`, `nasněžit`, `rozednít`, `setmít`, `zmrznout`, `zahřmět`, `blýsknout` — sitting under the same lexeme and inheriting the frames rather than carrying a copy: *Napršelo*, *Zmrzlo*, *Blýsklo se*. A counterpart inherits every sense, so `zmrznout` reaches both *Zmrzlo* and *Voda zmrzla*.
 
 What kind of event a verb names is a separate question from its aspect, and `lemma_entry.aktionsart` is where it goes — způsob slovesného děje, the whole twenty-six-group classification of NESČ. Twenty-six and not twenty-five: the groups are lettered with the Czech alphabet, where *ch* stands between *h* and *i*.
 
@@ -436,7 +438,11 @@ It is not a finer grade of aspect. Aspect is grammatical, has two members and ev
 
 Thirteen entries carry it: `blýsknout` semelfactive against the frequentative `blýskat`, `zahřmět` ingressive, `napršet` and `nasněžit` cumulative, `pršet`, `sněžit` and `hřmít` decursive, `svítat` and `stmívat` mutative, `setmít` and `zmrznout` resultative, `rozednít` evolutive.
 
-`mrznout` carries none, and that is a decision rather than a gap: *mrzne* is a state of the air and *voda mrzne* a gradual change of the water, which are different groups, while the column sits on the lemma and there is one row for it. Recording either would make one sense lie about the other. It is the counterexample to the usual description of způsob slovesného děje as a property of the verb, and moving the column to `lexical_unit` — where the frames already live — is the fix it points at.
+`mrznout` carries none on the entry, and that is a decision rather than a gap: *mrzne* is a state of the air and *voda mrzne* a gradual change of the water, which are different groups, while the entry has one row. It is the counterexample to the usual description of způsob slovesného děje as a property of the verb — the verb has no one answer and each of its readings does.
+
+Which is what `lemma_sense` is for. It pairs one heslo with one sense and states the group there, overriding the entry the way `valency_frame.reflexive_type` overrides the reflexive type on it; where there is no row, the entry stands. `mrznout` has two rows, stative for *mrzne* and mutative for *voda mrzne*, and `ValencyFrame.Aktionsart` is where they come back.
+
+The pairing is the point, and the obvious shortcut does not work: a sense hangs off the lexeme, a lexeme is an aspect pair, so a group written on `lexical_unit` would land on `zmrznout` too. *Zmrzlo* is a result reached under either reading — which is what its entry already says — and a perfective verb inheriting *mrzne*'s stative would be simply false. The validator is what caught that, by holding the row against the aspect of the lemma it belongs to.
 
 The other sense of `blýskat` shows a patient in the bare instrumental, which is a whole class of Czech verbs — *mávat rukou*, *kroutit hlavou*, *házet kamenem*: `Meč blýská očima.`
 
