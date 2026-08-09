@@ -370,6 +370,52 @@ Console.WriteLine(builder.Build(planner.Plan(roles.Resolve(plan))));
 
 Role plynou z rámce: konatel a adresát berou přednostně životné jméno, což je to, co udrží dva předměty slovesa dávání od sebe, aniž by je někdo pojmenoval. Participant, kterého nic nevysvětlí, si nechá prázdný funktor a vrátí se z `CzechRoleResolver.Unresolved` — špatná role dá dobře utvořenou větu o něčem jiném.
 
+Vztažná věta je plán taky, takže se v ní nic nezadává ručně — role jejích participantů plynou z rámce jejího vlastního slovesa a může být sama souvětím:
+
+```csharp
+var subject = Student with
+{
+    Relative = new PlannedRelative
+    {
+        Relativizer = "který",
+        Clause = new SentencePlan
+        {
+            Predicate = Verb("psát"),
+            Participants = [Letter],                       // bez zadaného funktoru
+            Joined = [new ClauseLink("a", Working)],
+        },
+    },
+};
+// Student, který píše dopis a pracuje, čte knihu.
+```
+
+Vztažné zájmeno drží uvnitř své věty jednu roli a mezi participanty není, takže resolver rezervuje slot, na který ukazuje jeho pád: u nominativního *který* je dopis patiens, ne konatel. Zájmeno je zároveň to, o čem ta věta je, takže se uvnitř nic nestává tématem samo od sebe — *který píše dopis*, ne *který dopis píše*.
+
+### Věty s nevyjádřeným podmětem
+
+Čeština vynechává podmět trojím způsobem, a jsou to tři různé věci, ne jedna:
+
+```csharp
+// Není co vyjádřit: sloveso konatele nemá vůbec.
+planner.Plan(new SentencePlan { Predicate = Verb("pršet") });          // Prší.
+
+// Vypuštěný: konatel je zájmeno, které už nese koncovka.
+planner.Plan(new SentencePlan { Predicate = Verb("číst"), Participants = [Me, Book] });
+// Čtu knihu.
+
+// Nepojmenovaný: nikdo neříká kdo, a osoba stojí na slovese.
+planner.Plan(new SentencePlan
+{
+    Predicate = Verb("psát") with { Person = Person.Third, Number = Number.Plural },
+    Participants = [Letter],
+});
+// Dopis píšou.
+```
+
+Model je rozlišuje podle toho, co je v plánu, ne podle povrchu. První a druhá osoba na slovese je shoda s podmětem, který se nevyslovil, takže slot konatele je obsazený a jméno na něj nemůže — bez toho by z *píšu dopis* vyšel dopis jako konatel, v nominativu.
+
+Co modelované není, je lexikální fakt, že některá slovesa podmět mít nemohou: *Prší student.* nikdo neodmítne. Slovník nemá rámec, který by řekl, že je sloveso avalentní.
+
 Dvě rozhodnutí, která pod plánovačem udělat nejde:
 
 ```csharp
@@ -833,7 +879,7 @@ Pravidlová data v projektu `Grammar.Czech` jsou embedded JSON resources. Výjim
 
 ### Co modelované není
 
-- Klauze spojené přes `SentencePlan.Joined` se vnořují, jak hluboko se napíšou, a řetěz na jedné úrovni (`[a: B, protože: C]`) je jiná věta než řetěz vnoření (`a: B { protože: C }`) — vyslovit jde obojí. Vztažná věta je `SentenceNode` a souřadí i podřaďuje jako každá jiná, jenže její klauze se zadávají jako `CzechClause`, ne jako plány — uvnitř ní se tedy role neodvozují a rámec nevybírá.
+- Klauze spojené přes `SentencePlan.Joined` se vnořují, jak hluboko se napíšou, a řetěz na jedné úrovni (`[a: B, protože: C]`) je jiná věta než řetěz vnoření (`a: B { protože: C }`) — vyslovit jde obojí. Vztažná věta je plnohodnotný plán, takže uvnitř ní platí všechno, co platí o větě.
 - `IValencyProvider.GetEntry` bere lemma, volitelně s `WordCategory`, takže homonyma napříč kategoriemi rozlišit umí, ale homonyma uvnitř jedné ne. Schéma je nese ve sloupci `homonym_index` a provider vrátí to s nejnižším.
 - Klitický klastr nezná volný dativ (*To ti byla legrace*), který podle NESČ stojí mezi pomocným slovesem a reflexivem. Ostatní pozice pořadí odpovídají.
 - Ukazovací zájmeno před číslovkou (*těch pět studentů*) se shoduje s hlavou fráze, ne s celou frází.

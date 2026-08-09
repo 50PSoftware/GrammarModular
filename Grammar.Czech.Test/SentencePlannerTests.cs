@@ -127,6 +127,50 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// A clause with no actor at all is a sentence like any other — Czech has plenty — and the
+        /// categories the missing subject would have carried are stated on the predicate instead.
+        /// </summary>
+        /// <remarks>
+        /// Three different things come out looking alike and are not: <em>Prší</em> has no subject to
+        /// express, <em>Čtu knihu</em> has one that was dropped, and <em>Píšou o tom</em> has one nobody
+        /// is naming. The model distinguishes them by what is in the plan, not by the surface.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("pršet", "trida4", "Third", "Singular", "Prší.", DisplayName = "bezpodmětné")]
+        [DataRow("psát", "psát", "Third", "Plural", "Píšou.", DisplayName = "neurčitý konatel")]
+        [DataRow("psát", "psát", "First", "Singular", "Píšu.", DisplayName = "osoba jen na slovese")]
+        public void ClauseWithNoActorStandsOnItsPredicate(
+            string lemma, string pattern, string person, string number, string expected)
+        {
+            var sentence = Build(new SentencePlan
+            {
+                Predicate = Verb(lemma, pattern) with
+                {
+                    Person = Enum.Parse<Person>(person),
+                    Number = Enum.Parse<Number>(number)
+                }
+            });
+
+            Assert.AreEqual(expected, sentence);
+        }
+
+        /// <summary>
+        /// A subjectless clause takes its arguments as any other does; only the actor is missing.
+        /// </summary>
+        [TestMethod]
+        public void SubjectlessClauseStillTakesItsArguments()
+        {
+            var plan = roles.Resolve(new SentencePlan
+            {
+                Predicate = Verb("psát", "psát") with { Person = Person.First, Number = Number.Singular },
+                Participants = [Noun("dopis", "hrad", Gender.Masculine)]
+            });
+
+            Assert.AreEqual(FgdFunctor.PAT, plan.Participants[0].Functor);
+            Assert.AreEqual("Dopis píšu.", Build(plan));
+        }
+
+        /// <summary>
         /// A contrasted pronoun is doing work and stays, because dropping it would take the contrast
         /// with it.
         /// </summary>
@@ -507,24 +551,14 @@ namespace Grammar.Czech.Test
         [TestMethod]
         public void RelativeClauseHangsOffAParticipant()
         {
+            // Vztažná věta je plán: nic se v ní nedodává ručně, ani způsob, ani čas, ani osoba.
             var subject = Student(FgdFunctor.ACT) with
             {
-                Relative = new RelativeAttachment
+                Relative = new PlannedRelative
                 {
                     Relativizer = "který",
                     Case = Case.Nominative,
-                    Clause = new CzechClause
-                    {
-                        Predicate = Verb("pracovat", "trida3") with
-                        {
-                            Modus = Modus.Indicative,
-                            Tense = Tense.Present,
-                            Voice = Voice.Active,
-                            Person = Person.Third,
-                            Number = Number.Singular,
-                            Gender = Gender.Masculine
-                        }
-                    }
+                    Clause = new SentencePlan { Predicate = Verb("pracovat", "trida3") }
                 }
             };
 
@@ -539,6 +573,45 @@ namespace Grammar.Czech.Test
             Assert.AreEqual(
                 "Student, který pracuje, čte knihu a žák píše dopis.",
                 Build(plan with { Joined = [new ClauseLink("a", Writes())] }));
+        }
+
+        /// <summary>
+        /// Everything that holds of a sentence holds inside a relative clause, because it is one: the
+        /// roles of its participants are read off its own verb's frame, and it can be a complex sentence
+        /// in its own right.
+        /// </summary>
+        [TestMethod]
+        public void RelativeClauseIsPlannedLikeAnyOtherSentence()
+        {
+            var subject = Student(FgdFunctor.ACT) with
+            {
+                Relative = new PlannedRelative
+                {
+                    Relativizer = "který",
+                    Case = Case.Nominative,
+
+                    // Role knihy nikdo neuvádí — plyne z rámce slovesa uvnitř vztažné věty.
+                    Clause = new SentencePlan
+                    {
+                        Predicate = Verb("psát", "psát"),
+                        Participants = [Noun("dopis", "hrad", Gender.Masculine)],
+                        Joined = [new ClauseLink("a", new SentencePlan { Predicate = Verb("pracovat", "trida3") })]
+                    }
+                }
+            };
+
+            var plan = roles.Resolve(new SentencePlan
+            {
+                Predicate = Verb("číst", "číst"),
+                Participants = [subject, Book(FgdFunctor.PAT)]
+            });
+
+            Assert.AreEqual(
+                FgdFunctor.PAT,
+                plan.Participants[0].Relative!.Clause.Participants[0].Functor,
+                "Role uvnitř vztažné věty se odvozuje stejně jako kdekoli jinde.");
+
+            Assert.AreEqual("Student, který píše dopis a pracuje, čte knihu.", Build(plan));
         }
 
         /// <summary>

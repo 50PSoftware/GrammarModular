@@ -27,18 +27,26 @@ namespace Grammar.Czech.Services
     {
         private readonly CzechFrameSelector frameSelector;
         private readonly ICzechPrepositionService prepositionService;
+        private readonly ICzechAdverbService adverbService;
+        private readonly ICzechConjunctionService conjunctionService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CzechRoleResolver"/> type.
         /// </summary>
         /// <param name="frameSelector">The selector for the sense of the verb.</param>
         /// <param name="prepositionService">The preposition service, for government and semantic groups.</param>
+        /// <param name="adverbService">The adverb service, for telling a relative adverb from a pronoun.</param>
+        /// <param name="conjunctionService">The conjunction service, for how a joined clause attaches.</param>
         public CzechRoleResolver(
             CzechFrameSelector frameSelector,
-            ICzechPrepositionService prepositionService)
+            ICzechPrepositionService prepositionService,
+            ICzechAdverbService adverbService,
+            ICzechConjunctionService conjunctionService)
         {
             this.frameSelector = frameSelector;
             this.prepositionService = prepositionService;
+            this.adverbService = adverbService;
+            this.conjunctionService = conjunctionService;
         }
 
         /// <summary>
@@ -50,8 +58,40 @@ namespace Grammar.Czech.Services
         /// A stated functor is never touched. Where the frame settles nothing the participant comes back
         /// unresolved, and <see cref="Unresolved"/> is how a caller asks which ones those are.
         /// </remarks>
-        public SentencePlan Resolve(SentencePlan plan)
+        public SentencePlan Resolve(SentencePlan plan) => Resolve(plan, relativizedBy: null);
+
+        // The relativizer's case travels down because inside a relative clause one role is already
+        // spoken for: the relative pronoun fills it and is not among the participants. "muž, který píše
+        // dopis" has the man as the actor; without this the letter takes the actor slot standing empty
+        // and comes out in the nominative.
+        private SentencePlan Resolve(SentencePlan plan, Case? relativizedBy)
         {
+            // Celý strom, ne jen tahle klauze: vnořená věta i vztažná věta jsou plány jako každý jiný
+            // a volající, který zavolá Resolve na větu, čeká, že se vyřeší věta — ne její začátek.
+            plan = plan with
+            {
+                // Souřadná klauze uvnitř vztažné věty sdílí totéž vztažné zájmeno — 'který píše dopis
+                // a čte knihu' — takže jí obsazený slot patří taky. Podřadicí spojka otevírá klauzi
+                // s vlastním podmětem a rezervace tam nesahá.
+                Joined =
+                [
+                    .. plan.Joined.Select(link => link with
+                    {
+                        Clause = Resolve(
+                            link.Clause,
+                            conjunctionService.GetType(link.Conjunction) == ConjunctionType.Coordinating
+                                ? relativizedBy
+                                : null),
+                    }),
+                ],
+                Participants =
+                [
+                    .. plan.Participants.Select(participant => participant.Relative is { } relative
+                        ? participant with { Relative = relative with { Clause = Resolve(relative.Clause, RelativizedCase(relative)) } }
+                        : participant),
+                ],
+            };
+
             if (plan.Participants.All(participant => participant.Functor is not null))
             {
                 return plan;
@@ -69,12 +109,24 @@ namespace Grammar.Czech.Services
 
             var resolved = plan.Participants.ToList();
 
+            // Slot, který drží samo vztažné zájmeno. Mezi participanty není, ale obsazený je.
+            var relativized = relativizedBy is { } stated && frame is not null
+                ? Relativized(frame, stated)
+                : null;
+
+            // Totéž jinou cestou: první a druhá osoba na slovese je shoda s podmětem, který se
+            // nevyslovil. Konatel je tím obsazený a jméno na něj nemůže — bez toho by z 'píšu dopis'
+            // byl 'dopis' konatelem a vyšel v nominativu.
+            var speaker = plan.Predicate.Person is Person.First or Person.Second;
+
             // Sloty, které rámec nabízí a nikdo si je ještě nevzal. Beze jmenného vyjádření se nepočítají:
             // infinitivní a větné realizace řeší až plánovač klauzí a role na nich je dána slotem.
             var slots = frame is null
                 ? []
                 : frame.Slots
                     .Where(slot => slot.Realizations.Any(realization => realization.Case is not null))
+                    .Where(slot => slot.Functor != relativized)
+                    .Where(slot => !speaker || slot.Functor != FgdFunctor.ACT)
                     .Where(slot => resolved.All(participant => participant.Functor != slot.Functor))
                     .OrderBy(Priority)
                     .ThenBy(slot => slot.CanonicalOrder)
@@ -244,6 +296,19 @@ namespace Grammar.Czech.Services
             PrepositionSemanticGroup.Comparison => FgdFunctor.CRIT,
             _ => null,
         };
+
+        // A relative adverb is not an argument of its clause — "dům, kde bydlím" has its own subject —
+        // so it reserves nothing. A pronoun does, and which slot it holds is what its case says against
+        // the frame: the nominative one is the subject, the accusative one the patient.
+        private Case? RelativizedCase(PlannedRelative relative) =>
+            adverbService.IsRelative(relative.Relativizer) ? null : relative.Case;
+
+        private static FgdFunctor? Relativized(ValencyFrame frame, Case relativized) => frame.Slots
+            .Where(slot => slot.Realizations.Any(realization =>
+                realization.Case == relativized && realization.Preposition is null))
+            .OrderBy(slot => slot.CanonicalOrder)
+            .Select(slot => (FgdFunctor?)slot.Functor)
+            .FirstOrDefault();
 
         private static int Priority(ValencySlot slot) => slot.Functor switch
         {

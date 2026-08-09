@@ -372,6 +372,52 @@ Console.WriteLine(builder.Build(planner.Plan(roles.Resolve(plan))));
 
 The roles come off the frame: the actor and the addressee prefer an animate noun, which is what keeps the two objects of a transfer verb apart without anyone naming either. A participant nothing accounts for keeps a null functor and comes back from `CzechRoleResolver.Unresolved`, because a wrong role produces a well-formed sentence that means something else.
 
+A relative clause is a plan too, so nothing inside one is stated by hand — the roles of its participants come off its own verb's frame, and it may be a complex sentence in its own right:
+
+```csharp
+var subject = Student with
+{
+    Relative = new PlannedRelative
+    {
+        Relativizer = "který",
+        Clause = new SentencePlan
+        {
+            Predicate = Verb("psát"),
+            Participants = [Letter],                       // no functor stated
+            Joined = [new ClauseLink("a", Working)],
+        },
+    },
+};
+// Student, který píše dopis a pracuje, čte knihu.
+```
+
+The relative pronoun holds one role inside its clause and is not among the participants, so the resolver reserves the slot its case points at: with a nominative *který* the letter is the patient rather than the actor. The pronoun is also what the clause is about, so nothing inside it becomes the theme by default — *který píše dopis* and not *který dopis píše*.
+
+### Sentences with no subject expressed
+
+Czech leaves the subject out in three different ways, and they are different things rather than one:
+
+```csharp
+// Nothing to express: the verb has no actor at all.
+planner.Plan(new SentencePlan { Predicate = Verb("pršet") });          // Prší.
+
+// Dropped: the actor is a pronoun the ending already carries.
+planner.Plan(new SentencePlan { Predicate = Verb("číst"), Participants = [Me, Book] });
+// Čtu knihu.
+
+// Unnamed: nobody is saying who, and the person is stated on the verb.
+planner.Plan(new SentencePlan
+{
+    Predicate = Verb("psát") with { Person = Person.Third, Number = Number.Plural },
+    Participants = [Letter],
+});
+// Dopis píšou.
+```
+
+The model tells them apart by what is in the plan, not by the surface. A first or second person on the verb is agreement with a subject that was not expressed, so the actor slot counts as taken and a noun cannot fill it — without that, *píšu dopis* would come out with the letter as the actor, in the nominative.
+
+What is not modelled is the lexical fact that some verbs cannot take a subject at all: nothing refuses *Prší student.* The dictionary has no frame that says a verb is avalent.
+
 Two decisions the planner makes that nothing below it could:
 
 ```csharp
@@ -835,7 +881,7 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 
 ### Not modelled
 
-- Clauses joined through `SentencePlan.Joined` nest as deep as they are written, and a chain at one level (`[a: B, protože: C]`) is a different sentence from a chain of nestings (`a: B { protože: C }`) — both are expressible. A relative clause is a `SentenceNode` and coordinates or subordinates like any other, but its clauses are stated as `CzechClause` rather than as plans, so nothing inside one gets role resolution or a frame chosen for it.
+- Clauses joined through `SentencePlan.Joined` nest as deep as they are written, and a chain at one level (`[a: B, protože: C]`) is a different sentence from a chain of nestings (`a: B { protože: C }`) — both are expressible. A relative clause is a plan in its own right, so everything that holds of a sentence holds inside one.
 - `IValencyProvider.GetEntry` takes a lemma, optionally with a `WordCategory`, so homonyms across categories can be told apart but homonyms inside one cannot. The schema carries `homonym_index` and the provider returns the lowest one.
 - The clitic cluster does not know the free dative (*To ti byla legrace*), which per NESČ stands between the auxiliary and the reflexive. The remaining positions match the described order.
 - A demonstrative in front of a numeral (*těch pět studentů*) agrees with the head of the phrase, not with the phrase as a whole.

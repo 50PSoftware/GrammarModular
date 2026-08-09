@@ -70,10 +70,16 @@ namespace Grammar.Czech.Services
         /// nothing and <see cref="Plan"/> can call it whether or not the caller already did.
         /// </para>
         /// </remarks>
-        public SentencePlan Complete(SentencePlan plan)
+        public SentencePlan Complete(SentencePlan plan) => Complete(plan, themeTaken: false);
+
+        // A relative clause opens with its pronoun, and that pronoun is what the clause is about — the
+        // theme is spoken for before any participant is reached. So nothing inside becomes the theme by
+        // default, and "který píše dopis" comes out in that order rather than as "který dopis píše",
+        // which is a marked reading nobody asked for.
+        private SentencePlan Complete(SentencePlan plan, bool themeTaken)
         {
             var voice = ResolveVoice(plan);
-            var participants = ApplyDefaultPerspective(plan);
+            var participants = ApplyDefaultPerspective(plan, themeTaken);
 
             var subject = participants.FirstOrDefault(participant =>
                 participant.Functor == (voice == Voice.Passive ? FgdFunctor.PAT : FgdFunctor.ACT)
@@ -81,7 +87,14 @@ namespace Grammar.Czech.Services
 
             return plan with
             {
-                Participants = participants,
+                // Vztažná věta se doplňuje taky — je to plán jako každý jiný a přehled, který ji chce
+                // ukázat, ji potřebuje hotovou stejně jako klauzi, na které visí.
+                Participants =
+                [
+                    .. participants.Select(participant => participant.Relative is { } relative
+                        ? participant with { Relative = relative with { Clause = Complete(relative.Clause, themeTaken: true) } }
+                        : participant),
+                ],
                 Predicate = WithDefaults(plan.Predicate, voice, subject),
                 // Způsob, který řídí spojka, se doplní dřív, než se doplní ten výchozí — jinak by
                 // oznamovací způsob obsadil mezeru, kterou má vyplnit kondicionál z 'aby'.
@@ -204,6 +217,19 @@ namespace Grammar.Czech.Services
             };
         }
 
+        // A relative clause is planned like the sentence it is: its own roles, its own sense of its own
+        // verb, its own subject drop. Which is why it goes through Plan and not through some smaller
+        // path — the only thing it does not have is a life outside the participant it hangs off.
+        private RelativeAttachment? PlanRelative(PlannedParticipant participant) =>
+            participant.Relative is not { } relative
+                ? null
+                : new RelativeAttachment
+                {
+                    Relativizer = relative.Relativizer,
+                    Case = relative.Case,
+                    Clause = Plan(relative.Clause),
+                };
+
         private CzechClause PlanClause(SentencePlan plan)
         {
             plan = Complete(plan);
@@ -230,7 +256,7 @@ namespace Grammar.Czech.Services
             return new CzechClause
             {
                 Predicate = predicate,
-                Elements = [.. participants.Select(participant => participant.ToElement())],
+                Elements = [.. participants.Select(participant => participant.ToElement(PlanRelative(participant)))],
                 FrameLabel = selection.Frame?.FrameLabel,
                 SentenceType = plan.SentenceType,
                 Terminator = plan.Terminator,
@@ -308,13 +334,15 @@ namespace Grammar.Czech.Services
         //
         // Only participants that stated nothing are touched: saying Given of everything is a claim about
         // the discourse, and not saying it is not.
-        private static List<PlannedParticipant> ApplyDefaultPerspective(SentencePlan plan)
+        private static List<PlannedParticipant> ApplyDefaultPerspective(SentencePlan plan, bool themeTaken)
         {
             var participants = plan.Participants.ToList();
 
-            var theme = plan.Perspective is { } perspective
-                ? participants.FindIndex(participant => participant.Functor == perspective)
-                : 0;
+            var theme = themeTaken
+                ? -1
+                : plan.Perspective is { } perspective
+                    ? participants.FindIndex(participant => participant.Functor == perspective)
+                    : 0;
 
             for (var index = 0; index < participants.Count; index++)
             {

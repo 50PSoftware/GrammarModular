@@ -50,10 +50,10 @@ namespace Grammar.Czech.Models.Syntax
         /// <remarks>
         /// A relative clause hangs off a participant rather than off the sentence, which is what makes
         /// it different from anything in <see cref="SentencePlan.Joined"/>: it says something about a
-        /// thing, not about the event. Its own clause is a <see cref="CzechClause"/>, so a complex
-        /// sentence inside a relative clause is still out of reach.
+        /// thing, not about the event. It is a plan in its own right, so everything that holds of a
+        /// sentence holds inside it too.
         /// </remarks>
-        public RelativeAttachment? Relative { get; init; }
+        public PlannedRelative? Relative { get; init; }
 
         /// <summary>
         /// Gets the communicative status, or <see langword="null"/> to take the unmarked one.
@@ -86,15 +86,19 @@ namespace Grammar.Czech.Models.Syntax
         /// <summary>
         /// Converts the participant into the clause element the rest of the pipeline consumes.
         /// </summary>
+        /// <param name="relative">
+        /// The relative clause once it has been planned, or null when there is none. Passed in because
+        /// planning a sentence is the planner's to do, not a model's.
+        /// </param>
         /// <returns>The clause element.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the functor is still unknown.</exception>
-        public ClauseElement ToElement() => new()
+        public ClauseElement ToElement(RelativeAttachment? relative = null) => new()
         {
             Word = Word,
             Content = Content,
             Modifiers = Modifiers,
             Preposition = Preposition,
-            Relative = Relative,
+            Relative = relative,
             Functor = Functor ?? throw new InvalidOperationException(
                 $"Participant '{Describe()}' nemá funktor. Buď ho zadej, nebo nech doplnit "
                 + $"{nameof(Services.CzechRoleResolver)}em."),
