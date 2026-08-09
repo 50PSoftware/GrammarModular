@@ -31,7 +31,7 @@ namespace Grammar.Czech.Test
         public void Parser_FindsTheMap()
         {
             Assert.AreEqual(LexiconSchema.Tables.Count, php.Count, "Parser nenačetl všechny tabulky.");
-            Assert.AreEqual(32, php["lemma_entry"].Count, "Parser nenačetl sloupce lemma_entry.");
+            Assert.AreEqual(33, php["lemma_entry"].Count, "Parser nenačetl sloupce lemma_entry.");
         }
 
         /// <summary>

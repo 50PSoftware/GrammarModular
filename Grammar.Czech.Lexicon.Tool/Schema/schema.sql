@@ -87,6 +87,7 @@ CREATE TABLE lemma_entry (
     verb_class                         VARCHAR(16),
     aspect                             VARCHAR(16),
     aspect_counterpart                 VARCHAR(64),
+    aktionsart                         VARCHAR(24),
     reflexive_type                     VARCHAR(32)  NOT NULL DEFAULT 'None',
     base_verb_lemma                    VARCHAR(64),
 
@@ -129,6 +130,12 @@ CREATE TABLE lemma_entry (
         'Perfective', 'Imperfective')),
     CONSTRAINT ck_lemma_entry_verb_class CHECK (verb_class IS NULL OR verb_class IN (
         'Class1', 'Class2', 'Class3', 'Class4', 'Class5')),
+    CONSTRAINT ck_lemma_entry_aktionsart CHECK (aktionsart IS NULL OR aktionsart IN (
+        'Ingressive', 'Evolutive', 'Delimitative', 'Resultative', 'Terminative',
+        'Perdurative', 'Finitive', 'Egressive', 'Exhaustive', 'Total', 'Saturative',
+        'Extensive', 'Cumulative', 'Intensive', 'Excessive', 'Distributive', 'Attenuative',
+        'Semelfactive', 'Momentary', 'Iterative', 'Diminutive', 'Comitative', 'Frequentative',
+        'Stative', 'Decursive', 'Mutative')),
     CONSTRAINT ck_lemma_entry_reflexive CHECK (reflexive_type IN (
         'None', 'ReflexivumTantum_Se', 'ReflexivumTantum_Si', 'DerivedReflexive_Se',
         'DerivedBenefactive_Si', 'Reciprocal_Se', 'DeagentivePassive_Se')),

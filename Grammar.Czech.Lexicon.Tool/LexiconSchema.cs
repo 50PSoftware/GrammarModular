@@ -26,7 +26,7 @@ namespace Grammar.Czech.Lexicon.Tool
                 "lemma_entry_id", "lemma", "lemma_key", "homonym_index", "category", "gender", "pattern",
                 "is_animate", "has_mobile_e", "has_genitive_plural_shortening",
                 "has_epenthesis_in_genitive_plural", "is_indeclinable", "is_plural_only", "is_countable",
-                "prefers_short_form", "verb_class", "aspect", "aspect_counterpart", "reflexive_type",
+                "prefers_short_form", "verb_class", "aspect", "aspect_counterpart", "aktionsart", "reflexive_type",
                 "base_verb_lemma", "stem", "present_stem", "past_stem", "future_stem",
                 "imperative_stem", "passive_stem", "infinitive", "forms_passive",
                 "lexeme_id", "source", "is_verified", "note"]),

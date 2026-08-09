@@ -428,7 +428,11 @@ gramatika veta voda mrznout
 
 Naseedováno: `pršet`, `sněžit`, `svítat`, `stmívat` jen jako bezpodměťová; `mrznout`, `hřmít`, `blýskat` i s druhým významem, který konatele bere; `stmívat` a `blýskat` se zvratným, které jejich význam o počasí vyžaduje. Každé z nich má dokonavý protějšek — `napršet`, `nasněžit`, `rozednít`, `setmět`, `zmrznout`, `zahřmět`, `blýsknout` — a ten stojí pod týmž lexémem a rámce dědí, místo aby nesl jejich kopii: *Napršelo*, *Zmrzlo*, *Blýsklo se*. Protějšek dědí všechny významy, takže `zmrznout` dosáhne na *Zmrzlo* i na *Voda zmrzla*.
 
-Co `aspect_counterpart` zaznamenat neumí, je že `blýsknout se` a `zahřmět` jsou semelfaktiva — jeden záblesk proti trvání — protože `VerbAspect` má dva členy. Do doby, než na to bude sloupec, to stojí v poznámce u hesla.
+Jaký druh děje sloveso pojmenovává, je jiná otázka než jeho vid, a bydlí v `lemma_entry.aktionsart` — způsob slovesného děje, celá dvacetišestiskupinová klasifikace z NESČ. Dvacet šest a ne dvacet pět: skupiny jsou značené českou abecedou, kde *ch* stojí mezi *h* a *i*.
+
+Není to jemnější vid. Vid je gramatický, má dva členy a má ho každé české sloveso; tohle je lexikální a většina sloves do žádné skupiny nepatří, takže `null` znamená nezařazeno, ne „žádný". Kde sloveso zařazené je, skupina vid určuje — NESČ to říká o celém výčtu najednou, *slovesa skupin (a)–(r) jsou dok., zatímco slovesa skupin (s)–(y) jsou nedok.* — a `AktionsartFacts.RequiredAspect` je právě to pravidlo. `lexikon validate` proti němu drží každý zařazený řádek, takže nedokonavé semelfaktivum je vadný řádek, ne neobvyklé sloveso.
+
+Zatím ho nese pět hesel: `blýsknout` je semelfaktivum proti frekventativu `blýskat`, `zahřmět` je ingresivum, `napršet` a `nasněžit` kumulativa. Nedokonavá slovesa počasí zůstávají nezařazená, protože rozhodnout u nich mezi *dekurzivním* a *stativním* by byl odhad — a sloupec je nullable přesně pro tohle.
 
 Druhý význam `blýskat` ukazuje patiens v holém instrumentálu, což je celá třída českých sloves — *mávat rukou*, *kroutit hlavou*, *házet kamenem*: `Meč blýská očima.`
 

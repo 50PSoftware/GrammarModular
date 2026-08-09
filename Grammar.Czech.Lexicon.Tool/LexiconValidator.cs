@@ -31,6 +31,7 @@ namespace Grammar.Czech.Lexicon.Tool
             ("lemma_entry", "gender", typeof(Gender)),
             ("lemma_entry", "aspect", typeof(VerbAspect)),
             ("lemma_entry", "verb_class", typeof(VerbClass)),
+            ("lemma_entry", "aktionsart", typeof(Aktionsart)),
             ("lemma_entry", "reflexive_type", typeof(ReflexiveType)),
             ("valency_frame", "kind", typeof(ValencyKind)),
             ("valency_frame", "diathesis", typeof(Diathesis)),
@@ -103,6 +104,7 @@ namespace Grammar.Czech.Lexicon.Tool
                 CheckEnums(connection, errors);
                 CheckPatterns(connection, errors);
                 CheckSubordinators(connection, errors);
+                CheckAktionsart(connection, errors);
                 CheckStems(connection, errors);
                 CheckLemmaKeys(connection, errors);
                 CheckFrames(connection, errors);
@@ -166,6 +168,40 @@ namespace Grammar.Czech.Lexicon.Tool
                             $"{table}.{column} obsahuje '{value}', což {enumType.Name} nezná. Povolené: "
                             + string.Join(", ", Enum.GetNames(enumType)) + ".");
                     }
+                }
+            }
+        }
+
+        // A způsob slovesného děje implies an aspect: NESČ states of the whole classification that its
+        // first nineteen groups are perfective and the rest imperfective. A semelfactive marked
+        // imperfective is therefore a bad row rather than an unusual verb, and this is the only thing
+        // that would notice — the two columns are filled in different places and nothing else compares
+        // them.
+        private static void CheckAktionsart(SqliteConnection connection, List<string> errors)
+        {
+            const string sql = """
+                SELECT lemma, aspect, aktionsart
+                FROM lemma_entry
+                WHERE aktionsart IS NOT NULL AND aspect IS NOT NULL
+                """;
+
+            foreach (var row in Query(connection, sql))
+            {
+                var lemma = row[0]?.ToString() ?? string.Empty;
+
+                if (!Enum.TryParse<VerbAspect>(row[1]?.ToString(), out var aspect)
+                    || !Enum.TryParse<Aktionsart>(row[2]?.ToString(), out var aktionsart))
+                {
+                    // Nečitelnou hodnotu hlásí CheckEnums; tady by z ní byla jen druhá hláška o témže.
+                    continue;
+                }
+
+                var required = AktionsartFacts.RequiredAspect(aktionsart);
+
+                if (aspect != required)
+                {
+                    errors.Add(
+                        $"'{lemma}' je {aktionsart} a má vid {aspect}; ta skupina je {required}.");
                 }
             }
         }

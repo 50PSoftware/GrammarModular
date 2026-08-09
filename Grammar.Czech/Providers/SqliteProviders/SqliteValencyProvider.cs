@@ -44,7 +44,7 @@ namespace Grammar.Czech.Providers.SqliteProviders
         /// <summary>
         /// The schema version this provider reads, matching schema_version in lexicon_meta.
         /// </summary>
-        public const int SupportedSchemaVersion = 4;
+        public const int SupportedSchemaVersion = 5;
 
         private const string SchemaVersionQuery =
             "SELECT meta_value FROM lexicon_meta WHERE meta_key = 'schema_version'";
@@ -55,7 +55,11 @@ namespace Grammar.Czech.Providers.SqliteProviders
                    is_indeclinable, is_plural_only, is_countable, prefers_short_form,
                    verb_class, aspect, aspect_counterpart, reflexive_type, base_verb_lemma,
                    stem, present_stem, past_stem, future_stem, imperative_stem, passive_stem,
-                   infinitive, forms_passive
+                   infinitive, forms_passive,
+
+                   -- Na konci, ne u aspect_counterpart, kam patří významem. Připsáním se nemůže posunout
+                   -- nic nad ním, a ordinály v ReadEntry jsou jediné, co stojí mezi tímhle dotazem a tichem.
+                   aktionsart
             FROM lemma_entry
 
             """;
@@ -462,7 +466,8 @@ namespace Grammar.Czech.Providers.SqliteProviders
             ImperativeStem = GetNullableString(reader, 21),
             PassiveStem = GetNullableString(reader, 22),
             Infinitive = GetNullableString(reader, 23),
-            FormsPassive = GetNullableBoolean(reader, 24)
+            FormsPassive = GetNullableBoolean(reader, 24),
+            Aktionsart = reader.IsDBNull(25) ? null : ParseEnum<Aktionsart>(reader.GetString(25), "aktionsart")
         };
 
         private DbConnection OpenConnection()

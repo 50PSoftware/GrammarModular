@@ -39,6 +39,18 @@ namespace Grammar.Czech.Models
         public string? AspectCounterpart { get; init; }
 
         /// <summary>
+        /// Gets the way the verb's action unfolds — způsob slovesného děje — or null when the entry
+        /// does not classify it.
+        /// </summary>
+        /// <remarks>
+        /// Not a finer grade of aspect. Aspect is grammatical and every Czech verb has one; this is a
+        /// lexical classification of the kind of event, and most verbs are in none of its groups, which
+        /// is why null means unclassified rather than "none". Where it is stated it implies the aspect —
+        /// see <see cref="Core.Enums.AktionsartFacts.RequiredAspect"/>.
+        /// </remarks>
+        public Aktionsart? Aktionsart { get; init; }
+
+        /// <summary>
         /// Gets or sets the reflexive type, encoding which particle (se/si) the verb requires.
         /// </summary>
         public ReflexiveType ReflexiveType { get; init; }

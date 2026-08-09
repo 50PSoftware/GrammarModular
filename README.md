@@ -430,7 +430,11 @@ gramatika veta voda mrznout
 
 Seeded: `pršet`, `sněžit`, `svítat`, `stmívat` as impersonal only; `mrznout`, `hřmít`, `blýskat` with a second sense that takes an actor; `stmívat` and `blýskat` with the reflexive their weather sense needs. Every one of them has its perfective counterpart — `napršet`, `nasněžit`, `rozednít`, `setmět`, `zmrznout`, `zahřmět`, `blýsknout` — sitting under the same lexeme and inheriting the frames rather than carrying a copy: *Napršelo*, *Zmrzlo*, *Blýsklo se*. A counterpart inherits every sense, so `zmrznout` reaches both *Zmrzlo* and *Voda zmrzla*.
 
-What `aspect_counterpart` cannot record is that `blýsknout se` and `zahřmět` are semelfactive — one flash against a stretch of them — because `VerbAspect` has two members. That sits in the entry's note until there is a column for it.
+What kind of event a verb names is a separate question from its aspect, and `lemma_entry.aktionsart` is where it goes — způsob slovesného děje, the whole twenty-six-group classification of NESČ. Twenty-six and not twenty-five: the groups are lettered with the Czech alphabet, where *ch* stands between *h* and *i*.
+
+It is not a finer grade of aspect. Aspect is grammatical, has two members and every Czech verb has one; this is lexical and most verbs are in none of the groups, so `null` means unclassified rather than "none". Where a verb is classified the group implies the aspect — NESČ states it of the whole list at once, *slovesa skupin (a)–(r) jsou dok., zatímco slovesa skupin (s)–(y) jsou nedok.* — and `AktionsartFacts.RequiredAspect` is that rule. `lexikon validate` holds every classified row against it, so a semelfactive marked imperfective is a bad row rather than an unusual verb.
+
+Five entries carry it so far: `blýsknout` is semelfactive against the frequentative `blýskat`, `zahřmět` is ingressive, `napršet` and `nasněžit` cumulative. The weather imperfectives stay unclassified, because deciding between *dekurzivní* and *stativní* for them would be a guess and the column is nullable for exactly that.
 
 The other sense of `blýskat` shows a patient in the bare instrumental, which is a whole class of Czech verbs — *mávat rukou*, *kroutit hlavou*, *házet kamenem*: `Meč blýská očima.`
 

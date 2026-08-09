@@ -63,7 +63,7 @@ namespace Grammar.Czech.Test
             CollectionAssert.AreEquivalent(expected, portable.Keys.ToArray(), "Parser nenašel očekávané tabulky.");
             CollectionAssert.AreEquivalent(expected, mysql.Keys.ToArray(), "Parser nenašel očekávané tabulky.");
 
-            Assert.AreEqual(32, portable["lemma_entry"].Columns.Count, "Parser nenačetl sloupce lemma_entry.");
+            Assert.AreEqual(33, portable["lemma_entry"].Columns.Count, "Parser nenačetl sloupce lemma_entry.");
             Assert.AreEqual(7, portable["slot_realization"].Columns.Count);
 
             Assert.IsTrue(
