@@ -155,6 +155,58 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// A verb the dictionary records as impersonal has no participants to be had, so one offered is
+        /// refused — and the refusal says why rather than reporting a role somebody forgot to fill in.
+        /// </summary>
+        [TestMethod]
+        public void ImpersonalVerbRefusesAParticipant()
+        {
+            var failure = Assert.ThrowsException<InvalidOperationException>(() => Build(new SentencePlan
+            {
+                Predicate = Verb("pršet", "trida4"),
+                Participants = [Student()]
+            }));
+
+            StringAssert.Contains(failure.Message, "bezpodměťové");
+        }
+
+        /// <summary>
+        /// An impersonal verb has nothing to agree with, and Czech puts its participle in the neuter
+        /// singular — pršelo, not pršel, which is what the masculine default would have given.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow("pršet", "trida4", "Pršelo.")]
+        [DataRow("sněžit", "trida4", "Sněžilo.")]
+        [DataRow("svítat", "trida5", "Svítalo.")]
+        public void ImpersonalVerbTakesTheNeuterInThePast(string lemma, string pattern, string expected)
+        {
+            Assert.AreEqual(expected, Build(new SentencePlan
+            {
+                Predicate = Verb(lemma, pattern) with { Tense = Tense.Past }
+            }));
+        }
+
+        /// <summary>
+        /// The frame is what says so, so a verb the dictionary does not hold keeps its old freedom: an
+        /// unlisted weather verb is not refused, it is simply not known to be impersonal.
+        /// </summary>
+        [TestMethod]
+        public void VerbOutsideTheDictionaryIsNotHeldToTheRule()
+        {
+            // Bez rámce si volající zadává pád sám — tak to platilo vždycky a nic na tom nemění ani to,
+            // že jiné sloveso v témž slovníku bezpodměťové je.
+            var subject = Student(FgdFunctor.ACT);
+            var word = subject.Word;
+            word.Case = Case.Nominative;
+
+            Assert.AreEqual("Student mrholí.", Build(new SentencePlan
+            {
+                Predicate = Verb("mrholit", "trida4"),
+                Participants = [subject with { Word = word }]
+            }));
+        }
+
+        /// <summary>
         /// A subjectless clause takes its arguments as any other does; only the actor is missing.
         /// </summary>
         [TestMethod]

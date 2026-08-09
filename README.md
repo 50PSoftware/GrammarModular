@@ -416,7 +416,11 @@ planner.Plan(new SentencePlan
 
 The model tells them apart by what is in the plan, not by the surface. A first or second person on the verb is agreement with a subject that was not expressed, so the actor slot counts as taken and a noun cannot fill it — without that, *píšu dopis* would come out with the letter as the actor, in the nominative.
 
-What is not modelled is the lexical fact that some verbs cannot take a subject at all: nothing refuses *Prší student.* The dictionary has no frame that says a verb is avalent.
+Whether a verb can have a subject at all is a lexical fact, so it lives in the dictionary: a frame of kind `Impersonal` has no slots, and a participant offered to one is refused rather than declined into *Prší student.* Three are seeded — `pršet`, `sněžit`, `svítat` — and a verb the dictionary does not hold keeps its old freedom, since it is the frame that says so.
+
+Such a verb has nothing to agree with, so its participle goes into the neuter singular: *Pršelo*, not the masculine the default would otherwise give.
+
+Whether *prší* has a subject position at all is a question the sources leave open — NESČ sets the traditional *věty bezpodměté* beside the generative reading with an unpronounced expletive, *(Ono) prší* — and an empty frame does not settle it. What it states is only that no word the caller supplies can be that subject, which both readings agree on and which is the whole of what a generator needs.
 
 Two decisions the planner makes that nothing below it could:
 

@@ -95,7 +95,7 @@ namespace Grammar.Czech.Services
                         ? participant with { Relative = relative with { Clause = Complete(relative.Clause, themeTaken: true) } }
                         : participant),
                 ],
-                Predicate = WithDefaults(plan.Predicate, voice, subject),
+                Predicate = WithDefaults(plan.Predicate, voice, subject, IsImpersonal(plan, voice)),
                 // Způsob, který řídí spojka, se doplní dřív, než se doplní ten výchozí — jinak by
                 // oznamovací způsob obsadil mezeru, kterou má vyplnit kondicionál z 'aby'.
                 Joined =
@@ -217,6 +217,14 @@ namespace Grammar.Czech.Services
             };
         }
 
+        private bool IsImpersonal(SentencePlan plan, Voice voice) =>
+            frameSelector.Select(
+                plan.Predicate.Lemma,
+                plan.FrameLabel,
+                CzechRoleResolver.Companions(plan),
+                voice == Voice.Passive ? Diathesis.PassivePeriphrastic : Diathesis.Active)
+                .Frame?.Kind == ValencyKind.Impersonal;
+
         // A relative clause is planned like the sentence it is: its own roles, its own sense of its own
         // verb, its own subject drop. Which is why it goes through Plan and not through some smaller
         // path — the only thing it does not have is a life outside the participant it hangs off.
@@ -310,9 +318,13 @@ namespace Grammar.Czech.Services
             {
                 if (participant.Functor is not { } functor)
                 {
-                    throw new InvalidOperationException(
-                        $"Participant '{Describe(participant)}' nemá roli. Doplň ji, nebo nech plán projít "
-                        + $"{nameof(CzechRoleResolver)}em, který ji odvodí z rámce.");
+                    // Bezpodměťové sloveso nemá kam participanta zařadit, a to je o něm to podstatné —
+                    // říct místo toho jen 'nemá roli' by vypadalo, že se něco zapomnělo doplnit.
+                    throw new InvalidOperationException(selection.Frame?.Kind == ValencyKind.Impersonal
+                        ? $"Sloveso '{plan.Predicate.Lemma}' je bezpodměťové a žádný účastník k němu "
+                            + $"nepatří, takže '{Describe(participant)}' nemá kam."
+                        : $"Participant '{Describe(participant)}' nemá roli. Doplň ji, nebo nech plán projít "
+                            + $"{nameof(CzechRoleResolver)}em, který ji odvodí z rámce.");
                 }
 
                 if (selection.Frame is { } frame
@@ -409,14 +421,20 @@ namespace Grammar.Czech.Services
         // and gender are the fallback for a clause with no subject to agree with — the microplanner
         // overwrites them from the subject wherever there is one.
         private static CzechWordRequest WithDefaults(
-            CzechWordRequest predicate, Voice voice, PlannedParticipant? subject)
+            CzechWordRequest predicate, Voice voice, PlannedParticipant? subject, bool impersonal)
         {
             predicate.Voice ??= voice;
             predicate.Modus ??= Modus.Indicative;
             predicate.Tense ??= Tense.Present;
             predicate.Person ??= Person.Third;
             predicate.Number ??= subject?.Word.Number ?? Number.Singular;
-            predicate.Gender ??= subject?.Word.Gender ?? Gender.Masculine;
+
+            // A verb with no participants has nothing to agree with, and Czech puts the participle in
+            // the neuter singular for it: pršelo, sněžilo, svítalo. The masculine default is agreement
+            // with a subject, and here there is none to be had.
+            predicate.Gender ??= impersonal
+                ? Gender.Neuter
+                : subject?.Word.Gender ?? Gender.Masculine;
 
             return predicate;
         }

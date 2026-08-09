@@ -44,7 +44,7 @@ namespace Grammar.Czech.Providers.SqliteProviders
         /// <summary>
         /// The schema version this provider reads, matching schema_version in lexicon_meta.
         /// </summary>
-        public const int SupportedSchemaVersion = 3;
+        public const int SupportedSchemaVersion = 4;
 
         private const string SchemaVersionQuery =
             "SELECT meta_value FROM lexicon_meta WHERE meta_key = 'schema_version'";

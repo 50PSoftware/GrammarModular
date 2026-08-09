@@ -292,7 +292,8 @@ namespace Grammar.Czech.Lexicon.Tool
                 SELECT f.frame_id, u.sense_label
                 FROM valency_frame f
                 JOIN lexical_unit u ON u.lu_id = f.lu_id
-                WHERE NOT EXISTS (SELECT 1 FROM valency_slot s WHERE s.frame_id = f.frame_id)
+                WHERE f.kind <> 'Impersonal'
+                  AND NOT EXISTS (SELECT 1 FROM valency_slot s WHERE s.frame_id = f.frame_id)
                 """;
 
             foreach (var row in Query(connection, noSlots))
@@ -300,19 +301,41 @@ namespace Grammar.Czech.Lexicon.Tool
                 errors.Add($"Rámec {row[0]} ({row[1] ?? "bez názvu"}) nemá žádný slot.");
             }
 
-            // Every Czech predicate has an actor, even where it goes unexpressed, so a frame without one is
-            // an unfinished row rather than a verb of an unusual kind.
+            // A Czech predicate has an actor even where it goes unexpressed, so a frame without one is an
+            // unfinished row — except for the weather verbs, where there is nothing to express. Whether
+            // *prší* has a subject at all is a question the sources disagree on, and this check does not
+            // settle it: what it holds is that no word the caller supplies can be that subject, which is
+            // true either way, and Impersonal is where a frame says so.
             const string noActor = """
                 SELECT f.frame_id, u.sense_label
                 FROM valency_frame f
                 JOIN lexical_unit u ON u.lu_id = f.lu_id
-                WHERE NOT EXISTS (
+                WHERE f.kind <> 'Impersonal'
+                  AND NOT EXISTS (
                     SELECT 1 FROM valency_slot s WHERE s.frame_id = f.frame_id AND s.functor = 'ACT')
                 """;
 
             foreach (var row in Query(connection, noActor))
             {
                 errors.Add($"Rámec {row[0]} ({row[1] ?? "bez názvu"}) nemá slot ACT.");
+            }
+
+            // The other way round, so the kind stays measurable rather than being a label anyone can put
+            // on anything: a frame that says it has no participants must not list one.
+            const string impersonalWithActor = """
+                SELECT f.frame_id, u.sense_label
+                FROM valency_frame f
+                JOIN lexical_unit u ON u.lu_id = f.lu_id
+                WHERE f.kind = 'Impersonal'
+                  AND EXISTS (
+                    SELECT 1 FROM valency_slot s WHERE s.frame_id = f.frame_id AND s.functor = 'ACT')
+                """;
+
+            foreach (var row in Query(connection, impersonalWithActor))
+            {
+                errors.Add(
+                    $"Rámec {row[0]} ({row[1] ?? "bez názvu"}) je bezpodměťový, ale slot ACT má. "
+                    + "Buď mu ten slot vezmi, nebo mu změň kind.");
             }
 
             // A frame marked default is what CzechValencyService.GetFrame hands back when the caller names

@@ -157,7 +157,7 @@ CREATE TABLE valency_frame (
     CONSTRAINT fk_valency_frame_lu FOREIGN KEY (lu_id) REFERENCES lexical_unit (lu_id),
     CONSTRAINT ck_valency_frame_kind CHECK (kind IN (
         'Verbal', 'Copular_NominalPred', 'Copular_AdjectivalPred', 'Existential',
-        'Modal', 'PhasalLightVerb', 'LightVerb')),
+        'Modal', 'PhasalLightVerb', 'LightVerb', 'Impersonal')),
     CONSTRAINT ck_valency_frame_diathesis CHECK (diathesis IN (
         'Active', 'PassivePeriphrastic', 'ReflexivePassive', 'RecipientDeobjective',
         'Dispositional', 'Resultative')),

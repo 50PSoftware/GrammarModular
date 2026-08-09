@@ -108,6 +108,7 @@ const LEXICON_ENUMS = [
         'Modal' => 'modální',
         'PhasalLightVerb' => 'fázové',
         'LightVerb' => 'kategoriální (mít zájem)',
+        'Impersonal' => 'bezpodměťové (prší)',
     ],
     'diathesis' => [
         'Active' => 'aktivum',

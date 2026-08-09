@@ -414,7 +414,11 @@ planner.Plan(new SentencePlan
 
 Model je rozlišuje podle toho, co je v plánu, ne podle povrchu. První a druhá osoba na slovese je shoda s podmětem, který se nevyslovil, takže slot konatele je obsazený a jméno na něj nemůže — bez toho by z *píšu dopis* vyšel dopis jako konatel, v nominativu.
 
-Co modelované není, je lexikální fakt, že některá slovesa podmět mít nemohou: *Prší student.* nikdo neodmítne. Slovník nemá rámec, který by řekl, že je sloveso avalentní.
+Jestli sloveso vůbec může mít podmět, je lexikální fakt, a bydlí tedy ve slovníku: rámec druhu `Impersonal` nemá žádný slot a participant k němu nabídnutý se odmítne, místo aby se vyskloňoval do *Prší student.* Naseedovaná jsou tři — `pršet`, `sněžit`, `svítat` — a sloveso, které slovník nevede, si svou dosavadní volnost drží, protože to říká rámec.
+
+Takové sloveso nemá s čím se shodovat, takže jeho příčestí jde do středního rodu jednotného čísla: *Pršelo*, ne mužský rod, který by dalo výchozí nastavení.
+
+Jestli *prší* vůbec má pozici podmětu, nechávají zdroje otevřené — NESČ staví tradiční *věty bezpodměté* vedle generativního čtení s nevysloveným expletivem *(Ono) prší* — a prázdný rámec ten spor nerozhoduje. Říká jen tolik, že tím podmětem nemůže být žádné slovo, které volající předá; na tom se obě čtení shodnou a generátoru to stačí.
 
 Dvě rozhodnutí, která pod plánovačem udělat nejde:
 

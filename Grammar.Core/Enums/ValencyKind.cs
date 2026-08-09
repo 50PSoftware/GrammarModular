@@ -44,6 +44,15 @@ namespace Grammar.Core.Enums
         /// <summary>
         /// A light verb whose meaning sits in the predicative noun — mít zájem, dělat starosti.
         /// </summary>
-        LightVerb
+        LightVerb,
+
+        /// <summary>
+        /// Represents a predicate with no participants at all — the weather verbs: prší, sněží, svítá.
+        /// </summary>
+        /// <remarks>
+        /// Appended rather than sorted in: the value is what the lexicon stores, so renumbering would
+        /// silently repoint every row already written.
+        /// </remarks>
+        Impersonal
     }
 }

@@ -126,11 +126,17 @@ namespace Grammar.Czech.Cli.Sentence
         /// <returns>The open questions, empty when the draft is complete.</returns>
         public IReadOnlyList<string> Gaps()
         {
+            // U bezpodměťového slovesa není co doplnit: nemá slot, do kterého by se dalo ukázat, takže
+            // rada 'doplň roli' by posílala uživatele za něčím, co neexistuje.
+            var impersonal = Frame?.Kind == ValencyKind.Impersonal;
+
             var gaps = Constituents
                 .Where(constituent => constituent.Functor is null)
-                .Select(constituent =>
-                    $"U slova '{constituent.Lemma}' (č. {constituent.Position}) není jasná role. "
-                    + "Doplň ji přepínačem --role.")
+                .Select(constituent => impersonal
+                    ? $"Sloveso '{PredicateLemma}' je bezpodměťové — '{constituent.Lemma}' (č. "
+                        + $"{constituent.Position}) k němu nepatří a věta s ním nevznikne."
+                    : $"U slova '{constituent.Lemma}' (č. {constituent.Position}) není jasná role. "
+                        + "Doplň ji přepínačem --role.")
                 .ToList();
 
             // Význam slovesa vybírá slovník, ne kód. Když ho nevybral ani on, je to otázka na uživatele.
