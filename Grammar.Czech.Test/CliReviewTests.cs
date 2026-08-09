@@ -120,6 +120,22 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that the predicate of one clause can be corrected on its own: the number after p is
+        /// a clause, since a predicate has no position of its own anyone would name.
+        /// </summary>
+        [TestMethod]
+        public void PredicateOfOneClauseIsCorrectedOnItsOwn()
+        {
+            string[] words = ["student", "číst", "kniha", "a", "žák", "psát", "dopis"];
+
+            var (_, both) = Review("p cas=minuly\n\n", words);
+            var (_, second) = Review("p2 cas=minuly\n\n", words);
+
+            Assert.IsTrue(both.Contains("Věta: Student četl knihu a žák psal dopis."));
+            Assert.IsTrue(second.Contains("Věta: Student čte knihu a žák psal dopis."));
+        }
+
+        /// <summary>
         /// Verifies that a correction aimed at the predicate says so, instead of being written into a
         /// record no constituent ever reads.
         /// </summary>

@@ -775,7 +775,19 @@ gramatika veta student cist kniha aby zak psat dopis a lekar zpivat pisen --prip
 # Student čte knihu, aby žák psal dopis a lékař zpívá píseň.
 ```
 
-The review shows what each clause hangs off and takes `k 3=1` to move it. Positions run across the whole word list, so `--pad dopis=genitiv` and `7 pad=genitiv` address the same word whichever clause it landed in. Predicate switches (`--cas`, `--zpusob`) apply to every clause; correcting one clause's predicate on its own is not expressible yet.
+The review shows what each clause hangs off and takes `k 3=1` to move it.
+
+A predicate switch speaks for the whole sentence unless it names a clause, and a clause that says otherwise wins:
+
+```bash
+gramatika veta student cist kniha a zak psat dopis --cas minuly
+# Student četl knihu a žák psal dopis.
+
+gramatika veta student cist kniha a zak psat dopis --cas minuly --cas 2=pritomny
+# Student četl knihu a žák píše dopis.
+```
+
+The review takes the same as `p cas=minuly` and `p2 cas=pritomny`. The number before the equals sign means different things on the two families of switch — a word on `--pad` and `--role`, a clause on `--cas` and `--zpusob` — and there is nothing to tell apart, because a predicate has no position of its own that anyone would want to name. Positions run across the whole word list, so `--pad dopis=genitiv` and `7 pad=genitiv` address the same word whichever clause it landed in.
 
 ## Tests
 

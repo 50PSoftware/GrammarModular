@@ -135,7 +135,8 @@ namespace Grammar.Czech.Cli.Interaction
               2 predlozka=v          předložka, kterou se člen otevírá
               2 privlastek=mladý     shodný přívlastek před jméno
 
-              p cas=minulý           čas, způsob, rod (činný/trpný), vid, osoba, číslo
+              p cas=minulý           čas, způsob, rod (činný/trpný), vid, osoba, číslo — všem klauzím
+              p2 cas=přítomný        totéž jen druhé klauzi; číslo za p je klauze, ne slovo
               p zapor=ano            zápor přísudku
               p podmet=vypustit      vypustit podmětové zájmeno: 'čtu' místo 'já čtu'
               p zvratne=se           zvratné se/si u slovesa, které slovník nevede

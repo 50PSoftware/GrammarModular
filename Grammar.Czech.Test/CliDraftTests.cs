@@ -41,6 +41,14 @@ namespace Grammar.Czech.Test
         private static ClauseDraft Draft(DraftOverrides? overrides, params string[] lemmas) =>
             Whole(overrides, lemmas).Main;
 
+        private static DraftOverrides Dropping()
+        {
+            var overrides = new DraftOverrides();
+            overrides.Predicate.DropSubject = true;
+
+            return overrides;
+        }
+
         private static string Sentence(DraftOverrides? overrides, params string[] lemmas) =>
             services.GetRequiredService<SentenceComposer>().Compose(Whole(overrides, lemmas));
 
@@ -160,7 +168,8 @@ namespace Grammar.Czech.Test
             Assert.IsNull(draft.Frame);
             Assert.IsTrue(draft.Gaps().Any(gap => gap.Contains("motion")));
 
-            var overrides = new DraftOverrides { FrameLabel = "motion" };
+            var overrides = new DraftOverrides();
+            overrides.Predicate.FrameLabel = "motion";
 
             Assert.AreEqual(0, Draft(overrides, "student", "jít").Gaps().Count);
         }
@@ -273,6 +282,45 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that a predicate switch speaks for the whole sentence, and that a clause which says
+        /// otherwise wins over it — which is what makes the pair read as it looks.
+        /// </summary>
+        [TestMethod]
+        public void PredicateSwitchSpeaksForTheSentenceUnlessAClauseSaysOtherwise()
+        {
+            string[] words = ["student", "číst", "kniha", "a", "žák", "psát", "dopis"];
+
+            var everywhere = new DraftOverrides();
+            everywhere.Predicate.Tense = Tense.Past;
+
+            var onlySecond = new DraftOverrides();
+            onlySecond.PredicateOf(2).Tense = Tense.Past;
+
+            var bothWays = new DraftOverrides();
+            bothWays.Predicate.Tense = Tense.Past;
+            bothWays.PredicateOf(2).Tense = Tense.Present;
+
+            Assert.AreEqual("Student četl knihu a žák psal dopis.", Sentence(everywhere, words));
+            Assert.AreEqual("Student čte knihu a žák psal dopis.", Sentence(onlySecond, words));
+            Assert.AreEqual("Student četl knihu a žák píše dopis.", Sentence(bothWays, words));
+        }
+
+        /// <summary>
+        /// Verifies that a clause number naming no clause is reported rather than quietly ignored.
+        /// </summary>
+        [TestMethod]
+        public void PredicateOfAClauseThatIsNotThereIsRefused()
+        {
+            var overrides = new DraftOverrides();
+            overrides.PredicateOf(5).Tense = Tense.Past;
+
+            var failure = Assert.ThrowsException<CliException>(
+                () => Whole(overrides, "student", "číst", "kniha", "a", "žák", "psát", "dopis"));
+
+            StringAssert.Contains(failure.Message, "klauze 5");
+        }
+
+        /// <summary>
         /// Verifies that positions stay global across the whole word list, so a correction addresses the
         /// same word whichever clause it ended up in.
         /// </summary>
@@ -316,7 +364,9 @@ namespace Grammar.Czech.Test
         [TestMethod]
         public void PredicateCategoriesComeFromTheSwitches()
         {
-            var overrides = new DraftOverrides { Tense = Tense.Past, IsNegative = true };
+            var overrides = new DraftOverrides();
+            overrides.Predicate.Tense = Tense.Past;
+            overrides.Predicate.IsNegative = true;
 
             Assert.AreEqual("Student nečetl knihu.", Sentence(overrides, "student", "číst", "kniha"));
         }
@@ -346,7 +396,7 @@ namespace Grammar.Czech.Test
 
             Assert.AreEqual(
                 "Čtu knihu.",
-                Sentence(new DraftOverrides { DropSubject = true }, "já", "číst", "kniha"));
+                Sentence(Dropping(), "já", "číst", "kniha"));
         }
 
         /// <summary>

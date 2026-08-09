@@ -47,6 +47,35 @@ namespace Grammar.Czech.Cli.Interaction
             : throw new CliException($"'{text}' není číslo klauze. Klauze se číslují od jedné.");
 
         /// <summary>
+        /// Applies a predicate switch, which speaks for the whole sentence unless it names a clause.
+        /// </summary>
+        /// <param name="overrides">The record to write into.</param>
+        /// <param name="property">The property the switch stands for, unaccented.</param>
+        /// <param name="argument">The argument: a bare value, or <c>klauze=hodnota</c>.</param>
+        /// <exception cref="CliException">Thrown when the argument or the value cannot be read.</exception>
+        /// <remarks>
+        /// The number before the equals sign is a clause, not a word — unlike on the switches that
+        /// address a constituent. Each switch belongs to one of the two, so there is nothing to tell
+        /// apart: a predicate has no position of its own that anyone would want to name.
+        /// </remarks>
+        public static void AssignPredicate(DraftOverrides overrides, string property, string argument)
+        {
+            var separator = argument.IndexOf('=');
+
+            if (separator < 0)
+            {
+                PreparePredicate(overrides, overrides.Predicate, property, argument.Trim())();
+
+                return;
+            }
+
+            var clause = Number(argument[..separator].Trim());
+
+            PreparePredicate(
+                overrides, overrides.PredicateOf(clause), property, argument[(separator + 1)..].Trim())();
+        }
+
+        /// <summary>
         /// Applies a correction written the way the review takes it: a target, then one or more pairs.
         /// </summary>
         /// <param name="line">The line the user typed.</param>
@@ -116,9 +145,19 @@ namespace Grammar.Czech.Cli.Interaction
         // dvakrát a pak se na ně jménem ukázat nedá.
         private static string Resolve(string target, IReadOnlyList<string> lemmas)
         {
-            if (target is "p" or "P")
+            // 'p' je přísudek celé věty, 'p2' přísudek druhé klauze. Číslo za p je číslo klauze, ne
+            // pořadí slova — přísudek se adresuje klauzí, protože každá má právě jeden.
+            if (target.Length > 0 && target[0] is 'p' or 'P')
             {
-                return "p";
+                if (target.Length == 1)
+                {
+                    return "p";
+                }
+
+                if (int.TryParse(target[1..], out var clause) && clause > 0)
+                {
+                    return "p" + clause;
+                }
             }
 
             if (int.TryParse(target, out var position))
@@ -149,9 +188,13 @@ namespace Grammar.Czech.Cli.Interaction
         // Hodnota se přečte hned a zapíše se až vrácenou akcí, aby šlo celý řádek nejdřív ověřit.
         private static Action Prepare(DraftOverrides overrides, string target, string property, string value)
         {
-            if (target is "p")
+            if (target.StartsWith('p'))
             {
-                return PreparePredicate(overrides, property, value);
+                return PreparePredicate(
+                    overrides,
+                    target.Length == 1 ? overrides.Predicate : overrides.PredicateOf(int.Parse(target[1..])),
+                    property,
+                    value);
             }
 
             var word = overrides.For(target);
@@ -173,18 +216,22 @@ namespace Grammar.Czech.Cli.Interaction
             };
         }
 
-        private static Action PreparePredicate(DraftOverrides overrides, string property, string value) => property switch
+        private static Action PreparePredicate(
+            DraftOverrides overrides, PredicateOverride predicate, string property, string value) => property switch
         {
-            "cas" => Assigning(Terms.ParseTense(value), parsed => overrides.Tense = parsed),
-            "zpusob" => Assigning(Terms.ParseMood(value), parsed => overrides.Mood = parsed),
-            "rod" => Assigning(Terms.ParseVoice(value), parsed => overrides.Voice = parsed),
-            "vid" => Assigning(Terms.ParseAspect(value), parsed => overrides.Aspect = parsed),
-            "osoba" => Assigning(Terms.ParsePerson(value), parsed => overrides.Person = parsed),
-            "cislo" => Assigning(Terms.ParseNumber(value), parsed => overrides.Number = parsed),
-            "zapor" => Assigning(Terms.ParseYesNo(value), parsed => overrides.IsNegative = parsed),
-            "podmet" => Assigning(ParseSubjectDrop(value), parsed => overrides.DropSubject = parsed),
-            "zvratne" => Assigning(ParseReflexive(value), parsed => overrides.ReflexiveType = parsed),
-            "ramec" => Assigning(value, parsed => overrides.FrameLabel = parsed),
+            "cas" => Assigning(Terms.ParseTense(value), parsed => predicate.Tense = parsed),
+            "zpusob" => Assigning(Terms.ParseMood(value), parsed => predicate.Mood = parsed),
+            "rod" => Assigning(Terms.ParseVoice(value), parsed => predicate.Voice = parsed),
+            "vid" => Assigning(Terms.ParseAspect(value), parsed => predicate.Aspect = parsed),
+            "osoba" => Assigning(Terms.ParsePerson(value), parsed => predicate.Person = parsed),
+            "cislo" => Assigning(Terms.ParseNumber(value), parsed => predicate.Number = parsed),
+            "zapor" => Assigning(Terms.ParseYesNo(value), parsed => predicate.IsNegative = parsed),
+            "podmet" => Assigning(ParseSubjectDrop(value), parsed => predicate.DropSubject = parsed),
+            "zvratne" => Assigning(ParseReflexive(value), parsed => predicate.ReflexiveType = parsed),
+            "ramec" => Assigning(value, parsed => predicate.FrameLabel = parsed),
+
+            // Tyhle tři nejsou o přísudku, ale o celé větě: sloveso vybírá, co je přísudek, a druh
+            // věty s koncovým znaménkem patří souvětí jako celku, ne jedné jeho klauzi.
             "sloveso" => Assigning(value, parsed => overrides.PredicateLemma = parsed),
             "typ" => Assigning(Terms.ParseSentenceType(value), parsed => overrides.SentenceType = parsed),
             "konec" => Assigning(value, parsed => overrides.Terminator = parsed),

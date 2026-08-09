@@ -14,6 +14,7 @@ namespace Grammar.Czech.Cli.Sentence
     {
         private readonly Dictionary<string, WordOverride> _words = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<int, int> _attachments = [];
+        private readonly Dictionary<int, PredicateOverride> _predicates = [];
 
         /// <summary>
         /// Gets the clauses whose attachment the user moved, keyed by the clause and naming the one it
@@ -58,64 +59,43 @@ namespace Grammar.Czech.Cli.Sentence
         public string? PredicateLemma { get; set; }
 
         /// <summary>
-        /// Gets or sets the valency frame to read the arguments from.
-        /// </summary>
-        public string? FrameLabel { get; set; }
-
-        /// <summary>
-        /// Gets or sets the tense of the predicate.
-        /// </summary>
-        public Tense? Tense { get; set; }
-
-        /// <summary>
-        /// Gets or sets the mood of the predicate.
-        /// </summary>
-        public Modus? Mood { get; set; }
-
-        /// <summary>
-        /// Gets or sets the voice of the predicate.
-        /// </summary>
-        public Voice? Voice { get; set; }
-
-        /// <summary>
-        /// Gets or sets the aspect of the predicate.
-        /// </summary>
-        public VerbAspect? Aspect { get; set; }
-
-        /// <summary>
-        /// Gets or sets the person of the predicate, for a clause with no subject to agree with.
-        /// </summary>
-        public Person? Person { get; set; }
-
-        /// <summary>
-        /// Gets or sets the number of the predicate, for a clause with no subject to agree with.
-        /// </summary>
-        public Number? Number { get; set; }
-
-        /// <summary>
-        /// Gets or sets the gender of the predicate, for a clause with no subject to agree with.
-        /// </summary>
-        public Gender? Gender { get; set; }
-
-        /// <summary>
-        /// Gets or sets the reflexive type of the predicate.
-        /// </summary>
-        public ReflexiveType? ReflexiveType { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the predicate is negated.
-        /// </summary>
-        public bool? IsNegative { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether a subject pronoun that adds nothing may be dropped.
+        /// Gets what was stated about every predicate in the sentence.
         /// </summary>
         /// <remarks>
-        /// Off unless asked for, unlike the library's default. A tool that was handed a word and did not
-        /// print it looks like it lost it, whereas a library consumer is building a sentence and wants
-        /// the neutral Czech one.
+        /// A statement about the sentence rather than about one clause: <c>--cas minuly</c> puts the
+        /// whole thing in the past. A clause that says otherwise wins over it.
         /// </remarks>
-        public bool? DropSubject { get; set; }
+        public PredicateOverride Predicate { get; } = new();
+
+        /// <summary>
+        /// Gets what was stated about the predicate of one clause, creating an empty record on first use.
+        /// </summary>
+        /// <param name="ordinal">The one-based number of the clause.</param>
+        /// <returns>The record for that clause.</returns>
+        public PredicateOverride PredicateOf(int ordinal)
+        {
+            if (!_predicates.TryGetValue(ordinal, out var predicate))
+            {
+                predicate = new PredicateOverride();
+                _predicates[ordinal] = predicate;
+            }
+
+            return predicate;
+        }
+
+        /// <summary>
+        /// Gets everything that applies to the predicate of one clause, its own word first.
+        /// </summary>
+        /// <param name="ordinal">The one-based number of the clause.</param>
+        /// <returns>The combined record.</returns>
+        public PredicateOverride PredicateFor(int ordinal) =>
+            _predicates.TryGetValue(ordinal, out var predicate) ? predicate.Over(Predicate) : Predicate;
+
+        /// <summary>
+        /// Lists the clause numbers singled out, so that a number naming no clause can be reported.
+        /// </summary>
+        public IReadOnlyCollection<int> SingledOutClauses => _predicates.Keys;
+
 
         /// <summary>
         /// Gets or sets the communicative force of the clause.

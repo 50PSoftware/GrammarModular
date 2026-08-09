@@ -772,7 +772,19 @@ gramatika veta student cist kniha aby zak psat dopis a lekar zpivat pisen --prip
 # Student čte knihu, aby žák psal dopis a lékař zpívá píseň.
 ```
 
-Přehled ukazuje, na čem která klauze visí, a přijme `k 3=1`. Pořadová čísla slov běží přes celý zadaný seznam, takže `--pad dopis=genitiv` i `7 pad=genitiv` ukazují na totéž slovo, ať skončilo v kterékoli klauzi. Přepínače přísudku (`--cas`, `--zpusob`) platí pro všechny klauze; opravit přísudek jedné z nich zvlášť zatím vyslovit nejde.
+Přehled ukazuje, na čem která klauze visí, a přijme `k 3=1`.
+
+Přepínač přísudku mluví za celé souvětí, dokud nepojmenuje klauzi — a klauze, která řekne jinak, vyhraje:
+
+```bash
+gramatika veta student cist kniha a zak psat dopis --cas minuly
+# Student četl knihu a žák psal dopis.
+
+gramatika veta student cist kniha a zak psat dopis --cas minuly --cas 2=pritomny
+# Student četl knihu a žák píše dopis.
+```
+
+V dialogu totéž jako `p cas=minulý` a `p2 cas=přítomný`. Číslo před rovnítkem znamená u každé rodiny přepínačů něco jiného — u `--pad` a `--role` slovo, u `--cas` a `--zpusob` klauzi — a není co rozlišovat, protože přísudek žádné vlastní pořadí, na které by šlo ukázat, nemá. Pořadová čísla slov běží přes celý zadaný seznam, takže `--pad dopis=genitiv` i `7 pad=genitiv` ukazují na totéž slovo, ať skončilo v kterékoli klauzi.
 
 ## Testy
 

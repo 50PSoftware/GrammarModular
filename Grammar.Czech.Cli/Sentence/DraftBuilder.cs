@@ -96,9 +96,8 @@ namespace Grammar.Czech.Cli.Sentence
             // zadaný seznam, aby '--role kniha=PAT' i '4 pad=dativ' ukazovaly pořád na totéž slovo.
             foreach (var segment in Split(words))
             {
-                var clause = BuildClause(segment.Conjunction, segment.Words, overrides);
-
-                clause.Ordinal = sentence.Clauses.Count + 1;
+                var clause = BuildClause(
+                    segment.Conjunction, segment.Words, overrides, sentence.Clauses.Count + 1);
 
                 // Nezadáno visí klauze na té bezprostředně předchozí. Tak to čte i člověk: v 'čte,
                 // protože píše a zpívá' patří zpívání dovnitř toho protože, ne vedle celé věty.
@@ -117,6 +116,13 @@ namespace Grammar.Czech.Cli.Sentence
                         $"Připojení {clause}={parent} ukazuje na klauzi, která ve větě není; "
                         + $"klauzí je {sentence.Clauses.Count}.");
                 }
+            }
+
+            foreach (var singled in overrides.SingledOutClauses.Where(number => number > sentence.Clauses.Count))
+            {
+                throw new CliException(
+                    $"Přísudek klauze {singled} nastavit nejde — tolik klauzí ve větě není, "
+                    + $"je jich {sentence.Clauses.Count}.");
             }
 
             // Výchozí hodnoty se doplňují až nad celým stromem: co spojka řídí, není klauze sama o sobě
@@ -173,9 +179,10 @@ namespace Grammar.Czech.Cli.Sentence
             yield return (conjunction, current);
         }
 
-        private ClauseDraft BuildClause(string? conjunction, List<ResolvedWord> words, DraftOverrides overrides)
+        private ClauseDraft BuildClause(
+            string? conjunction, List<ResolvedWord> words, DraftOverrides overrides, int ordinal)
         {
-            var draft = new ClauseDraft { Conjunction = conjunction };
+            var draft = new ClauseDraft { Conjunction = conjunction, Ordinal = ordinal };
 
             AttachPredicate(draft, words, overrides);
             AttachConstituents(draft, words, overrides);
@@ -369,18 +376,21 @@ namespace Grammar.Czech.Cli.Sentence
         /// <returns>The plan.</returns>
         public static SentencePlan ToPlan(ClauseDraft draft, DraftOverrides overrides)
         {
+            // Co bylo řečeno o téhle klauzi, jinak co bylo řečeno o celé větě. Přísudek se adresuje
+            // klauzí, protože každá má právě jeden.
+            var stated = overrides.PredicateFor(draft.Ordinal);
             var predicate = draft.Predicate;
 
-            predicate.Tense = overrides.Tense ?? predicate.Tense;
-            predicate.Modus = overrides.Mood ?? predicate.Modus;
-            predicate.Voice = overrides.Voice ?? predicate.Voice;
-            predicate.Aspect = overrides.Aspect ?? predicate.Aspect;
-            predicate.Person = overrides.Person ?? predicate.Person;
-            predicate.Number = overrides.Number ?? predicate.Number;
-            predicate.Gender = overrides.Gender ?? predicate.Gender;
-            predicate.IsNegative = overrides.IsNegative ?? predicate.IsNegative;
+            predicate.Tense = stated.Tense ?? predicate.Tense;
+            predicate.Modus = stated.Mood ?? predicate.Modus;
+            predicate.Voice = stated.Voice ?? predicate.Voice;
+            predicate.Aspect = stated.Aspect ?? predicate.Aspect;
+            predicate.Person = stated.Person ?? predicate.Person;
+            predicate.Number = stated.Number ?? predicate.Number;
+            predicate.Gender = stated.Gender ?? predicate.Gender;
+            predicate.IsNegative = stated.IsNegative ?? predicate.IsNegative;
 
-            if (overrides.ReflexiveType is { } reflexive)
+            if (stated.ReflexiveType is { } reflexive)
             {
                 predicate.ReflexiveType = reflexive;
             }
@@ -389,14 +399,14 @@ namespace Grammar.Czech.Cli.Sentence
             {
                 Predicate = predicate,
                 Participants = [.. draft.Constituents.Select(ToParticipant)],
-                FrameLabel = overrides.FrameLabel,
+                FrameLabel = stated.FrameLabel,
                 SentenceType = overrides.SentenceType ?? draft.SentenceType,
                 Terminator = overrides.Terminator
                     ?? ((overrides.SentenceType ?? draft.SentenceType) == SentenceType.Interrogative ? "?" : "."),
 
                 // Nástroj vypisuje, co dostal; vypustit podmět, který uživatel zadal, by vypadalo, že se
                 // slovo ztratilo. Knihovní konzument to má naopak zapnuté, protože staví větu.
-                AllowSubjectDrop = overrides.DropSubject ?? false,
+                AllowSubjectDrop = stated.DropSubject ?? false,
             };
         }
 
@@ -435,7 +445,7 @@ namespace Grammar.Czech.Cli.Sentence
             // ten, ze kterého se věta staví.
             var selection = _frames.Select(
                 draft.PredicateLemma,
-                overrides.FrameLabel,
+                overrides.PredicateFor(draft.Ordinal).FrameLabel,
                 draft.Constituents.Select(constituent => constituent.Lemma),
                 diathesis);
 

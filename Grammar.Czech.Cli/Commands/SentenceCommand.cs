@@ -52,24 +52,22 @@ namespace Grammar.Czech.Cli.Commands
                 AllowMultipleArgumentsPerToken = true,
             };
 
-            var frame = new Option<string?>("--ramec")
-            {
-                Description = "Který význam slovesa se má vzít, když jich slovník vede víc.",
-            };
+            // Přepínače přísudku berou buď holou hodnotu pro celé souvětí, nebo 'klauze=hodnota' pro
+            // jednu klauzi. Číslo tu znamená klauzi, ne slovo — přísudek se adresuje klauzí, protože
+            // každá má právě jeden.
+            var frame = PredicateOption("--ramec", "Který význam slovesa se má vzít: --ramec motion, --ramec 2=motion.");
+            var tense = PredicateOption("--cas", "Čas přísudku: minuly, pritomny, budouci. Nebo --cas 2=minuly.");
+            var mood = PredicateOption("--zpusob", "Způsob: oznamovaci, rozkazovaci, podminovaci.");
+            var voice = PredicateOption("--slovesny-rod", "Slovesný rod: cinny, trpny.");
+            var aspect = PredicateOption("--vid", "Vid: dokonavy, nedokonavy.");
+            var person = PredicateOption("--osoba", "Osoba přísudku ve větě bez podmětu: 1, 2, 3.");
+            var predicateNumber = PredicateOption("--cislo-prisudku", "Číslo přísudku ve větě bez podmětu.");
+            var reflexive = PredicateOption("--zvratne", "Zvratné se/si u slovesa mimo slovník.");
+            var negative = FlagOption("--zapor", "Zápor přísudku. Bez hodnoty celá věta, '--zapor 2' jen druhá klauze.");
 
-            var tense = new Option<string?>("--cas") { Description = "Čas přísudku: minuly, pritomny, budouci." };
-            var mood = new Option<string?>("--zpusob") { Description = "Způsob: oznamovaci, rozkazovaci, podminovaci." };
-            var voice = new Option<string?>("--slovesny-rod") { Description = "Slovesný rod: cinny, trpny." };
-            var aspect = new Option<string?>("--vid") { Description = "Vid: dokonavy, nedokonavy." };
-            var person = new Option<string?>("--osoba") { Description = "Osoba přísudku ve větě bez podmětu: 1, 2, 3." };
-            var predicateNumber = new Option<string?>("--cislo-prisudku") { Description = "Číslo přísudku ve větě bez podmětu." };
-            var reflexive = new Option<string?>("--zvratne") { Description = "Zvratné se/si u slovesa mimo slovník." };
-            var negative = new Option<bool>("--zapor") { Description = "Zápor přísudku." };
-
-            var dropSubject = new Option<bool>("--vypustit-podmet")
-            {
-                Description = "Vypustit podmětové zájmeno, když nenese důraz: 'čtu' místo 'já čtu'.",
-            };
+            var dropSubject = FlagOption(
+                "--vypustit-podmet",
+                "Vypustit podmětové zájmeno, když nenese důraz: 'čtu' místo 'já čtu'.");
             var sentenceType = new Option<string?>("--typ") { Description = "Druh věty: oznamovaci, tazaci." };
             var terminator = new Option<string?>("--konec") { Description = "Koncové znaménko věty." };
 
@@ -98,23 +96,20 @@ namespace Grammar.Czech.Cli.Commands
                 var overrides = new DraftOverrides
                 {
                     PredicateLemma = parse.GetValue(verb),
-                    FrameLabel = parse.GetValue(frame),
-                    Tense = Optional(parse.GetValue(tense), Terms.ParseTense),
-                    Mood = Optional(parse.GetValue(mood), Terms.ParseMood),
-                    Voice = Optional(parse.GetValue(voice), Terms.ParseVoice),
-                    Aspect = Optional(parse.GetValue(aspect), Terms.ParseAspect),
-                    Person = Optional(parse.GetValue(person), Terms.ParsePerson),
-                    Number = Optional(parse.GetValue(predicateNumber), Terms.ParseNumber),
                     SentenceType = Optional(parse.GetValue(sentenceType), Terms.ParseSentenceType),
                     Terminator = parse.GetValue(terminator),
-                    IsNegative = parse.GetValue(negative) ? true : null,
-                    DropSubject = parse.GetValue(dropSubject) ? true : null,
                 };
 
-                if (parse.GetValue(reflexive) is { } stated)
-                {
-                    overrides.ReflexiveType = OverrideParser.ParseReflexive(stated);
-                }
+                AssignPredicate(overrides, "ramec", parse.GetValue(frame));
+                AssignPredicate(overrides, "cas", parse.GetValue(tense));
+                AssignPredicate(overrides, "zpusob", parse.GetValue(mood));
+                AssignPredicate(overrides, "rod", parse.GetValue(voice));
+                AssignPredicate(overrides, "vid", parse.GetValue(aspect));
+                AssignPredicate(overrides, "osoba", parse.GetValue(person));
+                AssignPredicate(overrides, "cislo", parse.GetValue(predicateNumber));
+                AssignPredicate(overrides, "zvratne", parse.GetValue(reflexive));
+                AssignFlag(parse, overrides, "zapor", negative);
+                AssignFlag(parse, overrides, "podmet", dropSubject);
 
                 Assign(overrides, "role", parse.GetValue(role));
                 Assign(overrides, "cleneni", parse.GetValue(status));
@@ -190,11 +185,63 @@ namespace Grammar.Czech.Cli.Commands
             AllowMultipleArgumentsPerToken = true,
         };
 
+        // Same shape as a word switch, and told apart by which switch it is: one addresses a
+        // constituent by its position in the word list, the other a predicate by its clause.
+        private static Option<string[]> PredicateOption(string name, string description) => new(name)
+        {
+            Description = description,
+            Arity = ArgumentArity.OneOrMore,
+            AllowMultipleArgumentsPerToken = true,
+        };
+
+        // A yes-or-no switch that need not be answered: writing it is the answer. It still takes a
+        // clause number, so that the thing which used to be a bare flag keeps working as one.
+        private static Option<string[]> FlagOption(string name, string description) => new(name)
+        {
+            Description = description,
+            Arity = ArgumentArity.ZeroOrMore,
+            AllowMultipleArgumentsPerToken = true,
+        };
+
         private static void Assign(DraftOverrides overrides, string property, string[]? assignments)
         {
             foreach (var assignment in assignments ?? [])
             {
                 OverrideParser.Assign(overrides, property, assignment);
+            }
+        }
+
+        private static void AssignPredicate(DraftOverrides overrides, string property, string[]? arguments)
+        {
+            foreach (var argument in arguments ?? [])
+            {
+                OverrideParser.AssignPredicate(overrides, property, argument);
+            }
+        }
+
+        // Written without a value it answers itself, and written with a bare number it answers itself
+        // about that clause — so '--zapor' and '--zapor 2' both read the way they look.
+        private static void AssignFlag(
+            ParseResult parse, DraftOverrides overrides, string property, Option<string[]> option)
+        {
+            if (parse.GetResult(option) is null)
+            {
+                return;
+            }
+
+            var arguments = parse.GetValue(option) ?? [];
+
+            if (arguments.Length == 0)
+            {
+                OverrideParser.AssignPredicate(overrides, property, "ano");
+
+                return;
+            }
+
+            foreach (var argument in arguments)
+            {
+                OverrideParser.AssignPredicate(
+                    overrides, property, argument.Contains('=') ? argument : $"{argument}=ano");
             }
         }
 
