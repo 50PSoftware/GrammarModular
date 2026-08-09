@@ -432,7 +432,9 @@ Jaký druh děje sloveso pojmenovává, je jiná otázka než jeho vid, a bydlí
 
 Není to jemnější vid. Vid je gramatický, má dva členy a má ho každé české sloveso; tohle je lexikální a většina sloves do žádné skupiny nepatří, takže `null` znamená nezařazeno, ne „žádný". Kde sloveso zařazené je, skupina vid určuje — NESČ to říká o celém výčtu najednou, *slovesa skupin (a)–(r) jsou dok., zatímco slovesa skupin (s)–(y) jsou nedok.* — a `AktionsartFacts.RequiredAspect` je právě to pravidlo. `lexikon validate` proti němu drží každý zařazený řádek, takže nedokonavé semelfaktivum je vadný řádek, ne neobvyklé sloveso.
 
-Zatím ho nese pět hesel: `blýsknout` je semelfaktivum proti frekventativu `blýskat`, `zahřmět` je ingresivum, `napršet` a `nasněžit` kumulativa. Nedokonavá slovesa počasí zůstávají nezařazená, protože rozhodnout u nich mezi *dekurzivním* a *stativním* by byl odhad — a sloupec je nullable přesně pro tohle.
+Nese ho třináct hesel: `blýsknout` semelfaktivum proti frekventativu `blýskat`, `zahřmět` ingresivum, `napršet` a `nasněžit` kumulativa, `pršet`, `sněžit` a `hřmít` dekurziva, `svítat` a `stmívat` mutativa, `setmít` a `zmrznout` rezultativa, `rozednít` evolutivum.
+
+`mrznout` nenese žádné, a to je rozhodnutí, ne mezera: *mrzne* je stav vzduchu a *voda mrzne* postupná změna vody, což jsou různé skupiny — jenže sloupec sedí na lemmatu a to má jeden řádek. Zapsat kterékoli z nich by znamenalo, že jeden význam lže o druhém. Je to protipříklad k obvyklému popisu způsobu slovesného děje jako vlastnosti slovesa a ukazuje na opravu: přesunout sloupec na `lexical_unit`, kde už bydlí rámce.
 
 Druhý význam `blýskat` ukazuje patiens v holém instrumentálu, což je celá třída českých sloves — *mávat rukou*, *kroutit hlavou*, *házet kamenem*: `Meč blýská očima.`
 

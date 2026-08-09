@@ -434,7 +434,9 @@ What kind of event a verb names is a separate question from its aspect, and `lem
 
 It is not a finer grade of aspect. Aspect is grammatical, has two members and every Czech verb has one; this is lexical and most verbs are in none of the groups, so `null` means unclassified rather than "none". Where a verb is classified the group implies the aspect — NESČ states it of the whole list at once, *slovesa skupin (a)–(r) jsou dok., zatímco slovesa skupin (s)–(y) jsou nedok.* — and `AktionsartFacts.RequiredAspect` is that rule. `lexikon validate` holds every classified row against it, so a semelfactive marked imperfective is a bad row rather than an unusual verb.
 
-Five entries carry it so far: `blýsknout` is semelfactive against the frequentative `blýskat`, `zahřmět` is ingressive, `napršet` and `nasněžit` cumulative. The weather imperfectives stay unclassified, because deciding between *dekurzivní* and *stativní* for them would be a guess and the column is nullable for exactly that.
+Thirteen entries carry it: `blýsknout` semelfactive against the frequentative `blýskat`, `zahřmět` ingressive, `napršet` and `nasněžit` cumulative, `pršet`, `sněžit` and `hřmít` decursive, `svítat` and `stmívat` mutative, `setmít` and `zmrznout` resultative, `rozednít` evolutive.
+
+`mrznout` carries none, and that is a decision rather than a gap: *mrzne* is a state of the air and *voda mrzne* a gradual change of the water, which are different groups, while the column sits on the lemma and there is one row for it. Recording either would make one sense lie about the other. It is the counterexample to the usual description of způsob slovesného děje as a property of the verb, and moving the column to `lexical_unit` — where the frames already live — is the fix it points at.
 
 The other sense of `blýskat` shows a patient in the bare instrumental, which is a whole class of Czech verbs — *mávat rukou*, *kroutit hlavou*, *házet kamenem*: `Meč blýská očima.`
 

@@ -84,6 +84,13 @@ namespace Grammar.Czech.Test
         [DataRow("zahřmět", Aktionsart.Ingressive)]
         [DataRow("napršet", Aktionsart.Cumulative)]
         [DataRow("nasněžit", Aktionsart.Cumulative)]
+        [DataRow("pršet", Aktionsart.Decursive)]
+        [DataRow("hřmít", Aktionsart.Decursive)]
+        [DataRow("svítat", Aktionsart.Mutative)]
+        [DataRow("stmívat", Aktionsart.Mutative)]
+        [DataRow("setmít", Aktionsart.Resultative)]
+        [DataRow("rozednít", Aktionsart.Evolutive)]
+        [DataRow("zmrznout", Aktionsart.Resultative)]
         public void DictionaryCarriesTheGroup(string lemma, Aktionsart expected)
         {
             Assert.AreEqual(expected, lexicon.GetEntry(lemma, WordCategory.Verb)?.Aktionsart);
@@ -93,14 +100,38 @@ namespace Grammar.Czech.Test
         /// A verb the classification says nothing about keeps null, which is unclassified and not
         /// "no group" — most of the lexicon is in this state and the column exists to be sparse.
         /// </summary>
+        /// <remarks>
+        /// mrznout is not in this list and is null all the same, for a reason of its own: its two senses
+        /// belong to different groups and the column sits on the lemma. See
+        /// <see cref="LemmaWhoseSensesDisagreeStaysUnclassified"/>.
+        /// </remarks>
         [DataTestMethod]
-        [DataRow("pršet")]
-        [DataRow("mrznout")]
         [DataRow("dělat")]
         [DataRow("číst")]
+        [DataRow("kupovat")]
         public void UnclassifiedVerbKeepsNull(string lemma)
         {
             Assert.IsNull(lexicon.GetEntry(lemma, WordCategory.Verb)?.Aktionsart);
+        }
+
+        /// <summary>
+        /// A lemma whose senses belong to different groups carries none, because the column is on the
+        /// lemma and cannot hold two answers.
+        /// </summary>
+        /// <remarks>
+        /// mrznout is the counterexample to the usual description of způsob slovesného děje as a
+        /// property of the verb: <em>mrzne</em> is a state of the air and <em>voda mrzne</em> a gradual
+        /// change of the water, which are different groups. Recording either would make one sense lie
+        /// about the other, so the entry stays unclassified — and this test says that is a decision
+        /// rather than an omission.
+        /// </remarks>
+        [TestMethod]
+        public void LemmaWhoseSensesDisagreeStaysUnclassified()
+        {
+            var entry = lexicon.GetEntry("mrznout", WordCategory.Verb);
+
+            Assert.IsNotNull(entry);
+            Assert.IsNull(entry.Aktionsart);
         }
 
         /// <summary>
@@ -110,7 +141,11 @@ namespace Grammar.Czech.Test
         [TestMethod]
         public void EveryClassifiedEntryAgreesWithItsAspect()
         {
-            string[] classified = ["blýsknout", "blýskat", "zahřmět", "napršet", "nasněžit"];
+            string[] classified =
+            [
+                "blýsknout", "blýskat", "zahřmět", "napršet", "nasněžit",
+                "pršet", "sněžit", "hřmít", "svítat", "stmívat", "setmít", "rozednít", "zmrznout",
+            ];
 
             foreach (var lemma in classified)
             {

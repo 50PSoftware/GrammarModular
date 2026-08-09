@@ -219,7 +219,7 @@ namespace Grammar.Czech.Test
         /// carrying a copy — which is the whole reason the lexeme layer exists.
         /// </summary>
         [DataTestMethod]
-        [DataRow("setmět", "trida4", "Setmělo se.")]
+        [DataRow("setmít", "trida4", "Setmělo se.")]
         [DataRow("nasněžit", "trida4", "Nasněžilo.")]
         [DataRow("rozednít", "trida4", "Rozednilo se.")]
         [DataRow("napršet", "trida4", "Napršelo.")]
