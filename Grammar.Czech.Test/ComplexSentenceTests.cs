@@ -505,18 +505,83 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
-        /// The one place recursion stops: a relative clause is a single clause, not a sentence node, so it
-        /// cannot itself coordinate or subordinate. "muž, který přišel a odešel" is not expressible.
+        /// A relative clause is a sentence in its own right, so it can coordinate — and one relative
+        /// pronoun is the subject of every clause it coordinates, so the antecedent's agreement reaches
+        /// all of them.
         /// </summary>
         [TestMethod]
-        public void RelativeAttachment_TakesAClauseRatherThanASentence_WhichCapsNestingThere()
+        public void RelativeClause_Coordinates_AndTheAntecedentReachesEveryConjunct()
         {
-            var attachment = typeof(RelativeAttachment).GetProperty(nameof(RelativeAttachment.Clause))!;
+            var woman = ClauseElement.Of(
+                new CzechWordRequest
+                {
+                    Lemma = "žena",
+                    Pattern = "žena",
+                    WordCategory = WordCategory.Noun,
+                    Gender = Gender.Feminine,
+                    Number = Number.Singular,
+                    IsAnimate = true,
+                    Case = Case.Nominative
+                },
+                FgdFunctor.ACT,
+                InformationStatus.Given);
 
-            Assert.AreEqual(
-                typeof(CzechClause),
-                attachment.PropertyType,
-                "Kdyby to byl SentenceNode, tenhle test i dokumentované omezení jsou k přepsání.");
+            var sentence = builder.Build(new CzechClause
+            {
+                Predicate = Verb("dělat", "dělá"),
+                Elements =
+                [
+                    woman with
+                    {
+                        Relative = new RelativeAttachment
+                        {
+                            Relativizer = "který",
+                            Case = Case.Nominative,
+                            Clause = new Coordination("a",
+                            [
+                                new SimpleSentence(Clause(Verb("dělat", "dělá"))),
+                                new SimpleSentence(Clause(Verb("dělat", "dělá"))),
+                            ]),
+                        },
+                    },
+                ],
+            });
+
+            // Ženský rod v obou konjunktech je důkaz, že shoda došla i do toho druhého — helper Verb
+            // staví mužský rod, takže sám od sebe by to bylo 'dělal'.
+            Assert.AreEqual("Žena, která dělala a dělala, dělala.", sentence);
+        }
+
+        /// <summary>
+        /// A relative clause can carry a dependent clause of its own, and the relative pronoun still
+        /// fills the first position of the clause it opens — the cluster follows the pronoun, not the
+        /// verb.
+        /// </summary>
+        [TestMethod]
+        public void RelativeClause_CarriesASubordinateOfItsOwn()
+        {
+            var sentence = builder.Build(new CzechClause
+            {
+                Predicate = Verb("dělat", "dělá"),
+                Elements =
+                [
+                    Petr() with
+                    {
+                        Relative = new RelativeAttachment
+                        {
+                            Relativizer = "který",
+                            Case = Case.Nominative,
+                            Clause = new Subordination(
+                                new SimpleSentence(Clause(Verb("dělat", "dělá", ReflexiveType.ReflexivumTantum_Se))),
+                                "protože",
+                                new SimpleSentence(Clause(Verb("dělat", "dělá")))),
+                        },
+                    },
+                ],
+            });
+
+            // Klitikum jde za vztažné zájmeno, ne za sloveso: první pozici obsadilo 'který'.
+            Assert.AreEqual("Student, který se dělal, protože dělal, dělal.", sentence);
         }
 
         #endregion Recursion

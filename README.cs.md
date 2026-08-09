@@ -273,7 +273,7 @@ Builder řeší:
 - **frázové konstituenty** — přívlastek dědí od řídícího slova rod, číslo, pád a životnost všude, kde je nechal nevyplněné,
 - **předložkové fráze** včetně vokalizace a kontroly rekce; celá fráze je jeden konstituent,
 - **souvětí** — `Coordination` a `Subordination` nad `SentenceNode`, libovolně vnořitelné, s interpunkcí podle spojky,
-- **vztažné věty** — zájmeno se shoduje s řídícím jménem v rodě, čísle a životnosti, pád si bere ze své role ve vedlejší větě.
+- **vztažné věty** — zájmeno se shoduje s řídícím jménem v rodě, čísle a životnosti, pád si bere ze své role ve vedlejší větě. Vztažná věta je plnohodnotná věta: může souřadit i nést vedlejší větu. Jedno zájmeno je podmětem všeho, co s ním souřadí, takže shoda s řídícím jménem dojde do každého konjunktu — *žena, která přišla a odešla* — a zastaví se na podřadicí spojce, která otevírá klauzi s vlastním podmětem.
 
 Podřadicí spojka a vztažné zájmeno obsazují první pozici své klauze, takže za nimi jde klastr: *protože se student učil*, *muž, kterého jsem viděl*. Souřadicí spojka stojí mimo klauzi a první pozici jí nechává.
 
@@ -833,7 +833,7 @@ Pravidlová data v projektu `Grammar.Czech` jsou embedded JSON resources. Výjim
 
 ### Co modelované není
 
-- Vztažná věta musí být jedna klauze; souvětí uvnitř vztažné věty podporované není. Klauze spojené přes `SentencePlan.Joined` se vnořují, jak hluboko se napíšou, a řetěz na jedné úrovni (`[a: B, protože: C]`) je jiná věta než řetěz vnoření (`a: B { protože: C }`) — vyslovit jde obojí.
+- Klauze spojené přes `SentencePlan.Joined` se vnořují, jak hluboko se napíšou, a řetěz na jedné úrovni (`[a: B, protože: C]`) je jiná věta než řetěz vnoření (`a: B { protože: C }`) — vyslovit jde obojí. Vztažná věta je `SentenceNode` a souřadí i podřaďuje jako každá jiná, jenže její klauze se zadávají jako `CzechClause`, ne jako plány — uvnitř ní se tedy role neodvozují a rámec nevybírá.
 - `IValencyProvider.GetEntry` bere lemma, volitelně s `WordCategory`, takže homonyma napříč kategoriemi rozlišit umí, ale homonyma uvnitř jedné ne. Schéma je nese ve sloupci `homonym_index` a provider vrátí to s nejnižším.
 - Klitický klastr nezná volný dativ (*To ti byla legrace*), který podle NESČ stojí mezi pomocným slovesem a reflexivem. Ostatní pozice pořadí odpovídají.
 - Ukazovací zájmeno před číslovkou (*těch pět studentů*) se shoduje s hlavou fráze, ne s celou frází.

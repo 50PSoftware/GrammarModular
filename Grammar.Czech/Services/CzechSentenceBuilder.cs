@@ -94,7 +94,8 @@ namespace Grammar.Czech.Services
                 var grown => RenderNode(grown, firstPositionTaken, secondPositionConjunction, suppressConditional),
             },
             Coordination coordination => RenderCoordination(coordination, firstPositionTaken, suppressConditional),
-            Subordination subordination => RenderSubordination(subordination, suppressConditional),
+            Subordination subordination =>
+                RenderSubordination(subordination, firstPositionTaken, suppressConditional),
             _ => throw new NotSupportedException($"Neznámý typ větného uzlu: {sentence.GetType().Name}.")
         };
 
@@ -159,14 +160,16 @@ namespace Grammar.Czech.Services
         // The conjunction belongs to the dependent clause and fills its first position, which is why the
         // cluster follows the conjunction and not the verb: "Petr přišel, protože se bál".
         private (string Text, CzechWordRequest? Predicate) RenderSubordination(
-            Subordination subordination, bool suppressConditional = false)
+            Subordination subordination, bool firstPositionTaken = false, bool suppressConditional = false)
         {
-            // An inherited suppression reaches the main clause and stops there: aby above this one is
-            // carrying the auxiliary for it, while the clause below has its own conjunction and its own
-            // answer. Dropping it here instead gave "aby lékař by zpíval" the moment anything was nested
-            // under an aby.
+            // Both of these reach the main clause and stop there: what stands above this subordination
+            // stands above the clause it opens with, while the dependent clause has its own conjunction
+            // filling its own first position and its own answer about the auxiliary.
+            //
+            // The first position matters inside a relative clause, where the pronoun fills it: without
+            // this, "muž, který se učil, protože se bál" put the cluster after the verb instead.
             var (main, mainPredicate) = RenderNode(
-                subordination.Main, firstPositionTaken: false, suppressConditional: suppressConditional);
+                subordination.Main, firstPositionTaken, suppressConditional: suppressConditional);
             var conjunction = subordination.Conjunction;
             var fuses = conjunctionService.FusesWithConditional(conjunction);
 
@@ -208,10 +211,11 @@ namespace Grammar.Czech.Services
             var text = wordOrderResolver.Resolve(
                 planned,
                 firstPositionTaken,
-                // A relative clause is a sentence hanging off a constituent, so rendering one is this
-                // method again. The resolver is handed the way back up rather than the whole builder.
+                // A relative clause is a sentence hanging off a constituent — and a sentence in the full
+                // sense, since it can coordinate — so rendering one starts again at the top. The
+                // resolver is handed the way back up rather than the whole builder.
                 (embedded, embeddedFirstPositionTaken) =>
-                    RenderClause(embedded, embeddedFirstPositionTaken).Text,
+                    RenderNode(embedded, embeddedFirstPositionTaken).Text,
                 secondPositionConjunction,
                 suppressConditional);
 

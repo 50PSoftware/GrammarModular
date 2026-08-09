@@ -55,8 +55,9 @@ namespace Grammar.Czech.Services
         /// conjunction, say — in which case the cluster opens the clause proper.
         /// </param>
         /// <param name="renderEmbedded">
-        /// How to render a clause embedded in a constituent, which is a relative clause today. Passed in
-        /// rather than resolved, because the sentence that owns the recursion is above this stage.
+        /// How to render a sentence embedded in a constituent — a relative clause, which may itself be a
+        /// complex sentence. Passed in rather than resolved, because the sentence that owns the recursion
+        /// is above this stage.
         /// </param>
         /// <param name="secondPositionConjunction">The conjunction that shares the cluster's slot, or null.</param>
         /// <param name="suppressConditional">
@@ -67,7 +68,7 @@ namespace Grammar.Czech.Services
         public string Resolve(
             PlannedClause planned,
             bool firstPositionTaken,
-            Func<CzechClause, bool, string> renderEmbedded,
+            Func<SentenceNode, bool, string> renderEmbedded,
             string? secondPositionConjunction = null,
             bool suppressConditional = false)
         {
@@ -126,7 +127,7 @@ namespace Grammar.Czech.Services
 
         // One constituent, however many words. The whole phrase counts as a single unit for second position,
         // so the string returned here is what the cluster attaches after.
-        private string Realize(ClauseElement element, Func<CzechClause, bool, string> renderEmbedded)
+        private string Realize(ClauseElement element, Func<SentenceNode, bool, string> renderEmbedded)
         {
             // A slot filled by a proposition is one constituent however many words it runs to, so the
             // cluster of the clause above attaches after the whole of it: "chce jít do školy". Its first
@@ -173,7 +174,7 @@ namespace Grammar.Czech.Services
 
         // The pronoun agrees with the antecedent but takes its case from its role inside the clause, and
         // fills that clause's first position: "muž, kterého jsem viděl".
-        private string RenderRelative(ClauseElement element, Func<CzechClause, bool, string> renderEmbedded)
+        private string RenderRelative(ClauseElement element, Func<SentenceNode, bool, string> renderEmbedded)
         {
             var relative = element.Relative!;
             var antecedent = element.Word;
@@ -196,20 +197,40 @@ namespace Grammar.Czech.Services
                 ?? throw new InvalidOperationException(
                     $"Vztažné zájmeno '{relative.Relativizer}' nemá tvar pro pád {relative.Case}.");
 
-            var clause = relative.Clause;
-
-            // A nominative pronoun is the subject of its clause, so the predicate agrees with the antecedent
-            // through it — "muž, který se učil" against "žena, která se učila".
-            if (relative.Case == Case.Nominative)
-            {
-                var predicate = clause.Predicate;
-                predicate.Person = Person.Third;
-                predicate.Number = antecedent.Number;
-                predicate.Gender = antecedent.Gender;
-                clause = clause with { Predicate = predicate };
-            }
+            var clause = relative.Case == Case.Nominative
+                ? AgreeWithAntecedent(relative.Clause, antecedent)
+                : relative.Clause;
 
             return $"{pronoun} {renderEmbedded(clause, true)},";
+        }
+
+        // A nominative pronoun is the subject of its clause, so the predicate agrees with the antecedent
+        // through it — "muž, který se učil" against "žena, která se učila". One pronoun is the subject of
+        // every clause coordinated with that one, so the agreement reaches all of them: "žena, která
+        // přišla a odešla". A subordinator opens a clause with a subject of its own and stops it.
+        private static SentenceNode AgreeWithAntecedent(SentenceNode node, CzechWordRequest antecedent) => node switch
+        {
+            SimpleSentence simple => new SimpleSentence(Agree(simple.Clause, antecedent)),
+            Coordination coordination => coordination with
+            {
+                Conjuncts = [.. coordination.Conjuncts.Select(conjunct => AgreeWithAntecedent(conjunct, antecedent))],
+            },
+            Subordination subordination => subordination with
+            {
+                Main = AgreeWithAntecedent(subordination.Main, antecedent),
+            },
+            _ => node,
+        };
+
+        private static CzechClause Agree(CzechClause clause, CzechWordRequest antecedent)
+        {
+            var predicate = clause.Predicate;
+
+            predicate.Person = Person.Third;
+            predicate.Number = antecedent.Number;
+            predicate.Gender = antecedent.Gender;
+
+            return clause with { Predicate = predicate };
         }
 
         // The preposition governs the constituent, not its head noun: in "pro pět studentů" the noun is

@@ -33,13 +33,20 @@ namespace Grammar.Czech.Models.Syntax
         public Case Case { get; init; } = Case.Nominative;
 
         /// <summary>
-        /// Gets the relative clause itself.
+        /// Gets the relative clause itself, which may be a sentence in its own right.
         /// </summary>
         /// <remarks>
-        /// A single clause rather than a <see cref="SentenceNode"/>: when the pronoun is the subject, the
-        /// predicate has to be made to agree with the antecedent through it, and that has a clear meaning
-        /// only for one clause. A relative clause that coordinates internally is not supported yet.
+        /// A <see cref="SentenceNode"/>, so a relative clause can coordinate — "muž, který přišel
+        /// a odešel" — or carry a dependent clause of its own. A <see cref="CzechClause"/> converts
+        /// implicitly, so stating one clause needs nothing extra.
+        /// <para>
+        /// Where the pronoun is the subject, the antecedent's agreement reaches the opening clause and
+        /// everything coordinated with it, because one relative pronoun is the subject of all of them.
+        /// It stops at a subordinator: "muž, který přišel, protože se bál" has a clause with a subject
+        /// of its own, and forcing the antecedent's gender onto it would be agreement with the wrong
+        /// thing.
+        /// </para>
         /// </remarks>
-        public CzechClause Clause { get; init; }
+        public SentenceNode Clause { get; init; }
     }
 }

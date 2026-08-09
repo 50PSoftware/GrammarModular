@@ -273,7 +273,7 @@ The builder handles:
 - **phrasal constituents** — an attribute inherits gender, number, case and animacy from its head wherever it left them unset,
 - **prepositional phrases**, including vocalization and a government check; the whole phrase is one constituent,
 - **complex sentences** — `Coordination` and `Subordination` over `SentenceNode`, nestable to any depth, punctuated by the conjunction,
-- **relative clauses** — the pronoun agrees with the head noun in gender, number and animacy, and takes its case from its own role in the dependent clause.
+- **relative clauses** — the pronoun agrees with the head noun in gender, number and animacy, and takes its case from its own role in the dependent clause. The clause is a sentence in its own right and may coordinate or carry a dependent clause; one pronoun is the subject of everything coordinated with it, so the antecedent's agreement reaches every conjunct — *žena, která přišla a odešla* — and stops at a subordinator, which opens a clause with a subject of its own.
 
 A subordinating conjunction and a relative pronoun occupy the first position of their clause, so the cluster follows them: *protože se student učil*, *muž, kterého jsem viděl*. A coordinating conjunction stands outside the clause and leaves the first position to it.
 
@@ -835,7 +835,7 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 
 ### Not modelled
 
-- A relative clause must be a single clause; a complex sentence inside a relative clause is not supported. Clauses joined through `SentencePlan.Joined` nest as deep as they are written, and a chain at one level (`[a: B, protože: C]`) is a different sentence from a chain of nestings (`a: B { protože: C }`) — both are expressible.
+- Clauses joined through `SentencePlan.Joined` nest as deep as they are written, and a chain at one level (`[a: B, protože: C]`) is a different sentence from a chain of nestings (`a: B { protože: C }`) — both are expressible. A relative clause is a `SentenceNode` and coordinates or subordinates like any other, but its clauses are stated as `CzechClause` rather than as plans, so nothing inside one gets role resolution or a frame chosen for it.
 - `IValencyProvider.GetEntry` takes a lemma, optionally with a `WordCategory`, so homonyms across categories can be told apart but homonyms inside one cannot. The schema carries `homonym_index` and the provider returns the lowest one.
 - The clitic cluster does not know the free dative (*To ti byla legrace*), which per NESČ stands between the auxiliary and the reflexive. The remaining positions match the described order.
 - A demonstrative in front of a numeral (*těch pět studentů*) agrees with the head of the phrase, not with the phrase as a whole.
