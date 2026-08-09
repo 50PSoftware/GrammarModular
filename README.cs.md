@@ -426,7 +426,9 @@ gramatika veta voda mrznout
 # Jiný význam podmět bere: --ramec freeze.
 ```
 
-Naseedováno: `pršet`, `sněžit`, `svítat` jen jako bezpodměťová; `mrznout`, `hřmít`, `blýskat` i s druhým významem, který konatele bere; `stmívat` a `blýskat` se zvratným, které jejich význam o počasí vyžaduje; a dokonavé protějšky `setmět`, `nasněžit`, `rozednít`, které stojí pod týmž lexémem a rámec dědí, místo aby nesly jeho kopii — *Setmělo se*, *Nasněžilo*.
+Naseedováno: `pršet`, `sněžit`, `svítat`, `stmívat` jen jako bezpodměťová; `mrznout`, `hřmít`, `blýskat` i s druhým významem, který konatele bere; `stmívat` a `blýskat` se zvratným, které jejich význam o počasí vyžaduje. Každé z nich má dokonavý protějšek — `napršet`, `nasněžit`, `rozednít`, `setmět`, `zmrznout`, `zahřmět`, `blýsknout` — a ten stojí pod týmž lexémem a rámce dědí, místo aby nesl jejich kopii: *Napršelo*, *Zmrzlo*, *Blýsklo se*. Protějšek dědí všechny významy, takže `zmrznout` dosáhne na *Zmrzlo* i na *Voda zmrzla*.
+
+Co `aspect_counterpart` zaznamenat neumí, je že `blýsknout se` a `zahřmět` jsou semelfaktiva — jeden záblesk proti trvání — protože `VerbAspect` má dva členy. Do doby, než na to bude sloupec, to stojí v poznámce u hesla.
 
 Druhý význam `blýskat` ukazuje patiens v holém instrumentálu, což je celá třída českých sloves — *mávat rukou*, *kroutit hlavou*, *házet kamenem*: `Meč blýská očima.`
 

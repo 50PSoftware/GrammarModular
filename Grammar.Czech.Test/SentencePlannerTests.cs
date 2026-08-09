@@ -222,6 +222,10 @@ namespace Grammar.Czech.Test
         [DataRow("setmět", "trida4", "Setmělo se.")]
         [DataRow("nasněžit", "trida4", "Nasněžilo.")]
         [DataRow("rozednít", "trida4", "Rozednilo se.")]
+        [DataRow("napršet", "trida4", "Napršelo.")]
+        [DataRow("blýsknout", "trida2", "Blýsklo se.")]
+        [DataRow("zahřmět", "trida4", "Zahřmělo.")]
+        [DataRow("zmrznout", "trida2", "Zmrzlo.")]
         public void PerfectiveCounterpartInheritsTheImpersonalFrame(
             string lemma, string pattern, string expected)
         {
@@ -236,6 +240,47 @@ namespace Grammar.Czech.Test
                 Predicate = Verb(lemma, pattern) with { Aspect = VerbAspect.Perfective },
                 Participants = [Student(FgdFunctor.ACT)]
             }));
+        }
+
+        /// <summary>
+        /// A perfective inherits every sense of its lexeme, not only the one it was added for, so the
+        /// counterpart of a two-sense verb reaches both.
+        /// </summary>
+        [TestMethod]
+        public void PerfectiveInheritsEverySenseOfItsLexeme()
+        {
+            var water = Noun("voda", "žena", Gender.Feminine);
+
+            Assert.AreEqual("Voda zmrzla.", Build(roles.Resolve(new SentencePlan
+            {
+                Predicate = Verb("zmrznout", "trida2") with { Aspect = VerbAspect.Perfective, Tense = Tense.Past },
+                Participants = [water],
+                FrameLabel = "freeze"
+            })));
+
+            Assert.AreEqual("Zmrzlo.", Build(new SentencePlan
+            {
+                Predicate = Verb("zmrznout", "trida2") with { Aspect = VerbAspect.Perfective, Tense = Tense.Past }
+            }));
+        }
+
+        /// <summary>
+        /// A free modification attaches to any verb and is never licensed by a frame, so an empty frame
+        /// does not stand in its way: an impersonal verb still takes a time or a place.
+        /// </summary>
+        [TestMethod]
+        public void ImpersonalVerbStillTakesAFreeModification()
+        {
+            var plan = roles.Resolve(new SentencePlan
+            {
+                Predicate = Verb("pršet", "trida4"),
+                Participants =
+                [
+                    Noun("ráno", "město", Gender.Neuter) with { Preposition = "od" }
+                ]
+            });
+
+            Assert.AreEqual("Od rána prší.", Build(plan));
         }
 
         /// <summary>

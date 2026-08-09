@@ -428,7 +428,9 @@ gramatika veta voda mrznout
 # Jiný význam podmět bere: --ramec freeze.
 ```
 
-Seeded: `pršet`, `sněžit`, `svítat` as impersonal only; `mrznout`, `hřmít`, `blýskat` with a second sense that takes an actor; `stmívat` and `blýskat` with the reflexive their weather sense needs; and the perfective counterparts `setmět`, `nasněžit`, `rozednít`, which sit under the same lexeme and inherit the frame rather than carrying a copy of it — *Setmělo se*, *Nasněžilo*.
+Seeded: `pršet`, `sněžit`, `svítat`, `stmívat` as impersonal only; `mrznout`, `hřmít`, `blýskat` with a second sense that takes an actor; `stmívat` and `blýskat` with the reflexive their weather sense needs. Every one of them has its perfective counterpart — `napršet`, `nasněžit`, `rozednít`, `setmět`, `zmrznout`, `zahřmět`, `blýsknout` — sitting under the same lexeme and inheriting the frames rather than carrying a copy: *Napršelo*, *Zmrzlo*, *Blýsklo se*. A counterpart inherits every sense, so `zmrznout` reaches both *Zmrzlo* and *Voda zmrzla*.
+
+What `aspect_counterpart` cannot record is that `blýsknout se` and `zahřmět` are semelfactive — one flash against a stretch of them — because `VerbAspect` has two members. That sits in the entry's note until there is a column for it.
 
 The other sense of `blýskat` shows a patient in the bare instrumental, which is a whole class of Czech verbs — *mávat rukou*, *kroutit hlavou*, *házet kamenem*: `Meč blýská očima.`
 
