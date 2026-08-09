@@ -765,7 +765,17 @@ gramatika veta student cist kniha a zak psat dopis        # Student čte knihu a
 gramatika veta student cist kniha protoze zak psat dopis # Student čte knihu, protože žák píše dopis.
 ```
 
-Positions run across the whole word list, so `--pad dopis=genitiv` and `7 pad=genitiv` address the same word whichever clause it landed in. Predicate switches (`--cas`, `--zpusob`) apply to every clause; correcting one clause's predicate on its own is not expressible yet.
+A clause hangs off the one immediately before it, which is how a reader takes it: in *čte, protože píše a zpívá* the singing belongs inside the *protože*. `--pripojit` says otherwise, and because the attachment decides what a conjunction governs, moving it changes the sentence rather than only the picture of it:
+
+```bash
+gramatika veta student cist kniha aby zak psat dopis a lekar zpivat pisen
+# Student čte knihu, aby žák psal dopis a lékař zpíval píseň.
+
+gramatika veta student cist kniha aby zak psat dopis a lekar zpivat pisen --pripojit 3=1
+# Student čte knihu, aby žák psal dopis a lékař zpívá píseň.
+```
+
+The review shows what each clause hangs off and takes `k 3=1` to move it. Positions run across the whole word list, so `--pad dopis=genitiv` and `7 pad=genitiv` address the same word whichever clause it landed in. Predicate switches (`--cas`, `--zpusob`) apply to every clause; correcting one clause's predicate on its own is not expressible yet.
 
 ## Tests
 

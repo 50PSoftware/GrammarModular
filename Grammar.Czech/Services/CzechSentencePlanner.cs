@@ -170,13 +170,17 @@ namespace Grammar.Czech.Services
         /// Filling the gap with the indicative first would turn it into a contradiction.
         /// </para>
         /// </remarks>
-        public SentencePlan WithGovernedMood(string? conjunction, SentencePlan clause)
-        {
-            if (conjunction is null || !conjunctionService.FusesWithConditional(conjunction))
-            {
-                return clause;
-            }
+        public SentencePlan WithGovernedMood(string? conjunction, SentencePlan clause) =>
+            conjunction is not null && conjunctionService.FusesWithConditional(conjunction)
+                ? WithConditional(conjunction, clause)
+                : clause;
 
+        // Coordination joins equals, so a clause coordinated with a conditional one is conditional too:
+        // "aby žák psal dopis a lékař zpíval píseň" has one aby carrying the auxiliary for both. A
+        // subordinator inside opens a domain of its own and stops it — "aby psal, když zpívá" is not a
+        // wish about the singing.
+        private SentencePlan WithConditional(string conjunction, SentencePlan clause)
+        {
             if (clause.Predicate.Modus is { } stated && stated != Modus.Conditional)
             {
                 throw new InvalidOperationException(
@@ -187,7 +191,17 @@ namespace Grammar.Czech.Services
             var predicate = clause.Predicate;
             predicate.Modus = Modus.Conditional;
 
-            return clause with { Predicate = predicate };
+            return clause with
+            {
+                Predicate = predicate,
+                Joined =
+                [
+                    .. clause.Joined.Select(link =>
+                        conjunctionService.GetType(link.Conjunction) == ConjunctionType.Coordinating
+                            ? link with { Clause = WithConditional(conjunction, link.Clause) }
+                            : link),
+                ],
+            };
         }
 
         private CzechClause PlanClause(SentencePlan plan)

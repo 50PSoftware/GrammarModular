@@ -44,7 +44,9 @@ namespace Grammar.Czech.Cli.Rendering
 
         private static object Describe(ClauseDraft draft) => new
             {
+                poradi = draft.Ordinal,
                 spojka = draft.Conjunction,
+                visi_na = draft.ParentOrdinal,
                 prisudek = new
                 {
                     lemma = draft.PredicateLemma,

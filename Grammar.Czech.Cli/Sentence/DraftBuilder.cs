@@ -92,11 +92,44 @@ namespace Grammar.Czech.Cli.Sentence
 
             var sentence = new SentenceDraft();
 
-            // Spojka je předěl mezi klauzemi. Pořadová čísla přitom zůstávají globální přes celý
+            // Spojka je předěl mezi klauzemi. Pořadová čísla slov přitom zůstávají globální přes celý
             // zadaný seznam, aby '--role kniha=PAT' i '4 pad=dativ' ukazovaly pořád na totéž slovo.
             foreach (var segment in Split(words))
             {
-                sentence.Clauses.Add(BuildClause(segment.Conjunction, segment.Words, overrides));
+                var clause = BuildClause(segment.Conjunction, segment.Words, overrides);
+
+                clause.Ordinal = sentence.Clauses.Count + 1;
+
+                // Nezadáno visí klauze na té bezprostředně předchozí. Tak to čte i člověk: v 'čte,
+                // protože píše a zpívá' patří zpívání dovnitř toho protože, ne vedle celé věty.
+                clause.ParentOrdinal = clause.Ordinal == 1
+                    ? null
+                    : overrides.Attachments.GetValueOrDefault(clause.Ordinal, clause.Ordinal - 1);
+
+                sentence.Clauses.Add(clause);
+            }
+
+            foreach (var (clause, parent) in overrides.Attachments)
+            {
+                if (clause > sentence.Clauses.Count || parent > sentence.Clauses.Count)
+                {
+                    throw new CliException(
+                        $"Připojení {clause}={parent} ukazuje na klauzi, která ve větě není; "
+                        + $"klauzí je {sentence.Clauses.Count}.");
+                }
+            }
+
+            // Výchozí hodnoty se doplňují až nad celým stromem: co spojka řídí, není klauze sama o sobě
+            // schopná rozhodnout — klauze souřadná uvnitř 'aby' je v kondicionálu kvůli spojce o dvě
+            // úrovně výš. Doplnit to po klauzích znamenalo, že si věta odporovala sama se sebou.
+            sentence.Distribute(_planner.Complete(sentence.Assemble()));
+
+            foreach (var clause in sentence.Clauses)
+            {
+                Absorb(clause);
+                ResolveFrame(clause, overrides);
+                ApplyGovernment(clause);
+                Report(clause);
             }
 
             return sentence;
@@ -147,19 +180,9 @@ namespace Grammar.Czech.Cli.Sentence
             AttachPredicate(draft, words, overrides);
             AttachConstituents(draft, words, overrides);
 
-            // Odtud dolů rozhoduje knihovna. Nejdřív se sestaví plán z toho, co uživatel zadal, pak
-            // se nechá doplnit role a výchozí hodnoty, a teprve výsledek se rozprostře zpátky do
-            // návrhu, aby přehled ukazoval přesně to, z čeho se bude stavět.
-            // Způsob řízený spojkou se musí uplatnit dřív než doplnění výchozích hodnot: nástroj staví
-            // klauze po jedné a ta nad ní ještě neexistuje, takže by 'aby' zastihlo větu už v
-            // oznamovacím způsobu a hlásilo spor sám se sebou.
-            var plan = _planner.Complete(
-                _planner.WithGovernedMood(conjunction, _roles.Resolve(ToPlan(draft, overrides))));
-
-            Absorb(draft, plan);
-            ResolveFrame(draft, overrides);
-            ApplyGovernment(draft);
-            Report(draft);
+            // Odtud rozhoduje knihovna: role se dají odvodit z jedné klauze, takže to jde hned. Co je
+            // řízené zvenčí — a to jsou výchozí hodnoty — počká, až bude stát celý strom.
+            draft.Resolved = _roles.Resolve(ToPlan(draft, overrides));
 
             return draft;
         }
@@ -388,10 +411,11 @@ namespace Grammar.Czech.Cli.Sentence
 
         // Zpátky do návrhu, aby přehled ukazoval přesně to, z čeho se bude stavět — role i členění tak,
         // jak je doplnila knihovna, ne jak by si je nástroj domyslel podruhé.
-        private static void Absorb(ClauseDraft draft, SentencePlan plan)
+        private static void Absorb(ClauseDraft draft)
         {
+            var plan = draft.ToPlan();
+
             draft.Predicate = plan.Predicate;
-            draft.Plan = plan;
 
             foreach (var (constituent, participant) in draft.Constituents.Zip(plan.Participants))
             {

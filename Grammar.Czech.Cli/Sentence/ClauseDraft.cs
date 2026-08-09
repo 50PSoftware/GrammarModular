@@ -27,6 +27,23 @@ namespace Grammar.Czech.Cli.Sentence
         public string? Conjunction { get; set; }
 
         /// <summary>
+        /// Gets or sets the one-based number of this clause in the sentence, which is how the review
+        /// addresses it.
+        /// </summary>
+        public int Ordinal { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of the clause this one hangs off, or null when it is the first.
+        /// </summary>
+        /// <remarks>
+        /// Unstated, a clause attaches to the one immediately before it, which is how a reader takes it:
+        /// in <em>čte, protože píše a zpívá</em> the singing belongs inside the <em>protože</em> and not
+        /// beside the whole sentence. Late closure, in the parsing literature — and the reading the tool
+        /// used to get backwards.
+        /// </remarks>
+        public int? ParentOrdinal { get; set; }
+
+        /// <summary>
         /// Gets or sets the lemma of the predicate.
         /// </summary>
         public string PredicateLemma { get; set; } = string.Empty;
@@ -75,6 +92,17 @@ namespace Grammar.Czech.Cli.Sentence
         /// second one assembled from the draft afterwards.
         /// </remarks>
         public SentencePlan? Plan { get; set; }
+
+        /// <summary>
+        /// Gets or sets the plan of this clause alone, with its roles resolved and nothing defaulted yet.
+        /// </summary>
+        /// <remarks>
+        /// The defaults are filled once, over the assembled tree, because some of them are not the
+        /// clause's own to decide: a clause coordinated inside an <em>aby</em> is in the conditional
+        /// because of a conjunction two levels up. Completing each clause on its own settled that
+        /// question before the tree existed, and then contradicted itself.
+        /// </remarks>
+        public SentencePlan? Resolved { get; set; }
 
         /// <summary>
         /// Gets or sets the communicative force of the clause.

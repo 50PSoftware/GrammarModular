@@ -142,6 +142,8 @@ namespace Grammar.Czech.Cli.Interaction
               p ramec=transfer       který význam slovesa se má vzít
               p typ=tázací           druh věty; 'p konec=?' mění koncové znaménko
 
+              k 3=1                  na kterou klauzi se třetí věší; bez toho visí na předchozí
+
             """;
     }
 }

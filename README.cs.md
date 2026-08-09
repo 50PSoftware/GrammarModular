@@ -762,7 +762,17 @@ gramatika veta student cist kniha a zak psat dopis        # Student čte knihu a
 gramatika veta student cist kniha protoze zak psat dopis # Student čte knihu, protože žák píše dopis.
 ```
 
-Pořadová čísla běží přes celý zadaný seznam, takže `--pad dopis=genitiv` i `7 pad=genitiv` ukazují na totéž slovo, ať skončilo v kterékoli klauzi. Přepínače přísudku (`--cas`, `--zpusob`) platí pro všechny klauze; opravit přísudek jedné z nich zvlášť zatím vyslovit nejde.
+Klauze visí na té bezprostředně předchozí, jak to čte i člověk: v *čte, protože píše a zpívá* patří zpívání dovnitř toho *protože*. `--pripojit` řekne jinak — a protože na připojení závisí, co spojka řídí, mění to větu, ne jen obrázek o ní:
+
+```bash
+gramatika veta student cist kniha aby zak psat dopis a lekar zpivat pisen
+# Student čte knihu, aby žák psal dopis a lékař zpíval píseň.
+
+gramatika veta student cist kniha aby zak psat dopis a lekar zpivat pisen --pripojit 3=1
+# Student čte knihu, aby žák psal dopis a lékař zpívá píseň.
+```
+
+Přehled ukazuje, na čem která klauze visí, a přijme `k 3=1`. Pořadová čísla slov běží přes celý zadaný seznam, takže `--pad dopis=genitiv` i `7 pad=genitiv` ukazují na totéž slovo, ať skončilo v kterékoli klauzi. Přepínače přísudku (`--cas`, `--zpusob`) platí pro všechny klauze; opravit přísudek jedné z nich zvlášť zatím vyslovit nejde.
 
 ## Testy
 

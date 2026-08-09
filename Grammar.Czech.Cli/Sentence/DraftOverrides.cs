@@ -13,6 +13,44 @@ namespace Grammar.Czech.Cli.Sentence
     public sealed class DraftOverrides
     {
         private readonly Dictionary<string, WordOverride> _words = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<int, int> _attachments = [];
+
+        /// <summary>
+        /// Gets the clauses whose attachment the user moved, keyed by the clause and naming the one it
+        /// is to hang off.
+        /// </summary>
+        /// <remarks>
+        /// Numbered by clause rather than by word, because a clause is what attaches. Unlisted, a clause
+        /// hangs off the one before it — which is how a reader takes it — so this is only for saying
+        /// that something reaches further back.
+        /// </remarks>
+        public IReadOnlyDictionary<int, int> Attachments => _attachments;
+
+        /// <summary>
+        /// States that a clause hangs off another.
+        /// </summary>
+        /// <param name="clause">The one-based number of the clause being attached.</param>
+        /// <param name="parent">The one-based number of the clause it hangs off.</param>
+        /// <exception cref="CliException">Thrown when the attachment cannot hold.</exception>
+        public void Attach(int clause, int parent)
+        {
+            if (clause <= 1)
+            {
+                throw new CliException(
+                    "První klauze se nepřipojuje k ničemu — je to ta, ke které se připojuje zbytek.");
+            }
+
+            // Dopředu ani na sebe: klauze visí na něčem, co už bylo řečeno, jinak by ve stromu vznikl
+            // cyklus a věta by neměla kořen.
+            if (parent >= clause)
+            {
+                throw new CliException(
+                    $"Klauze {clause} se nemůže připojit ke klauzi {parent} — připojuje se vždycky "
+                    + "k něčemu, co stojí před ní.");
+            }
+
+            _attachments[clause] = parent;
+        }
 
         /// <summary>
         /// Gets or sets the lemma to treat as the predicate, when the tool should not decide.

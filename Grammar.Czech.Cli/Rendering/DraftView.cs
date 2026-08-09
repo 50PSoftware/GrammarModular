@@ -65,10 +65,16 @@ namespace Grammar.Czech.Cli.Rendering
             var text = new StringBuilder();
 
             // Spojka se ukazuje u klauze, kterou připojuje, protože to je to, co z ní dělá vedlejší
-            // nebo druhý souřadný člen — a uživatel ji zadal na tomhle místě.
+            // nebo druhý souřadný člen — a uživatel ji zadal na tomhle místě. S ní i to, na čem ta
+            // klauze visí: 'čte, protože píše a zpívá' se dá číst dvěma způsoby a tohle je ten výběr.
             if (draft.Conjunction is { } conjunction)
             {
-                text.AppendLine($"Spojka    {conjunction}");
+                text.AppendLine(
+                    $"Klauze {draft.Ordinal}  {conjunction} — visí na klauzi {draft.ParentOrdinal}");
+            }
+            else if (draft.Ordinal > 0)
+            {
+                text.AppendLine($"Klauze {draft.Ordinal}  hlavní");
             }
 
             text.AppendLine($"Přísudek  {draft.PredicateLemma} — {Describe(draft.Predicate)}");

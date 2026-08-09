@@ -29,6 +29,24 @@ namespace Grammar.Czech.Cli.Interaction
         }
 
         /// <summary>
+        /// Applies an attachment written as one clause number against another.
+        /// </summary>
+        /// <param name="overrides">The record to write into.</param>
+        /// <param name="assignment">The argument, as <c>klauze=klauze</c>.</param>
+        /// <exception cref="CliException">Thrown when the argument cannot be read.</exception>
+        public static void AssignAttachment(DraftOverrides overrides, string assignment)
+        {
+            var (clause, parent) = Split(assignment,
+                "Přepínač --pripojit se zadává jako klauze=klauze, třeba --pripojit 3=1.");
+
+            overrides.Attach(Number(clause), Number(parent));
+        }
+
+        private static int Number(string text) => int.TryParse(text, out var value) && value > 0
+            ? value
+            : throw new CliException($"'{text}' není číslo klauze. Klauze se číslují od jedné.");
+
+        /// <summary>
         /// Applies a correction written the way the review takes it: a target, then one or more pairs.
         /// </summary>
         /// <param name="line">The line the user typed.</param>
@@ -52,6 +70,20 @@ namespace Grammar.Czech.Cli.Interaction
             if (parts.Length < 2)
             {
                 throw new CliException("Oprava se píše jako: <cíl> <co>=<jak>, třeba 2 role=ADDR. Nápověda je '?'.");
+            }
+
+            // Připojení je jediná oprava, která nemluví o slově ani o přísudku, ale o celé klauzi, takže
+            // se i adresuje jinak: číslem klauze, ne pořadím slova.
+            if (parts[0] is "k" or "K" or "klauze")
+            {
+                foreach (var pair in parts.Skip(1))
+                {
+                    var (clause, parent) = Split(pair, $"'{pair}' není dvojice klauze=klauze.");
+
+                    overrides.Attach(Number(clause), Number(parent));
+                }
+
+                return;
             }
 
             var target = Resolve(parts[0], lemmas);

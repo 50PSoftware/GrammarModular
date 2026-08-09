@@ -437,6 +437,28 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Coordination joins equals, so a clause coordinated with a conditional one is conditional too
+        /// — one aby carries the auxiliary for both halves. A subordinator inside opens a domain of its
+        /// own and stops it, because a wish about the writing is not a wish about the singing.
+        /// </summary>
+        [TestMethod]
+        public void ConditionalReachesCoordinatedClausesAndStopsAtASubordinator()
+        {
+            var coordinated = Build(Reads() with
+            {
+                Joined = [new ClauseLink("aby", Writes() with { Joined = [new ClauseLink("a", Reads())] })]
+            });
+
+            var subordinated = Build(Reads() with
+            {
+                Joined = [new ClauseLink("aby", Writes() with { Joined = [new ClauseLink("když", Reads())] })]
+            });
+
+            Assert.AreEqual("Student čte knihu, aby žák psal dopis a student četl knihu.", coordinated);
+            Assert.AreEqual("Student čte knihu, aby žák psal dopis, když student čte knihu.", subordinated);
+        }
+
+        /// <summary>
         /// Stating a mood aby cannot govern is a contradiction rather than a preference, so it is
         /// reported instead of being rendered as one or the other.
         /// </summary>

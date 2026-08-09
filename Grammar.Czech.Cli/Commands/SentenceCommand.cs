@@ -45,6 +45,13 @@ namespace Grammar.Czech.Cli.Commands
                 Description = "Které ze zadaných sloves je přísudek.",
             };
 
+            var attach = new Option<string[]>("--pripojit")
+            {
+                Description = "Ke které klauzi se další věší: --pripojit 3=1. Bez toho visí na předchozí.",
+                Arity = ArgumentArity.OneOrMore,
+                AllowMultipleArgumentsPerToken = true,
+            };
+
             var frame = new Option<string?>("--ramec")
             {
                 Description = "Který význam slovesa se má vzít, když jich slovník vede víc.",
@@ -80,8 +87,8 @@ namespace Grammar.Czech.Cli.Commands
             {
                 lemmas,
                 role, status, kase, gender, number, pattern, animate, preposition, modifier,
-                verb, frame, tense, mood, voice, aspect, person, predicateNumber, reflexive, negative,
-                dropSubject, sentenceType, terminator, quiet, json,
+                verb, attach, frame, tense, mood, voice, aspect, person, predicateNumber, reflexive,
+                negative, dropSubject, sentenceType, terminator, quiet, json,
             };
 
             command.Aliases.Add("věta");
@@ -118,6 +125,11 @@ namespace Grammar.Czech.Cli.Commands
                 Assign(overrides, "zivotne", parse.GetValue(animate));
                 Assign(overrides, "predlozka", parse.GetValue(preposition));
                 Assign(overrides, "privlastek", parse.GetValue(modifier));
+
+                foreach (var assignment in parse.GetValue(attach) ?? [])
+                {
+                    OverrideParser.AssignAttachment(overrides, assignment);
+                }
 
                 return Run(
                     parse.GetValue(lemmas) ?? [],

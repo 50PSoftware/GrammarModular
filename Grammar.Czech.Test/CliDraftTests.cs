@@ -219,6 +219,60 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that a clause hangs off the one immediately before it unless told otherwise, which
+        /// is how a reader takes it — the singing belongs inside the <em>aby</em>, not beside the whole
+        /// sentence.
+        /// </summary>
+        [TestMethod]
+        public void ClauseHangsOffTheOneBeforeItByDefault()
+        {
+            string[] words = ["student", "číst", "kniha", "aby", "žák", "psát", "dopis", "a", "lékař", "zpívat", "píseň"];
+            var whole = Whole(null, words);
+
+            Assert.IsNull(whole.Clauses[0].ParentOrdinal);
+            Assert.AreEqual(1, whole.Clauses[1].ParentOrdinal);
+            Assert.AreEqual(2, whole.Clauses[2].ParentOrdinal);
+
+            // Kondicionál dosáhne i na třetí klauzi, protože je souřadná s tou pod 'aby'.
+            Assert.AreEqual("Student čte knihu, aby žák psal dopis a lékař zpíval píseň.", Sentence(null, words));
+        }
+
+        /// <summary>
+        /// Verifies that the attachment can be moved, and that moving it changes the sentence rather
+        /// than only the picture of it.
+        /// </summary>
+        [TestMethod]
+        public void AttachmentCanBeMovedAndChangesTheSentence()
+        {
+            string[] words = ["student", "číst", "kniha", "aby", "žák", "psát", "dopis", "a", "lékař", "zpívat", "píseň"];
+
+            var overrides = new DraftOverrides();
+            overrides.Attach(3, 1);
+
+            Assert.AreEqual(1, Whole(overrides, words).Clauses[2].ParentOrdinal);
+
+            // Mimo dosah 'aby' se třetí klauze vrací do oznamovacího způsobu.
+            Assert.AreEqual("Student čte knihu, aby žák psal dopis a lékař zpívá píseň.", Sentence(overrides, words));
+        }
+
+        /// <summary>
+        /// Verifies that an attachment which would leave the sentence without a root is refused.
+        /// </summary>
+        [TestMethod]
+        public void AttachmentThatCannotHoldIsRefused()
+        {
+            Assert.ThrowsException<CliException>(() => new DraftOverrides().Attach(1, 1));
+            Assert.ThrowsException<CliException>(() => new DraftOverrides().Attach(2, 2));
+            Assert.ThrowsException<CliException>(() => new DraftOverrides().Attach(2, 3));
+
+            var beyond = new DraftOverrides();
+            beyond.Attach(3, 1);
+
+            Assert.ThrowsException<CliException>(
+                () => Whole(beyond, "student", "číst", "kniha", "a", "žák", "psát", "dopis"));
+        }
+
+        /// <summary>
         /// Verifies that positions stay global across the whole word list, so a correction addresses the
         /// same word whichever clause it ended up in.
         /// </summary>
