@@ -31,6 +31,7 @@ namespace Grammar.Czech.Lexicon.Tool
             // A dictionary is large and the server has to read it out of MySQL, so the default hundred
             // seconds is short rather than generous here.
             _client.Timeout = TimeSpan.FromMinutes(10);
+            _client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("GrammarModular-LexiconTool", "1.0"));
 
             if (!string.IsNullOrEmpty(token))
             {
