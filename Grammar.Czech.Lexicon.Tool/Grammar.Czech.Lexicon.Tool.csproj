@@ -13,7 +13,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>lexikon</ToolCommandName>
     <PackageId>50PSoftware.GrammarModular.LexiconTool</PackageId>
-    <Version>1.0.0-preview.22</Version>
+    <Version>1.0.0-preview.23</Version>
     <Authors>Vojtěch Pchálek</Authors>
     <Company>50PSoftware</Company>
     <Description>Správa slovníku pro Grammar Modular — stahování, kontrola a export.</Description>
