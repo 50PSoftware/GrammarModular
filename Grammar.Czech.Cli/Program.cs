@@ -11,6 +11,17 @@ using System.Text;
 
 Console.OutputEncoding = Encoding.UTF8;
 
+// A taky vstupní. Bez toho čte konzole na Windows v OEM kódové stránce a 'čte' napsané do sezení
+// dorazí rozsypané — což je u nástroje, jehož vstupem jsou česká slova, vada v samotném zadání.
+// V try, protože nastavit kódování přesměrovaného vstupu nejde všude a spadnout na tom by bylo horší.
+try
+{
+    Console.InputEncoding = Encoding.UTF8;
+}
+catch (IOException)
+{
+}
+
 // Nápovědu System.CommandLine překládá satelitní assembly podle kultury rozhraní. Rozhraní je české,
 // tak ať je česky celé — i na stroji nastaveném jinak.
 CultureInfo.CurrentUICulture = new CultureInfo("cs");
@@ -25,6 +36,7 @@ var root = new RootCommand("gramatika — poskládá českou větu ze zadaných 
 {
     lexicon,
     SentenceCommand.Create(lexicon),
+    TermsCommand.Create(),
 };
 
 // Bez argumentů se spustí sezení. Vedle 'veta', ne místo něj: 'veta' je jeden příkaz, na který jde

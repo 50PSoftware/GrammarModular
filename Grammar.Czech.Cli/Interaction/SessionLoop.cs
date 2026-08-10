@@ -22,6 +22,7 @@ namespace Grammar.Czech.Cli.Interaction
         private readonly DraftBuilder _builder;
         private readonly DraftView _view;
         private readonly SentenceComposer _composer;
+        private readonly WordProposals _proposals;
         private readonly TextReader _input;
         private readonly TextWriter _output;
 
@@ -37,18 +38,21 @@ namespace Grammar.Czech.Cli.Interaction
         /// <param name="builder">The builder that turns lemmas into a draft.</param>
         /// <param name="view">The renderer for the review table.</param>
         /// <param name="composer">The composer that builds the sentence.</param>
+        /// <param name="proposals">The words collected for the dictionary.</param>
         /// <param name="input">The stream to read lines from.</param>
         /// <param name="output">The stream to write to.</param>
         public SessionLoop(
             DraftBuilder builder,
             DraftView view,
             SentenceComposer composer,
+            WordProposals proposals,
             TextReader input,
             TextWriter output)
         {
             _builder = builder;
             _view = view;
             _composer = composer;
+            _proposals = proposals;
             _input = input;
             _output = output;
         }
@@ -245,11 +249,100 @@ namespace Grammar.Czech.Cli.Interaction
 
                     return false;
 
+                case "slova":
+                    ListProposals();
+
+                    return false;
+
+                case "slova doplnit":
+                case "slova-doplnit":
+                    FillProposals();
+
+                    return false;
+
+                case "slova zapomen":
+                case "slova-zapomen":
+                    _proposals.Clear();
+                    _output.WriteLine("Sebraná slova zahozena.");
+
+                    return false;
+
                 default:
                     _output.WriteLine($"Příkaz ':{command}' neznám. ':?' je nápověda.");
 
                     return false;
             }
+        }
+
+        private void ListProposals()
+        {
+            var proposals = _proposals.Read();
+
+            if (proposals.Count == 0)
+            {
+                _output.WriteLine("Zatím nic — sbírají se slova, která slovník nezná.");
+
+                return;
+            }
+
+            _output.WriteLine($"Slova, která slovník nezná ({_proposals.Path}):");
+
+            foreach (var proposal in proposals)
+            {
+                _output.WriteLine("  " + proposal.Describe());
+            }
+
+            _output.WriteLine();
+            _output.WriteLine("':slova doplnit' se na ně doptá, 'lexikon navrhy' z nich udělá seed.");
+        }
+
+        // Doptání je jediné místo, kde z odhadu může být tvrzení. Bez něj by se do slovníku dostávalo
+        // to, co nástroj uhodl ze zakončení, a to je návrh, ne heslo.
+        private void FillProposals()
+        {
+            var proposals = _proposals.Read().ToList();
+            var open = proposals.Where(proposal => !proposal.IsConfirmed).ToList();
+
+            if (open.Count == 0)
+            {
+                _output.WriteLine("Není se na co ptát — všechno sebrané je potvrzené.");
+
+                return;
+            }
+
+            _output.WriteLine($"Projdeme {open.Count}. Enter potvrdí, co je v závorce; 'p' přeskočí.");
+
+            foreach (var proposal in open)
+            {
+                _output.WriteLine();
+                _output.WriteLine("  " + proposal.Describe());
+                _output.Write("  poznámka, nebo Enter: ");
+
+                var answer = _input.ReadLine();
+
+                if (answer is null)
+                {
+                    break;
+                }
+
+                answer = answer.Trim();
+
+                if (answer is "p" or "P")
+                {
+                    continue;
+                }
+
+                proposal.IsConfirmed = true;
+
+                if (answer.Length > 0)
+                {
+                    proposal.Note = answer;
+                }
+            }
+
+            _proposals.Write(proposals);
+            _output.WriteLine();
+            _output.WriteLine("Uloženo. 'lexikon navrhy' z toho udělá návrh seedu.");
         }
 
         private void Describe()
@@ -307,6 +400,9 @@ namespace Grammar.Czech.Cli.Interaction
               :stav       co je trvale nastavené
               :zapomen    zrušit to
               :znovu      vypsat poslední větu znovu
+              :slova      slova, která slovník nezná a nástroj je posbíral
+              :slova doplnit   projít je a potvrdit, co o nich nástroj odhadl
+              :slova zapomen   zahodit je
               :konec      konec (nebo Ctrl+D)
 
             Vysvětlení pojmů: ? role, ? cleneni, ? pad, ? ramec, ? odhad

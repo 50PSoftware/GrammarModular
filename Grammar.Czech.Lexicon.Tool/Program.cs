@@ -30,6 +30,7 @@ static int Run(string[] args)
             "dump" => Dump(args, settings),
             "pull" => Pull(args, settings),
             "export-json" => ExportJson(args, settings),
+            "navrhy" => Proposals(args),
             _ => Unknown(args[0]),
         };
     }
@@ -170,6 +171,59 @@ static int Report(ValidationReport validation, string path)
     return 0;
 }
 
+// Druhá polovina sběru, který dělá `gramatika`: klient si zapisuje slova, na která narazil a slovník
+// je nevedl, a tenhle příkaz z nich udělá to, čím se do slovníku obsah přidává — návrh seedu. Zapisovat
+// do slovníku sám klient nemůže: lokální .db je kopie, kterou další pull přepíše, id přiděluje server
+// a API umí jen číst.
+static int Proposals(string[] args)
+{
+    var path = Argument(args, "--soubor") ?? DefaultProposalsPath();
+    var seeds = Argument(args, "--out") ?? DefaultSeedDirectory();
+    var written = ProposalSeedWriter.Write(path, seeds, onlyConfirmed: args.Contains("--jen-potvrzene"));
+
+    if (written is null)
+    {
+        Console.WriteLine($"V {path} není nic, z čeho by šel seed udělat.");
+
+        return 0;
+    }
+
+    Console.WriteLine($"""
+        Návrh zapsán: {written}
+
+        Je to návrh, ne hotový seed. Přečti si jeho hlavičku — chybí v něm id, `source` a hlavně
+        odůvodnění toho, co jsi z něj vyhodil. To poslední vygenerovat nejde a je to jediné místo,
+        kde ta rozhodnutí žijí.
+        """);
+
+    return 0;
+}
+
+static string DefaultProposalsPath() => Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+    "gramatika",
+    "navrhy.json");
+
+static string DefaultSeedDirectory()
+{
+    var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
+
+    while (directory is not null)
+    {
+        var candidate = Path.Combine(directory.FullName, "Grammar.Czech.Lexicon.Tool", "Data");
+
+        if (Directory.Exists(candidate))
+        {
+            return candidate;
+        }
+
+        directory = directory.Parent;
+    }
+
+    throw new InvalidOperationException(
+        "Nevím, kam seedy patří — spusť to v repozitáři, nebo řekni adresář přes --out.");
+}
+
 // Poslední záchrana, když cestu neřekl nikdo: uvnitř repozitáře se lexikon najde sám. Nainstalovaný
 // nástroj spuštěný jinde ji nenajde a řekne, jak ji zadat.
 static string DefaultDatabasePath()
@@ -212,6 +266,9 @@ static void PrintUsage()
           pull        [--url <api>] [--out <cesta>]  Stáhne slovník z API a nahradí jím lokální lexikon.
           dump        [--db <cesta>] --out <sql>     Vypíše lexikon jako přenositelné INSERTy.
           export-json [--db <cesta>] --out <adresář> Vypíše lexikon ve formátu, který posílá API.
+          navrhy      [--soubor <json>] [--out <adresář>] [--jen-potvrzene]
+                                                    Udělá návrh seedu ze slov, která posbírala
+                                                    `gramatika`, když je slovník neznal.
 
         Nastavení se bere v tomhle pořadí:
 

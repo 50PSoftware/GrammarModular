@@ -27,6 +27,8 @@ namespace Grammar.Czech.Cli
             services.AddSingleton<LemmaGuess>();
             services.AddSingleton<LemmaLookup>();
             services.AddSingleton<RoleGuess>();
+            services.AddSingleton<FormLookup>();
+            services.AddSingleton<WordProposals>();
             services.AddSingleton<DraftBuilder>();
             services.AddSingleton<DraftView>();
             services.AddSingleton<SentenceComposer>();
@@ -34,6 +36,7 @@ namespace Grammar.Czech.Cli
                 provider.GetRequiredService<DraftBuilder>(),
                 provider.GetRequiredService<DraftView>(),
                 provider.GetRequiredService<SentenceComposer>(),
+                provider.GetRequiredService<WordProposals>(),
                 Console.In,
                 Console.Out));
             services.AddSingleton(provider => new ReviewLoop(

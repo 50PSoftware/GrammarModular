@@ -88,6 +88,28 @@ namespace Grammar.Czech.Cli
             [SentenceType.Interrogative] = "tázací",
         };
 
+        private static readonly Dictionary<WordCategory, string> Categories = new()
+        {
+            [WordCategory.Noun] = "podstatné jméno",
+            [WordCategory.Adjective] = "přídavné jméno",
+            [WordCategory.Pronoun] = "zájmeno",
+            [WordCategory.Numerale] = "číslovka",
+            [WordCategory.Verb] = "sloveso",
+            [WordCategory.Adverb] = "příslovce",
+            [WordCategory.Preposition] = "předložka",
+            [WordCategory.Conjunction] = "spojka",
+            [WordCategory.Particle] = "částice",
+            [WordCategory.Interjection] = "citoslovce",
+        };
+
+        /// <summary>
+        /// Names a word class in Czech.
+        /// </summary>
+        /// <param name="value">The word class.</param>
+        /// <returns>The Czech name.</returns>
+        public static string Name(WordCategory value) =>
+            Categories.GetValueOrDefault(value, value.ToString());
+
         // Funktory se nepřekládají — ACT a PAT jsou termíny FGD a v tomhle tvaru je nese i slovník.
         // Český popis je vedle nich, aby tabulka byla čitelná i pro toho, kdo zkratky nezná.
         private static readonly Dictionary<FgdFunctor, string> Functors = new()

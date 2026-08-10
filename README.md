@@ -834,6 +834,24 @@ gramatika veta Klára dávat žena kniha --role kniha=PAT --cas minulý --bez-do
 gramatika veta student jít --ramec motion --json
 ```
 
+A word the dictionary does not hold is now told apart from a word it holds in another form, which used to be the same silent guess. `učitele` is not accepted as input — the tool builds sentences from lemmas and does not read Czech — but it is recognized as a form of `učitel` and said so, instead of becoming a feminine noun of the *růže* pattern in a sentence that looked almost right. The index behind that is generated from the same inflection services that would produce the forms in a sentence, so it cannot disagree with them.
+
+A word that is a form of nothing known is genuinely new, and gets written down. `:slova` lists what has accumulated, `:slova doplnit` walks through it and records what a person confirmed:
+
+```text
+> zahradník kopat záhon
+  ! 'zahradník' slovník nezná a není to ani tvar ničeho, co zná.
+    Zapsal jsem ho mezi návrhy na doplnění slovníku.
+```
+
+It cannot write to the dictionary and does not try. The SQLite file is a read-only replica of a MySQL copy edited through the PHP admin, identifiers are handed out by the server, the API only reads, and the next `lexikon pull` overwrites the local file whole — a row inserted here would live until then and be gone, which is a feature that silently discards its own result. So the collected words go in a file of their own, and the other half is a command on the tool that does own the dictionary:
+
+```bash
+lexikon navrhy --jen-potvrzene
+```
+
+That reads the list and writes a draft `seed.NNN.sql`. A draft rather than a seed: identifiers are left blank because the server assigns them, `source` is left empty because provenance is what the licensing here rests on and a word that turned up in a session has none until somebody looks it up, and the header asks for the one thing that cannot be generated — what was left out and why.
+
 Run with no arguments it opens a session instead, which is the shape sentence-building actually has: a sentence gets poked at — another tense, another information structure, another case — and every poke used to be a fresh process and the word `veta` typed again.
 
 ```text

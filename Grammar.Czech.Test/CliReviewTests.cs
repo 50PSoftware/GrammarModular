@@ -28,6 +28,11 @@ namespace Grammar.Czech.Test
             collection.AddSingleton<LemmaGuess>();
             collection.AddSingleton<LemmaLookup>();
             collection.AddSingleton<RoleGuess>();
+            collection.AddSingleton<FormLookup>();
+            // Vlastní soubor, ne ten uživatelův: testy sbírají neznámá slova jako každý běh a psát
+            // je do %APPDATA% by znamenalo, že test mění stav stroje, na kterém běží.
+            collection.AddSingleton(new WordProposals(Path.Combine(
+                Path.GetTempPath(), $"gramatika-test-{Guid.NewGuid():N}.json")));
             collection.AddSingleton<DraftBuilder>();
             collection.AddSingleton<DraftView>();
             collection.AddSingleton<SentenceComposer>();
@@ -43,6 +48,7 @@ namespace Grammar.Czech.Test
                 services.GetRequiredService<DraftBuilder>(),
                 services.GetRequiredService<DraftView>(),
                 services.GetRequiredService<SentenceComposer>(),
+                services.GetRequiredService<WordProposals>(),
                 new StringReader(string.Join(Environment.NewLine, lines) + Environment.NewLine),
                 output);
 

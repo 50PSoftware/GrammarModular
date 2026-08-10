@@ -29,6 +29,11 @@ namespace Grammar.Czech.Test
             collection.AddSingleton<LemmaGuess>();
             collection.AddSingleton<LemmaLookup>();
             collection.AddSingleton<RoleGuess>();
+            collection.AddSingleton<FormLookup>();
+            // Vlastní soubor, ne ten uživatelův: testy sbírají neznámá slova jako každý běh a psát
+            // je do %APPDATA% by znamenalo, že test mění stav stroje, na kterém běží.
+            collection.AddSingleton(new WordProposals(Path.Combine(
+                Path.GetTempPath(), $"gramatika-test-{Guid.NewGuid():N}.json")));
             collection.AddSingleton<DraftBuilder>();
             collection.AddSingleton<DraftView>();
             collection.AddSingleton<SentenceComposer>();
@@ -413,6 +418,69 @@ namespace Grammar.Czech.Test
             overrides.For("student").Status = InformationStatus.New;
 
             Assert.AreEqual("Knihu čte student.", Sentence(overrides, "student", "číst", "kniha"));
+        }
+
+        /// <summary>
+        /// An inflected word is named as such rather than taken for a lemma of its own.
+        /// </summary>
+        /// <remarks>
+        /// The tool builds sentences out of lemmas and does not read Czech, so <c>učitele</c> is not
+        /// accepted — but it used to be guessed at, coming out as a feminine noun of the <em>růže</em>
+        /// pattern in a sentence that looked almost right. Telling a form of a known word from a genuinely
+        /// unknown one is what separates a question from a discovery.
+        /// </remarks>
+        [TestMethod]
+        public void FormOfAKnownLemmaIsNamedAsAForm()
+        {
+            var draft = Draft(null, "učitele", "psát", "dopis");
+
+            Assert.IsTrue(
+                draft.Notes.Any(note => note.Contains("učitele") && note.Contains("'učitel'")),
+                "Mělo se říct, čeho je to tvar: " + string.Join(" | ", draft.Notes));
+        }
+
+        /// <summary>
+        /// A word that is neither a lemma nor a form of one is collected for the dictionary.
+        /// </summary>
+        // Sdílí soubor návrhů s ostatními testy třídy, které do něj taky sbírají, a ty běží
+        // souběžně (Parallelize na úrovni metod). Bez tohohle si navzájem přepisují stav.
+        [TestMethod]
+        [DoNotParallelize]
+        public void GenuinelyUnknownWordIsCollected()
+        {
+            var proposals = services.GetRequiredService<WordProposals>();
+            proposals.Clear();
+
+            Draft(null, "zahradník", "kopat", "záhon");
+
+            CollectionAssert.AreEquivalent(
+                new[] { "zahradník", "kopat", "záhon" },
+                proposals.Read().Select(proposal => proposal.Lemma).ToArray());
+        }
+
+        /// <summary>
+        /// Seeing the same word twice does not record it twice, nor overwrite what was said about it.
+        /// </summary>
+        // Sdílí soubor návrhů s ostatními testy třídy, které do něj taky sbírají, a ty běží
+        // souběžně (Parallelize na úrovni metod). Bez tohohle si navzájem přepisují stav.
+        [TestMethod]
+        [DoNotParallelize]
+        public void CollectingTheSameWordTwiceKeepsTheFirstRecord()
+        {
+            var proposals = services.GetRequiredService<WordProposals>();
+            proposals.Clear();
+
+            Draft(null, "zahradník", "kopat", "záhon");
+            proposals.Write([.. proposals.Read().Select(proposal =>
+            {
+                proposal.IsConfirmed = true;
+
+                return proposal;
+            })]);
+            Draft(null, "zahradník", "kopat", "záhon");
+
+            Assert.AreEqual(3, proposals.Read().Count);
+            Assert.IsTrue(proposals.Read().All(proposal => proposal.IsConfirmed), "Potvrzení se nemá přepsat.");
         }
 
         /// <summary>

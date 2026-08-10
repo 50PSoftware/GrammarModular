@@ -831,6 +831,24 @@ gramatika veta Klára dávat žena kniha --role kniha=PAT --cas minulý --bez-do
 gramatika veta student jít --ramec motion --json
 ```
 
+Slovo, které slovník nemá, se teď rozliší od slova, které má v jiném tvaru — dřív to byl týž tichý odhad. `učitele` se jako vstup nebere, nástroj skládá věty z lemmat a češtinu nečte, ale pozná se jako tvar slova `učitel` a řekne se to, místo aby z toho bylo ženské jméno vzoru růže ve větě, která vypadá skoro dobře. Index za tím se generuje týmiž službami, které by ty tvary vyrobily do věty, takže se s nimi nemůže rozejít.
+
+Slovo, které není tvarem ničeho známého, je opravdu nové a zapíše se. `:slova` ukáže, co se nasbíralo, `:slova doplnit` to projde a zaznamená, co člověk potvrdil:
+
+```text
+> zahradník kopat záhon
+  ! 'zahradník' slovník nezná a není to ani tvar ničeho, co zná.
+    Zapsal jsem ho mezi návrhy na doplnění slovníku.
+```
+
+Do slovníku zapisovat neumí a nepokouší se o to. Soubor SQLite je kopie MySQL databáze editované přes PHP administraci, určená jen ke čtení; id přiděluje server, API umí jen číst a další `lexikon pull` lokální soubor přepíše celý — řádek vložený tady by žil do té doby a pak byl pryč, což je funkce, která tiše zahazuje vlastní výsledek. Sebraná slova tedy jdou do vlastního souboru a druhá půlka je příkaz nástroje, který slovník opravdu vlastní:
+
+```bash
+lexikon navrhy --jen-potvrzene
+```
+
+Ten seznam přečte a zapíše návrh `seed.NNN.sql`. Návrh, ne seed: id zůstávají prázdná, protože je přiděluje server, `source` je prázdný, protože na provenienci stojí licenční kázeň projektu a slovo, které se objevilo v sezení, žádnou nemá, dokud ji někdo nedohledá — a hlavička si říká o to jediné, co vygenerovat nejde: co jsi vynechal a proč.
+
 Spuštěný bez argumentů otevře sezení, což je tvar, jaký skládání věty doopravdy má: do věty se šťouchá — jiný čas, jiné členění, jiný pád — a každé šťouchnutí byl dosud nový proces a znovu napsané slovo `veta`.
 
 ```text

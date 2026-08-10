@@ -32,6 +32,8 @@ namespace Grammar.Czech.Cli.Sentence
         private readonly LemmaGuess _guess;
         private readonly LemmaLookup _lookup;
         private readonly RoleGuess _rolesWithoutFrame;
+        private readonly FormLookup _forms;
+        private readonly WordProposals _proposals;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DraftBuilder"/> type.
@@ -47,6 +49,8 @@ namespace Grammar.Czech.Cli.Sentence
         /// <param name="guess">The fallback for lemmas the dictionary does not hold.</param>
         /// <param name="lookup">The lookup that completes a spelling from the dictionary.</param>
         /// <param name="rolesWithoutFrame">The fallback for verbs the dictionary has no frame for.</param>
+        /// <param name="forms">The index that tells an unknown word from a form of a known one.</param>
+        /// <param name="proposals">The file unknown words are collected in.</param>
         public DraftBuilder(
             IValencyProvider<CzechLexicalEntry> lexicon,
             CzechLexiconEnricher enricher,
@@ -58,7 +62,9 @@ namespace Grammar.Czech.Cli.Sentence
             CzechSentencePlanner planner,
             LemmaGuess guess,
             LemmaLookup lookup,
-            RoleGuess rolesWithoutFrame)
+            RoleGuess rolesWithoutFrame,
+            FormLookup forms,
+            WordProposals proposals)
         {
             _lexicon = lexicon;
             _enricher = enricher;
@@ -71,6 +77,8 @@ namespace Grammar.Czech.Cli.Sentence
             _guess = guess;
             _lookup = lookup;
             _rolesWithoutFrame = rolesWithoutFrame;
+            _forms = forms;
+            _proposals = proposals;
         }
 
         /// <summary>
@@ -218,6 +226,8 @@ namespace Grammar.Czech.Cli.Sentence
                 draft.Notes.Add($"Doplnil jsem diakritiku podle slovníku: {string.Join(", ", completed)}.");
             }
 
+            ReportUnknown(draft, words);
+
             AttachPredicate(draft, words, overrides);
             AttachConstituents(draft, words, overrides);
 
@@ -243,6 +253,34 @@ namespace Grammar.Czech.Cli.Sentence
             draft.Resolved = _roles.Resolve(ToPlan(draft, overrides));
 
             return draft;
+        }
+
+        // Neznámé slovo je buď tvar něčeho známého, nebo opravdu nové slovo, a to jsou dvě různé
+        // situace s dvěma různými odpověďmi. Dokud se nerozlišovaly, splývaly do jednoho tichého
+        // odhadu: z 'učitele' se stalo ženské jméno vzoru růže a věta vypadala skoro dobře.
+        private void ReportUnknown(ClauseDraft draft, List<ResolvedWord> words)
+        {
+            foreach (var word in words.Where(word => word.Origin == MetadataOrigin.Guess))
+            {
+                if (_forms.LemmasBehind(word.Lemma) is { Count: > 0 } behind)
+                {
+                    draft.Notes.Add(
+                        $"'{word.Lemma}' slovník nezná, ale vypadá jako tvar slova "
+                        + $"{string.Join(" nebo ", behind.Select(lemma => $"'{lemma}'"))}, které zná. "
+                        + "Nástroj skládá větu ze základních tvarů, takže zadej lemma.");
+
+                    continue;
+                }
+
+                // Nové slovo se zapíše jednou a mlčky. Do slovníku to nezapisuje a zapsat nemůže —
+                // lokální .db je kopie, kterou další pull přepíše — takže je to jen seznam k projití.
+                if (_proposals.Add(word.Lemma, word.Request))
+                {
+                    draft.Notes.Add(
+                        $"'{word.Lemma}' slovník nezná a není to ani tvar ničeho, co zná. "
+                        + "Zapsal jsem ho mezi návrhy na doplnění slovníku.");
+                }
+            }
         }
 
         private ResolvedWord Resolve(string lemma, int position, DraftOverrides overrides)
