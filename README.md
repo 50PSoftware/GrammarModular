@@ -897,7 +897,9 @@ Folding is a fallback, never a first choice: an exact spelling always wins, and 
 
 What it does not accept is a whole sentence in one argument. Lemmas are separate arguments, and `veta "učitel psát dopis student"` says so — it used to reach the library and come back as *Verb pattern 'učitel psát dopis student' not found*, which is an English sentence about inflection patterns for someone who put the quotes in the wrong place.
 
-The dictionary does not ship inside the tool package, the same as with the library package. Its path comes from `--slovnik`, from `GRAMMAR_CZECH_LEXICON`, or from the application directory; when it is nowhere, the tool says so at startup and points at `lexikon pull`.
+The dictionary does not ship inside the tool package, the same as with the library package. Its path is resolved in the order the lexicon tool uses — `--slovnik` for this one run, then `lexikon.json`'s `database` key for the project, then `GRAMMAR_CZECH_LEXICON` for the machine, then the application directory. When it is nowhere, the tool says so at startup and lists all four.
+
+`lexikon.json` is the same file the lexicon tool reads, so a project says where its dictionary is once and both tools find it. The path is taken relative to that file rather than to the working directory, and the file is looked for by walking up, so it works from any subdirectory. Only the `database` key is read here; the address and the token belong to the tool that talks to the API.
 
 A conjunction in the word list splits the sentence, and the conjunction itself says how the halves join — the rule data knows which are coordinating and which subordinate:
 

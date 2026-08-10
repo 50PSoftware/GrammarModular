@@ -421,6 +421,72 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// The lexicon path is taken from the settings file the lexicon tool already uses, found by
+        /// walking up from the working directory and read relative to the file it stands in.
+        /// </summary>
+        /// <remarks>
+        /// Both tools work on the same dictionary and a project should not have to say where it is
+        /// twice. Relative to the file rather than to the working directory, or the same setting would
+        /// mean a different file in every subdirectory it is run from.
+        /// </remarks>
+        [TestMethod]
+        [DoNotParallelize]
+        public void LexiconPathComesFromTheSettingsFile()
+        {
+            var root = Directory.CreateDirectory(
+                Path.Combine(Path.GetTempPath(), $"gramatika-nastaveni-{Guid.NewGuid():N}"));
+            var deep = root.CreateSubdirectory("a").CreateSubdirectory("b");
+            var previous = Directory.GetCurrentDirectory();
+
+            try
+            {
+                File.WriteAllText(
+                    Path.Combine(root.FullName, LexiconSettings.FileName),
+                    """{ "database": "slovnik/lexikon.db" }""");
+
+                Directory.SetCurrentDirectory(deep.FullName);
+
+                Assert.AreEqual(
+                    Path.Combine(root.FullName, "slovnik", "lexikon.db"),
+                    LexiconSettings.DatabasePath());
+            }
+            finally
+            {
+                Directory.SetCurrentDirectory(previous);
+                root.Delete(recursive: true);
+            }
+        }
+
+        /// <summary>
+        /// A settings file that says nothing about the dictionary falls through instead of overriding
+        /// the environment with nothing.
+        /// </summary>
+        [TestMethod]
+        [DoNotParallelize]
+        public void SettingsFileWithoutADatabaseKeyFallsThrough()
+        {
+            var root = Directory.CreateDirectory(
+                Path.Combine(Path.GetTempPath(), $"gramatika-nastaveni-{Guid.NewGuid():N}"));
+            var previous = Directory.GetCurrentDirectory();
+
+            try
+            {
+                File.WriteAllText(
+                    Path.Combine(root.FullName, LexiconSettings.FileName),
+                    """{ "url": "https://example.invalid/api/", "database": "" }""");
+
+                Directory.SetCurrentDirectory(root.FullName);
+
+                Assert.IsNull(LexiconSettings.DatabasePath());
+            }
+            finally
+            {
+                Directory.SetCurrentDirectory(previous);
+                root.Delete(recursive: true);
+            }
+        }
+
+        /// <summary>
         /// An inflected word is named as such rather than taken for a lemma of its own.
         /// </summary>
         /// <remarks>

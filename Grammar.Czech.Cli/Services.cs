@@ -22,7 +22,12 @@ namespace Grammar.Czech.Cli
         {
             var services = new ServiceCollection();
 
-            services.AddCzechGrammarServices(lexicon?.FullName);
+            // Argument, pak lexikon.json, a teprve pak si knihovna sáhne na GRAMMAR_CZECH_LEXICON a
+            // vedle sebe. Stejné pořadí jako u nástroje `lexikon`: co chceš teď, pak co chce projekt,
+            // nakonec co ví tenhle stroj.
+            var path = lexicon?.FullName ?? LexiconSettings.DatabasePath();
+
+            services.AddCzechGrammarServices(path);
 
             services.AddSingleton<LemmaGuess>();
             services.AddSingleton<LemmaLookup>();
@@ -59,14 +64,20 @@ namespace Grammar.Czech.Cli
                 // Hlášku z knihovny sem nepřebírám: radí volajícímu, jak zavolat AddCzechGrammarServices,
                 // což je odpověď pro toho, kdo píše kód, ne pro toho, kdo spustil nástroj.
                 throw new CliException($"""
-                    Slovník {lexicon?.FullName ?? "grammar.czech.lexicon.db"} jsem nenašel.
+                    Slovník {path ?? "grammar.czech.lexicon.db"} jsem nenašel.
 
                     V balíčku nástroje se nerozdává, stejně jako v balíčku knihovny. Stáhni si ho:
 
                       dotnet tool install -g 50PSoftware.GrammarModular.LexiconTool --prerelease
                       lexikon pull
 
-                    …a pak na něj ukaž přepínačem --slovnik nebo proměnnou GRAMMAR_CZECH_LEXICON.
+                    …a pak na něj ukaž jedním z těchhle způsobů, v tomhle pořadí:
+
+                      --slovnik <cesta>                    jen pro tohle spuštění
+                      {LexiconSettings.FileName}, klíč "database"        pro celý projekt, i pro `lexikon`
+                      GRAMMAR_CZECH_LEXICON                pro tenhle stroj
+
+                    Nebo polož grammar.czech.lexicon.db vedle aplikace.
                     """);
             }
 

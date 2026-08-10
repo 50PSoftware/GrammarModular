@@ -894,7 +894,9 @@ Skládání je záloha, ne první volba: přesný zápis vyhrává vždycky a te
 
 Co nástroj nebere, je celá věta v jednom argumentu. Lemmata jsou samostatné argumenty a `veta "učitel psát dopis student"` to řekne — dřív to došlo až do knihovny a vrátilo se jako *Verb pattern 'učitel psát dopis student' not found*, tedy anglická věta o skloňovacích vzorech pro někoho, kdo jen dal uvozovky na špatné místo.
 
-Slovník se s balíčkem nástroje nerozdává, stejně jako s balíčkem knihovny. Cesta k němu se bere z `--slovnik`, z `GRAMMAR_CZECH_LEXICON`, nebo z adresáře aplikace; když není nikde, řekne to nástroj rovnou při startu a poradí `lexikon pull`.
+Slovník se s balíčkem nástroje nerozdává, stejně jako s balíčkem knihovny. Cesta k němu se hledá v tom pořadí, jaké má nástroj `lexikon` — `--slovnik` pro tohle jedno spuštění, pak klíč `database` v `lexikon.json` pro celý projekt, pak `GRAMMAR_CZECH_LEXICON` pro tenhle stroj, nakonec adresář aplikace. Když není nikde, řekne to nástroj rovnou při startu a všechny čtyři vypíše.
+
+`lexikon.json` je týž soubor, který čte nástroj lexikonu, takže projekt řekne jednou, kde má slovník, a najdou ho oba. Cesta se bere relativně k tomu souboru, ne k pracovnímu adresáři, a soubor se hledá směrem nahoru, takže to funguje z libovolného podadresáře. Čte se odsud jen klíč `database`; adresa a token patří nástroji, který mluví s API.
 
 Spojka ve vstupu rozdělí větu na klauze a sama říká, jak se spojují — pravidla vědí, které jsou souřadicí a které podřadicí:
 
