@@ -35,3 +35,20 @@ catch (CliException exception)
 
     return 1;
 }
+catch (Exception exception) when (exception is NotSupportedException or InvalidOperationException
+    or ArgumentException or KeyNotFoundException)
+{
+    // Hlášky knihovny mluví ke konzumentovi NuGetu: anglicky, o vzorech a rámcích, a bez rady, co
+    // udělat jinak. Sem chodí to, na co nástroj nemá vlastní hlášku, a i tak má odejít česky a s
+    // původním textem stranou — bez něj by se nedalo dohledat, co se vlastně stalo.
+    Console.Error.WriteLine($"""
+        Na tomhle jsem si vylámal zuby a neumím poradit líp než tímhle:
+
+          {exception.Message}
+
+        Nejčastěji je to slovo, které slovník nezná a jehož tvar se nedá odvodit ze zakončení.
+        Zkus mu doplnit vzor a rod: --vzor slovo=hrad --rod slovo=muzsky
+        """);
+
+    return 1;
+}

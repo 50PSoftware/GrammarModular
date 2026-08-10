@@ -25,6 +25,7 @@ namespace Grammar.Czech.Cli
             services.AddCzechGrammarServices(lexicon?.FullName);
 
             services.AddSingleton<LemmaGuess>();
+            services.AddSingleton<LemmaLookup>();
             services.AddSingleton<DraftBuilder>();
             services.AddSingleton<DraftView>();
             services.AddSingleton<SentenceComposer>();

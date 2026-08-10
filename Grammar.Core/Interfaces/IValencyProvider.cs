@@ -37,5 +37,21 @@ namespace Grammar.Core.Interfaces
         /// </summary>
         /// <param name="lemma">The dictionary form of the word (case-insensitive).</param>
         bool HasEntry(string lemma);
+
+        /// <summary>
+        /// Returns every entry the lexicon holds, in lemma order.
+        /// </summary>
+        /// <remarks>
+        /// For callers that have to answer a question about the dictionary as a whole rather than about
+        /// one lemma — matching a word written without diacritics against the lemmas that could have
+        /// produced it, or building an index of forms. Neither can be asked one lookup at a time,
+        /// because the question is which lemma to look up.
+        /// <para>
+        /// The sequence is meant to be enumerated once and turned into whatever the caller actually
+        /// needs. An implementation may stream it straight off storage, so enumerating it repeatedly is
+        /// the caller paying for the same scan again.
+        /// </para>
+        /// </remarks>
+        IEnumerable<T> GetEntries();
     }
 }

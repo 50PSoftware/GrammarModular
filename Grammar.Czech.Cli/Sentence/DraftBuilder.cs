@@ -30,6 +30,7 @@ namespace Grammar.Czech.Cli.Sentence
         private readonly CzechRoleResolver _roles;
         private readonly CzechSentencePlanner _planner;
         private readonly LemmaGuess _guess;
+        private readonly LemmaLookup _lookup;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DraftBuilder"/> type.
@@ -43,6 +44,7 @@ namespace Grammar.Czech.Cli.Sentence
         /// <param name="roles">The role resolver, which works out the functors.</param>
         /// <param name="planner">The sentence planner, for the values the plan leaves unsaid.</param>
         /// <param name="guess">The fallback for lemmas the dictionary does not hold.</param>
+        /// <param name="lookup">The lookup that completes a spelling from the dictionary.</param>
         public DraftBuilder(
             IValencyProvider<CzechLexicalEntry> lexicon,
             CzechLexiconEnricher enricher,
@@ -52,7 +54,8 @@ namespace Grammar.Czech.Cli.Sentence
             CzechFrameSelector frames,
             CzechRoleResolver roles,
             CzechSentencePlanner planner,
-            LemmaGuess guess)
+            LemmaGuess guess,
+            LemmaLookup lookup)
         {
             _lexicon = lexicon;
             _enricher = enricher;
@@ -63,6 +66,7 @@ namespace Grammar.Czech.Cli.Sentence
             _roles = roles;
             _planner = planner;
             _guess = guess;
+            _lookup = lookup;
         }
 
         /// <summary>
@@ -77,6 +81,20 @@ namespace Grammar.Czech.Cli.Sentence
             if (lemmas.Count == 0)
             {
                 throw new CliException("Nezadal jsi žádné lemma. Zkus třeba: gramatika veta student cist kniha");
+            }
+
+            foreach (var lemma in lemmas.Where(lemma => lemma.AsSpan().ContainsAny(' ', '	')))
+            {
+                throw new CliException(
+                    $"""
+                    '{lemma}' není jedno lemma, ale několik slov v jednom argumentu.
+
+                    Lemmata se zadávají zvlášť, každé jako vlastní argument a v základním tvaru:
+
+                      gramatika veta {lemma.Trim()}
+
+                    Nástroj větu skládá, nerozebírá ji — celá věta v uvozovkách pro něj není vstup.
+                    """);
             }
 
             foreach (var key in overrides.UnmatchedKeys(lemmas))
@@ -184,6 +202,18 @@ namespace Grammar.Czech.Cli.Sentence
         {
             var draft = new ClauseDraft { Conjunction = conjunction, Ordinal = ordinal };
 
+            // Ještě než se slova rozeberou na přísudek a členy, protože potom už není odkud vzít, jak je
+            // uživatel napsal — a věta bude obsahovat slova, která nenapsal.
+            var completed = words
+                .Where(word => word.CompletedSpelling is not null)
+                .Select(word => $"{word.CompletedSpelling} → {word.Lemma}")
+                .ToList();
+
+            if (completed.Count > 0)
+            {
+                draft.Notes.Add($"Doplnil jsem diakritiku podle slovníku: {string.Join(", ", completed)}.");
+            }
+
             AttachPredicate(draft, words, overrides);
             AttachConstituents(draft, words, overrides);
 
@@ -197,7 +227,16 @@ namespace Grammar.Czech.Cli.Sentence
         private ResolvedWord Resolve(string lemma, int position, DraftOverrides overrides)
         {
             var stated = overrides.Find(lemma, position);
-            var word = new CzechWordRequest { Lemma = lemma };
+            var match = _lookup.Resolve(lemma);
+
+            if (match.Candidates.Count > 0)
+            {
+                throw new CliException(
+                    $"'{lemma}' takhle napsané sedí na víc hesel: {string.Join(", ", match.Candidates)}. "
+                    + "Napiš ho s diakritikou, ať je jasné, které z nich myslíš.");
+            }
+
+            var word = new CzechWordRequest { Lemma = match.Lemma };
 
             // Nejdřív to, co řekl uživatel — enricher i odhad píšou jen do prázdného, takže tímhle
             // pořadím zadané vždycky vyhraje nad slovníkem.
@@ -210,7 +249,7 @@ namespace Grammar.Czech.Cli.Sentence
                 word.IsAnimate = stated.IsAnimate;
             }
 
-            var known = _lexicon.HasEntry(lemma);
+            var known = _lexicon.HasEntry(match.Lemma);
             var enriched = _enricher.Enrich(word);
 
             // Předložky, zájmena ani spojky slovník nevede — jsou to uzavřené třídy a bydlí
@@ -249,7 +288,10 @@ namespace Grammar.Czech.Cli.Sentence
                 completed.Number = completed.IsPluralOnly == true ? Number.Plural : Number.Singular;
             }
 
-            return new ResolvedWord(position, lemma, completed, origin, stated);
+            return new ResolvedWord(position, match.Lemma, completed, origin, stated)
+            {
+                CompletedSpelling = match.Completed ? lemma : null,
+            };
         }
 
         private static void AttachPredicate(ClauseDraft draft, List<ResolvedWord> words, DraftOverrides overrides)
@@ -259,7 +301,7 @@ namespace Grammar.Czech.Cli.Sentence
                 .ToList();
 
             var predicate = overrides.PredicateLemma is { } named
-                ? verbs.FirstOrDefault(word => string.Equals(word.Lemma, named, StringComparison.OrdinalIgnoreCase))
+                ? verbs.FirstOrDefault(word => Terms.LemmaComparer.Equals(word.Lemma, named))
                     ?? throw new CliException($"Slovo '{named}' mezi zadanými slovesy není.")
                 : verbs.Count switch
                 {
@@ -510,6 +552,11 @@ namespace Grammar.Czech.Cli.Sentence
             string Lemma,
             CzechWordRequest Request,
             MetadataOrigin Origin,
-            WordOverride? Stated);
+            WordOverride? Stated)
+        {
+            // Jak to napsal uživatel, když se to od slovníku lišilo — jinak null. Věta bude obsahovat
+            // slovo, které nenapsal, a to se má říct.
+            public string? CompletedSpelling { get; init; }
+        }
     }
 }

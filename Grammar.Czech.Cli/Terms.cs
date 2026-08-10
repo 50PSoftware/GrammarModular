@@ -415,6 +415,25 @@ namespace Grammar.Czech.Cli
         /// <returns>The normalized text.</returns>
         public static string Plain(string text) => Key(text);
 
+        /// <summary>
+        /// Compares words the way a person addressing one means them: without diacritics and without
+        /// case.
+        /// </summary>
+        /// <remarks>
+        /// What a switch names and what the dictionary spells need not match character for character.
+        /// Someone who wrote <c>ucitel</c> on the command line and got <c>učitel</c> back in the table
+        /// must be able to correct it with either spelling, and the number is not always to hand.
+        /// </remarks>
+        public static IEqualityComparer<string> LemmaComparer { get; } = new FoldingComparer();
+
+        private sealed class FoldingComparer : IEqualityComparer<string>
+        {
+            public bool Equals(string? left, string? right) =>
+                left is null || right is null ? left is null && right is null : Key(left) == Key(right);
+
+            public int GetHashCode(string value) => Key(value).GetHashCode(StringComparison.Ordinal);
+        }
+
         // Klíč bez diakritiky a bez velikosti písmen: na příkazové řádce je 'ženský' to nejhůř psatelné
         // slovo z celé nabídky a 'zensky' má znamenat totéž.
         private static string Key(string text)

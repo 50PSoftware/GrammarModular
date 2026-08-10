@@ -275,6 +275,8 @@ namespace Grammar.Czech.Test
             public bool HasEntry(string lemma) => GetEntry(lemma) is not null;
 
             public IEnumerable<Core.Models.Valency.ValencyFrame> GetFrames(string verbLemma) => [];
+
+            public IEnumerable<CzechLexicalEntry> GetEntries() => [entry];
         }
 
         /// <summary>

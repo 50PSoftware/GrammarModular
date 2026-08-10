@@ -81,6 +81,12 @@ namespace Grammar.Czech.Providers.SqliteProviders
             ORDER BY homonym_index
             """;
 
+        // Bez varianty: dubleta není heslo a nemá se objevit v seznamu hesel. Kdo prochází slovník,
+        // dostane to, co slovník vede, ne i pravopisy, pod kterými se to dá najít.
+        private const string AllEntriesQuery = EntryColumns + """
+            ORDER BY lemma_key, category, homonym_index
+            """;
+
         private const string FrameQuery = """
             SELECT f.frame_id, e.lemma, f.lu_id, u.sense_label, f.kind, f.diathesis, f.is_default,
                    s.slot_id, s.functor, s.canonical_order, s.obligatoriness,
@@ -308,6 +314,29 @@ namespace Grammar.Czech.Providers.SqliteProviders
         /// <param name="lemma">The dictionary form to resolve or analyze.</param>
         /// <returns><see langword="true"/> when the lemma is present in the lexicon; otherwise, <see langword="false"/>.</returns>
         public bool HasEntry(string lemma) => GetEntry(lemma) is not null;
+
+        /// <summary>
+        /// Gets every entry the lexicon holds, in lemma order.
+        /// </summary>
+        /// <returns>The entries.</returns>
+        /// <remarks>
+        /// Streamed rather than cached, and deliberately not fed into the per-lemma cache: this is a
+        /// whole-table scan serving one caller building an index of its own, and filling the lookup
+        /// cache from it would trade the dictionary's size in memory for a question nobody asked.
+        /// </remarks>
+        public IEnumerable<CzechLexicalEntry> GetEntries()
+        {
+            using var connection = OpenConnection();
+            using var command = connection.CreateCommand();
+            command.CommandText = AllEntriesQuery;
+
+            using var reader = command.ExecuteReader();
+
+            while (reader.Read())
+            {
+                yield return ReadEntry(reader);
+            }
+        }
 
         // Folded here and not by a collation: NOCASE folds ASCII only, so DÁT and dát would be two keys,
         // and a Czech culture collation treats ch as a unit.

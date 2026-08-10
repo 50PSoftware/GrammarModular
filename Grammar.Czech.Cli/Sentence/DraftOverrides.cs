@@ -12,7 +12,9 @@ namespace Grammar.Czech.Cli.Sentence
     /// </remarks>
     public sealed class DraftOverrides
     {
-        private readonly Dictionary<string, WordOverride> _words = new(StringComparer.OrdinalIgnoreCase);
+        // Skládaný klíč, ne jen bez velikosti písmen: kdo napsal 'ucitel' a v tabulce vidí 'učitel',
+        // musí ho umět opravit kteroukoli z těch dvou podob.
+        private readonly Dictionary<string, WordOverride> _words = new(Terms.LemmaComparer);
         private readonly Dictionary<int, int> _attachments = [];
         private readonly Dictionary<int, PredicateOverride> _predicates = [];
 
@@ -156,7 +158,7 @@ namespace Grammar.Czech.Cli.Sentence
             [
                 .. _words.Keys
                     .Where(key => !positions.Contains(key, StringComparer.Ordinal)
-                        && !lemmas.Contains(key, StringComparer.OrdinalIgnoreCase)),
+                        && !lemmas.Contains(key, Terms.LemmaComparer)),
             ];
         }
     }

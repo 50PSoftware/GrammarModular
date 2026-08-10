@@ -834,6 +834,16 @@ gramatika veta Klára dávat žena kniha --role kniha=PAT --cas minulý --bez-do
 gramatika veta student jít --ramec motion --json
 ```
 
+Lemmas may be written without diacritics. `ucitel` finds `učitel`, and the completed spelling is reported, because the sentence will contain a word nobody typed:
+
+```bash
+gramatika veta ucitel psat dopis student   # Učitel píše dopis studentovi.
+```
+
+Folding is a fallback, never a first choice: an exact spelling always wins, and one that folds onto several lemmas — `být` and `byt` are different words — is a question rather than a decision. Switches fold too, so a word can be corrected under either spelling: `--pad ucitel=dativ` reaches `učitel`.
+
+What it does not accept is a whole sentence in one argument. Lemmas are separate arguments, and `veta "učitel psát dopis student"` says so — it used to reach the library and come back as *Verb pattern 'učitel psát dopis student' not found*, which is an English sentence about inflection patterns for someone who put the quotes in the wrong place.
+
 The dictionary does not ship inside the tool package, the same as with the library package. Its path comes from `--slovnik`, from `GRAMMAR_CZECH_LEXICON`, or from the application directory; when it is nowhere, the tool says so at startup and points at `lexikon pull`.
 
 A conjunction in the word list splits the sentence, and the conjunction itself says how the halves join — the rule data knows which are coordinating and which subordinate:

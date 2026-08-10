@@ -27,6 +27,7 @@ namespace Grammar.Czech.Test
 
             collection.AddCzechGrammarServices();
             collection.AddSingleton<LemmaGuess>();
+            collection.AddSingleton<LemmaLookup>();
             collection.AddSingleton<DraftBuilder>();
             collection.AddSingleton<DraftView>();
             collection.AddSingleton<SentenceComposer>();
@@ -411,6 +412,82 @@ namespace Grammar.Czech.Test
             overrides.For("student").Status = InformationStatus.New;
 
             Assert.AreEqual("Knihu čte student.", Sentence(overrides, "student", "číst", "kniha"));
+        }
+
+        /// <summary>
+        /// A lemma written without diacritics reaches the entry the dictionary holds it under.
+        /// </summary>
+        /// <remarks>
+        /// Typing Czech on a keyboard that is not set up for it is the ordinary case for this tool, and
+        /// refusing <c>ucitel</c> would mean refusing most of what gets typed at it.
+        /// </remarks>
+        [TestMethod]
+        public void LemmaWithoutDiacriticsFindsItsEntry()
+        {
+            Assert.AreEqual(
+                "Učitel píše dopis studentovi.",
+                Sentence(null, "ucitel", "psat", "dopis", "student"));
+        }
+
+        /// <summary>
+        /// The completed spelling is reported, because the sentence contains a word nobody wrote.
+        /// </summary>
+        [TestMethod]
+        public void CompletedSpellingIsReported()
+        {
+            var draft = Draft(null, "ucitel", "psat", "dopis", "student");
+
+            Assert.IsTrue(
+                draft.Notes.Any(note => note.Contains("ucitel") && note.Contains("učitel")),
+                "Doplnění diakritiky se má oznámit: " + string.Join(" | ", draft.Notes));
+        }
+
+        /// <summary>
+        /// A word already spelled the way the dictionary spells it says nothing about spelling.
+        /// </summary>
+        [TestMethod]
+        public void ExactSpellingIsNotReported()
+        {
+            var draft = Draft(null, "učitel", "psát", "dopis", "student");
+
+            Assert.IsFalse(
+                draft.Notes.Any(note => note.Contains("diakritiku")),
+                "Nic se nedoplňovalo, tak se nemá nic hlásit.");
+        }
+
+        /// <summary>
+        /// A switch reaches its word under either spelling, so a correction never has to be retyped
+        /// with diacritics the user could not produce in the first place.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow("ucitel")]
+        [DataRow("učitel")]
+        [DataRow("UČITEL")]
+        public void SwitchReachesItsWordUnderEitherSpelling(string target)
+        {
+            var overrides = new DraftOverrides();
+            overrides.For(target).Case = Case.Dative;
+
+            Assert.AreEqual(
+                "Učiteli píše dopis studentovi.",
+                Sentence(overrides, "ucitel", "psat", "dopis", "student"));
+        }
+
+        /// <summary>
+        /// A whole sentence in one argument is refused rather than taken as one enormous lemma.
+        /// </summary>
+        /// <remarks>
+        /// It used to reach the library and come back as <em>Verb pattern &apos;učitel psát dopis
+        /// student&apos; not found</em> — an English sentence about inflection patterns, for someone who
+        /// only put quotes in the wrong place.
+        /// </remarks>
+        [TestMethod]
+        public void WholeSentenceInOneArgumentIsRefused()
+        {
+            var exception = Assert.ThrowsException<CliException>(
+                () => Whole(null, "učitel psát dopis student"));
+
+            StringAssert.Contains(exception.Message, "zvlášť");
         }
     }
 }

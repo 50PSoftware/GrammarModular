@@ -831,6 +831,16 @@ gramatika veta Klára dávat žena kniha --role kniha=PAT --cas minulý --bez-do
 gramatika veta student jít --ramec motion --json
 ```
 
+Lemmata jde psát bez diakritiky. `ucitel` najde `učitel` a doplněný pravopis se oznámí, protože ve větě bude slovo, které nikdo nenapsal:
+
+```bash
+gramatika veta ucitel psat dopis student   # Učitel píše dopis studentovi.
+```
+
+Skládání je záloha, ne první volba: přesný zápis vyhrává vždycky a ten, který sedí na víc hesel — `být` a `byt` jsou různá slova — je dotaz, ne rozhodnutí. Skládají se i cíle přepínačů, takže slovo jde opravit kteroukoli podobou: `--pad ucitel=dativ` trefí `učitel`.
+
+Co nástroj nebere, je celá věta v jednom argumentu. Lemmata jsou samostatné argumenty a `veta "učitel psát dopis student"` to řekne — dřív to došlo až do knihovny a vrátilo se jako *Verb pattern 'učitel psát dopis student' not found*, tedy anglická věta o skloňovacích vzorech pro někoho, kdo jen dal uvozovky na špatné místo.
+
 Slovník se s balíčkem nástroje nerozdává, stejně jako s balíčkem knihovny. Cesta k němu se bere z `--slovnik`, z `GRAMMAR_CZECH_LEXICON`, nebo z adresáře aplikace; když není nikde, řekne to nástroj rovnou při startu a poradí `lexikon pull`.
 
 Spojka ve vstupu rozdělí větu na klauze a sama říká, jak se spojují — pravidla vědí, které jsou souřadicí a které podřadicí:
