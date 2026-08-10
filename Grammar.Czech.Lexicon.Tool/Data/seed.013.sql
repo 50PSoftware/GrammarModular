@@ -60,19 +60,10 @@ INSERT INTO construction (
     construction_id, pattern_name, light_verb_lemma, pred_noun_lemma, template_json)
 VALUES
     (1, 'LVC.mít.zájem', 'mít', 'zájem',
-     '{"slots":[' ||
-     '{"functor":"ACT","order":1,"obligatoriness":"Obligatory","forms":[{"case":"Nominative"}]},' ||
-     '{"functor":"CPHR","order":2,"obligatoriness":"Obligatory","forms":[{"case":"Accusative"}]},' ||
-     '{"functor":"PAT","order":3,"obligatoriness":"Typical","forms":[{"case":"Accusative","preposition":"o"}]}]}'),
+     '{"slots":[ {"functor":"ACT","order":1,"obligatoriness":"Obligatory","forms":[{"case":"Nominative"}]}, {"functor":"CPHR","order":2,"obligatoriness":"Obligatory","forms":[{"case":"Accusative"}]}, {"functor":"PAT","order":3,"obligatoriness":"Typical","forms":[{"case":"Accusative","preposition":"o"}]}]}'),
 
     (2, 'LVC.dávat.pozor', 'dávat', 'pozor',
-     '{"slots":[' ||
-     '{"functor":"ACT","order":1,"obligatoriness":"Obligatory","forms":[{"case":"Nominative"}]},' ||
-     '{"functor":"CPHR","order":2,"obligatoriness":"Obligatory","forms":[{"case":"Accusative"}]},' ||
-     '{"functor":"PAT","order":3,"obligatoriness":"Typical","forms":[{"case":"Accusative","preposition":"na"}]}]}'),
+     '{"slots":[ {"functor":"ACT","order":1,"obligatoriness":"Obligatory","forms":[{"case":"Nominative"}]}, {"functor":"CPHR","order":2,"obligatoriness":"Obligatory","forms":[{"case":"Accusative"}]}, {"functor":"PAT","order":3,"obligatoriness":"Typical","forms":[{"case":"Accusative","preposition":"na"}]}]}'),
 
     (3, 'LVC.mít.strach', 'mít', 'strach',
-     '{"slots":[' ||
-     '{"functor":"ACT","order":1,"obligatoriness":"Obligatory","forms":[{"case":"Nominative"}]},' ||
-     '{"functor":"CPHR","order":2,"obligatoriness":"Obligatory","forms":[{"case":"Accusative"}]},' ||
-     '{"functor":"PAT","order":3,"obligatoriness":"Typical","forms":[{"case":"Genitive","preposition":"z"}]}]}');
+     '{"slots":[ {"functor":"ACT","order":1,"obligatoriness":"Obligatory","forms":[{"case":"Nominative"}]}, {"functor":"CPHR","order":2,"obligatoriness":"Obligatory","forms":[{"case":"Accusative"}]}, {"functor":"PAT","order":3,"obligatoriness":"Typical","forms":[{"case":"Genitive","preposition":"z"}]}]}');
