@@ -49,6 +49,17 @@ namespace Grammar.Czech.Cli.Sentence
         public FgdFunctor? Functor { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the role was invented from word order rather than
+        /// read off a valency frame.
+        /// </summary>
+        /// <remarks>
+        /// The difference between the dictionary saying what this argument is and the tool proposing it,
+        /// which is the same distinction <see cref="Origin"/> draws for the morphology. A guessed role
+        /// carries a guessed case with it, so it is the one line of the review worth reading twice.
+        /// </remarks>
+        public bool FunctorIsGuessed { get; set; }
+
+        /// <summary>
         /// Gets or sets the communicative status that decides where the constituent lands.
         /// </summary>
         public InformationStatus Status { get; set; } = InformationStatus.New;
@@ -71,6 +82,17 @@ namespace Grammar.Czech.Cli.Sentence
         /// which is also where it gets vocalized.
         /// </remarks>
         public string? Preposition { get; set; }
+
+        /// <summary>
+        /// Gets or sets the cases <see cref="Preposition"/> may govern, when there is one.
+        /// </summary>
+        /// <remarks>
+        /// Carried so that an unanswered constituent can be reported as the question it actually is. A
+        /// preposition with one rection settles the case and with it the role — <em>do</em> is always
+        /// genitive — while <em>v</em> governs two and they mean different things, so what is open there
+        /// is the case and not the role.
+        /// </remarks>
+        public IReadOnlyList<Case> PrepositionCases { get; set; } = [];
 
         /// <summary>
         /// Gets the agreeing attributes preceding the head, in surface order.

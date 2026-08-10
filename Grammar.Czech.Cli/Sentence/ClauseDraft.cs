@@ -144,8 +144,7 @@ namespace Grammar.Czech.Cli.Sentence
                     ? $"Sloveso '{PredicateLemma}' je bezpodměťové — '{constituent.Lemma}' (č. "
                         + $"{constituent.Position}) k němu nepatří a věta s ním nevznikne."
                         + (alternative is null ? string.Empty : $" Jiný význam podmět bere: --ramec {alternative}.")
-                    : $"U slova '{constituent.Lemma}' (č. {constituent.Position}) není jasná role. "
-                        + "Doplň ji přepínačem --role.")
+                    : Missing(constituent))
                 .ToList();
 
             // Význam slovesa vybírá slovník, ne kód. Když ho nevybral ani on, je to otázka na uživatele.
@@ -159,6 +158,18 @@ namespace Grammar.Czech.Cli.Sentence
 
             return gaps;
         }
+
+        // U předložkového členu není otevřená role, ale pád: roli z předložky odvodí knihovna, jakmile
+        // ví, se kterým pádem stojí. Rada 'doplň roli' by tam posílala za něčím, co si uživatel odvodit
+        // nemá jak — a 'v zahradě' proti 'v zahradu' je rozdíl kde a kam, ne rozdíl v terminologii.
+        private static string Missing(ConstituentDraft constituent) =>
+            constituent.Preposition is { } preposition && constituent.PrepositionCases.Count > 1
+                ? $"U slova '{constituent.Lemma}' (č. {constituent.Position}) rozhoduje roli pád, "
+                    + $"a předložka '{preposition}' jich připouští víc: "
+                    + $"{string.Join(", ", constituent.PrepositionCases.Select(Terms.Name))}. "
+                    + $"Doplň ho přepínačem --pad."
+                : $"U slova '{constituent.Lemma}' (č. {constituent.Position}) není jasná role. "
+                    + "Doplň ji přepínačem --role.";
 
         /// <summary>
         /// Converts the draft into the clause the sentence builder consumes.

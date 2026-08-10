@@ -31,6 +31,7 @@ namespace Grammar.Czech.Cli.Sentence
         private readonly CzechSentencePlanner _planner;
         private readonly LemmaGuess _guess;
         private readonly LemmaLookup _lookup;
+        private readonly RoleGuess _rolesWithoutFrame;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DraftBuilder"/> type.
@@ -45,6 +46,7 @@ namespace Grammar.Czech.Cli.Sentence
         /// <param name="planner">The sentence planner, for the values the plan leaves unsaid.</param>
         /// <param name="guess">The fallback for lemmas the dictionary does not hold.</param>
         /// <param name="lookup">The lookup that completes a spelling from the dictionary.</param>
+        /// <param name="rolesWithoutFrame">The fallback for verbs the dictionary has no frame for.</param>
         public DraftBuilder(
             IValencyProvider<CzechLexicalEntry> lexicon,
             CzechLexiconEnricher enricher,
@@ -55,7 +57,8 @@ namespace Grammar.Czech.Cli.Sentence
             CzechRoleResolver roles,
             CzechSentencePlanner planner,
             LemmaGuess guess,
-            LemmaLookup lookup)
+            LemmaLookup lookup,
+            RoleGuess rolesWithoutFrame)
         {
             _lexicon = lexicon;
             _enricher = enricher;
@@ -67,6 +70,7 @@ namespace Grammar.Czech.Cli.Sentence
             _planner = planner;
             _guess = guess;
             _lookup = lookup;
+            _rolesWithoutFrame = rolesWithoutFrame;
         }
 
         /// <summary>
@@ -217,6 +221,23 @@ namespace Grammar.Czech.Cli.Sentence
             AttachPredicate(draft, words, overrides);
             AttachConstituents(draft, words, overrides);
 
+            // Až po členech a před rolemi: role rozdává rámec, a když žádný není, nemá knihovna co
+            // rozdávat a všechno by zůstalo bez role. Zapsané role tenhle odhad nepřepisuje, takže
+            // '--role zahrada=LOC' vyhraje, a knihovna pak dopočítá jen to, co zbylo.
+            if (_rolesWithoutFrame.IsNeeded(draft.PredicateLemma))
+            {
+                var invented = _rolesWithoutFrame.Assign(draft.Constituents);
+
+                if (invented.Count > 0)
+                {
+                    draft.Notes.Add(
+                        $"Sloveso '{draft.PredicateLemma}' slovník nevede, takže nevím, jaké argumenty "
+                        + $"váže. Role jsem rozdal podle pořadí: "
+                        + string.Join(", ", invented.Select(item => $"{item.Lemma} = {item.Functor}"))
+                        + ". Když sedí jinak, oprav to přepínačem --role.");
+                }
+            }
+
             // Odtud rozhoduje knihovna: role se dají odvodit z jedné klauze, takže to jde hned. Co je
             // řízené zvenčí — a to jsou výchozí hodnoty — počká, až bude stát celý strom.
             draft.Resolved = _roles.Resolve(ToPlan(draft, overrides));
@@ -364,6 +385,8 @@ namespace Grammar.Czech.Cli.Sentence
                 var constituent = new ConstituentDraft(word.Position, word.Lemma, word.Request, word.Origin)
                 {
                     Preposition = word.Stated?.Preposition ?? pendingPreposition,
+                    PrepositionCases = [.. _prepositions.GetAllowedCases(
+                        word.Stated?.Preposition ?? pendingPreposition ?? string.Empty)],
                     Functor = word.Stated?.Functor,
                     Status = word.Stated?.Status ?? InformationStatus.New,
                     HasStatedStatus = word.Stated?.Status is not null,

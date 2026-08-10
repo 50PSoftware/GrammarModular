@@ -28,6 +28,7 @@ namespace Grammar.Czech.Test
             collection.AddCzechGrammarServices();
             collection.AddSingleton<LemmaGuess>();
             collection.AddSingleton<LemmaLookup>();
+            collection.AddSingleton<RoleGuess>();
             collection.AddSingleton<DraftBuilder>();
             collection.AddSingleton<DraftView>();
             collection.AddSingleton<SentenceComposer>();
@@ -412,6 +413,87 @@ namespace Grammar.Czech.Test
             overrides.For("student").Status = InformationStatus.New;
 
             Assert.AreEqual("Knihu čte student.", Sentence(overrides, "student", "číst", "kniha"));
+        }
+
+        /// <summary>
+        /// A verb the dictionary holds no frame for still produces a sentence, from word order.
+        /// </summary>
+        /// <remarks>
+        /// The dictionary has frames for sixty verbs, so this is the ordinary case and not the edge
+        /// one. Without it every other verb is a wall: no frame means no slots, no slots means no roles,
+        /// and no roles means no sentence.
+        /// </remarks>
+        [TestMethod]
+        public void VerbWithoutAFrameStillMakesASentence()
+        {
+            Assert.AreEqual(
+                "Učitel daruje knihu studentovi.",
+                Sentence(null, "učitel", "darovat", "kniha", "student"));
+        }
+
+        /// <summary>
+        /// The invented roles are the unmarked Czech order, and they are reported as invented.
+        /// </summary>
+        [TestMethod]
+        public void InventedRolesAreOrderedAndReported()
+        {
+            var draft = Draft(null, "učitel", "darovat", "kniha", "student");
+
+            CollectionAssert.AreEqual(
+                new[] { FgdFunctor.ACT, FgdFunctor.PAT, FgdFunctor.ADDR },
+                draft.Constituents.Select(constituent => constituent.Functor).ToArray());
+
+            Assert.IsTrue(
+                draft.Constituents.All(constituent => constituent.FunctorIsGuessed),
+                "Role odhadnuté z pořadí se mají značit.");
+
+            Assert.IsTrue(
+                draft.Notes.Any(note => note.Contains("podle pořadí")),
+                "A oznámit: " + string.Join(" | ", draft.Notes));
+        }
+
+        /// <summary>
+        /// A stated role wins over the order, and the rest is dealt out around it.
+        /// </summary>
+        [TestMethod]
+        public void StatedRoleWinsOverTheOrder()
+        {
+            var overrides = new DraftOverrides();
+            overrides.For("zahrada").Functor = FgdFunctor.LOC;
+            overrides.For("zahrada").Preposition = "v";
+            overrides.For("zahrada").Case = Case.Locative;
+
+            Assert.AreEqual("Pes běhá v zahradě.", Sentence(overrides, "pes", "běhat", "zahrada"));
+        }
+
+        /// <summary>
+        /// A verb the dictionary does hold keeps its own frame, guesses nothing, and marks nothing.
+        /// </summary>
+        [TestMethod]
+        public void VerbWithAFrameIsNotGuessedAt()
+        {
+            var draft = Draft(null, "učitel", "psát", "dopis", "student");
+
+            Assert.IsFalse(draft.Constituents.Any(constituent => constituent.FunctorIsGuessed));
+            Assert.IsFalse(draft.Notes.Any(note => note.Contains("podle pořadí")));
+        }
+
+        /// <summary>
+        /// A constituent opened by a preposition of several rections is reported as an open case, which
+        /// is what it is — the role follows from the case and the library reads it off the preposition.
+        /// </summary>
+        /// <remarks>
+        /// <em>v zahradě</em> and <em>v zahradu</em> are where and whither. Telling the user to supply a
+        /// role there sends them after something they cannot work out and did not get wrong.
+        /// </remarks>
+        [TestMethod]
+        public void PrepositionWithSeveralRectionsAsksForTheCase()
+        {
+            var draft = Draft(null, "pes", "běhat", "v", "zahrada");
+
+            Assert.IsTrue(
+                draft.Gaps().Any(gap => gap.Contains("--pad") && gap.Contains("lokál")),
+                "Otevřený je pád, ne role: " + string.Join(" | ", draft.Gaps()));
         }
 
         /// <summary>

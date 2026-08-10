@@ -831,6 +831,18 @@ gramatika veta Klára dávat žena kniha --role kniha=PAT --cas minulý --bez-do
 gramatika veta student jít --ramec motion --json
 ```
 
+Sloveso, na které slovník nemá rámec, dá větu i tak. Bez rámce nemá rozhodovač rolí co rozdávat, každý člen zůstane bez role a nevznikne nic — a protože slovník vede rámce k šedesáti slovesům, býval to běžný konec, ne výjimka. Nástroj se opře o bezpříznakové české pořadí: konatel, patiens, a po nich adresát, když je životný.
+
+```bash
+gramatika veta učitel darovat kniha student   # Učitel daruje knihu studentovi.
+```
+
+Role, které si vymyslel, jsou v přehledu značené `*` a hlásí se pod ním, a pád jde s nimi: role bez pádu nikam nevede a tam, kde chybí rámec, je obojí týž odhad. Zadané vyhrává, takže `--role zahrada=LOC` se nepřepisuje, jen se kolem něj rozdá zbytek.
+
+Co pořadí slov vědět nemůže, je význam. *zahrada* v *pes běhat zahrada* je místo, ne patiens, a neřekne to ani pořadí, ani životnost — řeklo by to jen sloveso. Vyjde z toho *Pes běhá zahradu*, označené, a opraví se to rolí. Bydlí to v nástroji a ne v knihovně záměrně: knihovna, která by si valenci tiše vymýšlela, by lhala tomu, kdo na ní staví.
+
+Předložka s víc rekcemi se hlásí jako otevřený pád, ne jako otevřená role, protože to tak je: *v zahradě* proti *v zahradu* je kde proti kam a roli si knihovna z předložky odvodí sama, jakmile je pád jasný.
+
 Lemmata jde psát bez diakritiky. `ucitel` najde `učitel` a doplněný pravopis se oznámí, protože ve větě bude slovo, které nikdo nenapsal:
 
 ```bash

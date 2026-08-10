@@ -27,6 +27,7 @@ namespace Grammar.Czech.Test
             collection.AddCzechGrammarServices();
             collection.AddSingleton<LemmaGuess>();
             collection.AddSingleton<LemmaLookup>();
+            collection.AddSingleton<RoleGuess>();
             collection.AddSingleton<DraftBuilder>();
             collection.AddSingleton<DraftView>();
             collection.AddSingleton<SentenceComposer>();

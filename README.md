@@ -834,6 +834,18 @@ gramatika veta Klára dávat žena kniha --role kniha=PAT --cas minulý --bez-do
 gramatika veta student jít --ramec motion --json
 ```
 
+A verb the dictionary holds no frame for still produces a sentence. Without one the role resolver has no slots to hand out, every constituent stays roleless and nothing comes of it — and since the dictionary carries frames for sixty verbs, that used to be the ordinary outcome rather than the rare one. The tool falls back on the unmarked Czech order: actor, patient, and an addressee after them if it is animate.
+
+```bash
+gramatika veta učitel darovat kniha student   # Učitel daruje knihu studentovi.
+```
+
+The roles it invented are marked with `*` in the review and reported underneath, and the case goes with them: a role without a case leads nowhere, and where the frame is missing both are the same guess. Anything stated wins, so `--role zahrada=LOC` is dealt around rather than over.
+
+What word order cannot know is meaning. *zahrada* in *pes běhat zahrada* is a place, not a patient, and neither order nor animacy says so — only the verb would. It comes out as *Pes běhá zahradu*, marked, and is corrected with `--role`. This lives in the tool rather than in the library on purpose: a library that invented valency silently would be lying to whoever built on it.
+
+A preposition governing several cases is reported as an open case rather than an open role, because that is what it is: *v zahradě* and *v zahradu* are where and whither, and the library reads the role off the preposition once the case is settled.
+
 Lemmas may be written without diacritics. `ucitel` finds `učitel`, and the completed spelling is reported, because the sentence will contain a word nobody typed:
 
 ```bash

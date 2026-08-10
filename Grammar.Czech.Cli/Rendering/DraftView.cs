@@ -86,7 +86,11 @@ namespace Grammar.Czech.Cli.Rendering
             }
             else if (draft.FrameChoices.Count == 0)
             {
-                text.AppendLine("Rámec     žádný — slovník tohle sloveso nevede, pády doplň sám");
+                var guessed = draft.Constituents.Any(constituent => constituent.FunctorIsGuessed);
+
+                text.AppendLine(guessed
+                    ? "Rámec     žádný — slovník tohle sloveso nevede, role jsou odhadnuté z pořadí"
+                    : "Rámec     žádný — slovník tohle sloveso nevede, pády doplň sám");
             }
 
             text.AppendLine();
@@ -186,8 +190,10 @@ namespace Grammar.Czech.Cli.Rendering
                 : string.Join(" ", words);
         }
 
+        // Odhadnutá role se značí hvězdičkou a ne slovem, protože je jich v řádku víc než jedna věc,
+        // která může být odhadnutá, a sloupec 'zdroj' vedle mluví o morfologii, ne o roli.
         private static string Role(ConstituentDraft constituent) => constituent.Functor is { } functor
-            ? $"{functor} ({Terms.Gloss(functor)})"
+            ? $"{functor} ({Terms.Gloss(functor)})" + (constituent.FunctorIsGuessed ? " *" : string.Empty)
             : "?";
 
         // Pád z rámce se značí, protože je to jediný sloupec, který v requestu nestojí — kdyby se

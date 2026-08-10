@@ -26,6 +26,7 @@ namespace Grammar.Czech.Cli
 
             services.AddSingleton<LemmaGuess>();
             services.AddSingleton<LemmaLookup>();
+            services.AddSingleton<RoleGuess>();
             services.AddSingleton<DraftBuilder>();
             services.AddSingleton<DraftView>();
             services.AddSingleton<SentenceComposer>();

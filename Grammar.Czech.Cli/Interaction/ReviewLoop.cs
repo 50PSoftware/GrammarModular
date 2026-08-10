@@ -105,9 +105,19 @@ namespace Grammar.Czech.Cli.Interaction
                     return null;
                 }
 
-                if (answer is "?" or "h" or "napoveda" or "nápověda")
+                if (answer.StartsWith('?') || answer is "h" or "napoveda" or "nápověda")
                 {
-                    _output.WriteLine(Help);
+                    var topic = answer.TrimStart('?', ' ');
+
+                    if (topic.Length == 0)
+                    {
+                        _output.WriteLine(Help);
+
+                        continue;
+                    }
+
+                    _output.WriteLine(HelpTopics.Find(topic)
+                        ?? $"O '{topic}' nápovědu nemám. Témata: {HelpTopics.Names}.");
 
                     continue;
                 }
@@ -144,6 +154,14 @@ namespace Grammar.Czech.Cli.Interaction
               p typ=tázací           druh věty; 'p konec=?' mění koncové znaménko
 
               k 3=1                  na kterou klauzi se třetí věší; bez toho visí na předchozí
+
+            Co ty termíny znamenají, vysvětlí '? téma':
+
+              ? role       čím je slovo ve větě a proč se zadává role a ne rovnou pád
+              ? cleneni    dané a nové, a proč z nich plyne slovosled
+              ? pad        proč ho většinou zadávat nemusíš a kdy ano
+              ? ramec      který význam slovesa se bere
+              ? odhad      co si nástroj domýšlí a jak to ve výpisu poznáš
 
             """;
     }
