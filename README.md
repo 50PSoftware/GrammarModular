@@ -834,6 +834,29 @@ gramatika veta Klára dávat žena kniha --role kniha=PAT --cas minulý --bez-do
 gramatika veta student jít --ramec motion --json
 ```
 
+Run with no arguments it opens a session instead, which is the shape sentence-building actually has: a sentence gets poked at — another tense, another information structure, another case — and every poke used to be a fresh process and the word `veta` typed again.
+
+```text
+gramatika — sezení. Piš lemmata a stiskni Enter.
+':?' nápověda, '? role' vysvětlení pojmů, ':konec' konec.
+
+> student číst kniha
+  …
+  Student čte knihu.
+
+> p cas=minuly
+  …
+  Student četl knihu.
+```
+
+A line with an equals sign corrects the sentence that stands; bare words start a new one. That is the one rule, and it is stated rather than guessed at.
+
+What is said about the predicate holds until the end of the session and applies to the sentences after it — `:stav` shows what is in force and `:zapomen` clears it. What is said about a *word* does not: the next sentence has other words in those positions, so carrying `3 pad=dativ` over would silently be about something else.
+
+The session stands beside `veta` rather than replacing it. `veta` is still one command, answerable in advance and usable from a script; the session is for the poking.
+
+Terms can be asked about by name, in either mode: `? role` explains what functors are and why a role is stated rather than a case, `? cleneni` why dané and nové decide the word order, and `? odhad` what the tool makes up and how the display says so.
+
 A verb the dictionary holds no frame for still produces a sentence. Without one the role resolver has no slots to hand out, every constituent stays roleless and nothing comes of it — and since the dictionary carries frames for sixty verbs, that used to be the ordinary outcome rather than the rare one. The tool falls back on the unmarked Czech order: actor, patient, and an addressee after them if it is animate.
 
 ```bash

@@ -90,5 +90,62 @@ namespace Grammar.Czech.Cli.Sentence
             FrameLabel = FrameLabel ?? wider.FrameLabel,
             DropSubject = DropSubject ?? wider.DropSubject,
         };
+
+        /// <summary>
+        /// Clears every statement, leaving the record as it was built.
+        /// </summary>
+        public void Forget()
+        {
+            Tense = null;
+            Mood = null;
+            Voice = null;
+            Aspect = null;
+            Person = null;
+            Number = null;
+            Gender = null;
+            IsNegative = null;
+            ReflexiveType = null;
+            FrameLabel = null;
+            DropSubject = null;
+        }
+
+        /// <summary>
+        /// Describes what the record states, for a session to show what is still in force.
+        /// </summary>
+        /// <returns>One line per statement, empty when the record says nothing.</returns>
+        public IReadOnlyList<string> Describe()
+        {
+            List<string> lines = [];
+
+            Say("cas", Tense is { } tense ? Terms.Name(tense) : null);
+            Say("zpusob", Mood is { } mood ? Terms.Name(mood) : null);
+            Say("rod", Voice is { } voice ? Terms.Name(voice) : null);
+            Say("vid", Aspect is { } aspect ? Terms.Name(aspect) : null);
+            Say("osoba", Person is { } person ? Terms.Name(person) : null);
+            Say("cislo", Number is { } number ? Terms.Name(number) : null);
+            Say("jmenny-rod", Gender is { } gender ? Terms.Name(gender) : null);
+            Say("zapor", IsNegative is { } negative ? (negative ? "ano" : "ne") : null);
+            // Zvratnost se zadává částicí a ne názvem typu, tak se tak i vypisuje — 'se' je to, co
+            // uživatel napsal, kdežto DerivedReflexive_Se je jméno pro kód.
+            Say("zvratne", ReflexiveType switch
+            {
+                Core.Enums.ReflexiveType.None => "ne",
+                Core.Enums.ReflexiveType.DerivedBenefactive_Si or Core.Enums.ReflexiveType.ReflexivumTantum_Si => "si",
+                null => null,
+                _ => "se",
+            });
+            Say("ramec", FrameLabel);
+            Say("podmet", DropSubject is true ? "vypustit" : null);
+
+            return lines;
+
+            void Say(string name, string? value)
+            {
+                if (value is not null)
+                {
+                    lines.Add($"p {name} = {value}");
+                }
+            }
+        }
     }
 }

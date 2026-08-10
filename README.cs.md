@@ -831,6 +831,29 @@ gramatika veta Klára dávat žena kniha --role kniha=PAT --cas minulý --bez-do
 gramatika veta student jít --ramec motion --json
 ```
 
+Spuštěný bez argumentů otevře sezení, což je tvar, jaký skládání věty doopravdy má: do věty se šťouchá — jiný čas, jiné členění, jiný pád — a každé šťouchnutí byl dosud nový proces a znovu napsané slovo `veta`.
+
+```text
+gramatika — sezení. Piš lemmata a stiskni Enter.
+':?' nápověda, '? role' vysvětlení pojmů, ':konec' konec.
+
+> student číst kniha
+  …
+  Student čte knihu.
+
+> p cas=minuly
+  …
+  Student četl knihu.
+```
+
+Řádek s rovnítkem opraví větu, která stojí; holá slova začnou novou. To je jediné pravidlo a je vyslovené, ne uhádnuté.
+
+Co se řekne o přísudku, platí do konce sezení a použije se i na věty po něm — `:stav` ukáže, co platí, `:zapomen` to zruší. Co se řekne o *slovu*, neplatí: další věta má na těch místech jiná slova, takže přenést `3 pad=dativ` by znamenalo mluvit potichu o něčem jiném.
+
+Sezení stojí vedle `veta`, ne místo něj. `veta` je pořád jeden příkaz, na který jde odpovědět dopředu a pustit ho ze skriptu; sezení je na to šťouchání.
+
+Na pojmy se dá zeptat jménem, v obou režimech: `? role` vysvětlí, co jsou funktory a proč se zadává role a ne pád, `? cleneni` proč dané a nové rozhodují slovosled, a `? odhad` co si nástroj domýšlí a jak to výpis říká.
+
 Sloveso, na které slovník nemá rámec, dá větu i tak. Bez rámce nemá rozhodovač rolí co rozdávat, každý člen zůstane bez role a nevznikne nic — a protože slovník vede rámce k šedesáti slovesům, býval to běžný konec, ne výjimka. Nástroj se opře o bezpříznakové české pořadí: konatel, patiens, a po nich adresát, když je životný.
 
 ```bash

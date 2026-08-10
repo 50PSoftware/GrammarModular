@@ -100,6 +100,57 @@ namespace Grammar.Czech.Cli.Sentence
 
 
         /// <summary>
+        /// Forgets everything said about individual words and about how the clauses hang together.
+        /// </summary>
+        /// <remarks>
+        /// What the session keeps between sentences and what it cannot. A statement about the predicate
+        /// — past tense, conditional — is about the sentence being built and holds for the next one just
+        /// as well. A statement about a word is addressed by lemma or by position, and the next sentence
+        /// has different words in those positions, so carrying it over would silently apply it to
+        /// something else. The same for an attachment, which numbers clauses that will not be there.
+        /// </remarks>
+        public void ForgetWords()
+        {
+            _words.Clear();
+            _attachments.Clear();
+            _predicates.Clear();
+            PredicateLemma = null;
+        }
+
+        /// <summary>
+        /// Forgets everything, leaving the record as it was built.
+        /// </summary>
+        public void ForgetAll()
+        {
+            ForgetWords();
+
+            Predicate.Forget();
+            SentenceType = null;
+            Terminator = null;
+        }
+
+        /// <summary>
+        /// Describes what is still in force, for a session to show on request.
+        /// </summary>
+        /// <returns>The statements in force, one per line, empty when nothing is set.</returns>
+        public IReadOnlyList<string> Describe()
+        {
+            List<string> lines = [.. Predicate.Describe()];
+
+            if (SentenceType is { } type)
+            {
+                lines.Add($"typ = {Terms.Name(type)}");
+            }
+
+            if (Terminator is { } terminator)
+            {
+                lines.Add($"konec = {terminator}");
+            }
+
+            return lines;
+        }
+
+        /// <summary>
         /// Gets or sets the communicative force of the clause.
         /// </summary>
         public SentenceType? SentenceType { get; set; }

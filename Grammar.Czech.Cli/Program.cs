@@ -1,5 +1,7 @@
 using Grammar.Czech.Cli;
 using Grammar.Czech.Cli.Commands;
+using Grammar.Czech.Cli.Interaction;
+using Microsoft.Extensions.DependencyInjection;
 using System.CommandLine;
 using System.Globalization;
 using System.Text;
@@ -24,6 +26,13 @@ var root = new RootCommand("gramatika — poskládá českou větu ze zadaných 
     lexicon,
     SentenceCommand.Create(lexicon),
 };
+
+// Bez argumentů se spustí sezení. Vedle 'veta', ne místo něj: 'veta' je jeden příkaz, na který jde
+// odpovědět dopředu a pustit ho ze skriptu, kdežto sezení je pro to, čemu se věta dělá — šťouchá se
+// do ní, dokud nesedí, a každé šťouchnutí bylo dosud nový proces.
+root.SetAction(parse => Services.Build(parse.GetValue(lexicon))
+    .GetRequiredService<SessionLoop>()
+    .Run());
 
 try
 {

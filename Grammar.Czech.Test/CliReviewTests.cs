@@ -35,6 +35,22 @@ namespace Grammar.Czech.Test
             services = collection.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true });
         }
 
+        private static string Session(params string[] lines)
+        {
+            var output = new StringWriter();
+
+            var loop = new SessionLoop(
+                services.GetRequiredService<DraftBuilder>(),
+                services.GetRequiredService<DraftView>(),
+                services.GetRequiredService<SentenceComposer>(),
+                new StringReader(string.Join(Environment.NewLine, lines) + Environment.NewLine),
+                output);
+
+            loop.Run();
+
+            return output.ToString();
+        }
+
         private static (SentenceDraft? Draft, string Dialog) Review(string answers, params string[] lemmas)
         {
             var output = new StringWriter();
@@ -158,6 +174,78 @@ namespace Grammar.Czech.Test
         {
             Assert.IsNull(Review("q\n", "student", "číst", "kniha").Draft);
             Assert.IsNull(Review(string.Empty, "student", "číst", "kniha").Draft);
+        }
+        /// <summary>
+        /// A session builds a sentence and then rebuilds it from a correction, without starting over.
+        /// </summary>
+        /// <remarks>
+        /// The correction is told from a new sentence by the equals sign, which is the one rule that can
+        /// be stated: corrections have one and bare lemmas do not.
+        /// </remarks>
+        [TestMethod]
+        public void SessionCorrectsTheSentenceItJustBuilt()
+        {
+            var dialog = Session("student číst kniha", "p cas=minuly", ":konec");
+
+            StringAssert.Contains(dialog, "Student četl knihu.");
+        }
+
+        /// <summary>
+        /// What was said about the predicate holds for the next sentence too, which is the point of a
+        /// session rather than a string of commands.
+        /// </summary>
+        [TestMethod]
+        public void PredicateSettingsHoldForTheNextSentence()
+        {
+            var dialog = Session("student číst kniha", "p cas=minuly", "žák psát dopis", ":konec");
+
+            StringAssert.Contains(dialog, "Žák psal dopis.");
+        }
+
+        /// <summary>
+        /// What was said about a word does not, because the next sentence has other words in those
+        /// places and carrying it over would silently be about something else.
+        /// </summary>
+        [TestMethod]
+        public void WordSettingsDoNotHoldForTheNextSentence()
+        {
+            var dialog = Session("student číst kniha", "3 pad=dativ", "žák psát dopis", ":konec");
+
+            StringAssert.Contains(dialog, "Student čte knize.");
+            StringAssert.Contains(dialog, "Žák píše dopis.");
+        }
+
+        /// <summary>
+        /// The session says what it is still holding on to, and forgets it on request.
+        /// </summary>
+        [TestMethod]
+        public void SessionSaysWhatItHoldsAndForgetsIt()
+        {
+            var dialog = Session("student číst kniha", "p cas=minuly", ":stav", ":zapomen", ":stav", ":konec");
+
+            StringAssert.Contains(dialog, "p cas = minulý");
+            StringAssert.Contains(dialog, "Trvale nic nastaveného není");
+        }
+
+        /// <summary>
+        /// A term asked about is explained rather than merely listed.
+        /// </summary>
+        [TestMethod]
+        public void SessionExplainsATerm()
+        {
+            var dialog = Session("? role", ":konec");
+
+            StringAssert.Contains(dialog, "konatel");
+            StringAssert.Contains(dialog, "instrumentálu");
+        }
+
+        /// <summary>
+        /// A correction before there is anything to correct says so instead of failing.
+        /// </summary>
+        [TestMethod]
+        public void CorrectionWithNoSentenceSaysSo()
+        {
+            StringAssert.Contains(Session("p cas=minuly", ":konec"), "napiš nejdřív lemmata");
         }
     }
 }

@@ -30,6 +30,12 @@ namespace Grammar.Czech.Cli
             services.AddSingleton<DraftBuilder>();
             services.AddSingleton<DraftView>();
             services.AddSingleton<SentenceComposer>();
+            services.AddSingleton(provider => new SessionLoop(
+                provider.GetRequiredService<DraftBuilder>(),
+                provider.GetRequiredService<DraftView>(),
+                provider.GetRequiredService<SentenceComposer>(),
+                Console.In,
+                Console.Out));
             services.AddSingleton(provider => new ReviewLoop(
                 provider.GetRequiredService<DraftBuilder>(),
                 provider.GetRequiredService<DraftView>(),
