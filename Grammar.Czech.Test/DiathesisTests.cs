@@ -1,0 +1,140 @@
+using Grammar.Core.Enums;
+using Grammar.Czech.Models;
+using Grammar.Czech.Models.Syntax;
+using Grammar.Czech.Services;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Grammar.Czech.Test
+{
+    /// <summary>
+    /// Verifies the diatheses beyond the passive: the ones with no subject at all.
+    /// </summary>
+    /// <remarks>
+    /// A perspective can only name a diathesis by pointing at the participant that becomes the subject,
+    /// which works for the passive and for nothing else. The deagentive and the dispositional have no
+    /// subject to point at, so the plan names the diathesis outright and the frame supplies the rest.
+    /// </remarks>
+    [TestClass]
+    public sealed class DiathesisTests
+    {
+        private static CzechSentenceBuilder builder = null!;
+        private static CzechSentencePlanner planner = null!;
+
+        /// <summary>
+        /// Builds the service graph once for the whole fixture.
+        /// </summary>
+        [ClassInitialize]
+        public static void SetupClass(TestContext _)
+        {
+            var services = new ServiceCollection();
+            services.AddCzechGrammarServices();
+
+            var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true });
+
+            builder = provider.GetRequiredService<CzechSentenceBuilder>();
+            planner = provider.GetRequiredService<CzechSentencePlanner>();
+        }
+
+        // Plán projde plánovačem a teprve pak stavitelem, stejně jako v SentencePlannerTests.
+        private static string Build(SentencePlan plan) => builder.Build(planner.Plan(plan));
+
+        private static SentencePlan Plan(string verb, Diathesis diathesis, params PlannedParticipant[] participants) =>
+            new()
+            {
+                Predicate = new CzechWordRequest
+                {
+                    Lemma = verb,
+                    WordCategory = WordCategory.Verb,
+                    Tense = Tense.Past,
+                },
+                Diathesis = diathesis,
+                Participants = participants,
+            };
+
+        /// <summary>
+        /// The deagentive drops the actor entirely and leaves a subjectless clause with the particle.
+        /// </summary>
+        /// <remarks>
+        /// Not the passive: there the actor is demoted to an instrumental and can still be said. Here it
+        /// is gone, which is why the frame carries no slot for it and the participle falls to the neuter
+        /// singular — the same path an impersonal verb takes.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("pracovat", "Pracovalo se.")]
+        [DataRow("mluvit", "Mluvilo se.")]
+        public void DeagentiveHasNoActorAtAll(string verb, string expected)
+        {
+            Assert.AreEqual(expected, Build(Plan(verb, Diathesis.ReflexivePassive)));
+        }
+
+        /// <summary>
+        /// The dispositional brings the actor back in the dative, and the clause still has no subject.
+        /// </summary>
+        [TestMethod]
+        public void DispositionalPutsTheActorInTheDative()
+        {
+            var actor = new PlannedParticipant
+            {
+                Word = new CzechWordRequest
+                {
+                    Lemma = "student",
+                    WordCategory = WordCategory.Noun,
+                    Number = Number.Singular,
+                },
+                Functor = FgdFunctor.ACT,
+            };
+
+            Assert.AreEqual(
+                "Studentovi se pracovalo.",
+                Build(Plan("pracovat", Diathesis.Dispositional, actor)));
+        }
+
+        /// <summary>
+        /// A plan naming a perspective and a diathesis that disagree is refused rather than resolved.
+        /// </summary>
+        /// <remarks>
+        /// Both say which diathesis to build in, and picking one of two things the caller asked for
+        /// would be choosing on their behalf.
+        /// </remarks>
+        [TestMethod]
+        public void PerspectiveAndDiathesisMustAgree()
+        {
+            var plan = Plan("pracovat", Diathesis.ReflexivePassive) with { Perspective = FgdFunctor.PAT };
+
+            var exception = Assert.ThrowsException<InvalidOperationException>(() => Build(plan));
+
+            StringAssert.Contains(exception.Message, "odporují");
+        }
+
+        /// <summary>
+        /// Saying nothing still builds the active clause, so the plans written before this keep working.
+        /// </summary>
+        [TestMethod]
+        public void SayingNothingStaysActive()
+        {
+            var actor = new PlannedParticipant
+            {
+                Word = new CzechWordRequest
+                {
+                    Lemma = "student",
+                    WordCategory = WordCategory.Noun,
+                    Number = Number.Singular,
+                },
+                Functor = FgdFunctor.ACT,
+            };
+
+            Assert.AreEqual(
+                "Student pracoval.",
+                Build(new SentencePlan
+                {
+                    Predicate = new CzechWordRequest
+                    {
+                        Lemma = "pracovat",
+                        WordCategory = WordCategory.Verb,
+                        Tense = Tense.Past,
+                    },
+                    Participants = [actor],
+                }));
+        }
+    }
+}

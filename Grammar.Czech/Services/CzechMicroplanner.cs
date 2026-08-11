@@ -133,7 +133,7 @@ namespace Grammar.Czech.Services
                 return clause;
             }
 
-            var frame = valencyService.GetFrame(clause.Predicate.Lemma, clause.FrameLabel);
+            var frame = valencyService.GetFrame(clause.Predicate.Lemma, clause.FrameLabel, clause.Diathesis);
 
             // A diathesis remaps every slot at once, so the passive is a frame of its own rather than the
             // active one recomputed: ACT drops to an instrumental adjunct and PAT rises to the subject.

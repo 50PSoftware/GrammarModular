@@ -53,6 +53,30 @@ namespace Grammar.Czech.Models.Syntax
         public FgdFunctor? Perspective { get; init; }
 
         /// <summary>
+        /// Gets the diathesis to build the clause in, or <see langword="null"/> to let
+        /// <see cref="Perspective"/> decide.
+        /// </summary>
+        /// <remarks>
+        /// Czech has five diatheses and a perspective can only name two of them. Saying PAT is the
+        /// subject asks for the periphrastic passive and says everything there is to say about it; the
+        /// deagentive <em>pracovalo se</em> and the dispositional <em>pracovalo se mi dobře</em> have no
+        /// subject at all, so there is no participant to point at and the diathesis has to be named
+        /// outright.
+        /// <para>
+        /// Stated separately rather than folded into <see cref="Perspective"/> so that the plans that
+        /// worked before keep working: a perspective still selects the passive on its own, and this is
+        /// only consulted where it says something. Naming both a perspective and a diathesis that
+        /// disagree is refused rather than silently resolved.
+        /// </para>
+        /// <para>
+        /// It is not a voice. The deagentive and the dispositional are built on an active verb form with
+        /// the reflexive particle, so <see cref="Grammar.Core.Enums.Voice"/> stays active for both; what
+        /// changes is which frame the arguments come from.
+        /// </para>
+        /// </remarks>
+        public Diathesis? Diathesis { get; init; }
+
+        /// <summary>
         /// Gets a value indicating whether a subject pronoun that adds nothing may be dropped.
         /// </summary>
         /// <remarks>

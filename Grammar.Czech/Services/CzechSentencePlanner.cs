@@ -78,6 +78,10 @@ namespace Grammar.Czech.Services
         // which is a marked reading nobody asked for.
         private SentencePlan Complete(SentencePlan plan, bool themeTaken)
         {
+            // Dřív než cokoli jiného: plán, který si odporuje sám se sebou, má o tom slyšet, a ne dostat
+            // hlášku o slovese, které za nic nemůže.
+            _ = CzechRoleResolver.DiathesisOf(plan);
+
             var voice = ResolveVoice(plan);
             var participants = ApplyDefaultPerspective(plan, themeTaken);
 
@@ -222,8 +226,15 @@ namespace Grammar.Czech.Services
                 plan.Predicate.Lemma,
                 plan.FrameLabel,
                 CzechRoleResolver.Companions(plan),
-                voice == Voice.Passive ? Diathesis.PassivePeriphrastic : Diathesis.Active)
+                DiathesisFor(plan, voice))
                 .Frame?.Kind == ValencyKind.Impersonal;
+
+        // Hlas říká jen to, jestli je to opisné pasivum. Deagentiv ani dispoziční diateze hlas nemění —
+        // sloveso zůstává v činném tvaru a nese zvratné se — takže je z něj nepoznáš a musí je říct plán.
+        private static Diathesis DiathesisFor(SentencePlan plan, Voice voice) =>
+            plan.Diathesis is { } stated && stated != Diathesis.Active
+                ? stated
+                : voice == Voice.Passive ? Diathesis.PassivePeriphrastic : Diathesis.Active;
 
         // A relative clause is planned like the sentence it is: its own roles, its own sense of its own
         // verb, its own subject drop. Which is why it goes through Plan and not through some smaller
@@ -247,7 +258,7 @@ namespace Grammar.Czech.Services
                 plan.Predicate.Lemma,
                 plan.FrameLabel,
                 CzechRoleResolver.Companions(plan),
-                voice == Voice.Passive ? Diathesis.PassivePeriphrastic : Diathesis.Active);
+                DiathesisFor(plan, voice));
 
             if (selection.IsAmbiguous)
             {
@@ -266,6 +277,7 @@ namespace Grammar.Czech.Services
                 Predicate = predicate,
                 Elements = [.. participants.Select(participant => participant.ToElement(PlanRelative(participant)))],
                 FrameLabel = selection.Frame?.FrameLabel,
+                Diathesis = DiathesisFor(plan, voice),
                 SentenceType = plan.SentenceType,
                 Terminator = plan.Terminator,
                 Particle = plan.Particle,

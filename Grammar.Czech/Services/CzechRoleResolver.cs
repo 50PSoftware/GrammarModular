@@ -97,9 +97,7 @@ namespace Grammar.Czech.Services
                 return plan;
             }
 
-            var diathesis = plan.Perspective is FgdFunctor.PAT
-                ? Diathesis.PassivePeriphrastic
-                : Diathesis.Active;
+            var diathesis = DiathesisOf(plan);
 
             // Slova kolem slovesa se předávají, protože rámec nemusí patřit slovesu samotnému: mít zájem
             // váže 'o něco', co žádný význam slovesa mít nemá.
@@ -142,6 +140,39 @@ namespace Grammar.Czech.Services
             ClaimFreeModifications(resolved, open);
 
             return plan with { Participants = resolved };
+        }
+
+        /// <summary>
+        /// Reads the diathesis a plan asks for, however it asks.
+        /// </summary>
+        /// <param name="plan">The plan to read.</param>
+        /// <returns>The diathesis to select a frame by.</returns>
+        /// <exception cref="InvalidOperationException">The plan names two that disagree.</exception>
+        /// <remarks>
+        /// Two ways of saying it, because a perspective can only name the two diatheses that have a
+        /// subject to point at. Where both are stated they have to agree — a plan asking for PAT as the
+        /// subject and for the deagentive at once is a contradiction, and resolving it silently would
+        /// pick one of two things the caller asked for.
+        /// </remarks>
+        public static Diathesis DiathesisOf(SentencePlan plan)
+        {
+            var fromPerspective = plan.Perspective is FgdFunctor.PAT
+                ? Diathesis.PassivePeriphrastic
+                : Diathesis.Active;
+
+            if (plan.Diathesis is not { } stated)
+            {
+                return fromPerspective;
+            }
+
+            if (plan.Perspective is not null && stated != fromPerspective)
+            {
+                throw new InvalidOperationException(
+                    $"Plán žádá perspektivu {plan.Perspective} i diatezi {stated}, a ty si odporují. "
+                    + "Nech jedno z toho nevyplněné.");
+            }
+
+            return stated;
         }
 
         /// <summary>

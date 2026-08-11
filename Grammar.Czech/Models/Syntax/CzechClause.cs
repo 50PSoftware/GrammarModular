@@ -32,6 +32,21 @@ namespace Grammar.Czech.Models.Syntax
         public string? FrameLabel { get; init; }
 
         /// <summary>
+        /// Gets the diathesis the clause is built in.
+        /// </summary>
+        /// <remarks>
+        /// Carried alongside the label because the two together are what identify a frame, and the
+        /// microplanner looks the frame up again to read the cases off it. Without this it would always
+        /// find the active one, and a deagentive clause would be assembled from the arguments of a
+        /// construction it is not.
+        /// <para>
+        /// Not derivable from the voice: the deagentive and the dispositional are built on an active
+        /// verb form and differ from the plain active only in the frame.
+        /// </para>
+        /// </remarks>
+        public Diathesis Diathesis { get; init; } = Diathesis.Active;
+
+        /// <summary>
         /// Gets the particle that opens the clause, or null when there is none.
         /// </summary>
         /// <remarks>

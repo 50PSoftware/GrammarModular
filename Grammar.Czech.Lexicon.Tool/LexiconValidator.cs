@@ -451,20 +451,28 @@ namespace Grammar.Czech.Lexicon.Tool
             }
 
             // The other way round, so the kind stays measurable rather than being a label anyone can put
-            // on anything: a frame that says it has no participants must not list one.
-            const string impersonalWithActor = """
+            // on anything: a frame that says it has no subject must not list one.
+            //
+            // No subject, not no actor. The dispositional diathesis has an actor and no subject at once —
+            // 'pracovalo se mi dobře' — so what makes the frame impersonal is that nothing in it can be
+            // the subject, and only a nominative can be that. An ACT in the dative is a participant the
+            // clause has and does not agree with.
+            const string impersonalWithSubject = """
                 SELECT f.frame_id, u.sense_label
                 FROM valency_frame f
                 JOIN lexical_unit u ON u.lu_id = f.lu_id
                 WHERE f.kind = 'Impersonal'
                   AND EXISTS (
-                    SELECT 1 FROM valency_slot s WHERE s.frame_id = f.frame_id AND s.functor = 'ACT')
+                    SELECT 1
+                    FROM valency_slot s
+                    JOIN slot_realization r ON r.slot_id = s.slot_id
+                    WHERE s.frame_id = f.frame_id AND r.morph_case = 'Nominative')
                 """;
 
-            foreach (var row in Query(connection, impersonalWithActor))
+            foreach (var row in Query(connection, impersonalWithSubject))
             {
                 errors.Add(
-                    $"Rámec {row[0]} ({row[1] ?? "bez názvu"}) je bezpodměťový, ale slot ACT má. "
+                    $"Rámec {row[0]} ({row[1] ?? "bez názvu"}) je bezpodměťový, ale má slot v nominativu. "
                     + "Buď mu ten slot vezmi, nebo mu změň kind.");
             }
 
