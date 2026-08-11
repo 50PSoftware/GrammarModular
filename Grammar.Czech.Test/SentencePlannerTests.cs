@@ -78,6 +78,33 @@ namespace Grammar.Czech.Test
         private static string Build(SentencePlan plan) => builder.Build(planner.Plan(plan));
 
         /// <summary>
+        /// The passive answers for more than one verb now that the frames are in the dictionary.
+        /// </summary>
+        /// <remarks>
+        /// The mechanism was finished long before the data: <see cref="SentencePlan.Perspective"/> has
+        /// selected a passive frame since it was written, and the dictionary held exactly one. Each of
+        /// these is derived from the active frame by the regular Czech rule — actor to the instrumental,
+        /// patient to the nominative — so what is asserted is that the derivation reaches the sentence.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("číst", "číst", "Kniha je čtena studentem.")]
+        [DataRow("psát", "psát", "Kniha je psána studentem.")]
+        [DataRow("volat", "trida5", "Kniha je volána studentem.")]
+        public void PassiveReachesTheVerbsTheDictionaryNowCarries(
+            string lemma, string pattern, string expected)
+        {
+            var plan = new SentencePlan
+            {
+                Predicate = Verb(lemma, pattern),
+                Participants = [Student(FgdFunctor.ACT), Book(FgdFunctor.PAT)],
+                Perspective = FgdFunctor.PAT
+            };
+
+            Assert.AreEqual(expected, Build(plan));
+        }
+
+
+        /// <summary>
         /// A verb repeated in the second conjunct is left out, and the remnants carry the clause.
         /// </summary>
         /// <remarks>
