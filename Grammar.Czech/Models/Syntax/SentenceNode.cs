@@ -51,11 +51,16 @@ namespace Grammar.Czech.Models.Syntax
     /// nezavolal" splits it. Only the caller knows which was meant.
     /// </para>
     /// </remarks>
+    /// <param name="AllowVerbEllipsis">
+    /// Whether a verb repeated from the preceding conjunct may be left out — <em>Student čte knihu a
+    /// žák dopis</em>.
+    /// </param>
     public sealed record Coordination(
         string Conjunction,
         IReadOnlyList<SentenceNode> Conjuncts,
         bool? RequiresComma = null,
-        bool Paired = false) : SentenceNode;
+        bool Paired = false,
+        bool AllowVerbEllipsis = true) : SentenceNode;
 
     /// <summary>
     /// Represents a clause attached to a superordinate one by a subordinating conjunction.

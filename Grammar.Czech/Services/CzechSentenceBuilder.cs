@@ -83,14 +83,17 @@ namespace Grammar.Czech.Services
             SentenceNode sentence,
             bool firstPositionTaken,
             string? secondPositionConjunction = null,
-            bool suppressConditional = false) => sentence switch
+            bool suppressConditional = false,
+            bool omitPredicate = false) => sentence switch
         {
             // A clause whose slot turned out to be a dependent clause is no longer one clause, so
             // planning runs before anything else and its result goes back through this switch.
             SimpleSentence simple => clausePlanner.Plan(simple.Clause) switch
             {
                 SimpleSentence planned =>
-                    RenderClause(planned.Clause, firstPositionTaken, secondPositionConjunction, suppressConditional),
+                    RenderClause(
+                        planned.Clause, firstPositionTaken, secondPositionConjunction, suppressConditional,
+                        omitPredicate),
                 var grown => RenderNode(grown, firstPositionTaken, secondPositionConjunction, suppressConditional),
             },
             Coordination coordination => RenderCoordination(coordination, firstPositionTaken, suppressConditional),
@@ -135,7 +138,10 @@ namespace Grammar.Czech.Services
                     conjunct,
                     firstPositionTaken && index == 0,
                     secondPosition && index > 0 ? coordination.Conjunction : null,
-                    suppressConditional))
+                    suppressConditional,
+                    omitPredicate: coordination.AllowVerbEllipsis
+                        && index > 0
+                        && Repeats(coordination.Conjuncts[index - 1], conjunct)))
                 .ToList();
 
             var text = string.Join(separator, rendered.Select(item => item.Text));
@@ -150,6 +156,42 @@ namespace Grammar.Czech.Services
             // The leading conjunct is what anything above this coordination agrees with.
             return (text, rendered[0].Predicate);
         }
+
+        // Vypuštěné sloveso se podle manuálu PDT (§12.1.1.1) obnovuje kopií z předchozí klauze, a to
+        // tehdy, „když je jasné, které sloveso bylo vypuštěno". Obnovitelnost se tady testuje tvrději,
+        // než jazyk vyžaduje: shodne-li se všechno, co by se do mezery doplňovalo, doplnit se dá právě
+        // jedno sloveso. Osoba a číslo se lišit smí — ty nese podmět, který ve druhém konjunktu zůstal,
+        // takže 'já piju kávu a ona čaj' projde.
+        //
+        // A jen tam, kde přísudek vychází jako jedno slovo. V 1. a 2. osobě minulého času, v kondicionálu
+        // a v opisných tvarech by po vypuštění osiřelo pomocné sloveso nebo zvratná částice, a kam je
+        // v takové větě položit, tenhle projekt doložené nemá. Nevypustit je vždycky gramatické.
+        private static bool Repeats(SentenceNode previous, SentenceNode current) =>
+            Clause(previous) is { } first
+            && Clause(current) is { } second
+
+            // Musí zbýt co vyslovit, a musí být čemu to postavit naproti. Manuálový příklad
+            // '(Jirka navštívil Marii.) Honza Jiřinu' stojí na tom, že obě klauze mají zbytky a ty si
+            // odpovídají — z té paralely se vypuštěné sloveso obnovuje. Klauze, kde nic jiného není, by
+            // se vypuštěním slovesa vyprázdnila celá; a klauze, které nemá co odpovídat, mezeru doplnit
+            // nepomůže.
+            && first.Elements.Count > 0
+            && second.Elements.Count > 0
+            && first.Predicate is { } before
+            && second.Predicate is { } after
+            && string.Equals(before.Lemma, after.Lemma, StringComparison.Ordinal)
+            && before.Tense == after.Tense
+            && before.Modus == after.Modus
+            && before.Voice == after.Voice
+            && before.Aspect == after.Aspect
+            && before.IsNegative == after.IsNegative
+            && before.ReflexiveType == ReflexiveType.None
+            && after.ReflexiveType == ReflexiveType.None;
+
+        // Jen prostá klauze: u souřadnosti ani podřadnosti uvnitř konjunktu není jedno sloveso, které by
+        // se dalo porovnat, a domýšlet které z nich by bylo hádání.
+        private static CzechClause? Clause(SentenceNode node) =>
+            node is SimpleSentence simple ? simple.Clause : null;
 
         private string ResolveCorrelate(string conjunction)
             => conjunctionService.GetCorrelate(conjunction, ConjunctionType.Coordinating)
@@ -204,7 +246,8 @@ namespace Grammar.Czech.Services
             CzechClause clause,
             bool firstPositionTaken,
             string? secondPositionConjunction = null,
-            bool suppressConditional = false)
+            bool suppressConditional = false,
+            bool omitPredicate = false)
         {
             var planned = microplanner.Plan(clause, firstPositionTaken);
 
@@ -217,7 +260,8 @@ namespace Grammar.Czech.Services
                 (embedded, embeddedFirstPositionTaken) =>
                     RenderNode(embedded, embeddedFirstPositionTaken).Text,
                 secondPositionConjunction,
-                suppressConditional);
+                suppressConditional,
+                omitPredicate);
 
             return (text, planned.Predicate);
         }

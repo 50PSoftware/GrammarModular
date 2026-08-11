@@ -70,7 +70,8 @@ namespace Grammar.Czech.Services
             bool firstPositionTaken,
             Func<SentenceNode, bool, string> renderEmbedded,
             string? secondPositionConjunction = null,
-            bool suppressConditional = false)
+            bool suppressConditional = false,
+            bool omitPredicate = false)
         {
             var clause = planned.Clause;
 
@@ -107,6 +108,15 @@ namespace Grammar.Czech.Services
             }
 
             var (verbRest, clitics) = SplitOffClitics(planned.Predicate, suppressConditional);
+
+            // Vypuštěné sloveso zmizí ze slovosledu, ne z plánu: pády zbytků řídí pořád ono, jen se
+            // nevysloví. Klitika se nevypouštějí — kdyby jaká byla, mezera by neměla hostitele, a proto
+            // se elipsa na takovou větu vůbec nepustí.
+            if (omitPredicate)
+            {
+                verbRest.Clear();
+            }
+
             clitics.AddRange(BuildPronounClitics(pronounClitics));
 
             var words = BuildLinearOrder(

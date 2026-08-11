@@ -164,7 +164,8 @@ namespace Grammar.Czech.Services
                 return running with { Conjuncts = [.. running.Conjuncts, joined] };
             }
 
-            return new Coordination(link.Conjunction, [node, joined], link.RequiresComma, link.Paired);
+            return new Coordination(
+                link.Conjunction, [node, joined], link.RequiresComma, link.Paired, link.AllowVerbEllipsis);
         }
 
         /// <summary>

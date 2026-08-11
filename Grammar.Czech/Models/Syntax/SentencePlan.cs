@@ -130,9 +130,13 @@ namespace Grammar.Czech.Models.Syntax
     /// Asks for the split construction: buď … nebo, ani … ani, nejen … ale i. Asked for rather than
     /// inferred, because the same conjunction serves both and only the caller knows which was meant.
     /// </param>
+    /// <param name="AllowVerbEllipsis">
+    /// Whether a verb repeated from the preceding conjunct may be left out.
+    /// </param>
     public sealed record ClauseLink(
         string Conjunction,
         SentencePlan Clause,
         bool? RequiresComma = null,
-        bool Paired = false);
+        bool Paired = false,
+        bool AllowVerbEllipsis = true);
 }

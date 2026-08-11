@@ -77,6 +77,149 @@ namespace Grammar.Czech.Test
 
         private static string Build(SentencePlan plan) => builder.Build(planner.Plan(plan));
 
+        /// <summary>
+        /// A verb repeated in the second conjunct is left out, and the remnants carry the clause.
+        /// </summary>
+        /// <remarks>
+        /// The PDT manual (§12.1.1.1) treats the governing verb as elided where it is clear from the
+        /// preceding clause which verb was left out — <em>(Jirka navštívil Marii.) Honza Jiřinu.</em> —
+        /// and reconstructs it by copying that node. The cases of what remains come from the elided
+        /// verb, which is why nothing here is recomputed: the clause is planned whole and only the verb
+        /// goes unsaid.
+        /// </remarks>
+        [TestMethod]
+        public void RepeatedVerbIsLeftOutOfTheSecondConjunct()
+        {
+            var plan = Reads() with
+            {
+                Joined =
+                [
+                    new ClauseLink("a", new SentencePlan
+                    {
+                        Predicate = Verb("číst", "číst"),
+                        Participants =
+                        [
+                            Noun("žák", "pán", Gender.Masculine, animate: true, FgdFunctor.ACT),
+                            Noun("dopis", "hrad", Gender.Masculine, functor: FgdFunctor.PAT)
+                        ]
+                    })
+                ]
+            };
+
+            Assert.AreEqual("Student čte knihu a žák dopis.", Build(plan));
+        }
+
+        /// <summary>
+        /// Turning it off keeps the verb, which is the contrastive reading.
+        /// </summary>
+        /// <remarks>
+        /// Both sentences are Czech and they are not the same sentence, so the caller has to be able to
+        /// have either. On by default for the same reason <see cref="SentencePlan.AllowSubjectDrop"/>
+        /// is: the language does it by default and turning it off is what marks the reading.
+        /// </remarks>
+        [TestMethod]
+        public void EllipsisCanBeTurnedOff()
+        {
+            var plan = Reads() with
+            {
+                Joined =
+                [
+                    new ClauseLink("a", new SentencePlan
+                    {
+                        Predicate = Verb("číst", "číst"),
+                        Participants =
+                        [
+                            Noun("žák", "pán", Gender.Masculine, animate: true, FgdFunctor.ACT),
+                            Noun("dopis", "hrad", Gender.Masculine, functor: FgdFunctor.PAT)
+                        ]
+                    }, AllowVerbEllipsis: false)
+                ]
+            };
+
+            Assert.AreEqual("Student čte knihu a žák čte dopis.", Build(plan));
+        }
+
+        /// <summary>
+        /// A different verb is not a repetition, so nothing is left out.
+        /// </summary>
+        [TestMethod]
+        public void DifferentVerbIsNotElided()
+        {
+            var plan = Reads() with { Joined = [new ClauseLink("a", Writes())] };
+
+            StringAssert.Contains(Build(plan), "píše");
+        }
+
+        /// <summary>
+        /// The two clauses may differ in person and number and the verb still goes.
+        /// </summary>
+        /// <remarks>
+        /// Person and number are carried by the subject, which stays in the second conjunct, so they are
+        /// recoverable without the verb. Requiring the predicates to match outright would refuse
+        /// <em>já piju kávu a ona čaj</em>, which is the commonest shape this construction has.
+        /// </remarks>
+        [TestMethod]
+        public void PersonAndNumberMayDifferAndTheVerbStillGoes()
+        {
+            var plan = new SentencePlan
+            {
+                Predicate = Verb("číst", "číst") with { Person = Person.First, Number = Number.Singular },
+                Participants = [Book(FgdFunctor.PAT)],
+                AllowSubjectDrop = false,
+                Joined =
+                [
+                    new ClauseLink("a", new SentencePlan
+                    {
+                        Predicate = Verb("číst", "číst"),
+                        Participants =
+                        [
+                            Student(FgdFunctor.ACT),
+                            Noun("dopis", "hrad", Gender.Masculine, functor: FgdFunctor.PAT)
+                        ]
+                    })
+                ]
+            };
+
+            Assert.AreEqual("Knihu čtu a student dopis.", Build(plan));
+        }
+
+        /// <summary>
+        /// A predicate that needs more than one word keeps all of them.
+        /// </summary>
+        /// <remarks>
+        /// In the first and second person of the past tense the clitic auxiliary carries the tense and
+        /// the person, so leaving the participle out would strand it, and where it then belongs is not
+        /// something this project has established. Not eliding is always grammatical, so that is what a
+        /// multi-word predicate gets.
+        /// </remarks>
+        [TestMethod]
+        public void MultiWordPredicateIsNotElided()
+        {
+            var past = Verb("číst", "číst") with { Tense = Tense.Past, Person = Person.First, Number = Number.Singular };
+
+            var plan = new SentencePlan
+            {
+                Predicate = past,
+                Participants = [Book(FgdFunctor.PAT)],
+                AllowSubjectDrop = false,
+                Joined =
+                [
+                    new ClauseLink("a", new SentencePlan
+                    {
+                        Predicate = past,
+                        Participants =
+                        [
+                            Student(FgdFunctor.ACT),
+                            Noun("dopis", "hrad", Gender.Masculine, functor: FgdFunctor.PAT)
+                        ]
+                    })
+                ]
+            };
+
+            StringAssert.Contains(Build(plan), "jsem");
+        }
+
+
         private static SentencePlan Reads() => new()
         {
             Predicate = Verb("číst", "číst"),
