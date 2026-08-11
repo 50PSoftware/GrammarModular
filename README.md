@@ -18,10 +18,13 @@ The project generates Czech word forms from a lemma, grammatical categories, a p
   - [Adjectives](#adjectives)
   - [Pronouns](#pronouns)
   - [Numerals](#numerals)
+  - [Adverbs](#adverbs)
   - [Verbs](#verbs)
   - [Phonology and orthography](#phonology-and-orthography)
   - [Lexicon and valency](#lexicon-and-valency)
   - [Sentences and complex sentences](#sentences-and-complex-sentences)
+  - [Particles](#particles)
+  - [Interjections](#interjections)
 - [Architecture](#architecture)
 - [Quick start](#quick-start)
 - [Examples](#examples)
@@ -66,7 +69,7 @@ Supported patterns:
 | feminine | `žena`, `růže`, `píseň`, `kost` |
 | neuter | `město`, `moře`, `kuře`, `stavení` |
 
-Patterns can inherit endings through `inheritsFrom`; `les`, for instance, inherits from `hrad` and overrides only the cases that differ. The five masculine animate sub-patterns all use it for the same thing, a nominative and vocative plural the base vzor does not have: `učitel`, `občan` and `turista` give `-é` to the *-tel*, *-an* and *-ista/-ita* suffix classes (*učitelé*, *občané*, *turisté*), and `syn` and `král` give `-ové` to the lexically defined class that takes it (*synové*, *biologové*, *králové*). Softening rules are inherited along with endings — a rule named for `pán` governs `občan` and `syn` too — so a sub-pattern does not have to restate the palatalization its base already describes. Irregular nouns live in `Grammar.Czech/Data/Rules/Nouns/irregulars.json` (19 lemmas, e.g. *oko*, *dům*, *ruka*, *noha*, *ucho*). The file `Grammar.Czech/Data/Rules/Nouns/propers.json` is empty — the mechanism for proper names exists, the data does not.
+Patterns can inherit endings through `inheritsFrom`; `les`, for instance, inherits from `hrad` and overrides only the cases that differ. The five masculine animate sub-patterns all use it for the same thing, a nominative and vocative plural the base vzor does not have: `učitel`, `občan` and `turista` give `-é` to the *-tel*, *-an* and *-ista/-ita* suffix classes (*učitelé*, *občané*, *turisté*), and `syn` and `král` give `-ové` to the lexically defined class that takes it (*synové*, *biologové*, *králové*). Softening rules are inherited along with endings — a rule named for `pán` governs `občan` and `syn` too — so a sub-pattern does not have to restate the palatalization its base already describes. Irregular nouns live in `Grammar.Czech/Data/Rules/Nouns/irregulars.json` (*oko*, *dům*, *ruka*, *noha*, *ucho* and the like). The file `Grammar.Czech/Data/Rules/Nouns/propers.json` is empty — the mechanism for proper names exists, the data does not.
 
 ### Adjectives
 
@@ -89,7 +92,7 @@ The post-preposition variant is available through `CzechWordRequest.IsAfterPrepo
 
 ### Numerals
 
-Numerals are read from `Grammar.Czech/Data/Rules/Numerals/patterns.json`, their paradigms from `Grammar.Czech/Data/Rules/Numerals/paradigms.json`. The data covers all nine kinds — cardinal, ordinal, sortal, set, aggregate, multiplicative, fractional, group, and the indefinite numerals across kinds. Distributive numerals (*po dvou*) are a construction rather than a lexical entry, and `CzechNumeralComposer` builds them.
+Numerals are read from `Grammar.Czech/Data/Rules/Numerals/patterns.json`, their paradigms from `Grammar.Czech/Data/Rules/Numerals/paradigms.json`. The data covers every kind `NumeralType` names — cardinal, ordinal, sortal, set, aggregate, multiplicative, fractional and group — plus the indefinite numerals, which cut across those kinds rather than forming one of their own. Distributive numerals (*po dvou*) are a construction rather than a lexical entry, and `CzechNumeralComposer` builds them.
 
 `CzechNumeralService` picks a strategy by `NumeralMorphology`: shared paradigms (*jeden*, *dva*, *oba*, *tři*, *čtyři*), the rule for the two-form 5–99 paradigm, delegation to adjectival and to nominal declension, and indeclinable entries. Doublets (*tří/třech*, *tisíc/tisíců*) and the dual forms of paired body parts (*třema rukama*) are selected through `NumeralFormOptions`.
 
@@ -115,7 +118,7 @@ The comparative, though, is read from `Grammar.Czech/Data/Rules/adverbs.json` ra
 
 The superlative is `nej-` on the comparative. Several irregulars carry a doublet whose shorter member is the colloquial one (*hůř* beside *hůře*, *dřív* beside *dříve*); it is selected with `CzechWordRequest.PrefersShortForm`.
 
-An unregistered adverb has its comparative derived: `-ěji` after `d`, `t`, `n` and the labials, `-eji` elsewhere, with the palatalization `-ce`, `-ky` and `-ho` bring. Measured against the 99 comparatives in the data, the rule reproduces every regular one and misses only the irregulars the ÚJČ reference lists as such — the two partition without overlap, which is what makes deriving safe. A test measures that rather than assuming it, so the rule and the data cannot drift apart unnoticed. A registered comparative always wins, and an adverb registered without one is taken to be uncompared rather than derived.
+An unregistered adverb has its comparative derived: `-ěji` after `d`, `t`, `n` and the labials, `-eji` elsewhere, with the palatalization `-ce`, `-ky` and `-ho` bring. Measured against the comparatives in the data, the rule reproduces every regular one and misses only the irregulars the ÚJČ reference lists as such — the two partition without overlap, which is what makes deriving safe. A test measures that rather than assuming it, so the rule and the data cannot drift apart unnoticed. A registered comparative always wins, and an adverb registered without one is taken to be uncompared rather than derived.
 
 The adjective an adverb comes from is recorded rather than computed, for the same reason, and `ICzechAdverbService.GetAdverbsFor` reads the mapping back — returning both members where an adjective yields two. Relative adverbs (*kde*, *kdy*, *kam*, *jak*) introduce a relative clause through `RelativeAttachment.Relativizer`, the field that used to be called `Pronoun`; being uninflected, they take no case and nothing agrees with the antecedent through them. Negative adverbs (*nikdy*, *nikde*, *nijak*) are lemmas of their own, not the positive ones with a prefix.
 
@@ -126,7 +129,7 @@ A comparative built a different way is not the same thing as a clipping, and the
 Verbs are generated from the rules in:
 
 - `Grammar.Czech/Data/Rules/Verbs/patterns.json` — the general classes `trida1` through `trida5`, whose stems are derived from the infinitive, plus the named pattern `dojme`,
-- `Grammar.Czech/Data/Rules/Verbs/irregulars.json` — 37 entries with explicitly listed stems. These are not only irregular verbs such as `být`, `mít`, `chtít`, `moci` and `vědět`; the classic named patterns `nese`, `bere`, `maže`, `peče`, `umře`, `tiskne`, `mine`, `kryje`, `kupuje`, `prosí` and `dělá` live here too.
+- `Grammar.Czech/Data/Rules/Verbs/irregulars.json` — entries with explicitly listed stems. These are not only irregular verbs such as `být`, `mít`, `chtít`, `moci` and `vědět`; the classic named patterns `nese`, `bere`, `maže`, `peče`, `umře`, `tiskne`, `mine`, `kryje`, `kupuje`, `prosí` and `dělá` live here too.
 
 `CzechVerbConjugationService` generates the basic forms for the indicative, the conditional, the imperative, the past tense, the present/future tense and the passive participle. On top of that, `CzechWordFormComposer` assembles some verb phrases: the periphrastic future of imperfectives, the passive with an auxiliary, the conditional, negation, and the reflexive `se`/`si`.
 
@@ -154,7 +157,7 @@ The phoneme registry then vetoes what cannot shorten regardless of the flag, so 
 
 `SqliteValencyProvider` reads `Grammar.Czech/Data/Lexicon/grammar.czech.lexicon.db`, a SQLite database. It is the one data source here that is not embedded JSON, because it is the part meant to grow into thousands of entries; the rule files under `Data/Rules/` describe closed classes and stay as they are.
 
-The dictionary is edited centrally, in MySQL behind a PHP admin, and this file is the local read-only copy pulled from it. Identifiers are assigned by the server and carried over unchanged — a copy that renumbered could never be compared against the server it came from again.
+The dictionary is edited centrally on a server, and this file is the local read-only copy pulled from it. Identifiers are assigned by the server and carried over unchanged — a copy that renumbered could never be compared against the server it came from again.
 
 The dictionary is **not carried inside the NuGet package**, and that is deliberate: a word added on the server is not a reason to release the library, and a consumer should not have to wait for one. The package ships the code; the deployment supplies the data and can replace it without rebuilding anything.
 
@@ -191,7 +194,7 @@ constructions.Find("mít", ["student", "zájem", "kniha"]);   // LVC.mít.zájem
 constructions.Find("mít", ["student", "kniha"]);            // null
 ```
 
-The pair is what is recognized, so the construction never leaks into ordinary uses of the same verb: *Student má zájem o knihu* and *Student má knihu* are built from different frames. Three patterns are seeded — `mít zájem o`, `dávat pozor na`, `mít strach z` — and the inventory is a corpus job rather than a memory one.
+The pair is what is recognized, so the construction never leaks into ordinary uses of the same verb: *Student má zájem o knihu* and *Student má knihu* are built from different frames. The seeded patterns are of the `mít zájem o`, `dávat pozor na` and `mít strach z` kind, and the inventory is a corpus job rather than a memory one.
 
 The schema in `Grammar.Czech.Lexicon.Tool/Schema/schema.sql` is deliberately portable SQL — SQLite is the first backend, and MySQL, Microsoft SQL or Firebird are meant to take the same DDL. Everything SQLite-specific sits in `schema.sqlite.sql`, and `schema.mysql.sql` is the server's variant: the same tables with `AUTO_INCREMENT` and, importantly, binary collation on every column that is matched rather than read — the usual `utf8mb4_0900_ai_ci` is accent-insensitive and would make `dát` and `dat` the same string.
 
@@ -224,21 +227,7 @@ The tool package does not contain the dictionary either. It is the thing that fe
 
 A pull writes to a temporary file and only moves it into place once `validate` passes, so a failed or interrupted download leaves the working lexicon untouched.
 
-#### The wire format
-
-`Grammar.Czech.Lexicon.Tool/Php/api/index.php` serves one page of one table per request:
-
-```json
-{"table":"lemma_entry","columns":["lemma_entry_id","lemma",…],"rows":[[1,"student",…]],"next_after":"5000"}
-```
-
-Three choices in there are worth knowing about, because each has a quieter alternative that looks fine:
-
-- **Table-shaped, not nested.** Identifiers come from the server and have to survive the trip; a document nesting slots inside frames inside lemmas would either repeat them anyway or make the importer invent its own.
-- **Rows as arrays, with the column names stated once.** At a hundred thousand lemmas, repeating twenty-four keys per row is most of the payload. The single header is also the contract: the importer refuses a page whose columns are not the ones it expects, in that order, which is what stops a reordered column from importing cleanly into the wrong place.
-- **Keyset paging, not offsets.** An offset shifts when the dictionary is edited mid-pull, silently dropping or repeating rows. The key is compared in its own type on both sides so the primary key index stays usable.
-
-A paged pull is still not a consistent snapshot — nothing stops an edit between one page and the next — and `validate` is what catches the result, as a broken reference rather than as a word that quietly fails to resolve later.
+A pull is paged, and paging is not a consistent snapshot — nothing stops an edit between one page and the next. `validate` is what catches the result, as a broken reference rather than as a word that quietly fails to resolve later.
 
 #### Filling a request from the lexicon
 
@@ -248,7 +237,7 @@ Ahead of the dispatch, because the word class is one of the things it fills and 
 
 It only ever writes where the request holds `null`, so a stated pattern wins even when the lexicon disagrees, and `HasMobileE = false` stays false rather than being replaced by the entry. That distinction is why the flags are nullable: `false` is the caller saying the word has no mobile e, `null` is the caller not saying, and only the second is a gap. A word the lexicon has never heard of goes through untouched and inflects from what the caller passes, which is the ordinary case — most of Czech is not in the dictionary and never will be.
 
-An entry is used only when its word class matches the one asked about. `GetEntry` takes a lemma and no category, so on a lemma entered under two classes it returns whichever row it finds; filling a request about *stát* the verb from the row for *stát* the country would not complete it but answer a different question.
+An entry is used only when its word class matches the one asked about, because filling a request about *stát* the verb from the row for *stát* the country would not complete it but answer a different question. Where the request states a class, the enricher looks the lemma up in that class; where it does not, it asks by lemma alone and takes whichever row it finds — which is the one case a lemma held under two classes can still come back as the wrong one.
 
 The lexicon serves mainly as a metadata provider for selected resolvers; it is not a complete dictionary of Czech.
 
@@ -307,7 +296,7 @@ Homonymy with the adverbs and the conjunctions is expected rather than a fault i
 
 ### Interjections
 
-Sixty-nine lemmas in `Grammar.Czech/Data/Rules/interjections.json`, in the four NESČ types — *emocionální*, *kontaktová*, *apelová*, *zvukomalebná* — with the line that source draws across them: the first three are subjective and the fourth objective. No morphology; an interjection is uninflected and forms, in that description, the most primitive sentence type there is.
+The lemmas in `Grammar.Czech/Data/Rules/interjections.json` fall into the four NESČ types — *emocionální*, *kontaktová*, *apelová*, *zvukomalebná* — with the line that source draws across them: the first three are subjective and the fourth objective. No morphology; an interjection is uninflected and forms, in that description, the most primitive sentence type there is.
 
 The punctuation is a rule and not data. An interjection is set off by a comma except where it stands in for a clause member, so the same word goes both ways — *Kamarádi, hurá, vyhráli jsme* against *Palicí buch ho po hlavě* — and `ICzechInterjectionService.RequiresComma` takes the use rather than only the word. What *is* recorded per word is which interjections can be a predicate at all, because it does not follow from the type: *hop* is *apelové* and predicative all the same. Those also carry the verb they form (*žbluňk → žbluňknout*), which NESČ notes as their entering word formation directly.
 
@@ -322,7 +311,7 @@ Grammar.sln
 |-- Grammar.Core/               language-independent enums, interfaces and models
 |-- Grammar.Czech/              the Czech implementation: services, providers, embedded JSON rules and the lexicon database
 |-- Grammar.Czech.Cli/          the `gramatika` client application: lemmas in, a sentence out
-|-- Grammar.Czech.Lexicon.Tool/ pulls, builds, validates and dumps the lexicon database; holds the schemas and the PHP API
+|-- Grammar.Czech.Lexicon.Tool/ pulls, builds, validates and dumps the lexicon database; holds the schemas
 `-- Grammar.Czech.Test/         MSTest tests for declension, conjugation, phonology and sentence building
 ```
 
@@ -436,7 +425,7 @@ What kind of event a verb names is a separate question from its aspect, and `lem
 
 It is not a finer grade of aspect. Aspect is grammatical, has two members and every Czech verb has one; this is lexical and most verbs are in none of the groups, so `null` means unclassified rather than "none". Where a verb is classified the group implies the aspect — NESČ states it of the whole list at once, *slovesa skupin (a)–(r) jsou dok., zatímco slovesa skupin (s)–(y) jsou nedok.* — and `AktionsartFacts.RequiredAspect` is that rule. `lexikon validate` holds every classified row against it, so a semelfactive marked imperfective is a bad row rather than an unusual verb.
 
-Thirteen entries carry it: `blýsknout` semelfactive against the frequentative `blýskat`, `zahřmět` ingressive, `napršet` and `nasněžit` cumulative, `pršet`, `sněžit` and `hřmít` decursive, `svítat` and `stmívat` mutative, `setmít` and `zmrznout` resultative, `rozednít` evolutive.
+The entries that carry it are of this kind: `blýsknout` semelfactive against the frequentative `blýskat`, `zahřmět` ingressive, `napršet` and `nasněžit` cumulative, `pršet`, `sněžit` and `hřmít` decursive, `svítat` and `stmívat` mutative, `setmít` and `zmrznout` resultative, `rozednít` evolutive.
 
 `mrznout` carries none on the entry, and that is a decision rather than a gap: *mrzne* is a state of the air and *voda mrzne* a gradual change of the water, which are different groups, while the entry has one row. It is the counterexample to the usual description of způsob slovesného děje as a property of the verb — the verb has no one answer and each of its readings does.
 
@@ -844,7 +833,7 @@ A word that is a form of nothing known is genuinely new, and gets written down. 
     Zapsal jsem ho mezi návrhy na doplnění slovníku.
 ```
 
-It cannot write to the dictionary and does not try. The SQLite file is a read-only replica of a MySQL copy edited through the PHP admin, identifiers are handed out by the server, the API only reads, and the next `lexikon pull` overwrites the local file whole — a row inserted here would live until then and be gone, which is a feature that silently discards its own result. So the collected words go in a file of their own, and the other half is a command on the tool that does own the dictionary:
+It cannot write to the dictionary and does not try. The SQLite file is a read-only replica of the central copy, identifiers are handed out by the server, the API only reads, and the next `lexikon pull` overwrites the local file whole — a row inserted here would live until then and be gone, which is a feature that silently discards its own result. So the collected words go in a file of their own, and the other half is a command on the tool that does own the dictionary:
 
 ```bash
 lexikon navrhy --jen-potvrzene
@@ -896,11 +885,11 @@ gramatika veta student číst kniha dnes   # Student čte knihu dnes.
 
 It cannot be derived. The ending says nothing, and neither does the adjective behind the adverb — *rychlý* and *rychle* are one word in two classes and only one of them answers "how". So it is recorded per word.
 
-It lives in the dictionary rather than beside the 291 adverbs in the embedded `adverbs.json` for the reason the verb stems give: correcting it should be an edit in the admin, not a release of the library. The two files now say different things about the same word — the JSON how it compares, which is morphology, the dictionary what it means for a sentence, which is a fact about the word. An adverb in the JSON and not in the dictionary behaves exactly as it did before: recognized, and the caller states the role.
+It lives in the dictionary rather than beside the adverbs in the embedded `adverbs.json` for the reason the verb stems give: correcting it should be an edit in the dictionary, not a release of the library. The two files now say different things about the same word — the JSON how it compares, which is morphology, the dictionary what it means for a sentence, which is a fact about the word. An adverb in the JSON and not in the dictionary behaves exactly as it did before: recognized, and the caller states the role.
 
-Every adverb the rule data holds carries one — 283 of the 291. Ninety-one of them rest on a rule rather than on anybody's judgement: a deadjectival adverb answers "jak", and `adverbs.json` records what each was derived from, so *pečlivý* → *pečlivě* → MANN needs no deciding. The other 171 were gone through one at a time, which is what the seed headers set out: 61 TWHEN, 26 EXT, 19 LOC and 19 DIR3, 16 MOD, 14 RHEM, and a tail of DIR1, DIR2, ATT, ACMP, CAUS and PREC.
+Practically every adverb the rule data holds carries one. A good share of them rest on a rule rather than on anybody's judgement: a deadjectival adverb answers "jak", and `adverbs.json` records what each was derived from, so *pečlivý* → *pečlivě* → MANN needs no deciding. The rest were gone through one at a time, which is what the seed headers set out — mostly TWHEN, EXT, LOC and DIR3, then MOD and RHEM, with a tail of DIR1, DIR2, ATT, ACMP, CAUS and PREC.
 
-Eight are deliberately absent: `blízko`, `dokonce`, `jak`, `naproti`, `sotva`, `tak`, `uvnitř` and `vedle`. Each is also a preposition or a conjunction, and an entry would take that away — the enricher fills the word class from the dictionary before the closed-class checks run, so *vedle knihy* would become an adverb and stop governing the genitive. A test holds both halves of that: every other adverb has a functor, and these eight have no entry.
+A few are deliberately absent: `blízko`, `dokonce`, `jak`, `naproti`, `sotva`, `tak`, `uvnitř` and `vedle`. Each is also a preposition or a conjunction, and an entry would take that away — the enricher fills the word class from the dictionary before the closed-class checks run, so *vedle knihy* would become an adverb and stop governing the genitive. A test holds both halves of that: every other adverb has a functor, and these have no entry.
 
 The judgement calls are named where they were made. `dlouho` is TWHEN rather than THL because the column holds one answer and TWHEN is the reading that does not lie in the other; `vpravo` is LOC rather than DIR3 because *je vpravo* against *jdi vpravo* is decided by the verb; `prakticky` is EXT by how it is used rather than MANN by how it looks.
 
@@ -993,16 +982,16 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 
 | Path | Contents |
 |---|---|
-| `Data/Rules/Nouns/patterns.json` | noun patterns (15) |
-| `Data/Rules/Nouns/irregulars.json` | irregular nouns (18) |
+| `Data/Rules/Nouns/patterns.json` | noun patterns |
+| `Data/Rules/Nouns/irregulars.json` | irregular nouns |
 | `Data/Rules/Nouns/propers.json` | proper names — empty so far |
-| `Data/Rules/Adjectives/patterns.json` | adjective patterns (4) |
+| `Data/Rules/Adjectives/patterns.json` | adjective patterns |
 | `Data/Rules/Pronouns/patterns.json` | pronoun data |
 | `Data/Rules/Pronouns/paradigms.json` | pronoun paradigms |
 | `Data/Rules/Numerals/patterns.json` | numeral data |
 | `Data/Rules/Numerals/paradigms.json` | numeral paradigms |
 | `Data/Rules/Verbs/patterns.json` | the general verb classes `trida1`–`trida5` and the `dojme` pattern |
-| `Data/Rules/Verbs/irregulars.json` | irregular verbs and named patterns with explicit stems (37) |
+| `Data/Rules/Verbs/irregulars.json` | irregular verbs and named patterns with explicit stems |
 | `Data/Rules/prefixes.json` | prefixes |
 | `Data/Rules/clitics.json` | conditional particles, past auxiliaries, reflexives |
 | `Data/Rules/prepositions.json` | prepositions, their government and vocalization |
@@ -1010,15 +999,15 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 | `Data/Rules/adverbs.json` | adverbs and their comparison |
 | `Data/Rules/particles.json` | particles and their function |
 | `Data/Rules/interjections.json` | interjections, their type and predicative use |
-| `Data/Lexicon/grammar.czech.lexicon.db` | lexical metadata and valency frames (`dát`/`dávat`, `jít`, `vidět`) — SQLite, not JSON |
+| `Data/Lexicon/grammar.czech.lexicon.db` | lexical metadata and valency frames — SQLite, not JSON |
 
 ## Known limitations
 
 ### The data, not the mechanism
 
 - The lexicon is not a complete dictionary of Czech; `ResolveGenderAndPattern` and `ResolveVerbAspect` only work for lemmas the database holds.
-- The lexicon contains frames for thirty lexemes — forty-six verb lemmas, counting both members of each aspect pair — out of two hundred and sixty-four entries. The mechanism is finished, the data is not: for a verb without a frame the caller supplies the cases as before.
-- Genitive-plural shortening is quantity only, and eight lemmas carry the flag. The *í* → *ě* type (*míra* → *měr*, *díra* → *děr*) is a different alternation that `has_genitive_plural_shortening` does not describe; such words need `lemma_entry.stem`, which the code reads but which no lemma in the dictionary fills in yet.
+- Only a fraction of the entries in the lexicon carry a valency frame. The mechanism is finished, the data is not: for a verb without a frame the caller supplies the cases as before.
+- Genitive-plural shortening is quantity only, and the flag is set on a handful of lemmas. The *í* → *ě* type (*míra* → *měr*, *díra* → *děr*) is a different alternation that `has_genitive_plural_shortening` does not describe; such words need `lemma_entry.stem`, which the code reads but which nothing in the dictionary fills in yet.
 - A slot realized by an infinitive or a content clause is built by `CzechClausePlanner`, but only one such slot per clause: a verb governing two of them at once is refused rather than assembled.
 - A reflexive infinitive puts its particle in the governing clause's cluster, which is right for one — *chce se učit* — and refused for two, because a clause has one cluster and *se* cannot be in it twice.
 - `CzechNumeralComposer.ComposeOrdinal` and `ComposeOfType` build only from lemmas present in the dictionary; a value that needs a missing component (e.g. *dvoutisící*) throws rather than inventing a form.

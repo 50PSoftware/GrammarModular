@@ -18,10 +18,13 @@ Projekt generuje české slovní tvary z lemmatu, gramatických kategorií, vzor
   - [Přídavná jména](#přídavná-jména)
   - [Zájmena](#zájmena)
   - [Číslovky](#číslovky)
+  - [Příslovce](#příslovce)
   - [Slovesa](#slovesa)
   - [Fonologie a pravopis](#fonologie-a-pravopis)
   - [Lexikon a valence](#lexikon-a-valence)
   - [Věty a souvětí](#věty-a-souvětí)
+  - [Částice](#částice)
+  - [Citoslovce](#citoslovce)
 - [Architektura](#architektura)
 - [Rychlý start](#rychlý-start)
 - [Příklady](#příklady)
@@ -66,7 +69,7 @@ Podporované vzory:
 | ženský | `žena`, `růže`, `píseň`, `kost` |
 | střední | `město`, `moře`, `kuře`, `stavení` |
 
-Vzory mohou dědit koncovky přes `inheritsFrom`; například `les` dědí z `hrad` a přepisuje jen odlišné pády. Nepravidelnosti jsou v `Grammar.Czech/Data/Rules/Nouns/irregulars.json` (18 lemmat, například *oko*, *dům*, *ruka*, *noha*, *ucho*). Soubor `Grammar.Czech/Data/Rules/Nouns/propers.json` je prázdný — mechanismus pro vlastní jména existuje, data v něm nejsou žádná.
+Vzory mohou dědit koncovky přes `inheritsFrom`; například `les` dědí z `hrad` a přepisuje jen odlišné pády. Nepravidelnosti jsou v `Grammar.Czech/Data/Rules/Nouns/irregulars.json` (*oko*, *dům*, *ruka*, *noha*, *ucho* a další). Soubor `Grammar.Czech/Data/Rules/Nouns/propers.json` je prázdný — mechanismus pro vlastní jména existuje, data v něm nejsou žádná.
 
 ### Přídavná jména
 
@@ -89,7 +92,7 @@ Volitelně se rozlišuje varianta po předložce přes `CzechWordRequest.IsAfter
 
 ### Číslovky
 
-Číslovky se čtou z `Grammar.Czech/Data/Rules/Numerals/patterns.json` a paradigmata z `Grammar.Czech/Data/Rules/Numerals/paradigms.json`. Data pokrývají všech devět druhů — základní, řadové, druhové, souborové, úhrnné, násobné, dílové, skupinové a neurčité napříč druhy. Podílné číslovky (*po dvou*) jsou konstrukce, ne lexikální položky, a skládá je `CzechNumeralComposer`.
+Číslovky se čtou z `Grammar.Czech/Data/Rules/Numerals/patterns.json` a paradigmata z `Grammar.Czech/Data/Rules/Numerals/paradigms.json`. Data pokrývají každý druh, který `NumeralType` jmenuje — základní, řadové, druhové, souborové, úhrnné, násobné, dílové a skupinové — a k tomu neurčité číslovky, které jdou napříč druhy, místo aby tvořily vlastní. Podílné číslovky (*po dvou*) jsou konstrukce, ne lexikální položky, a skládá je `CzechNumeralComposer`.
 
 `CzechNumeralService` vybírá strategii podle `NumeralMorphology`: sdílená paradigmata (*jeden*, *dva*, *oba*, *tři*, *čtyři*), pravidlo pro dvoutvarové paradigma 5–99, delegaci na adjektivní i substantivní skloňování a nesklonné položky. Dublety (*tří/třech*, *tisíc/tisíců*) i duálové tvary párových částí těla (*třema rukama*) se vybírají přes `NumeralFormOptions`.
 
@@ -115,7 +118,7 @@ Komparativ se ale z `Grammar.Czech/Data/Rules/adverbs.json` čte, neodvozuje. P�
 
 Superlativ je `nej-` na komparativu. Několik nepravidelných nese dubletu, jejíž kratší člen je ten hovorovější (*hůř* vedle *hůře*, *dřív* vedle *dříve*); vybírá se přes `CzechWordRequest.PrefersShortForm`.
 
-Neregistrovanému příslovci se komparativ odvodí: `-ěji` po `d`, `t`, `n` a retnicích, jinde `-eji`, s měkčením, které přinášejí `-ce`, `-ky` a `-ho`. Proti 99 komparativům v datech pravidlo reprodukuje každý pravidelný a míjí jen ty nepravidelné, které jako nepravidelné uvádí příručka ÚJČ — obojí se dělí bez překryvu, a právě proto je odvozování bezpečné. Test to měří, místo aby to předpokládal, takže se pravidlo a data nemůžou nepozorovaně rozejít. Registrovaný komparativ vždycky vyhrává a příslovce registrované bez něj se bere jako nestupňované, ne jako důvod k odvození.
+Neregistrovanému příslovci se komparativ odvodí: `-ěji` po `d`, `t`, `n` a retnicích, jinde `-eji`, s měkčením, které přinášejí `-ce`, `-ky` a `-ho`. Proti komparativům v datech pravidlo reprodukuje každý pravidelný a míjí jen ty nepravidelné, které jako nepravidelné uvádí příručka ÚJČ — obojí se dělí bez překryvu, a právě proto je odvozování bezpečné. Test to měří, místo aby to předpokládal, takže se pravidlo a data nemůžou nepozorovaně rozejít. Registrovaný komparativ vždycky vyhrává a příslovce registrované bez něj se bere jako nestupňované, ne jako důvod k odvození.
 
 Přídavné jméno, ze kterého příslovce pochází, se ze stejného důvodu zaznamenává, nepočítá, a `ICzechAdverbService.GetAdverbsFor` mapování čte zpátky — kde jedno přídavné jméno dá dvě příslovce, vrátí obě. Vztažná příslovce (*kde*, *kdy*, *kam*, *jak*) uvozují vztažnou větu přes `RelativeAttachment.Relativizer`, tedy pole, které se dřív jmenovalo `Pronoun`; protože jsou neohebná, neberou pád a nic se přes ně s řídícím členem neshoduje. Záporná příslovce (*nikdy*, *nikde*, *nijak*) jsou samostatná lemmata, ne kladná s předponou.
 
@@ -126,7 +129,7 @@ Jinak utvořený komparativ není totéž co zkrácený tvar a data je drží zv
 Slovesa se generují z pravidel v:
 
 - `Grammar.Czech/Data/Rules/Verbs/patterns.json` — obecné třídy `trida1` až `trida5`, u kterých se kmeny odvozují z infinitivu, plus pojmenovaný vzor `dojme`,
-- `Grammar.Czech/Data/Rules/Verbs/irregulars.json` — 37 položek s explicitně zapsanými kmeny. Nejsou to jen nepravidelná slovesa jako `být`, `mít`, `chtít`, `moci` a `vědět`; leží tu i klasické vzory `nese`, `bere`, `maže`, `peče`, `umře`, `tiskne`, `mine`, `kryje`, `kupuje`, `prosí` a `dělá`.
+- `Grammar.Czech/Data/Rules/Verbs/irregulars.json` — položky s explicitně zapsanými kmeny. Nejsou to jen nepravidelná slovesa jako `být`, `mít`, `chtít`, `moci` a `vědět`; leží tu i klasické vzory `nese`, `bere`, `maže`, `peče`, `umře`, `tiskne`, `mine`, `kryje`, `kupuje`, `prosí` a `dělá`.
 
 `CzechVerbConjugationService` umí generovat základní tvary pro indikativ, kondicionál, imperativ, minulý čas, přítomný/budoucí čas a pasivní participium. `CzechWordFormComposer` nad tím skládá některé slovesné fráze: opisné futurum u imperfektiv, pasivum s pomocným slovesem, kondicionál, negaci a reflexivní `se`/`si`.
 
@@ -154,7 +157,7 @@ Registr fonémů pak odmítne, co krátit nejde, ať si heslo říká co chce, t
 
 `SqliteValencyProvider` čte `Grammar.Czech/Data/Lexicon/grammar.czech.lexicon.db`, databázi SQLite. Je to jediný zdroj dat, který tu není embedded JSON — právě on má růst do tisíců hesel, zatímco pravidlové soubory v `Data/Rules/` popisují uzavřené třídy a zůstávají, jak jsou.
 
-Slovník se edituje centrálně, v MySQL nebo MariaDB za PHP administrací, a tenhle soubor je jeho lokální kopie určená jen ke čtení. Identifikátory přiděluje server a kopie je přebírá beze změny — přečíslovaná kopie by se už nedala porovnat se serverem, ze kterého vznikla.
+Slovník se edituje centrálně na serveru a tenhle soubor je jeho lokální kopie určená jen ke čtení. Identifikátory přiděluje server a kopie je přebírá beze změny — přečíslovaná kopie by se už nedala porovnat se serverem, ze kterého vznikla.
 
 Slovník **není součástí NuGet balíčku**, a je to záměr: heslo přidané na serveru není důvod vydávat knihovnu a konzument na to nemá čekat. Balíček veze kód, data dodává nasazení — a může je vyměnit, aniž by cokoli přestavovalo.
 
@@ -191,7 +194,7 @@ constructions.Find("mít", ["student", "zájem", "kniha"]);   // LVC.mít.zájem
 constructions.Find("mít", ["student", "kniha"]);            // null
 ```
 
-Poznává se dvojice, takže konstrukce nepřeteče do běžných užití téhož slovesa: *Student má zájem o knihu* a *Student má knihu* se staví z různých rámců. Naseedované jsou tři vzorce — `mít zájem o`, `dávat pozor na`, `mít strach z` — a doplnit inventář je práce s korpusem, ne po paměti.
+Poznává se dvojice, takže konstrukce nepřeteče do běžných užití téhož slovesa: *Student má zájem o knihu* a *Student má knihu* se staví z různých rámců. Naseedované vzorce jsou druhu `mít zájem o`, `dávat pozor na` a `mít strach z` a doplnit inventář je práce s korpusem, ne po paměti.
 
 Schéma v `Grammar.Czech.Lexicon.Tool/Schema/schema.sql` je záměrně přenositelné SQL — SQLite je první backend, ne poslední, a MySQL, Microsoft SQL i Firebird mají vzít stejné DDL. Vše specifické pro SQLite je v `schema.sqlite.sql`; `schema.mysql.sql` je varianta pro server.
 
@@ -224,21 +227,7 @@ Balíček nástroje slovník taky neobsahuje. Nástroj je to, co ho stáhne.
 
 Pull staví novou databázi do dočasného souboru a přesune ji na místo, teprve když projde `validate` — neúspěšné nebo přerušené stažení funkční lexikon nesáhne.
 
-#### Formát na drátě
-
-`Grammar.Czech.Lexicon.Tool/Php/api/index.php` vrací na jeden požadavek jednu stránku jedné tabulky:
-
-```json
-{"table":"lemma_entry","columns":["lemma_entry_id","lemma",…],"rows":[[1,"student",…]],"next_after":"5000"}
-```
-
-Tři rozhodnutí v tom stojí za vysvětlení, protože ke každému existuje tišší varianta, která vypadá stejně dobře:
-
-- **Tvar tabulek, ne zanoření.** Identifikátory přiděluje server a musí cestu přežít; dokument, který by zanořoval sloty do rámců a rámce do lemmat, by je buď stejně opakoval, nebo by je importér musel vymýšlet.
-- **Řádky jako pole, jména sloupců jednou.** Při stotisíci heslech je opakování dvaceti čtyř klíčů na řádek většina objemu. Ta jediná hlavička je zároveň kontrakt: importér odmítne stránku, jejíž sloupce nejsou ty očekávané ve stejném pořadí — což je to, co zabrání prohozenému sloupci naimportovat se čistě na špatné místo.
-- **Stránkování podle klíče, ne podle offsetu.** Offset se posune, když někdo slovník edituje uprostřed stahování, a tiše přeskočí nebo zopakuje řádky. Klíč se na obou stranách porovnává ve vlastním typu, takže index primárního klíče zůstane použitelný.
-
-Stránkované stahování ani tak není konzistentní snímek — nic nebrání editaci mezi dvěma stránkami — a `validate` je to, co výsledek zachytí: jako rozbitý odkaz, ne jako slovo, které se za půl roku nenaskloňuje.
+Stahování je stránkované a stránkování není konzistentní snímek — nic nebrání editaci mezi dvěma stránkami. `validate` je to, co výsledek zachytí: jako rozbitý odkaz, ne jako slovo, které se za půl roku nenaskloňuje.
 
 #### Doplňování požadavku z lexikonu
 
@@ -248,7 +237,7 @@ Před rozřazením proto, že slovní druh je jedna z věcí, které doplňuje, 
 
 Zapisuje jen tam, kde je v požadavku `null`, takže zadaný vzor vyhraje i proti slovníku a `HasMobileE = false` zůstane false, místo aby ho přebil záznam. Proto jsou ty příznaky nullable: `false` je „volající říká, že slovo pohyblivé -e nemá", `null` je „volající to neřekl", a mezera je jen to druhé. Slovo, které slovník nezná, projde beze změny a skloní se z toho, co dodal volající — což je běžný případ, ne okrajový: většina češtiny ve slovníku není a nebude.
 
-Záznam se použije jen tehdy, když jeho slovní druh odpovídá tomu, na co se ptáš. `GetEntry` bere lemma bez kategorie, takže u lemmatu zavedeného pod dvěma slovními druhy vrátí ten řádek, na který narazí; doplnit požadavek o sloveso *stát* z řádku pro *stát* jako zemi by ho nedoplnilo, ale odpovědělo na něco jiného.
+Záznam se použije jen tehdy, když jeho slovní druh odpovídá tomu, na co se ptáš — doplnit požadavek o sloveso *stát* z řádku pro *stát* jako zemi by ho nedoplnilo, ale odpovědělo na něco jiného. Když požadavek slovní druh uvádí, enricher hledá lemma rovnou v něm; když ne, ptá se jen na lemma a vezme ten řádek, na který narazí — a to je jediný případ, kdy se u lemmatu zavedeného pod dvěma slovními druhy pořád může vrátit ten nesprávný.
 
 Lexikon slouží hlavně jako provider metadat pro vybrané resolvery, není to úplný český slovník.
 
@@ -305,7 +294,7 @@ Homonymie s příslovci a spojkami se čeká, není to vada dat. Hranice se kres
 
 ### Citoslovce
 
-Devětašedesát lemmat v `Grammar.Czech/Data/Rules/interjections.json` ve čtyřech typech podle NESČ — *emocionální*, *kontaktová*, *apelová*, *zvukomalebná* — s čárou, kterou zdroj napříč nimi vede: první tři jsou subjektivní, čtvrtý objektivní. Žádná morfologie; citoslovce je neohebné a tvoří podle toho popisu nejprimitivnější typ věty.
+Lemmata v `Grammar.Czech/Data/Rules/interjections.json` se dělí do čtyř typů podle NESČ — *emocionální*, *kontaktová*, *apelová*, *zvukomalebná* — s čárou, kterou zdroj napříč nimi vede: první tři jsou subjektivní, čtvrtý objektivní. Žádná morfologie; citoslovce je neohebné a tvoří podle toho popisu nejprimitivnější typ věty.
 
 Interpunkce je pravidlo, ne data. Citoslovce se odděluje čárkou kromě případu, kdy zastupuje větný člen, takže totéž slovo se píše obojím způsobem — *Kamarádi, hurá, vyhráli jsme* proti *Palicí buch ho po hlavě* — a `ICzechInterjectionService.RequiresComma` proto bere užití, ne jen slovo. Po slovech zapsané je to, které citoslovce vůbec může být přísudkem, protože to z typu neplyne: *hop* je *apelové* a přísudkové zároveň. Ta také nesou sloveso, které tvoří (*žbluňk → žbluňknout*), což NESČ zmiňuje jako jejich přímý vstup do slovotvorby.
 
@@ -320,7 +309,7 @@ Grammar.sln
 |-- Grammar.Core/               jazykově nezávislé enumy, rozhraní a modely
 |-- Grammar.Czech/              česká implementace: servisy, providery, embedded JSON pravidla a databáze lexikonu
 |-- Grammar.Czech.Cli/          klientská aplikace `gramatika`: z lemmat poskládá větu
-|-- Grammar.Czech.Lexicon.Tool/ stahuje, staví, kontroluje a vypisuje databázi lexikonu; drží schémata a PHP API
+|-- Grammar.Czech.Lexicon.Tool/ stahuje, staví, kontroluje a vypisuje databázi lexikonu; drží schémata
 `-- Grammar.Czech.Test/         MSTest testy pro skloňování, časování, fonologii a stavbu vět
 ```
 
@@ -434,7 +423,7 @@ Jaký druh děje sloveso pojmenovává, je jiná otázka než jeho vid, a bydlí
 
 Není to jemnější vid. Vid je gramatický, má dva členy a má ho každé české sloveso; tohle je lexikální a většina sloves do žádné skupiny nepatří, takže `null` znamená nezařazeno, ne „žádný". Kde sloveso zařazené je, skupina vid určuje — NESČ to říká o celém výčtu najednou, *slovesa skupin (a)–(r) jsou dok., zatímco slovesa skupin (s)–(y) jsou nedok.* — a `AktionsartFacts.RequiredAspect` je právě to pravidlo. `lexikon validate` proti němu drží každý zařazený řádek, takže nedokonavé semelfaktivum je vadný řádek, ne neobvyklé sloveso.
 
-Nese ho třináct hesel: `blýsknout` semelfaktivum proti frekventativu `blýskat`, `zahřmět` ingresivum, `napršet` a `nasněžit` kumulativa, `pršet`, `sněžit` a `hřmít` dekurziva, `svítat` a `stmívat` mutativa, `setmít` a `zmrznout` rezultativa, `rozednít` evolutivum.
+Nesou ho hesla tohoto druhu: `blýsknout` semelfaktivum proti frekventativu `blýskat`, `zahřmět` ingresivum, `napršet` a `nasněžit` kumulativa, `pršet`, `sněžit` a `hřmít` dekurziva, `svítat` a `stmívat` mutativa, `setmít` a `zmrznout` rezultativa, `rozednít` evolutivum.
 
 `mrznout` na hesle nenese žádné, a to je rozhodnutí, ne mezera: *mrzne* je stav vzduchu a *voda mrzne* postupná změna vody, což jsou různé skupiny, a heslo má jeden řádek. Je to protipříklad k obvyklému popisu způsobu slovesného děje jako vlastnosti slovesa — sloveso samo jednu odpověď nemá a každé jeho čtení ano.
 
@@ -841,7 +830,7 @@ Slovo, které není tvarem ničeho známého, je opravdu nové a zapíše se. `:
     Zapsal jsem ho mezi návrhy na doplnění slovníku.
 ```
 
-Do slovníku zapisovat neumí a nepokouší se o to. Soubor SQLite je kopie MySQL databáze editované přes PHP administraci, určená jen ke čtení; id přiděluje server, API umí jen číst a další `lexikon pull` lokální soubor přepíše celý — řádek vložený tady by žil do té doby a pak byl pryč, což je funkce, která tiše zahazuje vlastní výsledek. Sebraná slova tedy jdou do vlastního souboru a druhá půlka je příkaz nástroje, který slovník opravdu vlastní:
+Do slovníku zapisovat neumí a nepokouší se o to. Soubor SQLite je kopie centrální databáze, určená jen ke čtení; id přiděluje server, API umí jen číst a další `lexikon pull` lokální soubor přepíše celý — řádek vložený tady by žil do té doby a pak byl pryč, což je funkce, která tiše zahazuje vlastní výsledek. Sebraná slova tedy jdou do vlastního souboru a druhá půlka je příkaz nástroje, který slovník opravdu vlastní:
 
 ```bash
 lexikon navrhy --jen-potvrzene
@@ -893,11 +882,11 @@ gramatika veta student číst kniha dnes   # Student čte knihu dnes.
 
 Odvodit to nejde. Zakončení neříká nic a přídavné jméno za tím příslovcem taky ne — *rychlý* a *rychle* je jedno slovo ve dvou slovních druzích a na otázku „jak“ odpovídá jen jedno z nich. Zapisuje se to tedy po slovech.
 
-Bydlí to ve slovníku, a ne u těch 291 příslovcí ve vestavěném `adverbs.json`, ze stejného důvodu jako slovesné kmeny: oprava má být edit v administraci, ne vydání knihovny. Ty dva soubory teď o témž slově říkají různé věci — JSON, jak se stupňuje, což je morfologie, slovník, co znamená pro větu, což je fakt o slově. Příslovce, které je v JSONu a ne ve slovníku, se chová přesně jako dřív: pozná se a roli zadá volající.
+Bydlí to ve slovníku, a ne u příslovcí ve vestavěném `adverbs.json`, ze stejného důvodu jako slovesné kmeny: oprava má být edit ve slovníku, ne vydání knihovny. Ty dva soubory teď o témž slově říkají různé věci — JSON, jak se stupňuje, což je morfologie, slovník, co znamená pro větu, což je fakt o slově. Příslovce, které je v JSONu a ne ve slovníku, se chová přesně jako dřív: pozná se a roli zadá volající.
 
-Nese ho každé příslovce, které pravidla vedou — 283 z 291. Devadesát jedna z nich stojí na pravidle, ne na něčím úsudku: deadjektivní příslovce odpovídá na „jak" a `adverbs.json` si pamatuje, z čeho které vzniklo, takže *pečlivý* → *pečlivě* → MANN není co rozhodovat. Zbylých 171 je projitých po jednom, což hlavičky seedů rozepisují: 61 TWHEN, 26 EXT, 19 LOC a 19 DIR3, 16 MOD, 14 RHEM a ocásek DIR1, DIR2, ATT, ACMP, CAUS a PREC.
+Nese ho prakticky každé příslovce, které pravidla vedou. Slušná část z nich stojí na pravidle, ne na něčím úsudku: deadjektivní příslovce odpovídá na „jak" a `adverbs.json` si pamatuje, z čeho které vzniklo, takže *pečlivý* → *pečlivě* → MANN není co rozhodovat. Zbytek je projitý po jednom, což hlavičky seedů rozepisují — nejvíc TWHEN, EXT, LOC a DIR3, pak MOD a RHEM a ocásek DIR1, DIR2, ATT, ACMP, CAUS a PREC.
 
-Osm jich tam vědomě není: `blízko`, `dokonce`, `jak`, `naproti`, `sotva`, `tak`, `uvnitř` a `vedle`. Každé z nich je zároveň předložka nebo spojka a heslo by jim tu roli vzalo — enricher doplní slovní druh ze slovníku dřív, než se na slovo dostane rozpoznání uzavřených tříd, takže by z *vedle knihy* bylo příslovce a předložka by přestala řídit genitiv. Test hlídá obě půlky: každé ostatní příslovce funktor má a těchhle osm nemá heslo.
+Několik jich tam vědomě není: `blízko`, `dokonce`, `jak`, `naproti`, `sotva`, `tak`, `uvnitř` a `vedle`. Každé z nich je zároveň předložka nebo spojka a heslo by jim tu roli vzalo — enricher doplní slovní druh ze slovníku dřív, než se na slovo dostane rozpoznání uzavřených tříd, takže by z *vedle knihy* bylo příslovce a předložka by přestala řídit genitiv. Test hlídá obě půlky: každé ostatní příslovce funktor má a tahle heslo nemají.
 
 Sporná rozhodnutí jsou pojmenovaná tam, kde padla. `dlouho` je TWHEN a ne THL, protože sloupec drží jednu odpověď a TWHEN je to čtení, které nelže v tom druhém; `vpravo` je LOC a ne DIR3, protože *je vpravo* proti *jdi vpravo* rozhoduje sloveso; `prakticky` je EXT podle toho, jak se používá, ne MANN podle toho, jak vypadá.
 
@@ -984,39 +973,38 @@ dotnet test Grammar.Czech.Test
 
 Testy jsou v MSTest a pokrývají substantiva, adjektiva, zájmena, číslovky, slovesa, vybrané fonologické evaluátory/služby, stavbu vět a souvětí, a načítání všech JSON providerů včetně referenční integrity mezi soubory.
 
-Lexikon má vlastní sadu: průchod databáze přes JSON a zpátky, který ověří, že drátový formát unese celý slovník beze ztráty, stránkovací smyčku proti podstrčenému transportu, a porovnání schémat — přenositelné DDL proti variantě pro MySQL a mapa sloupců v C# proti té v PHP. Ty poslední existují proto, že kontrola v importéru se spustí až při stahování proti běžícímu serveru, což je nejhorší chvíle na zjištění, že se dva ručně udržované seznamy rozešly.
-
 ## Datová vrstva
 
 Pravidlová data v projektu `Grammar.Czech` jsou embedded JSON resources. Výjimkou je lexikon: ten je databáze SQLite, protože jako jediný má růst do tisíců hesel a edituje se centrálně.
 
 | Cesta | Obsah |
 |---|---|
-| `Data/Rules/Nouns/patterns.json` | substantivní vzory (15) |
-| `Data/Rules/Nouns/irregulars.json` | nepravidelná substantiva (18) |
+| `Data/Rules/Nouns/patterns.json` | substantivní vzory |
+| `Data/Rules/Nouns/irregulars.json` | nepravidelná substantiva |
 | `Data/Rules/Nouns/propers.json` | vlastní jména — zatím prázdné |
-| `Data/Rules/Adjectives/patterns.json` | adjektivní vzory (4) |
+| `Data/Rules/Adjectives/patterns.json` | adjektivní vzory |
 | `Data/Rules/Pronouns/patterns.json` | data zájmen |
 | `Data/Rules/Pronouns/paradigms.json` | zájmenná paradigmata |
 | `Data/Rules/Numerals/patterns.json` | data číslovek |
 | `Data/Rules/Numerals/paradigms.json` | paradigmata číslovek |
 | `Data/Rules/Verbs/patterns.json` | obecné slovesné třídy `trida1`–`trida5` a vzor `dojme` |
-| `Data/Rules/Verbs/irregulars.json` | nepravidelná slovesa a pojmenované vzory s explicitními kmeny (37) |
+| `Data/Rules/Verbs/irregulars.json` | nepravidelná slovesa a pojmenované vzory s explicitními kmeny |
 | `Data/Rules/prefixes.json` | prefixy |
 | `Data/Rules/clitics.json` | kondicionálové částice, minulá pomocná slovesa, reflexiva |
 | `Data/Rules/prepositions.json` | předložky, jejich rekce a vokalizace |
 | `Data/Rules/conjunctions.json` | spojky, jejich druh, vztah, párovost a pravidlo čárky |
+| `Data/Rules/adverbs.json` | příslovce a jejich stupňování |
 | `Data/Rules/particles.json` | částice a jejich funkce |
 | `Data/Rules/interjections.json` | citoslovce, jejich druh a přísudkové užití |
-| `Data/Lexicon/grammar.czech.lexicon.db` | lexikální metadata a valenční rámce (`dát`/`dávat`, `jít`, `vidět`) — SQLite, ne JSON |
+| `Data/Lexicon/grammar.czech.lexicon.db` | lexikální metadata a valenční rámce — SQLite, ne JSON |
 
 ## Známá omezení
 
 ### Data, ne mechanismus
 
 - Lexikon není úplný slovník češtiny; `ResolveGenderAndPattern` a `ResolveVerbAspect` fungují jen pro lemmata, která databáze obsahuje.
-- Lexikon obsahuje rámce pro třicet lexémů — čtyřicet šest slovesných lemmat, počítá-li se každý člen vidové dvojice — z dvou set šedesáti čtyř hesel. Mechanismus je hotový, data ne: u slovesa bez rámce si pády zadává volající jako dřív.
-- Krácení v genitivu plurálu je jen kvantitativní a vlajku nese osm lemmat. Typ *í* → *ě* (*míra* → *měr*, *díra* → *děr*) je jiná alternace, o které `has_genitive_plural_shortening` nic neříká; taková slova potřebují `lemma_entry.stem`, který kód čte, ale který zatím žádné heslo ve slovníku nevyplňuje.
+- Valenční rámec nese jen zlomek hesel lexikonu. Mechanismus je hotový, data ne: u slovesa bez rámce si pády zadává volající jako dřív.
+- Krácení v genitivu plurálu je jen kvantitativní a vlajku nese hrstka lemmat. Typ *í* → *ě* (*míra* → *měr*, *díra* → *děr*) je jiná alternace, o které `has_genitive_plural_shortening` nic neříká; taková slova potřebují `lemma_entry.stem`, který kód čte, ale který zatím ve slovníku nic nevyplňuje.
 - Slot realizovaný infinitivem nebo obsahovou větou skládá `CzechClausePlanner`, ale jen jeden na klauzi: sloveso, které jich řídí víc najednou, se odmítne, místo aby se poskládalo.
 - Zvratný infinitiv dává svoje se/si do klastru věty řídící, což je u jednoho správně — *chce se učit* — a u dvou se odmítne, protože klastr je v klauzi jeden a *se* v něm nemůže být dvakrát.
 - `CzechNumeralComposer.ComposeOrdinal` a `ComposeOfType` skládají jen z lemmat ve slovníku; hodnota vyžadující chybějící složku (např. *dvoutisící*) selže s výjimkou, místo aby si tvar vymyslela.
