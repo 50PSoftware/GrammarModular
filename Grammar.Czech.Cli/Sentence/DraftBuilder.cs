@@ -339,6 +339,7 @@ namespace Grammar.Czech.Cli.Sentence
             }
 
             var known = _lexicon.HasEntry(match.Lemma);
+            FgdFunctor? adverbial = null;
             var enriched = _enricher.Enrich(word);
 
             // Předložky, zájmena ani spojky slovník nevede — jsou to uzavřené třídy a bydlí
@@ -357,6 +358,15 @@ namespace Grammar.Czech.Cli.Sentence
             if (enriched.WordCategory is null && IsConjunction(lemma))
             {
                 enriched.WordCategory = WordCategory.Conjunction;
+            }
+
+            // Okolnost, kterou příslovce vyjadřuje samo o sobě, ví jen slovník: 'dnes' je kdy, 'doma'
+            // kde, 'rychle' jak. Zapisuje se rovnou jako role, takže se na ni uživatel nemusí ptát —
+            // a jen tam, kde ji sám neurčil, protože zadané vyhrává nad slovníkem i tady.
+            if (stated?.Functor is null
+                && _lexicon.GetEntry(match.Lemma, WordCategory.Adverb)?.AdverbialFunctor is { } circumstance)
+            {
+                adverbial = circumstance;
             }
 
             // Zbylé čtyři uzavřené třídy, ve stejném duchu a záměrně až za předchozími třemi: 'vedle'
@@ -413,6 +423,7 @@ namespace Grammar.Czech.Cli.Sentence
             return new ResolvedWord(position, match.Lemma, completed, origin, stated)
             {
                 CompletedSpelling = match.Completed ? lemma : null,
+                AdverbialFunctor = adverbial,
             };
         }
 
@@ -488,7 +499,7 @@ namespace Grammar.Czech.Cli.Sentence
                     Preposition = word.Stated?.Preposition ?? pendingPreposition,
                     PrepositionCases = [.. _prepositions.GetAllowedCases(
                         word.Stated?.Preposition ?? pendingPreposition ?? string.Empty)],
-                    Functor = word.Stated?.Functor,
+                    Functor = word.Stated?.Functor ?? word.AdverbialFunctor,
                     Status = word.Stated?.Status ?? InformationStatus.New,
                     HasStatedStatus = word.Stated?.Status is not null,
                 };
@@ -687,6 +698,10 @@ namespace Grammar.Czech.Cli.Sentence
             // Jak to napsal uživatel, když se to od slovníku lišilo — jinak null. Věta bude obsahovat
             // slovo, které nenapsal, a to se má říct.
             public string? CompletedSpelling { get; init; }
+
+            // Okolnost, kterou to příslovce podle slovníku vyjadřuje. Nese se sem, protože roli dostane
+            // člen až o krok dál a heslo už tam po ruce není.
+            public FgdFunctor? AdverbialFunctor { get; init; }
         }
     }
 }

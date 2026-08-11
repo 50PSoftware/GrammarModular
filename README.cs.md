@@ -872,6 +872,18 @@ Sezení stojí vedle `veta`, ne místo něj. `veta` je pořád jeden příkaz, n
 
 Na pojmy se dá zeptat jménem, v obou režimech: `? role` vysvětlí, co jsou funktory a proč se zadává role a ne pád, `? cleneni` proč dané a nové rozhodují slovosled, a `? odhad` co si nástroj domýšlí a jak to výpis říká.
 
+Poznat slovní druh není totéž co umět to slovo zasadit. Příslovce není valenční slot, takže mu žádný rámec roli nedá, a dokud slovník neuměl říct, jakou okolnost příslovce vyjadřuje, končilo každé příslovce jako otevřená otázka. Od toho je `lemma_entry.adverbial_functor`:
+
+```bash
+gramatika veta student číst kniha dnes   # Student čte knihu dnes.
+```
+
+Odvodit to nejde. Zakončení neříká nic a přídavné jméno za tím příslovcem taky ne — *rychlý* a *rychle* je jedno slovo ve dvou slovních druzích a na otázku „jak“ odpovídá jen jedno z nich. Zapisuje se to tedy po slovech.
+
+Bydlí to ve slovníku, a ne u těch 291 příslovcí ve vestavěném `adverbs.json`, ze stejného důvodu jako slovesné kmeny: oprava má být edit v administraci, ne vydání knihovny. Ty dva soubory teď o témž slově říkají různé věci — JSON, jak se stupňuje, což je morfologie, slovník, co znamená pro větu, což je fakt o slově. Příslovce, které je v JSONu a ne ve slovníku, se chová přesně jako dřív: pozná se a roli zadá volající.
+
+Zatím ji nese jednadvacet, ve třech skupinách, které definice rozhodnou bez dohadů: `dnes`, `včera`, `zítra`, `brzy`, `pozdě`, `dlouho` jako TWHEN; `doma`, `tady`, `zde`, `venku`, `vpravo`, `vlevo`, `nahoře`, `dole` jako LOC; `rychle`, `pomalu`, `dobře`, `špatně`, `tiše`, `hlasitě`, `pěšky` jako MANN. Seed říká, co z něj vypadlo a proč — `dlouho` je TWHEN a ne THL, protože sloupec drží jednu odpověď a TWHEN je to čtení, které nelže v tom druhém, a `vpravo` je LOC a ne DIR3, protože *je vpravo* proti *jdi vpravo* rozhoduje sloveso, ne příslovce.
+
 Sedm z deseti slovních druhů je uzavřených — nová předložka ani spojka nevzniká — a bydlí v pravidlech vedle slovníku, ne v něm. Slovník vede podstatná a přídavná jména a slovesa; zájmena, předložky a spojky se z pravidel četly už dřív, příslovce, částice, citoslovce a číslovky teď taky. Předtím propadly odhadu ze zakončení, který zná infinitiv a adjektivní koncovky a všechno ostatní pojmenuje podstatným jménem.
 
 ```bash

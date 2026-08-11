@@ -33,6 +33,7 @@ namespace Grammar.Czech.Lexicon.Tool
             ("lemma_entry", "verb_class", typeof(VerbClass)),
             ("lemma_entry", "aktionsart", typeof(Aktionsart)),
             ("lemma_sense", "aktionsart", typeof(Aktionsart)),
+            ("lemma_entry", "adverbial_functor", typeof(FgdFunctor)),
             ("lemma_entry", "reflexive_type", typeof(ReflexiveType)),
             ("valency_frame", "kind", typeof(ValencyKind)),
             ("valency_frame", "diathesis", typeof(Diathesis)),
@@ -108,6 +109,7 @@ namespace Grammar.Czech.Lexicon.Tool
                 CheckAktionsart(connection, errors);
                 CheckStems(connection, errors);
                 CheckLemmaKeys(connection, errors);
+                CheckAdverbialFunctors(connection, errors);
                 CheckLemmaVariants(connection, errors);
                 CheckLemmaSenses(connection, errors);
                 CheckFrames(connection, errors);
@@ -248,6 +250,25 @@ namespace Grammar.Czech.Lexicon.Tool
                 errors.Add(
                     $"lemma_sense páruje '{row[0]}' s významem '{row[1]}', který patří jinému lexému. "
                     + "Význam se k heslu dostane jen přes společný lexém, takže tenhle řádek nikdo nepřečte.");
+            }
+        }
+
+        // Okolnost, kterou slovo vyjadřuje samo o sobě, dává smysl u příslovce. U podstatného jména ji
+        // rozhoduje pád a rámec slovesa, ne heslo, takže vyplněný sloupec jinde než u příslovce je
+        // řádek, který nikdo nepřečte — a mlčky, protože ho čte jen cesta pro příslovce.
+        private static void CheckAdverbialFunctors(SqliteConnection connection, List<string> errors)
+        {
+            const string sql = """
+                SELECT lemma, category
+                FROM lemma_entry
+                WHERE adverbial_functor IS NOT NULL AND category <> 'Adverb'
+                """;
+
+            foreach (var row in Query(connection, sql))
+            {
+                errors.Add(
+                    $"'{row[0]}' má vyplněnou okolnost příslovce, ale je to {row[1]}. "
+                    + "Ten sloupec se čte jen u příslovcí; u ostatních druhů roli rozhoduje rámec slovesa.");
             }
         }
 

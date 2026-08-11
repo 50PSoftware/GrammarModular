@@ -72,6 +72,10 @@ namespace Grammar.Czech.Cli.Interaction
             --stupen dobre=treti dá 'nejlépe'. Na druhu, který se nestupňuje, se to řekne a nic to
             neudělá.
 
+            Příslovce navíc může mít ve slovníku zapsanou okolnost, na kterou odpovídá — 'dnes' kdy,
+            'doma' kde, 'rychle' jak — a pak roli dostane samo a nemusíš ji zadávat. Odvodit ji nejde,
+            takže příslovce, které ve slovníku není, se na roli pořád zeptá.
+
             """;
 
         private const string Roles = """

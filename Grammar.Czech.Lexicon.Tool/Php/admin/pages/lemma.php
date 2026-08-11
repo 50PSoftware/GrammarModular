@@ -163,6 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         admin_enum('aktionsart', 'aktionsart'),
         admin_enum('reflexive_type', 'reflexive_type') ?? 'None',
         admin_text('base_verb_lemma'),
+        admin_enum('adverbial_functor', 'adverbial_functor'),
         admin_text('stem'),
         admin_text('present_stem'),
         admin_text('past_stem'),
@@ -181,8 +182,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'lemma', 'lemma_key', 'homonym_index', 'category', 'gender', 'pattern', 'is_animate',
         'has_mobile_e', 'has_genitive_plural_shortening', 'has_epenthesis_in_genitive_plural',
         'is_indeclinable', 'is_plural_only', 'is_countable', 'prefers_short_form', 'verb_class',
-        'aspect', 'aspect_counterpart', 'aktionsart', 'reflexive_type', 'base_verb_lemma', 'stem',
-        'present_stem',
+        'aspect', 'aspect_counterpart', 'aktionsart', 'reflexive_type', 'base_verb_lemma',
+        'adverbial_functor', 'stem', 'present_stem',
         'past_stem', 'future_stem', 'imperative_stem', 'passive_stem', 'infinitive', 'forms_passive',
         'lexeme_id', 'source', 'is_verified', 'note',
     ];
@@ -248,6 +249,7 @@ $foldColumns = [
         'is_indeclinable', 'is_plural_only', 'is_countable', 'prefers_short_form',
     ],
     'verb' => ['verb_class', 'aspect', 'aspect_counterpart', 'aktionsart', 'base_verb_lemma'],
+    'adverb' => ['adverbial_functor'],
     'stems' => [
         'stem', 'present_stem', 'past_stem', 'future_stem', 'imperative_stem', 'passive_stem',
         'infinitive', 'forms_passive',
@@ -425,6 +427,20 @@ if (!$isNew) {
             <label for="base_verb_lemma">Odvozeno ze slovesa</label>
             <input type="text" id="base_verb_lemma" name="base_verb_lemma" value="<?= h((string) $value('base_verb_lemma')) ?>">
             <small>U dějových substantiv — příjezd ← přijet. Rámec pak dědí.</small>
+        </p>
+    </div>
+    <?= admin_fold_close() ?>
+
+    <?= admin_fold_open('Příslovce', $foldFilled['adverb'], count($foldColumns['adverb'])) ?>
+
+    <div class="grid">
+        <p class="field wide">
+            <label for="adverbial_functor">Okolnost</label>
+            <?= admin_select('adverbial_functor', 'adverbial_functor', $value('adverbial_functor')) ?>
+            <small>Na co příslovce odpovídá samo o sobě: dnes kdy (TWHEN), doma kde (LOC), rychle jak
+                (MANN). Odvodit to nejde — ze zakončení ne a z přídavného jména, ze kterého vzniklo, taky
+                ne. Prázdno znamená nezapsáno, ne „žádná“; generátor pak roli potřebuje dostat zvenčí.
+                U jiného slovního druhu to nech prázdné, <code>validate</code> to hlásí jako chybu.</small>
         </p>
     </div>
     <?= admin_fold_close() ?>

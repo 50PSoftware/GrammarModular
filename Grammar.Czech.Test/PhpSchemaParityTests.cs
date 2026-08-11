@@ -31,7 +31,7 @@ namespace Grammar.Czech.Test
         public void Parser_FindsTheMap()
         {
             Assert.AreEqual(LexiconSchema.Tables.Count, php.Count, "Parser nenačetl všechny tabulky.");
-            Assert.AreEqual(33, php["lemma_entry"].Count, "Parser nenačetl sloupce lemma_entry.");
+            Assert.AreEqual(34, php["lemma_entry"].Count, "Parser nenačetl sloupce lemma_entry.");
         }
 
         /// <summary>
@@ -210,6 +210,7 @@ namespace Grammar.Czech.Test
             ["kind", typeof(Core.Enums.ValencyKind)],
             ["diathesis", typeof(Core.Enums.Diathesis)],
             ["functor", typeof(Core.Enums.FgdFunctor)],
+            ["adverbial_functor", typeof(Core.Enums.FgdFunctor)],
             ["obligatoriness", typeof(Core.Enums.Obligatoriness)],
             ["morph_case", typeof(Core.Enums.Case)]
         ];

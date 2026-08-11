@@ -106,6 +106,22 @@ namespace Grammar.Czech.Models
         /// </remarks>
         public string? BaseVerbLemma { get; init; }
 
+        /// <summary>
+        /// Gets the circumstance this adverb expresses on its own, or <see langword="null"/> when nobody
+        /// has said.
+        /// </summary>
+        /// <remarks>
+        /// <em>dnes</em> answers when, <em>doma</em> answers where and <em>rychle</em> answers how, and
+        /// nothing about the words says so — not the ending, and not the adjective the adverb was
+        /// derived from, since <em>rychlý</em> and <em>rychle</em> are one word in two classes and only
+        /// one of them answers "how". It is recorded per word for that reason.
+        /// <para>
+        /// Null is the ordinary case and means unrecorded rather than "no circumstance". A generator
+        /// then has to be told the functor, which is what it had to be told for every adverb before.
+        /// </para>
+        /// </remarks>
+        public FgdFunctor? AdverbialFunctor { get; init; }
+
         // Stems the word inflects on, for the verbs whose pattern does not predict them. Null is the
         // ordinary case and means the pattern decides; only what the pattern gets wrong is stated.
         // They sit on the entry rather than in the embedded irregulars.json because říct is a

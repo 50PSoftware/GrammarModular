@@ -875,6 +875,18 @@ The session stands beside `veta` rather than replacing it. `veta` is still one c
 
 Terms can be asked about by name, in either mode: `? role` explains what functors are and why a role is stated rather than a case, `? cleneni` why dané and nové decide the word order, and `? odhad` what the tool makes up and how the display says so.
 
+Recognizing the class is not the same as being able to place the word. An adverb is not a valency slot, so no frame hands it a role, and until the dictionary could say what circumstance an adverb expresses, every adverb stopped as an open question. `lemma_entry.adverbial_functor` is where that now lives:
+
+```bash
+gramatika veta student číst kniha dnes   # Student čte knihu dnes.
+```
+
+It cannot be derived. The ending says nothing, and neither does the adjective behind the adverb — *rychlý* and *rychle* are one word in two classes and only one of them answers "how". So it is recorded per word.
+
+It lives in the dictionary rather than beside the 291 adverbs in the embedded `adverbs.json` for the reason the verb stems give: correcting it should be an edit in the admin, not a release of the library. The two files now say different things about the same word — the JSON how it compares, which is morphology, the dictionary what it means for a sentence, which is a fact about the word. An adverb in the JSON and not in the dictionary behaves exactly as it did before: recognized, and the caller states the role.
+
+Twenty-one carry it so far, in the three groups the definitions settle without a judgement call: `dnes`, `včera`, `zítra`, `brzy`, `pozdě`, `dlouho` as TWHEN; `doma`, `tady`, `zde`, `venku`, `vpravo`, `vlevo`, `nahoře`, `dole` as LOC; `rychle`, `pomalu`, `dobře`, `špatně`, `tiše`, `hlasitě`, `pěšky` as MANN. The seed says what it left out and why — `dlouho` is TWHEN rather than THL because the column holds one answer and TWHEN is the reading that does not lie in the other, and `vpravo` is LOC rather than DIR3 because *je vpravo* against *jdi vpravo* is decided by the verb, not by the adverb.
+
 Seven of the ten word classes are closed — no new preposition or conjunction gets coined — and live in the rule data beside the dictionary rather than in it. The dictionary carries nouns, adjectives and verbs; pronouns, prepositions and conjunctions were already read off the rules, and adverbs, particles, interjections and numerals now are too. Before that they fell through to the guess from the ending, which knows infinitives and adjective endings and calls everything else a noun.
 
 ```bash

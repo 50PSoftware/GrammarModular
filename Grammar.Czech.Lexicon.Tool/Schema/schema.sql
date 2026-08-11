@@ -91,6 +91,16 @@ CREATE TABLE lemma_entry (
     reflexive_type                     VARCHAR(32)  NOT NULL DEFAULT 'None',
     base_verb_lemma                    VARCHAR(64),
 
+    -- The circumstance an adverb expresses on its own: dnes is TWHEN, doma is LOC, rychle is MANN.
+    -- Nothing derives it. The ending says nothing, and neither does the adjective it came from, since
+    -- rychlý and rychle are one word in two classes and only one of them answers "how". It is a fact
+    -- about a single word, so it belongs here rather than in the embedded adverbs.json, for the reason
+    -- the stems below give: correcting it should be an edit in the admin, not a release of the library.
+    --
+    -- NULL is the ordinary case and means nobody has said. A generator then has to be told the role,
+    -- which is what it had to be told for every adverb before this column existed.
+    adverbial_functor                  VARCHAR(16),
+
     -- Stems the word inflects on, for verbs whose pattern does not predict them — říct conjugates by
     -- class 1 but forms its past on řek-. Empty is the ordinary case: the pattern decides. They live
     -- on the entry rather than in the embedded irregulars.json so that correcting one verb is an edit
@@ -136,6 +146,10 @@ CREATE TABLE lemma_entry (
         'Extensive', 'Cumulative', 'Intensive', 'Excessive', 'Distributive', 'Attenuative',
         'Semelfactive', 'Momentary', 'Iterative', 'Diminutive', 'Comitative', 'Frequentative',
         'Stative', 'Decursive', 'Mutative')),
+    CONSTRAINT ck_lemma_entry_adverbial_functor CHECK (adverbial_functor IS NULL OR adverbial_functor IN (
+        'ACT', 'PAT', 'ADDR', 'ORIG', 'EFF', 'DIR1', 'DIR2', 'DIR3', 'LOC', 'MANN',
+        'MEANS', 'BEN', 'CAUS', 'AIM', 'TWHEN', 'DIFF', 'OBST', 'INTT', 'MAT', 'THL',
+        'EXT', 'CRIT', 'ACMP', 'COMPL', 'CPHR')),
     CONSTRAINT ck_lemma_entry_reflexive CHECK (reflexive_type IN (
         'None', 'ReflexivumTantum_Se', 'ReflexivumTantum_Si', 'DerivedReflexive_Se',
         'DerivedBenefactive_Si', 'Reciprocal_Se', 'DeagentivePassive_Se')),

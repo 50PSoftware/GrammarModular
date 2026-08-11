@@ -610,6 +610,65 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// An adverb the dictionary carries reaches the sentence without anyone stating a role.
+        /// </summary>
+        /// <remarks>
+        /// Recognizing the class was never enough on its own: an adverb is not a valency slot, so the
+        /// role resolver had nothing to give it and every adverb stopped as an open question. Which
+        /// circumstance an adverb expresses is not derivable — the ending says nothing, and neither does
+        /// the adjective behind it, since <em>rychlý</em> and <em>rychle</em> are one word in two classes
+        /// and only one answers "how" — so it is recorded per word in the dictionary.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("dnes", FgdFunctor.TWHEN, "Student čte knihu dnes.")]
+        [DataRow("doma", FgdFunctor.LOC, "Student čte knihu doma.")]
+        [DataRow("rychle", FgdFunctor.MANN, "Student čte knihu rychle.")]
+        public void AdverbFromTheDictionaryCarriesItsOwnRole(
+            string lemma, FgdFunctor expected, string sentence)
+        {
+            var draft = Draft(null, "student", "číst", "kniha", lemma);
+
+            Assert.AreEqual(
+                expected,
+                draft.Constituents.Single(constituent => constituent.Lemma == lemma).Functor);
+
+            Assert.AreEqual(sentence, Sentence(null, "student", "číst", "kniha", lemma));
+        }
+
+        /// <summary>
+        /// An adverb the dictionary does not carry still asks, which is what it always did.
+        /// </summary>
+        /// <remarks>
+        /// The column is sparse on purpose: twenty-one adverbs have it and the other two hundred and
+        /// seventy in the rule data do not. Nothing about them got worse — they are recognized as
+        /// adverbs and the caller states the role, exactly as before the column existed.
+        /// </remarks>
+        [TestMethod]
+        public void AdverbOutsideTheDictionaryStillAsks()
+        {
+            var draft = Draft(null, "student", "číst", "kniha", "chytře");
+
+            Assert.AreEqual(WordCategory.Adverb, CategoryOf("chytře"));
+            Assert.IsNull(draft.Constituents.Single(constituent => constituent.Lemma == "chytře").Functor);
+            Assert.IsTrue(draft.Gaps().Any(gap => gap.Contains("chytře")));
+        }
+
+        /// <summary>
+        /// A stated role beats the one the dictionary records.
+        /// </summary>
+        [TestMethod]
+        public void StatedRoleBeatsTheRecordedCircumstance()
+        {
+            var overrides = new DraftOverrides();
+            overrides.For("dnes").Functor = FgdFunctor.MANN;
+
+            Assert.AreEqual(
+                FgdFunctor.MANN,
+                Draft(overrides, "student", "číst", "kniha", "dnes")
+                    .Constituents.Single(constituent => constituent.Lemma == "dnes").Functor);
+        }
+
+        /// <summary>
         /// The lexicon path is taken from the settings file the lexicon tool already uses, found by
         /// walking up from the working directory and read relative to the file it stands in.
         /// </summary>
