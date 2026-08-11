@@ -934,6 +934,10 @@ Slovník se s balíčkem nástroje nerozdává, stejně jako s balíčkem knihov
 
 `lexikon.json` je týž soubor, který čte nástroj lexikonu, takže projekt řekne jednou, kde má slovník, a najdou ho oba. Cesta se bere relativně k tomu souboru, ne k pracovnímu adresáři, a soubor se hledá směrem nahoru, takže to funguje z libovolného podadresáře. Čte se odsud jen klíč `database`; adresa a token patří nástroji, který mluví s API.
 
+Sloveso zopakované v druhém konjunktu se vypustí: `Student čte knihu a žák dopis.` Manuál PDT (§12.1.1.1) považuje řídící sloveso za vypuštěné tam, kde je z předchozí klauze jasné, které to bylo — *(Jirka navštívil Marii.) Honza Jiřinu.* — a obnovuje ho kopií toho uzlu; `#EmpVerb` je vyhrazený gramatické elipse, kde se sloveso z kontextu obnovit nedá vůbec.
+
+Podmínka je tu tvrdší, než jazyk vyžaduje, protože generátor si musí být jistý, ne pravděpodobný: shodnout se musí lemma, čas, způsob, slovesný rod, vid, zápor i zvratnost, oba konjunkty musí mít zbytky, které si stojí naproti, a přísudek musí vyjít jako jedno slovo. Osoba a číslo se lišit smí — nese je podmět, který zůstal, a bez toho by neprošlo ani *já piju kávu a ona čaj*. Podmínka jednoho slova drží stranou klitické pomocné sloveso: v 1. a 2. osobě minulého času nese čas i osobu a kam ho po vypuštění příčestí položit, tenhle projekt doložené nemá. `ClauseLink.AllowVerbEllipsis` to vypne pro příznakové čtení a zapnutý je ze stejného důvodu jako `AllowSubjectDrop`.
+
 Spojka ve vstupu rozdělí větu na klauze a sama říká, jak se spojují — pravidla vědí, které jsou souřadicí a které podřadicí:
 
 ```bash
@@ -1019,7 +1023,7 @@ Pravidlová data v projektu `Grammar.Czech` jsou embedded JSON resources. Výjim
 - Aktuální členění se promítá jen do slovosledu. NESČ ho nese i v intonaci a dvě čtení lišící se prozodií považuje za dvě různé věty; to modelované není. Stejně tak kontrastivní ohnisko, na které manuál PDT (9.1.2, 9.3.1.1) potřebuje samostatný příznak intonačního centra — slovosled sám ho nezastoupí.
 - Kontrola modelovaná je, ale jen jednoduchá. `valency_slot.control_target` zapisuje, se kterým participantem řídící klauze se nevyjádřený podmět infinitivu ztotožňuje, a `CzechClausePlanner` konstrukci odmítne, když jde o dva různé lidi. Modelovaná není dvojí kontrola (PDT §2.4) a táž koreference u obsahové věty místo infinitivu.
 - Dvě z pěti českých diatezí dostupné nejsou. `SentencePlan.Diathesis` říká, ve které se má stavět, a deagentiv (*pracovalo se*) i dispoziční (*studentovi se pracovalo*) z toho vyjdou; rezultativ (*mám napsáno*) a recipientní deagentiv (*dostat* s příčestím) ne, protože obojí potřebuje druhé sloveso nesoucí příčestí prvního a takový tvar skladatel netvoří. Rámce pro ty dvě, které fungují, jsou ve slovníku u dvou sloves — dost na to, aby se mechanismus prošel, ne dost na to, aby se dal používat šíře.
-- Elipsa slovesa v koordinaci modelovaná není. Manuál PDT (§12.1.1.1) považuje řídící sloveso za vypuštěné tehdy, když je z předchozí klauze jasné, které to bylo — *(Jirka navštívil Marii.) Honza Jiřinu.* — a obnovuje ho kopií toho uzlu; `#EmpVerb` je vyhrazený gramatické elipse, kde se sloveso z kontextu obnovit nedá. `SentencePlan.Joined` spojuje vždycky dvě celé klauze.
+- Sdílené rozvití v koordinaci modelované není: doplnění prvního konjunktu nejde říct jednou a číst jako patřící oběma přísudkům. Elipsa slovesa modelovaná je (viz výš); tohle je druhá půlka §12.3 manuálu PDT.
 - Koordinace členů s různými funktory, a s ní gapping, modelovaná není.
 - Apozice modelovaná není, což je zároveň důvod, proč jedinečnost participantu nemá pro co dělat výjimku.
 - Vytýkací konstrukce (*to, co potřebujeme, je…*) modelované nejsou.
