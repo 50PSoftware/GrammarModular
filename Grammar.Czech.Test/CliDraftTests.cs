@@ -1,6 +1,7 @@
 using Grammar.Core.Enums;
 using Grammar.Czech.Cli;
 using Grammar.Czech.Models;
+using Grammar.Czech.Providers.JsonProviders;
 using Grammar.Czech.Cli.Interaction;
 using Grammar.Czech.Cli.Rendering;
 using Grammar.Czech.Cli.Sentence;
@@ -636,21 +637,27 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
-        /// An adverb the dictionary does not carry still asks, which is what it always did.
+        /// An adverb the dictionary does not carry asks for its role, and there is no rule that could
+        /// answer instead.
         /// </summary>
         /// <remarks>
-        /// The column is sparse on purpose: twenty-one adverbs have it and the other two hundred and
-        /// seventy in the rule data do not. Nothing about them got worse — they are recognized as
-        /// adverbs and the caller states the role, exactly as before the column existed.
+        /// Every adverb the rule data holds is now in the dictionary, so the case has to be built: a
+        /// word nobody has heard of, stated to be an adverb. Which circumstance it expresses is not
+        /// derivable from anything — that is the whole reason the column exists — so it stops and asks
+        /// rather than inventing one.
         /// </remarks>
         [TestMethod]
-        public void AdverbOutsideTheDictionaryStillAsks()
+        public void AdverbOutsideTheDictionaryAsksForItsRole()
         {
-            var draft = Draft(null, "student", "číst", "kniha", "chytře");
+            var overrides = new DraftOverrides();
+            overrides.For("kulišácky").WordCategory = WordCategory.Adverb;
 
-            Assert.AreEqual(WordCategory.Adverb, CategoryOf("chytře"));
-            Assert.IsNull(draft.Constituents.Single(constituent => constituent.Lemma == "chytře").Functor);
-            Assert.IsTrue(draft.Gaps().Any(gap => gap.Contains("chytře")));
+            var draft = Draft(overrides, "student", "číst", "kniha", "kulišácky");
+
+            Assert.IsNull(
+                draft.Constituents.Single(constituent => constituent.Lemma == "kulišácky").Functor);
+
+            Assert.IsTrue(draft.Gaps().Any(gap => gap.Contains("kulišácky")));
         }
 
         /// <summary>
@@ -736,26 +743,109 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
-        /// A word that is both an adverb and a particle reads as an adverb and asks, and
-        /// <c>--druh</c> is what settles it.
+        /// A word that is both an adverb and a particle answers the same either way.
         /// </summary>
         /// <remarks>
-        /// Forty-nine words are in both sets. Read as an adverb, <em>asi</em> would need a circumstance
-        /// the dictionary does not record for it, so it stops and asks rather than inventing one; stated
-        /// as a particle, its group answers.
+        /// Forty-nine words are in both sets. <em>asi</em> reads as an adverb, because adverbs are
+        /// tested first, and the dictionary records MOD for it — by what it means rather than by which
+        /// class won. Stated as a particle instead, its group in the rule data says MOD as well. Two
+        /// routes, and the point is that they agree: which class the word is filed under stops mattering
+        /// for what the sentence does with it.
         /// </remarks>
         [TestMethod]
-        public void AmbiguousWordAsksUntilTheClassIsStated()
+        public void AmbiguousWordAnswersTheSameEitherWay()
         {
-            Assert.IsTrue(Draft(null, "student", "číst", "kniha", "asi").Gaps().Any(gap => gap.Contains("asi")));
+            var asParticle = new DraftOverrides();
+            asParticle.For("asi").WordCategory = WordCategory.Particle;
 
+            Assert.AreEqual(WordCategory.Adverb, CategoryOf("asi"));
+
+            foreach (var overrides in (DraftOverrides?[])[null, asParticle])
+            {
+                Assert.AreEqual(
+                    FgdFunctor.MOD,
+                    Draft(overrides, "student", "číst", "kniha", "asi")
+                        .Constituents.Single(constituent => constituent.Lemma == "asi").Functor);
+            }
+        }
+
+        /// <summary>
+        /// Every adverb the rule data holds is in the dictionary with a functor, bar the eight that are
+        /// something else as well.
+        /// </summary>
+        /// <remarks>
+        /// The exceptions are the point of the test. blízko, dokonce, jak, naproti, sotva, tak, uvnitř
+        /// and vedle are also prepositions or conjunctions, and an entry would take that away from them:
+        /// the enricher fills the word class from the dictionary before the closed-class checks run, so
+        /// <em>vedle knihy</em> would become an adverb and stop governing the genitive.
+        /// </remarks>
+        [TestMethod]
+        public void EveryAdverbButTheEightIsInTheDictionary()
+        {
+            var lexicon = services.GetRequiredService<
+                Core.Interfaces.IValencyProvider<Models.CzechLexicalEntry>>();
+
+            string[] excluded = ["blízko", "dokonce", "jak", "naproti", "sotva", "tak", "uvnitř", "vedle"];
+
+            var unrecorded = new JsonAdverbDataProvider().GetAdverbs().Keys
+                .Where(lemma => !excluded.Contains(lemma, StringComparer.Ordinal))
+                .Where(lemma => lexicon.GetEntry(lemma, WordCategory.Adverb)?.InherentFunctor is null)
+                .ToList();
+
+            Assert.AreEqual(0, unrecorded.Count, "Bez funktoru: " + string.Join(", ", unrecorded));
+
+            foreach (var lemma in excluded)
+            {
+                Assert.IsNull(
+                    lexicon.GetEntry(lemma, WordCategory.Adverb),
+                    $"'{lemma}' je taky předložka nebo spojka a heslo by jí tu roli vzalo.");
+            }
+        }
+
+        /// <summary>
+        /// The words left out keep the class they had, which is what leaving them out was for.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow("Student čte vedle knihy.", new[] { "student", "číst", "vedle", "kniha" })]
+        [DataRow("Student čte knihu a žák píše dopis.",
+            new[] { "student", "číst", "kniha", "a", "žák", "psát", "dopis" })]
+        public void ExcludedWordsKeepTheirClass(string expected, string[] lemmas)
+        {
             var overrides = new DraftOverrides();
-            overrides.For("asi").WordCategory = WordCategory.Particle;
+            overrides.For("kniha").Case = Case.Genitive;
+
+            Assert.AreEqual(expected, Sentence(lemmas.Contains("vedle") ? overrides : null, lemmas));
+        }
+
+        /// <summary>
+        /// The functors the adverbs were sorted into reach the sentence, across the groups.
+        /// </summary>
+        /// <remarks>
+        /// Ninety-one of them are MANN by derivation — a deadjectival adverb answers "jak" and
+        /// adverbs.json records what each was derived from, so that part is a rule. The rest were gone
+        /// through by hand, and these are one from each group that was.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("pečlivě", FgdFunctor.MANN)]
+        [DataRow("často", FgdFunctor.TWHEN)]
+        [DataRow("velmi", FgdFunctor.EXT)]
+        [DataRow("nikde", FgdFunctor.LOC)]
+        [DataRow("domů", FgdFunctor.DIR3)]
+        [DataRow("odkud", FgdFunctor.DIR1)]
+        [DataRow("tudy", FgdFunctor.DIR2)]
+        [DataRow("proč", FgdFunctor.CAUS)]
+        [DataRow("spolu", FgdFunctor.ACMP)]
+        [DataRow("asi", FgdFunctor.MOD)]
+        [DataRow("jen", FgdFunctor.RHEM)]
+        [DataRow("bohužel", FgdFunctor.ATT)]
+        [DataRow("naopak", FgdFunctor.PREC)]
+        public void RecordedFunctorReachesTheConstituent(string lemma, FgdFunctor expected)
+        {
+            var draft = Draft(null, "student", "číst", "kniha", lemma);
 
             Assert.AreEqual(
-                FgdFunctor.MOD,
-                Draft(overrides, "student", "číst", "kniha", "asi")
-                    .Constituents.Single(constituent => constituent.Lemma == "asi").Functor);
+                expected,
+                draft.Constituents.Single(constituent => constituent.Lemma == lemma).Functor);
         }
 
         /// <summary>
