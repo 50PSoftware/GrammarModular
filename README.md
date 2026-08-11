@@ -1008,18 +1008,27 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 - The lexicon is not a complete dictionary of Czech; `ResolveGenderAndPattern` and `ResolveVerbAspect` only work for lemmas the database holds.
 - Only a fraction of the entries in the lexicon carry a valency frame. The mechanism is finished, the data is not: for a verb without a frame the caller supplies the cases as before.
 - Genitive-plural shortening is quantity only, and the flag is set on a handful of lemmas. The *í* → *ě* type (*míra* → *měr*, *díra* → *děr*) is a different alternation that `has_genitive_plural_shortening` does not describe; such words need `lemma_entry.stem`, which the code reads but which nothing in the dictionary fills in yet.
-- A slot realized by an infinitive or a content clause is built by `CzechClausePlanner`, but only one such slot per clause: a verb governing two of them at once is refused rather than assembled.
-- A reflexive infinitive puts its particle in the governing clause's cluster, which is right for one — *chce se učit* — and refused for two, because a clause has one cluster and *se* cannot be in it twice.
+- A slot realized by an infinitive or a content clause is built by `CzechClausePlanner`, but only one such slot per clause: a verb governing two of them at once is refused rather than assembled. The PDT tectogrammatical manual (§2.4) documents the counterexample — *vyžadovat* controls two at once — so the limit is the implementation and not the language.
+- A reflexive infinitive puts its particle in the governing clause's cluster, which is right for one — *chce se učit* — and refused for two, because a clause has one cluster and *se* cannot be in it twice. What Czech does instead is described as haplology of the reflexive clitic (Rosen 2014), and three strategies are attested: the long form (*sebe*), a cluster of its own, and deletion of one particle. Which of them to generate is open; refusing is the one answer that is never wrong.
 - `CzechNumeralComposer.ComposeOrdinal` and `ComposeOfType` build only from lemmas present in the dictionary; a value that needs a missing component (e.g. *dvoutisící*) throws rather than inventing a form.
 
 ### Not modelled
 
 - Clauses joined through `SentencePlan.Joined` nest as deep as they are written, and a chain at one level (`[a: B, protože: C]`) is a different sentence from a chain of nestings (`a: B { protože: C }`) — both are expressible. A relative clause is a plan in its own right, so everything that holds of a sentence holds inside one.
 - `IValencyProvider.GetEntry` takes a lemma, optionally with a `WordCategory`, so homonyms across categories can be told apart but homonyms inside one cannot. The schema carries `homonym_index` and the provider returns the lowest one.
-- The clitic cluster does not know the free dative (*To ti byla legrace*), which per NESČ stands between the auxiliary and the reflexive. The remaining positions match the described order.
+- The clitic cluster does not know the free dative (*To ti byla legrace*), which per NESČ stands between the auxiliary and the reflexive. The remaining positions match the described order. NESČ (*Dativ*) separates the semantically motivated ones — benefactive, possessive, subject and respect datives, which a valency frame could carry — from the ethical dative, which is pragmatic and belongs to none; a frame is the wrong place for the second kind and the right one for the first.
 - A demonstrative in front of a numeral (*těch pět studentů*) agrees with the head of the phrase, not with the phrase as a whole.
-- The rule that an inner participant combines with a verb at most once is not enforced — nothing stops two `PAT` constituents in one clause.
-- Information structure is reflected in word order only. NESČ carries it in intonation too, and treats two readings differing in prosody as two different sentences; that is not modelled.
+- That an inner participant combines with a given verb at most once is not enforced. In FGD this is not a rule the grammar happens to have but the criterion that makes a participant a participant at all (Urešová et al., PBML 105, 2016): a slot that can be filled twice over is a free modification, not an actant. Nothing stops two `PAT` constituents in one clause, and coordination and apposition — the two constructions where a repeat is legitimate — are not modelled either, so the check has nothing to make an exception for yet.
+- Information structure is reflected in word order only. NESČ carries it in intonation too, and treats two readings differing in prosody as two different sentences; that is not modelled. Neither is contrastive focus, which the PDT manual (9.1.2, 9.3.1.1) needs an independent mark of the intonation centre for — word order alone cannot stand in for it.
+- Control is modelled, but singly. `valency_slot.control_target` records which participant of the matrix clause the unexpressed subject of an infinitive corefers with, and `CzechClausePlanner` refuses the construction when the two are different people. What is not modelled is double control (PDT §2.4) and the same coreference stated on a content clause rather than an infinitive.
+- Diathesis is modelled in the frame layer and not in the plan. `Diathesis` names all five Czech diatheses — passive, deagentive, resultative, dispositional, recipient (Kettnerová–Lopatková–Panevová 2014) — and `CzechFrameSelector` picks a frame by any of them, but `SentencePlan.Perspective` can only ask for PAT as subject, and the dictionary holds one non-active frame in total. The mechanism is ahead of both the plan and the data.
+- Verb ellipsis in coordination is not modelled. The PDT manual (6.1) writes a repeated governing verb as `#EmpVerb` and lets the second conjunct share the modifications of the first; `SentencePlan.Joined` always joins two whole clauses.
+- Coordination of members with different functors, and gapping with it, is not modelled.
+- Apposition is not modelled, which is also why the uniqueness of a participant has no exception to make.
+- Clefts and pseudo-clefts (*to, co potřebujeme, je…*) are not modelled.
+- Projectivity is not enforced. Czech word order permits non-projective constructions and the word-order resolver has no notion of a crossing dependency.
+- Negation is a property of the predicate, not something with a scope: *nepřišel kvůli dešti* has two readings and the plan cannot tell them apart.
+- Condensation — a proposition expressed by a noun or an infinitive instead of a clause (*po jeho příchodu* for *když přišel*) — is not modelled as a choice; a slot is filled the way it is written.
 
 ### Where usage decides and one reading was chosen
 
@@ -1033,7 +1042,7 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 - The caller often has to supply `Pattern`, `Gender`, `Number`, `Case`, `Person`, `Tense`, `Aspect`, `Modus` and `Voice`; the project is not yet an analyzer of natural text.
 - `MorphologyEngine.GetForm` returns a single word, so for a verb it gives the basic form only. The verb forms that are several words — the periphrastic future, the passive with an auxiliary, the conditional, negation, the reflexive — need `CzechWordFormComposer.GetFullForm`.
 - A named pattern from `irregulars.json` carries the stems literally, so it fits the pattern's own verb and its prefixed derivatives — `nese` covers *nést* and *odnést*, `dělá` covers *dělat* and *dodělat*. An unrelated verb needs a class pattern: *prodávat* with `dělá` returns *dělá*, with `trida5` the correct *prodává*.
-- The CLI is a demo, not a general-purpose query tool.
+- The CLI builds sentences; it does not read them. An inflected word is recognized as a form of a lemma and named as one, but it is not accepted as input — the tool generates from lemmas and is not an analyzer.
 
 ### The dictionary workflow
 

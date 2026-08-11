@@ -1005,18 +1005,27 @@ Pravidlová data v projektu `Grammar.Czech` jsou embedded JSON resources. Výjim
 - Lexikon není úplný slovník češtiny; `ResolveGenderAndPattern` a `ResolveVerbAspect` fungují jen pro lemmata, která databáze obsahuje.
 - Valenční rámec nese jen zlomek hesel lexikonu. Mechanismus je hotový, data ne: u slovesa bez rámce si pády zadává volající jako dřív.
 - Krácení v genitivu plurálu je jen kvantitativní a vlajku nese hrstka lemmat. Typ *í* → *ě* (*míra* → *měr*, *díra* → *děr*) je jiná alternace, o které `has_genitive_plural_shortening` nic neříká; taková slova potřebují `lemma_entry.stem`, který kód čte, ale který zatím ve slovníku nic nevyplňuje.
-- Slot realizovaný infinitivem nebo obsahovou větou skládá `CzechClausePlanner`, ale jen jeden na klauzi: sloveso, které jich řídí víc najednou, se odmítne, místo aby se poskládalo.
-- Zvratný infinitiv dává svoje se/si do klastru věty řídící, což je u jednoho správně — *chce se učit* — a u dvou se odmítne, protože klastr je v klauzi jeden a *se* v něm nemůže být dvakrát.
+- Slot realizovaný infinitivem nebo obsahovou větou skládá `CzechClausePlanner`, ale jen jeden na klauzi: sloveso, které jich řídí víc najednou, se odmítne, místo aby se poskládalo. Tektogramatický manuál PDT (§2.4) doložený protipříklad má — *vyžadovat* řídí dva naráz — takže je to mez implementace, ne jazyka.
+- Zvratný infinitiv dává svoje se/si do klastru věty řídící, což je u jednoho správně — *chce se učit* — a u dvou se odmítne, protože klastr je v klauzi jeden a *se* v něm nemůže být dvakrát. Tomu, co čeština dělá místo toho, se říká haplologie zvratného klitika (Rosen 2014), a doložené jsou tři cesty: dlouhý tvar (*sebe*), vlastní klastr a smazání jedné částice. Kterou generovat, otevřené je; odmítnout je jediná odpověď, která nikdy není špatně.
 - `CzechNumeralComposer.ComposeOrdinal` a `ComposeOfType` skládají jen z lemmat ve slovníku; hodnota vyžadující chybějící složku (např. *dvoutisící*) selže s výjimkou, místo aby si tvar vymyslela.
 
 ### Co modelované není
 
 - Klauze spojené přes `SentencePlan.Joined` se vnořují, jak hluboko se napíšou, a řetěz na jedné úrovni (`[a: B, protože: C]`) je jiná věta než řetěz vnoření (`a: B { protože: C }`) — vyslovit jde obojí. Vztažná věta je plnohodnotný plán, takže uvnitř ní platí všechno, co platí o větě.
 - `IValencyProvider.GetEntry` bere lemma, volitelně s `WordCategory`, takže homonyma napříč kategoriemi rozlišit umí, ale homonyma uvnitř jedné ne. Schéma je nese ve sloupci `homonym_index` a provider vrátí to s nejnižším.
-- Klitický klastr nezná volný dativ (*To ti byla legrace*), který podle NESČ stojí mezi pomocným slovesem a reflexivem. Ostatní pozice pořadí odpovídají.
+- Klitický klastr nezná volný dativ (*To ti byla legrace*), který podle NESČ stojí mezi pomocným slovesem a reflexivem. Ostatní pozice pořadí odpovídají. NESČ (*Dativ*) odděluje sémanticky motivované — prospěchový, posesivní, subjektový a zřetelový, které by valenční rámec nést mohl — od etického dativu, který je pragmatický a do žádného rámce nepatří; u druhého druhu je rámec špatné místo a u prvního správné.
 - Ukazovací zájmeno před číslovkou (*těch pět studentů*) se shoduje s hlavou fráze, ne s celou frází.
-- Že se vnitřní participant pojí se slovesem nejvýš jednou, se nevynucuje — dva `PAT` konstituenty v jedné klauzi nic nezastaví.
-- Aktuální členění se promítá jen do slovosledu. NESČ ho nese i intonací a dvě čtení lišící se prozodií považuje za dvě různé věty; to modelované není.
+- Že se vnitřní participant pojí s daným slovesem nejvýš jednou, se nevynucuje. V FGD to není pravidlo, které gramatika náhodou má, ale kritérium, které z participantu dělá participant (Urešová et al., PBML 105, 2016): slot, který jde obsadit dvakrát, je volné doplnění, ne aktant. Dvěma `PAT` v jedné klauzi nic nebrání a koordinace ani apozice — jediné dvě konstrukce, kde je opakování legitimní — modelované nejsou, takže ta kontrola zatím nemá pro co dělat výjimku.
+- Aktuální členění se promítá jen do slovosledu. NESČ ho nese i v intonaci a dvě čtení lišící se prozodií považuje za dvě různé věty; to modelované není. Stejně tak kontrastivní ohnisko, na které manuál PDT (9.1.2, 9.3.1.1) potřebuje samostatný příznak intonačního centra — slovosled sám ho nezastoupí.
+- Kontrola modelovaná je, ale jen jednoduchá. `valency_slot.control_target` zapisuje, se kterým participantem řídící klauze se nevyjádřený podmět infinitivu ztotožňuje, a `CzechClausePlanner` konstrukci odmítne, když jde o dva různé lidi. Modelovaná není dvojí kontrola (PDT §2.4) a táž koreference u obsahové věty místo infinitivu.
+- Diateze je modelovaná na rámci, ne v plánu. `Diathesis` pojmenovává všech pět českých diatezí — pasivní, deagentní, rezultativní, dispoziční, recipientní (Kettnerová–Lopatková–Panevová 2014) — a `CzechFrameSelector` podle kterékoli z nich rámec vybere, jenže `SentencePlan.Perspective` umí požádat jen o PAT jako podmět a slovník vede jediný neaktivní rámec. Mechanismus je napřed před plánem i před daty.
+- Elipsa slovesa v koordinaci modelovaná není. Manuál PDT (6.1) opakované řídící sloveso zapisuje jako `#EmpVerb` a druhému konjunktu dovolí sdílet rozvití prvního; `SentencePlan.Joined` spojuje vždycky dvě celé klauze.
+- Koordinace členů s různými funktory, a s ní gapping, modelovaná není.
+- Apozice modelovaná není, což je zároveň důvod, proč jedinečnost participantu nemá pro co dělat výjimku.
+- Vytýkací konstrukce (*to, co potřebujeme, je…*) modelované nejsou.
+- Projektivita se nevynucuje. Český slovosled neprojektivní konstrukce připouští a rozhodovač slovosledu o křížící se závislosti neví.
+- Zápor je vlastnost přísudku, ne něco s dosahem: *nepřišel kvůli dešti* má dvě čtení a plán je nerozliší.
+- Kondenzace — propozice vyjádřená jménem nebo infinitivem místo věty (*po jeho příchodu* za *když přišel*) — jako volba modelovaná není; slot se obsadí tak, jak je napsaný.
 
 ### Kde rozhoduje úzus a vybralo se jedno čtení
 
