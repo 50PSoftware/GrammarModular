@@ -872,6 +872,24 @@ Sezení stojí vedle `veta`, ne místo něj. `veta` je pořád jeden příkaz, n
 
 Na pojmy se dá zeptat jménem, v obou režimech: `? role` vysvětlí, co jsou funktory a proč se zadává role a ne pád, `? cleneni` proč dané a nové rozhodují slovosled, a `? odhad` co si nástroj domýšlí a jak to výpis říká.
 
+Sedm z deseti slovních druhů je uzavřených — nová předložka ani spojka nevzniká — a bydlí v pravidlech vedle slovníku, ne v něm. Slovník vede podstatná a přídavná jména a slovesa; zájmena, předložky a spojky se z pravidel četly už dřív, příslovce, částice, citoslovce a číslovky teď taky. Předtím propadly odhadu ze zakončení, který zná infinitiv a adjektivní koncovky a všechno ostatní pojmenuje podstatným jménem.
+
+```bash
+gramatika veta student číst pět kniha   # Student čte pět knih.
+```
+
+Testují se v pevném pořadí — zájmeno, předložka, spojka, číslovka, příslovce, částice, citoslovce — protože se ty třídy překrývají a něco vyhrát musí: *vedle* je předložka i příslovce, *tak* spojka i příslovce i citoslovce, *dost* příslovce i číslovka. Ty čtyři nové jdou až nakonec, takže nic, co fungovalo, nečte jinak.
+
+Mezi těmi čtyřmi je pořadí volba, ne fakt. 49 slov je zároveň příslovce i částice — *dobře*, *jistě*, *asi*, *prý* — a vyhrává příslovce: příslovce může být větný člen a částice ne, takže kdyby se z *dobře* stala částice, vypadlo by z věty, kdežto *asi* čtené jako příslovce se chová stejně jako částice, obojí je neohebné. Rozhodnout to slovo od slova by chtělo výčet slov v kódu, a lexikální fakta patří do slovníku.
+
+Od toho je `--druh`, a má poslední slovo nad vším výše:
+
+```bash
+gramatika veta student číst asi --druh asi=castice --role asi=MANN
+```
+
+`--stupen` pouští ven stupňování, které knihovna uměla a nástroj ho nikam nepustil: `--stupen rychle=druhy` dá *rychleji*, `--stupen dobre=treti` dá *nejlépe* — zapsaný tvar, ne odvozený, protože pravidlo by řeklo *dobřeji*. Na druhu, který se nestupňuje, nic neudělá a řekne to, místo aby to byl přepínač, co tiše nedělá nic.
+
 Sloveso, na které slovník nemá rámec, dá větu i tak. Bez rámce nemá rozhodovač rolí co rozdávat, každý člen zůstane bez role a nevznikne nic — a protože slovník vede rámce k šedesáti slovesům, býval to běžný konec, ne výjimka. Nástroj se opře o bezpříznakové české pořadí: konatel, patiens, a po nich adresát, když je životný.
 
 ```bash

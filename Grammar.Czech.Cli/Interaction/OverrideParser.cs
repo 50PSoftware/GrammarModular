@@ -208,11 +208,13 @@ namespace Grammar.Czech.Cli.Interaction
                 "cislo" => Assigning(Terms.ParseNumber(value), parsed => word.Number = parsed),
                 "vzor" => Assigning(value, parsed => word.Pattern = parsed),
                 "zivotne" => Assigning(Terms.ParseYesNo(value), parsed => word.IsAnimate = parsed),
+                "druh" => Assigning(Terms.ParseWordCategory(value), parsed => word.WordCategory = parsed),
+                "stupen" => Assigning(Terms.ParseDegree(value), parsed => word.Degree = parsed),
                 "predlozka" => Assigning(value, parsed => word.Preposition = parsed),
                 "privlastek" => Assigning(value, word.Modifiers.Add),
                 _ => throw new CliException(
                     $"U slova neznám '{property}'. Jde: role, cleneni, pad, rod, cislo, vzor, "
-                    + "zivotne, predlozka, privlastek."),
+                    + "zivotne, druh, stupen, predlozka, privlastek."),
             };
         }
 

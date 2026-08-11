@@ -26,6 +26,10 @@ namespace Grammar.Czech.Cli.Sentence
         private readonly ICzechPrepositionService _prepositions;
         private readonly ICzechPronounService _pronouns;
         private readonly ICzechConjunctionService _conjunctions;
+        private readonly ICzechNumeralService _numerals;
+        private readonly IAdverbDataProvider _adverbs;
+        private readonly IParticleDataProvider _particles;
+        private readonly IInterjectionDataProvider _interjections;
         private readonly CzechFrameSelector _frames;
         private readonly CzechRoleResolver _roles;
         private readonly CzechSentencePlanner _planner;
@@ -43,6 +47,10 @@ namespace Grammar.Czech.Cli.Sentence
         /// <param name="prepositions">The preposition service, for recognizing one in the word list.</param>
         /// <param name="pronouns">The pronoun service, for recognizing one in the word list.</param>
         /// <param name="conjunctions">The conjunction service, for finding where one clause ends.</param>
+        /// <param name="numerals">The numeral service, for recognizing one in the word list.</param>
+        /// <param name="adverbs">The adverb data, for recognizing one in the word list.</param>
+        /// <param name="particles">The particle data, for recognizing one in the word list.</param>
+        /// <param name="interjections">The interjection data, for recognizing one in the word list.</param>
         /// <param name="frames">The frame selector, for the sense of the verb.</param>
         /// <param name="roles">The role resolver, which works out the functors.</param>
         /// <param name="planner">The sentence planner, for the values the plan leaves unsaid.</param>
@@ -57,6 +65,10 @@ namespace Grammar.Czech.Cli.Sentence
             ICzechPrepositionService prepositions,
             ICzechPronounService pronouns,
             ICzechConjunctionService conjunctions,
+            ICzechNumeralService numerals,
+            IAdverbDataProvider adverbs,
+            IParticleDataProvider particles,
+            IInterjectionDataProvider interjections,
             CzechFrameSelector frames,
             CzechRoleResolver roles,
             CzechSentencePlanner planner,
@@ -71,6 +83,10 @@ namespace Grammar.Czech.Cli.Sentence
             _prepositions = prepositions;
             _pronouns = pronouns;
             _conjunctions = conjunctions;
+            _numerals = numerals;
+            _adverbs = adverbs;
+            _particles = particles;
+            _interjections = interjections;
             _frames = frames;
             _roles = roles;
             _planner = planner;
@@ -228,6 +244,18 @@ namespace Grammar.Czech.Cli.Sentence
 
             ReportUnknown(draft, words);
 
+            // Stupeň na slově, které se nestupňuje, se nikde neprojeví. Mlčet o tom by znamenalo přepínač,
+            // který nic neudělá a netvrdí to — a to je horší než chyba. Poznámka, ne výjimka: věta je
+            // jinak v pořádku a shodit ji kvůli přepínači navíc by bylo neúměrné.
+            foreach (var word in words.Where(word => word.Stated?.Degree is not null
+                && word.Request.WordCategory is not (WordCategory.Adjective or WordCategory.Adverb)))
+            {
+                draft.Notes.Add(
+                    $"Stupeň jsem u slova '{word.Lemma}' nechal být — stupňuje se přídavné jméno a "
+                    + $"příslovce, a tohle je {Terms.Name(word.Request.WordCategory ?? WordCategory.Noun)}. "
+                    + "Když je to jinak, řekni to přepínačem --druh.");
+            }
+
             AttachPredicate(draft, words, overrides);
             AttachConstituents(draft, words, overrides);
 
@@ -306,6 +334,8 @@ namespace Grammar.Czech.Cli.Sentence
                 word.Case = stated.Case;
                 word.Pattern = stated.Pattern;
                 word.IsAnimate = stated.IsAnimate;
+                word.WordCategory = stated.WordCategory;
+                word.Degree = stated.Degree;
             }
 
             var known = _lexicon.HasEntry(match.Lemma);
@@ -329,12 +359,45 @@ namespace Grammar.Czech.Cli.Sentence
                 enriched.WordCategory = WordCategory.Conjunction;
             }
 
+            // Zbylé čtyři uzavřené třídy, ve stejném duchu a záměrně až za předchozími třemi: 'vedle'
+            // je předložka i příslovce, 'tak' spojka i příslovce, 'na' předložka i citoslovce. Kdo
+            // dosud fungoval, funguje dál.
+            //
+            // Mezi těmihle čtyřmi je pořadí volba, ne fakt: 49 slov je zároveň v příslovcích i
+            // v částicích ('dobře', 'jistě', 'asi', 'prý'). Vyhrává příslovce, protože příslovce může
+            // být větný člen, a udělat z 'dobře' částici by ho z věty vyřadilo — kdežto 'asi' jako
+            // příslovce se chová stejně jako částice, obojí je neohebné a nic se neskloní. Rozhodnout
+            // to lépe by chtělo výčet slov v kódu, což do kódu nepatří; od toho je '--druh'.
+            if (enriched.WordCategory is null && _numerals.IsNumeral(lemma))
+            {
+                enriched.WordCategory = WordCategory.Numerale;
+            }
+
+            if (enriched.WordCategory is null && _adverbs.GetAdverbs().ContainsKey(lemma))
+            {
+                enriched.WordCategory = WordCategory.Adverb;
+            }
+
+            if (enriched.WordCategory is null && _particles.GetParticles().ContainsKey(lemma))
+            {
+                enriched.WordCategory = WordCategory.Particle;
+            }
+
+            if (enriched.WordCategory is null && _interjections.GetInterjections().ContainsKey(lemma))
+            {
+                enriched.WordCategory = WordCategory.Interjection;
+            }
+
             var origin = stated?.StatesMorphology == true
                 ? MetadataOrigin.User
                 : known ? MetadataOrigin.Lexicon
                 : enriched.WordCategory is WordCategory.Pronoun
                     or WordCategory.Preposition
                     or WordCategory.Conjunction
+                    or WordCategory.Numerale
+                    or WordCategory.Adverb
+                    or WordCategory.Particle
+                    or WordCategory.Interjection
                     ? MetadataOrigin.Rules
                     : MetadataOrigin.Guess;
 
@@ -573,8 +636,14 @@ namespace Grammar.Czech.Cli.Sentence
                 constituent.FramePreposition = realization?.Preposition;
 
                 // Bezpředložkový člen, kterému pád neurčuje ani rámec, by skončil v nominativu — to je
-                // skoro jistě špatně, tak ať se to řekne nahlas.
-                if (constituent.EffectiveCase is null && constituent.Functor is not null)
+                // skoro jistě špatně, tak ať se to řekne nahlas. Neohebné slovo je výjimka: příslovce
+                // ani částice pád nemají a rada 'doplň pád' by u nich posílala za něčím, co neexistuje.
+                if (constituent.EffectiveCase is null
+                    && constituent.Functor is not null
+                    && constituent.Word.WordCategory is not (WordCategory.Adverb
+                        or WordCategory.Particle
+                        or WordCategory.Interjection
+                        or WordCategory.Conjunction))
                 {
                     draft.Notes.Add(
                         $"U slova '{constituent.Lemma}' neurčuje pád ani rámec, ani předložka — doplň ho "

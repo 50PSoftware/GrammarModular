@@ -1,5 +1,6 @@
 using Grammar.Core.Enums;
 using Grammar.Czech.Cli;
+using Grammar.Czech.Models;
 using Grammar.Czech.Cli.Interaction;
 using Grammar.Czech.Cli.Rendering;
 using Grammar.Czech.Cli.Sentence;
@@ -418,6 +419,194 @@ namespace Grammar.Czech.Test
             overrides.For("student").Status = InformationStatus.New;
 
             Assert.AreEqual("Knihu čte student.", Sentence(overrides, "student", "číst", "kniha"));
+        }
+
+        private static WordCategory? CategoryOf(string lemma) =>
+            Draft(null, "student", "číst", lemma)
+                .Constituents.Single(constituent => constituent.Lemma == lemma)
+                .Word.WordCategory;
+
+        /// <summary>
+        /// The four closed classes the dictionary does not carry are recognized from the rule data, the
+        /// same way pronouns, prepositions and conjunctions already were.
+        /// </summary>
+        /// <remarks>
+        /// The SQLite dictionary holds nouns, adjectives and verbs and nothing else, so every adverb,
+        /// particle, interjection and numeral used to fall through to the guess from the ending — which
+        /// knows infinitives and adjective endings and calls everything else a noun.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("rychle", WordCategory.Adverb)]
+        [DataRow("pomalu", WordCategory.Adverb)]
+        [DataRow("ano", WordCategory.Particle)]
+        [DataRow("copak", WordCategory.Particle)]
+        [DataRow("ach", WordCategory.Interjection)]
+        [DataRow("bum", WordCategory.Interjection)]
+        public void ClosedClassWordIsRecognized(string lemma, WordCategory expected)
+        {
+            Assert.AreEqual(expected, CategoryOf(lemma));
+        }
+
+        /// <summary>
+        /// A numeral in words counts the noun after it, with the agreement that number takes.
+        /// </summary>
+        /// <remarks>
+        /// Asserted through the sentence rather than through the category, because a numeral is not a
+        /// constituent of its own — it modifies the noun it stands before, the same as an adjective, so
+        /// there is no row in the table to read the class off. And <em>pět knih</em> rather than
+        /// <em>pět knihy</em> is what says the class was recognized: five governs the genitive plural,
+        /// and a noun mistaken for a numeral would have been declined instead.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("pět", "Student čte pět knih.")]
+        [DataRow("dvacet", "Student čte dvacet knih.")]
+        public void NumeralInWordsCountsTheNounAfterIt(string lemma, string expected)
+        {
+            Assert.AreEqual(expected, Sentence(null, "student", "číst", lemma, "kniha"));
+        }
+
+        /// <summary>
+        /// The classes that already worked keep working, because the new tests run after them.
+        /// </summary>
+        /// <remarks>
+        /// They overlap: <em>vedle</em> is a preposition and an adverb, <em>tak</em> a conjunction, an
+        /// adverb and an interjection, <em>na</em> a preposition and an interjection. Putting the new
+        /// tests last is what keeps every one of those reading as it did.
+        /// </remarks>
+        [TestMethod]
+        public void OrderKeepsThePronounUnchanged()
+        {
+            Assert.AreEqual(WordCategory.Pronoun, CategoryOf("já"));
+        }
+
+        /// <summary>
+        /// A word that is both a preposition and something else stays a preposition, which is what the
+        /// order of the tests is for.
+        /// </summary>
+        /// <remarks>
+        /// Through the sentence again: a preposition is not a constituent either, it opens the one that
+        /// follows it. <em>vedle</em> is also an adverb and <em>na</em> also an interjection, and both
+        /// govern the noun after them here, which no other reading would.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("vedle", Case.Genitive, "Student čte vedle knihy.")]
+        [DataRow("na", Case.Locative, "Student čte na knize.")]
+        public void OrderKeepsThePrepositionsUnchanged(string lemma, Case governed, string expected)
+        {
+            var overrides = new DraftOverrides();
+            overrides.For("kniha").Case = governed;
+
+            Assert.AreEqual(expected, Sentence(overrides, "student", "číst", lemma, "kniha"));
+        }
+
+        /// <summary>
+        /// Where a word is both an adverb and a particle, the adverb wins — and that is a choice rather
+        /// than a fact.
+        /// </summary>
+        /// <remarks>
+        /// Forty-nine words are in both sets: <em>dobře</em>, <em>jistě</em>, <em>asi</em>,
+        /// <em>prý</em>. The adverb reading wins because an adverb can be a constituent and a
+        /// particle cannot, so calling <em>dobře</em> a particle would take it out of the sentence,
+        /// while <em>asi</em> read as an adverb behaves exactly as a particle would — both are
+        /// uninflected and neither declines. Deciding it word by word would need a list of words in the
+        /// code, which is what the dictionary is for; <c>--druh</c> is the way out.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("dobře")]
+        [DataRow("asi")]
+        public void AdverbWinsOverParticleWhereBothApply(string lemma)
+        {
+            Assert.AreEqual(WordCategory.Adverb, CategoryOf(lemma));
+        }
+
+        /// <summary>
+        /// A stated word class beats what the tool worked out, even where the tool had an answer.
+        /// </summary>
+        [TestMethod]
+        public void StatedWordClassWins()
+        {
+            var overrides = new DraftOverrides();
+            overrides.For("asi").WordCategory = WordCategory.Particle;
+
+            Assert.AreEqual(
+                WordCategory.Particle,
+                Draft(overrides, "student", "číst", "asi")
+                    .Constituents.Single(constituent => constituent.Lemma == "asi")
+                    .Word.WordCategory);
+        }
+
+        /// <summary>
+        /// A word the tool would otherwise call a noun becomes what the user says it is.
+        /// </summary>
+        [TestMethod]
+        public void StatedWordClassOverridesTheGuess()
+        {
+            var overrides = new DraftOverrides();
+            overrides.For("mimoň").WordCategory = WordCategory.Adverb;
+
+            Assert.AreEqual(WordCategory.Noun, CategoryOf("mimoň"));
+            Assert.AreEqual(
+                WordCategory.Adverb,
+                Draft(overrides, "student", "číst", "mimoň")
+                    .Constituents.Single(constituent => constituent.Lemma == "mimoň")
+                    .Word.WordCategory);
+        }
+
+        /// <summary>
+        /// The degree reaches the sentence, regularly and irregularly.
+        /// </summary>
+        /// <remarks>
+        /// <em>lépe</em> and <em>nejlépe</em> are not derived from <em>dobře</em> by any
+        /// rule; they are registered forms, which is what makes them worth asserting — a rule-derived
+        /// answer would be <em>dobřeji</em>.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("rychle", Degree.Comparative, "Student čte rychleji.")]
+        [DataRow("dobře", Degree.Positive, "Student čte dobře.")]
+        [DataRow("dobře", Degree.Comparative, "Student čte lépe.")]
+        [DataRow("dobře", Degree.Superlative, "Student čte nejlépe.")]
+        public void DegreeReachesTheSentence(string lemma, Degree degree, string expected)
+        {
+            var overrides = new DraftOverrides();
+            overrides.For(lemma).Degree = degree;
+            overrides.For(lemma).Functor = FgdFunctor.MANN;
+
+            Assert.AreEqual(expected, Sentence(overrides, "student", "číst", lemma));
+        }
+
+        /// <summary>
+        /// A degree stated on a class that does not compare is reported rather than quietly dropped.
+        /// </summary>
+        /// <remarks>
+        /// A switch that does nothing and does not say so is worse than one that fails. It is a note and
+        /// not an error because the sentence is otherwise sound, and refusing to build it over a switch
+        /// that changed nothing would be out of proportion.
+        /// </remarks>
+        [TestMethod]
+        public void DegreeOnAClassThatDoesNotCompareIsReported()
+        {
+            var overrides = new DraftOverrides();
+            overrides.For("kniha").Degree = Degree.Comparative;
+
+            var draft = Draft(overrides, "student", "číst", "kniha");
+
+            Assert.IsTrue(
+                draft.Notes.Any(note => note.Contains("Stupeň") && note.Contains("kniha")),
+                "Mělo se to říct: " + string.Join(" | ", draft.Notes));
+        }
+
+        /// <summary>
+        /// An uninflected word is not asked for a case it cannot have.
+        /// </summary>
+        [TestMethod]
+        public void UninflectedWordIsNotAskedForACase()
+        {
+            var overrides = new DraftOverrides();
+            overrides.For("rychle").Functor = FgdFunctor.MANN;
+
+            Assert.IsFalse(
+                Draft(overrides, "student", "číst", "rychle").Notes.Any(note => note.Contains("--pad")),
+                "Příslovce pád nemá, tak se na něj nemá ptát.");
         }
 
         /// <summary>

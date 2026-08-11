@@ -26,6 +26,7 @@ namespace Grammar.Czech.Cli.Interaction
             ["pad"] = Cases,
             ["ramec"] = Frames,
             ["odhad"] = Guesses,
+            ["druh"] = Classes,
         };
 
         /// <summary>
@@ -40,6 +41,38 @@ namespace Grammar.Czech.Cli.Interaction
         /// Lists the topic names, for the short help to point at.
         /// </summary>
         public static string Names => string.Join(", ", All.Keys);
+
+        private const string Classes = """
+
+            SLOVNÍ DRUH — odkud ho nástroj bere
+
+            Slovník vede podstatná jména, přídavná jména a slovesa. Zbylých sedm druhů jsou uzavřené
+            třídy — nová předložka ani spojka nevzniká — a bydlí v pravidlech vedle slovníku:
+            zájmena, předložky, spojky, číslovky, příslovce, částice a citoslovce. Nástroj se ptá
+            jich, a teprve co nepozná ani jedno, odhadne ze zakončení (infinitiv sloveso, jinak
+            podstatné jméno).
+
+            Testuje se v tomhle pořadí: zájmeno, předložka, spojka, číslovka, příslovce, částice,
+            citoslovce. Pořadí není libovolné, protože se ty třídy překrývají:
+
+              vedle      předložka i příslovce   → vyhrává předložka
+              tak        spojka, příslovce i citoslovce → vyhrává spojka
+              na         předložka i citoslovce  → vyhrává předložka
+              dost       příslovce i číslovka    → vyhrává číslovka
+              asi, dobře příslovce i částice     → vyhrává příslovce
+
+            To poslední je volba, ne pravidlo: 49 slov je obojí. Příslovce vyhrává proto, že příslovce
+            může být větný člen a částice ne — kdyby se z 'dobře' stala částice, vypadlo by z věty,
+            kdežto 'asi' čtené jako příslovce se chová stejně jako částice, obojí je neohebné.
+
+            Když to nesedí, řekni to: --druh asi=castice. Bere školní i latinské názvy
+            (prislovce i adverbium, castice i partikule) a nesnáší se s diakritikou ani velkými písmeny.
+
+            Příslovce a přídavná jména se stupňují: --stupen rychle=druhy dá 'rychleji',
+            --stupen dobre=treti dá 'nejlépe'. Na druhu, který se nestupňuje, se to řekne a nic to
+            neudělá.
+
+            """;
 
         private const string Roles = """
 

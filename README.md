@@ -875,6 +875,24 @@ The session stands beside `veta` rather than replacing it. `veta` is still one c
 
 Terms can be asked about by name, in either mode: `? role` explains what functors are and why a role is stated rather than a case, `? cleneni` why dané and nové decide the word order, and `? odhad` what the tool makes up and how the display says so.
 
+Seven of the ten word classes are closed — no new preposition or conjunction gets coined — and live in the rule data beside the dictionary rather than in it. The dictionary carries nouns, adjectives and verbs; pronouns, prepositions and conjunctions were already read off the rules, and adverbs, particles, interjections and numerals now are too. Before that they fell through to the guess from the ending, which knows infinitives and adjective endings and calls everything else a noun.
+
+```bash
+gramatika veta student číst pět kniha   # Student čte pět knih.
+```
+
+They are tested in a fixed order — pronoun, preposition, conjunction, numeral, adverb, particle, interjection — because the classes overlap and something has to win: *vedle* is a preposition and an adverb, *tak* a conjunction and an adverb and an interjection, *dost* an adverb and a numeral. The four new tests run last, so nothing that already worked reads differently.
+
+Between the new four the order is a choice rather than a fact. Forty-nine words are both an adverb and a particle — *dobře*, *jistě*, *asi*, *prý* — and the adverb wins: an adverb can be a constituent and a particle cannot, so calling *dobře* a particle would take it out of the sentence, while *asi* read as an adverb behaves exactly as a particle would, both being uninflected. Deciding it word by word would need a list of words in the code, and lexical facts belong in the dictionary.
+
+Which is what `--druh` is for, and it is the last word over everything above:
+
+```bash
+gramatika veta student číst asi --druh asi=castice --role asi=MANN
+```
+
+`--stupen` reaches the comparison the library already had and the tool never exposed: `--stupen rychle=druhy` gives *rychleji*, and `--stupen dobre=treti` gives *nejlépe* — a registered form rather than a derived one, since the rule would have said *dobřeji*. Stated on a class that does not compare it changes nothing and says so, rather than being a switch that quietly does nothing.
+
 A verb the dictionary holds no frame for still produces a sentence. Without one the role resolver has no slots to hand out, every constituent stays roleless and nothing comes of it — and since the dictionary carries frames for sixty verbs, that used to be the ordinary outcome rather than the rare one. The tool falls back on the unmarked Czech order: actor, patient, and an addressee after them if it is animate.
 
 ```bash

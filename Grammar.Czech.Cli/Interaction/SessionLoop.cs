@@ -382,6 +382,8 @@ namespace Grammar.Czech.Cli.Interaction
               kniha pad=dativ        pád natvrdo; přebije ten, který by řídil rámec
               2 cleneni=dane         dané (téma) nebo nové (réma) — z toho plyne slovosled
               2 rod=ženský           rod, číslo, vzor, životné — když slovník slovo nezná
+              2 druh=prislovce       slovní druh, když ho nástroj určil špatně
+              2 stupen=druhy         stupeň příslovce a přídavného jména: rychle → rychleji
               2 predlozka=v          předložka, kterou se člen otevírá
               2 privlastek=mladý     shodný přívlastek před jméno
               p cas=minulý           čas, způsob, rod, vid, osoba, číslo — přísudku

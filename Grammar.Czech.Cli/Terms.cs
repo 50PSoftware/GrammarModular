@@ -187,6 +187,48 @@ namespace Grammar.Czech.Cli
             ["rema"] = InformationStatus.New,
         });
 
+        // Jednoslovné zkratky vedle školních názvů: 'podstatné jméno' se na příkazové řádce píše špatně
+        // a v dialogu ještě hůř, protože mezera odděluje cíl od vlastnosti.
+        private static readonly Dictionary<string, WordCategory> WordCategoryAliases = Aliases(Categories, new()
+        {
+            ["substantivum"] = WordCategory.Noun,
+            ["podstatne"] = WordCategory.Noun,
+            ["adjektivum"] = WordCategory.Adjective,
+            ["pridavne"] = WordCategory.Adjective,
+            ["pronomen"] = WordCategory.Pronoun,
+            ["zajmeno"] = WordCategory.Pronoun,
+            ["numerale"] = WordCategory.Numerale,
+            ["cislovka"] = WordCategory.Numerale,
+            ["verbum"] = WordCategory.Verb,
+            ["adverbium"] = WordCategory.Adverb,
+            ["prislovce"] = WordCategory.Adverb,
+            ["prepozice"] = WordCategory.Preposition,
+            ["predlozka"] = WordCategory.Preposition,
+            ["konjunkce"] = WordCategory.Conjunction,
+            ["spojka"] = WordCategory.Conjunction,
+            ["partikule"] = WordCategory.Particle,
+            ["castice"] = WordCategory.Particle,
+            ["interjekce"] = WordCategory.Interjection,
+            ["citoslovce"] = WordCategory.Interjection,
+        });
+
+        private static readonly Dictionary<Degree, string> Degrees = new()
+        {
+            [Degree.Positive] = "první",
+            [Degree.Comparative] = "druhý",
+            [Degree.Superlative] = "třetí",
+        };
+
+        private static readonly Dictionary<string, Degree> DegreeAliases = Aliases(Degrees, new()
+        {
+            ["1"] = Degree.Positive,
+            ["2"] = Degree.Comparative,
+            ["3"] = Degree.Superlative,
+            ["pozitiv"] = Degree.Positive,
+            ["komparativ"] = Degree.Comparative,
+            ["superlativ"] = Degree.Superlative,
+        });
+
         /// <summary>
         /// Gets the Czech name of the case.
         /// </summary>
@@ -287,6 +329,23 @@ namespace Grammar.Czech.Cli
         /// <returns>The gender.</returns>
         /// <exception cref="CliException">Thrown when the text names no gender.</exception>
         public static Gender ParseGender(string text) => Parse(GenderAliases, text, "rod");
+
+        /// <summary>
+        /// Parses a word class written in Czech.
+        /// </summary>
+        /// <param name="text">The text to parse.</param>
+        /// <returns>The word class.</returns>
+        /// <exception cref="CliException">The text names no word class.</exception>
+        public static WordCategory ParseWordCategory(string text) =>
+            Parse(WordCategoryAliases, text, "slovní druh");
+
+        /// <summary>
+        /// Parses a degree of comparison written in Czech.
+        /// </summary>
+        /// <param name="text">The text to parse.</param>
+        /// <returns>The degree.</returns>
+        /// <exception cref="CliException">The text names no degree.</exception>
+        public static Degree ParseDegree(string text) => Parse(DegreeAliases, text, "stupeň");
 
         /// <summary>
         /// Parses a person written as a Czech name or a number.

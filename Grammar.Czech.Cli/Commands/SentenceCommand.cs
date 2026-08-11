@@ -37,6 +37,8 @@ namespace Grammar.Czech.Cli.Commands
             var number = WordOption("--cislo", "Číslo jména: --cislo kniha=mnozne");
             var pattern = WordOption("--vzor", "Vzor skloňování: --vzor Klara=zena");
             var animate = WordOption("--zivotne", "Životnost: --zivotne pes=ano");
+            var category = WordOption("--druh", "Slovní druh natvrdo, přebije odhad: --druh rychle=prislovce");
+            var degree = WordOption("--stupen", "Stupeň přídavného jména nebo příslovce: --stupen rychle=druhy");
             var preposition = WordOption("--predlozka", "Předložka členu: --predlozka skola=v");
             var modifier = WordOption("--privlastek", "Shodný přívlastek: --privlastek Klara=mlada");
 
@@ -84,7 +86,7 @@ namespace Grammar.Czech.Cli.Commands
             var command = new Command("veta", "Poskládá českou větu ze zadaných lemmat.")
             {
                 lemmas,
-                role, status, kase, gender, number, pattern, animate, preposition, modifier,
+                role, status, kase, gender, number, pattern, animate, category, degree, preposition, modifier,
                 verb, attach, frame, tense, mood, voice, aspect, person, predicateNumber, reflexive,
                 negative, dropSubject, sentenceType, terminator, quiet, json,
             };
@@ -118,6 +120,8 @@ namespace Grammar.Czech.Cli.Commands
                 Assign(overrides, "cislo", parse.GetValue(number));
                 Assign(overrides, "vzor", parse.GetValue(pattern));
                 Assign(overrides, "zivotne", parse.GetValue(animate));
+                Assign(overrides, "druh", parse.GetValue(category));
+                Assign(overrides, "stupen", parse.GetValue(degree));
                 Assign(overrides, "predlozka", parse.GetValue(preposition));
                 Assign(overrides, "privlastek", parse.GetValue(modifier));
 
