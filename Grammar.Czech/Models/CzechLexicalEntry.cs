@@ -107,20 +107,26 @@ namespace Grammar.Czech.Models
         public string? BaseVerbLemma { get; init; }
 
         /// <summary>
-        /// Gets the circumstance this adverb expresses on its own, or <see langword="null"/> when nobody
+        /// Gets what this word contributes to a clause by itself, or <see langword="null"/> when nobody
         /// has said.
         /// </summary>
         /// <remarks>
-        /// <em>dnes</em> answers when, <em>doma</em> answers where and <em>rychle</em> answers how, and
-        /// nothing about the words says so — not the ending, and not the adjective the adverb was
+        /// For the classes no verb governs. <em>dnes</em> answers when, <em>doma</em> answers where,
+        /// <em>rychle</em> answers how, <em>asi</em> is modality and <em>jen</em> points at the focus —
+        /// and nothing about the words says so. Not the ending, and not the adjective an adverb was
         /// derived from, since <em>rychlý</em> and <em>rychle</em> are one word in two classes and only
         /// one of them answers "how". It is recorded per word for that reason.
         /// <para>
-        /// Null is the ordinary case and means unrecorded rather than "no circumstance". A generator
-        /// then has to be told the functor, which is what it had to be told for every adverb before.
+        /// Inherent in the sense <see cref="ReflexiveType"/> uses: it holds for the word rather than for
+        /// a frame the word happens to stand in. A noun takes its functor from the verb instead, and one
+        /// written here would be read by nobody.
+        /// </para>
+        /// <para>
+        /// Null is the ordinary case and means unrecorded rather than "contributes nothing". A generator
+        /// then has to be told the functor, which is what it had to be told for every such word before.
         /// </para>
         /// </remarks>
-        public FgdFunctor? AdverbialFunctor { get; init; }
+        public FgdFunctor? InherentFunctor { get; init; }
 
         // Stems the word inflects on, for the verbs whose pattern does not predict them. Null is the
         // ordinary case and means the pattern decides; only what the pattern gets wrong is stated.

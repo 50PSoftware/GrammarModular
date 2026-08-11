@@ -210,7 +210,7 @@ namespace Grammar.Czech.Test
             ["kind", typeof(Core.Enums.ValencyKind)],
             ["diathesis", typeof(Core.Enums.Diathesis)],
             ["functor", typeof(Core.Enums.FgdFunctor)],
-            ["adverbial_functor", typeof(Core.Enums.FgdFunctor)],
+            ["inherent_functor", typeof(Core.Enums.FgdFunctor)],
             ["obligatoriness", typeof(Core.Enums.Obligatoriness)],
             ["morph_case", typeof(Core.Enums.Case)]
         ];

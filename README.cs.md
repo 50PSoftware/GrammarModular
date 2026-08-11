@@ -872,7 +872,20 @@ Sezení stojí vedle `veta`, ne místo něj. `veta` je pořád jeden příkaz, n
 
 Na pojmy se dá zeptat jménem, v obou režimech: `? role` vysvětlí, co jsou funktory a proč se zadává role a ne pád, `? cleneni` proč dané a nové rozhodují slovosled, a `? odhad` co si nástroj domýšlí a jak to výpis říká.
 
-Poznat slovní druh není totéž co umět to slovo zasadit. Příslovce není valenční slot, takže mu žádný rámec roli nedá, a dokud slovník neuměl říct, jakou okolnost příslovce vyjadřuje, končilo každé příslovce jako otevřená otázka. Od toho je `lemma_entry.adverbial_functor`:
+Všech deset slovních druhů dojde k hotové větě. Poslední dva byly částice a citoslovce, a ne proto, že by je bylo těžké poznat: nebyl pro ně funktor. Ani jedno není větný člen — čeština u nich mluví o slovech *bez větněčlenské platnosti* — takže jim žádný valenční rámec roli nedá, a dosavadních 25 funktorů byli samí účastníci děje nebo okolnosti. Vnutit jim některý znamenalo zapsat, že *asi* odpovídá na otázku „jak", což neodpovídá.
+
+Pražský závislostní korpus na to funktory má a teď jsou v `FgdFunctor`: `MOD` pro modalitu, `RHEM` pro rematizátor, `ATT` pro postoj, `PREC` pro navázání na předchozí větu a `PARTL` pro slovo stojící mimo stavbu věty.
+
+Ani jedna třída na to nepotřebuje slovník. Pravidla už částice třídí do devíti skupin Nekulovy klasifikace a korpus třídí totéž na funktory, takže srovnat je vedle sebe je pravidlo — `Modal` je `MOD`, `Focusing` je `RHEM`, `Intensifying` je `EXT`, `Response` a `Negative` jsou `PARTL`. Citoslovce je `PARTL` z toho, že je citoslovce, a není co dohledávat.
+
+```bash
+gramatika veta student číst kniha ano   # Student čte knihu ano.
+gramatika veta student číst kniha ach   # Student čte knihu ach.
+```
+
+Slovo, které je zároveň příslovce i částice, se pořád čte jako příslovce, takže se `asi` zeptá na okolnost, kterou u něj slovník nevede, místo aby si ji vymyslelo. `--druh asi=castice` to rozhodne a skupina dodá `MOD`.
+
+Poznat slovní druh není totéž co umět to slovo zasadit. Příslovce není valenční slot, takže mu žádný rámec roli nedá, a dokud slovník neuměl říct, jakou okolnost příslovce vyjadřuje, končilo každé příslovce jako otevřená otázka. Od toho je `lemma_entry.inherent_functor`:
 
 ```bash
 gramatika veta student číst kniha dnes   # Student čte knihu dnes.

@@ -76,6 +76,10 @@ namespace Grammar.Czech.Cli.Interaction
             'doma' kde, 'rychle' jak — a pak roli dostane samo a nemusíš ji zadávat. Odvodit ji nejde,
             takže příslovce, které ve slovníku není, se na roli pořád zeptá.
 
+            Částice a citoslovce roli dostanou vždycky, ze své třídy. U slova, které je obojí — 'asi',
+            'jen', 'bohužel' — vyhrává příslovce, a to se zeptá; '--druh asi=castice' to rozhodne
+            a funktor přijde sám.
+
             """;
 
         private const string Roles = """
@@ -105,6 +109,19 @@ namespace Grammar.Czech.Cli.Interaction
               LOC   kde          DIR1  odkud       DIR2  kudy        DIR3  kam
               TWHEN kdy          THL   jak dlouho  MANN  jak         MEANS čím
               CAUS  proč         AIM   za účelem   BEN   pro koho    ACMP  s kým
+
+            Slova, která nejsou větným členem — částice a citoslovce. Nerozvíjejí nic a sloveso je
+            neváže, ale ve větě stojí, tak mají funktory taky:
+
+              MOD   modalita     Jak si je mluvčí jistý: 'asi přijde', 'prý přijde'.
+              RHEM  rematizátor  Ukazuje, o čem věta je: 'JEN Pavel', 'TAKÉ Pavel'.
+              ATT   postoj       Co si o tom mluvčí myslí: 'bohužel přišel'.
+              PREC  navázání     Váže větu na to, co bylo řečeno: 'tedy', 'však'.
+              EXT   míra         Do jaké míry: 'velmi', 'příliš'.
+              PARTL citoslovce   Stojí mimo stavbu věty: 'ach', 'bum'.
+
+            Tyhle si přiřazovat nemusíš. Částice ho dostane podle svého druhu, citoslovce vždycky
+            PARTL — obojí z pravidel, takže se na ně nástroj neptá.
 
             Zadává se: --role kniha=PAT, nebo v sezení '3 role=PAT'.
 

@@ -33,7 +33,7 @@ namespace Grammar.Czech.Lexicon.Tool
             ("lemma_entry", "verb_class", typeof(VerbClass)),
             ("lemma_entry", "aktionsart", typeof(Aktionsart)),
             ("lemma_sense", "aktionsart", typeof(Aktionsart)),
-            ("lemma_entry", "adverbial_functor", typeof(FgdFunctor)),
+            ("lemma_entry", "inherent_functor", typeof(FgdFunctor)),
             ("lemma_entry", "reflexive_type", typeof(ReflexiveType)),
             ("valency_frame", "kind", typeof(ValencyKind)),
             ("valency_frame", "diathesis", typeof(Diathesis)),
@@ -109,7 +109,7 @@ namespace Grammar.Czech.Lexicon.Tool
                 CheckAktionsart(connection, errors);
                 CheckStems(connection, errors);
                 CheckLemmaKeys(connection, errors);
-                CheckAdverbialFunctors(connection, errors);
+                CheckInherentFunctors(connection, errors);
                 CheckLemmaVariants(connection, errors);
                 CheckLemmaSenses(connection, errors);
                 CheckFrames(connection, errors);
@@ -253,22 +253,24 @@ namespace Grammar.Czech.Lexicon.Tool
             }
         }
 
-        // Okolnost, kterou slovo vyjadřuje samo o sobě, dává smysl u příslovce. U podstatného jména ji
-        // rozhoduje pád a rámec slovesa, ne heslo, takže vyplněný sloupec jinde než u příslovce je
-        // řádek, který nikdo nepřečte — a mlčky, protože ho čte jen cesta pro příslovce.
-        private static void CheckAdverbialFunctors(SqliteConnection connection, List<string> errors)
+        // Co slovo přináší samo o sobě, dává smysl tam, kde mu funktor nedává sloveso: u příslovce,
+        // částice a citoslovce. U podstatného jména ho rozhoduje rámec, takže vyplněný sloupec jinde je
+        // řádek, který nikdo nepřečte — a mlčky, protože ho čte jen cesta pro tyhle tři třídy.
+        private static void CheckInherentFunctors(SqliteConnection connection, List<string> errors)
         {
             const string sql = """
                 SELECT lemma, category
                 FROM lemma_entry
-                WHERE adverbial_functor IS NOT NULL AND category <> 'Adverb'
+                WHERE inherent_functor IS NOT NULL
+                  AND category NOT IN ('Adverb', 'Particle', 'Interjection')
                 """;
 
             foreach (var row in Query(connection, sql))
             {
                 errors.Add(
-                    $"'{row[0]}' má vyplněnou okolnost příslovce, ale je to {row[1]}. "
-                    + "Ten sloupec se čte jen u příslovcí; u ostatních druhů roli rozhoduje rámec slovesa.");
+                    $"'{row[0]}' má vyplněný vlastní funktor, ale je to {row[1]}. "
+                    + "Ten sloupec se čte jen u příslovcí, částic a citoslovcí; jinde roli rozhoduje "
+                    + "rámec slovesa.");
             }
         }
 

@@ -138,6 +138,12 @@ namespace Grammar.Czech.Cli
             [FgdFunctor.CRIT] = "podle čeho",
             [FgdFunctor.ACMP] = "s kým",
             [FgdFunctor.COMPL] = "doplněk",
+            [FgdFunctor.CPHR] = "jmenná část",
+            [FgdFunctor.RHEM] = "rematizátor",
+            [FgdFunctor.MOD] = "modalita",
+            [FgdFunctor.ATT] = "postoj",
+            [FgdFunctor.PREC] = "navázání",
+            [FgdFunctor.PARTL] = "citoslovce",
         };
 
         // Zkratky a číselné pády jsou synonyma navíc; do výpisu se nikdy nedostanou, jen se přijímají.

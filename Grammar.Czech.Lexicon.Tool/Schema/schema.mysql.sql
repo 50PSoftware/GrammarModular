@@ -82,7 +82,7 @@ CREATE TABLE lemma_entry (
     aktionsart                         VARCHAR(24)  COLLATE utf8mb4_bin,
     reflexive_type                     VARCHAR(32)  COLLATE utf8mb4_bin NOT NULL DEFAULT 'None',
     base_verb_lemma                    VARCHAR(64)  COLLATE utf8mb4_bin,
-    adverbial_functor                  VARCHAR(16)  COLLATE utf8mb4_bin,
+    inherent_functor                  VARCHAR(16)  COLLATE utf8mb4_bin,
 
     stem                               VARCHAR(32)  COLLATE utf8mb4_bin,
     present_stem                       VARCHAR(32)  COLLATE utf8mb4_bin,
@@ -117,10 +117,11 @@ CREATE TABLE lemma_entry (
         'Extensive', 'Cumulative', 'Intensive', 'Excessive', 'Distributive', 'Attenuative',
         'Semelfactive', 'Momentary', 'Iterative', 'Diminutive', 'Comitative', 'Frequentative',
         'Stative', 'Decursive', 'Mutative')),
-    CONSTRAINT ck_lemma_entry_adverbial_functor CHECK (adverbial_functor IS NULL OR adverbial_functor IN (
+    CONSTRAINT ck_lemma_entry_inherent_functor CHECK (inherent_functor IS NULL OR inherent_functor IN (
         'ACT', 'PAT', 'ADDR', 'ORIG', 'EFF', 'DIR1', 'DIR2', 'DIR3', 'LOC', 'MANN',
         'MEANS', 'BEN', 'CAUS', 'AIM', 'TWHEN', 'DIFF', 'OBST', 'INTT', 'MAT', 'THL',
-        'EXT', 'CRIT', 'ACMP', 'COMPL', 'CPHR')),
+        'EXT', 'CRIT', 'ACMP', 'COMPL', 'CPHR',
+        'RHEM', 'MOD', 'ATT', 'PREC', 'PARTL')),
     CONSTRAINT ck_lemma_entry_reflexive CHECK (reflexive_type IN (
         'None', 'ReflexivumTantum_Se', 'ReflexivumTantum_Si', 'DerivedReflexive_Se',
         'DerivedBenefactive_Si', 'Reciprocal_Se', 'DeagentivePassive_Se')),

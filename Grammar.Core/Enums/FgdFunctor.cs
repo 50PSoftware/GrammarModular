@@ -140,6 +140,46 @@ namespace Grammar.Core.Enums
         /// něco</em>, where mít on its own governs no such thing. The Prague Dependency Treebank
         /// annotates it as CPHR, and this is that.
         /// </remarks>
-        CPHR
+        CPHR,
+
+        /// <summary>
+        /// Rhematizer (rematizátor) — a word that points at what the sentence is about: <em>jen</em>
+        /// Pavel, <em>také</em> Pavel.
+        /// </summary>
+        /// <remarks>
+        /// It is not a circumstance of the event; it says nothing about how or when anything happened.
+        /// What it does is mark another word as the focus, which is why the Prague Dependency Treebank
+        /// gives it a functor of its own rather than folding it into MANN.
+        /// </remarks>
+        RHEM,
+
+        /// <summary>
+        /// Modality (modalitní částice) — how certain the speaker is: <em>asi</em> přijde, <em>prý</em>
+        /// přijde.
+        /// </summary>
+        MOD,
+
+        /// <summary>
+        /// Attitude (postojová částice) — what the speaker makes of it: <em>bohužel</em> přišel,
+        /// <em>naštěstí</em> přišel.
+        /// </summary>
+        ATT,
+
+        /// <summary>
+        /// Preceding connective (navazovací částice) — a word tying the sentence to what came before:
+        /// <em>tedy</em>, <em>však</em>, <em>totiž</em>.
+        /// </summary>
+        PREC,
+
+        /// <summary>
+        /// Interjection (citoslovce) — a word standing outside the structure of the clause: <em>ach</em>,
+        /// <em>bum</em>.
+        /// </summary>
+        /// <remarks>
+        /// It fills no slot and modifies nothing; it is in the sentence without being part of what the
+        /// sentence says. Having a functor for that is what lets it be generated at all, rather than
+        /// being forced into a circumstance it does not express.
+        /// </remarks>
+        PARTL
     }
 }

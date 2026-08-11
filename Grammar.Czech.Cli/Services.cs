@@ -59,6 +59,20 @@ namespace Grammar.Czech.Cli
             {
                 _ = provider.GetRequiredService<IValencyProvider<CzechLexicalEntry>>().HasEntry("být");
             }
+            catch (InvalidOperationException exception) when (exception.Message.Contains("schéma"))
+            {
+                // Hlášku z knihovny přebírám celou: ta říká přesně to, co je potřeba — jakou verzi
+                // slovník má a jakou tenhle balíček čte. Bez tohohle odchytu by spadla do obecného,
+                // který radí doplnit vzor, což s verzí schématu nemá nic společného.
+                throw new CliException($"""
+                    {exception.Message}
+
+                    Slovník se aktualizuje takhle:
+
+                      lexikon pull      stáhne ho ze serveru
+                      lexikon build     postaví ho ze seedů v repozitáři
+                    """);
+            }
             catch (FileNotFoundException)
             {
                 // Hlášku z knihovny sem nepřebírám: radí volajícímu, jak zavolat AddCzechGrammarServices,

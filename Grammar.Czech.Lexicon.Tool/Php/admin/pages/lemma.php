@@ -163,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         admin_enum('aktionsart', 'aktionsart'),
         admin_enum('reflexive_type', 'reflexive_type') ?? 'None',
         admin_text('base_verb_lemma'),
-        admin_enum('adverbial_functor', 'adverbial_functor'),
+        admin_enum('inherent_functor', 'inherent_functor'),
         admin_text('stem'),
         admin_text('present_stem'),
         admin_text('past_stem'),
@@ -183,7 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'has_mobile_e', 'has_genitive_plural_shortening', 'has_epenthesis_in_genitive_plural',
         'is_indeclinable', 'is_plural_only', 'is_countable', 'prefers_short_form', 'verb_class',
         'aspect', 'aspect_counterpart', 'aktionsart', 'reflexive_type', 'base_verb_lemma',
-        'adverbial_functor', 'stem', 'present_stem',
+        'inherent_functor', 'stem', 'present_stem',
         'past_stem', 'future_stem', 'imperative_stem', 'passive_stem', 'infinitive', 'forms_passive',
         'lexeme_id', 'source', 'is_verified', 'note',
     ];
@@ -249,7 +249,7 @@ $foldColumns = [
         'is_indeclinable', 'is_plural_only', 'is_countable', 'prefers_short_form',
     ],
     'verb' => ['verb_class', 'aspect', 'aspect_counterpart', 'aktionsart', 'base_verb_lemma'],
-    'adverb' => ['adverbial_functor'],
+    'inherent' => ['inherent_functor'],
     'stems' => [
         'stem', 'present_stem', 'past_stem', 'future_stem', 'imperative_stem', 'passive_stem',
         'infinitive', 'forms_passive',
@@ -431,16 +431,18 @@ if (!$isNew) {
     </div>
     <?= admin_fold_close() ?>
 
-    <?= admin_fold_open('Příslovce', $foldFilled['adverb'], count($foldColumns['adverb'])) ?>
+    <?= admin_fold_open('Vlastní funktor', $foldFilled['inherent'], count($foldColumns['inherent'])) ?>
 
     <div class="grid">
         <p class="field wide">
-            <label for="adverbial_functor">Okolnost</label>
-            <?= admin_select('adverbial_functor', 'adverbial_functor', $value('adverbial_functor')) ?>
-            <small>Na co příslovce odpovídá samo o sobě: dnes kdy (TWHEN), doma kde (LOC), rychle jak
-                (MANN). Odvodit to nejde — ze zakončení ne a z přídavného jména, ze kterého vzniklo, taky
-                ne. Prázdno znamená nezapsáno, ne „žádná“; generátor pak roli potřebuje dostat zvenčí.
-                U jiného slovního druhu to nech prázdné, <code>validate</code> to hlásí jako chybu.</small>
+            <label for="inherent_functor">Funktor</label>
+            <?= admin_select('inherent_functor', 'inherent_functor', $value('inherent_functor')) ?>
+            <small>Co slovo přináší do věty samo o sobě: dnes kdy (TWHEN), doma kde (LOC), rychle jak
+                (MANN), asi modalitu (MOD), jen ukazuje na jádro (RHEM), ach stojí mimo stavbu věty
+                (PARTL). Odvodit to nejde — ze zakončení ne a u příslovce ani z přídavného jména, ze
+                kterého vzniklo. Prázdno znamená nezapsáno, ne „žádný“; generátor pak roli potřebuje
+                dostat zvenčí. Vyplňuje se jen u příslovcí, částic a citoslovcí — jinde funktor
+                rozhoduje rámec slovesa a <code>validate</code> to hlásí jako chybu.</small>
         </p>
     </div>
     <?= admin_fold_close() ?>

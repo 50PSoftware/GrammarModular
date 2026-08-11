@@ -25,7 +25,7 @@ const LEXICON_TABLES = [
         'is_animate', 'has_mobile_e', 'has_genitive_plural_shortening',
         'has_epenthesis_in_genitive_plural', 'is_indeclinable', 'is_plural_only', 'is_countable',
         'prefers_short_form', 'verb_class', 'aspect', 'aspect_counterpart', 'aktionsart', 'reflexive_type',
-        'base_verb_lemma', 'adverbial_functor',
+        'base_verb_lemma', 'inherent_functor',
         'stem', 'present_stem', 'past_stem', 'future_stem',
         'imperative_stem', 'passive_stem', 'infinitive', 'forms_passive',
         'lexeme_id', 'source', 'is_verified', 'note',
@@ -177,12 +177,17 @@ const LEXICON_ENUMS = [
         'ACMP' => 'ACMP – s kým',
         'COMPL' => 'COMPL – jako co',
         'CPHR' => 'CPHR – jmenná část (mít zájem)',
+        'RHEM' => 'RHEM – rematizátor (jen, také)',
+        'MOD' => 'MOD – modalita (asi, prý)',
+        'ATT' => 'ATT – postoj (bohužel)',
+        'PREC' => 'PREC – navázání (tedy, však)',
+        'PARTL' => 'PARTL – citoslovce (ach)',
     ],
 
-    // Co příslovce vyjadřuje samo o sobě: dnes je TWHEN, doma LOC, rychle MANN. Tytéž hodnoty
+    // Co slovo přináší do věty samo o sobě: dnes je TWHEN, doma LOC, asi MOD. Tytéž hodnoty
     // jako u 'functor', vypsané znovu a ne odkazem — parita čte hodnoty z literálů v tomhle
     // souboru. Rozejít se jim to nepodaří, oba klíče se drží proti témuž C# enumu.
-    'adverbial_functor' => [
+    'inherent_functor' => [
         'ACT' => 'ACT – konatel',
         'PAT' => 'PAT – patiens',
         'ADDR' => 'ADDR – adresát',
@@ -208,6 +213,11 @@ const LEXICON_ENUMS = [
         'ACMP' => 'ACMP – s kým',
         'COMPL' => 'COMPL – jako co',
         'CPHR' => 'CPHR – jmenná část (mít zájem)',
+        'RHEM' => 'RHEM – rematizátor (jen, také)',
+        'MOD' => 'MOD – modalita (asi, prý)',
+        'ATT' => 'ATT – postoj (bohužel)',
+        'PREC' => 'PREC – navázání (tedy, však)',
+        'PARTL' => 'PARTL – citoslovce (ach)',
     ],
     'obligatoriness' => [
         'Obligatory' => 'obligatorní',

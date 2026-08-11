@@ -669,6 +669,96 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Every one of the ten word classes reaches a finished sentence.
+        /// </summary>
+        /// <remarks>
+        /// The two that took longest were the particle and the interjection, and not because they were
+        /// hard to recognize: there was no functor to give them. Neither is a clause member — Czech
+        /// grammar says <em>bez větněčlenské platnosti</em> — so no valency frame hands them a role, and
+        /// the twenty-five functors this project had were all participants or circumstances. Forcing one
+        /// on them would have recorded that <em>asi</em> answers "how", which it does not.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("Student čte knihu.", new[] { "student", "číst", "kniha" })]
+        [DataRow("Mladý student čte knihu.", new[] { "mladý", "student", "číst", "kniha" })]
+        [DataRow("Já čtu knihu.", new[] { "já", "číst", "kniha" })]
+        [DataRow("Student čte pět knih.", new[] { "student", "číst", "pět", "kniha" })]
+        [DataRow("Student čte knihu dnes.", new[] { "student", "číst", "kniha", "dnes" })]
+        [DataRow("Student čte ve školu.", new[] { "student", "číst", "v", "škola" })]
+        [DataRow("Student čte knihu ano.", new[] { "student", "číst", "kniha", "ano" })]
+        [DataRow("Student čte knihu ach.", new[] { "student", "číst", "kniha", "ach" })]
+        public void EveryWordClassReachesASentence(string expected, string[] lemmas)
+        {
+            Assert.AreEqual(expected, Sentence(null, lemmas));
+        }
+
+        /// <summary>
+        /// A particle takes its functor from the group the rule data already sorts it into.
+        /// </summary>
+        /// <remarks>
+        /// Nine groups of Nekula's classification against the functors of the Prague Dependency
+        /// Treebank. Lining two classifications up is a rule and lives in code; a list of words would
+        /// have belonged in the dictionary.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow(ParticleType.Modal, FgdFunctor.MOD)]
+        [DataRow(ParticleType.Optative, FgdFunctor.MOD)]
+        [DataRow(ParticleType.Focusing, FgdFunctor.RHEM)]
+        [DataRow(ParticleType.Intensifying, FgdFunctor.EXT)]
+        [DataRow(ParticleType.Emotional, FgdFunctor.ATT)]
+        [DataRow(ParticleType.Modifying, FgdFunctor.ATT)]
+        [DataRow(ParticleType.Structuring, FgdFunctor.PREC)]
+        [DataRow(ParticleType.Response, FgdFunctor.PARTL)]
+        [DataRow(ParticleType.Negative, FgdFunctor.PARTL)]
+        public void ParticleTypeDecidesTheFunctor(ParticleType type, FgdFunctor expected)
+        {
+            Assert.AreEqual(expected, ClassFunctors.Of(type));
+        }
+
+        /// <summary>
+        /// An interjection is PARTL from being an interjection, with nothing to look up.
+        /// </summary>
+        /// <remarks>
+        /// Unlike an adverb, whose circumstance is a fact about the word, and unlike a particle, whose
+        /// group the rule data records: every interjection stands outside the clause the same way, so
+        /// there is nothing to record per word.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("ach")]
+        [DataRow("bum")]
+        public void InterjectionIsPartlFromItsClass(string lemma)
+        {
+            var draft = Draft(null, "student", "číst", "kniha", lemma);
+
+            Assert.AreEqual(
+                FgdFunctor.PARTL,
+                draft.Constituents.Single(constituent => constituent.Lemma == lemma).Functor);
+        }
+
+        /// <summary>
+        /// A word that is both an adverb and a particle reads as an adverb and asks, and
+        /// <c>--druh</c> is what settles it.
+        /// </summary>
+        /// <remarks>
+        /// Forty-nine words are in both sets. Read as an adverb, <em>asi</em> would need a circumstance
+        /// the dictionary does not record for it, so it stops and asks rather than inventing one; stated
+        /// as a particle, its group answers.
+        /// </remarks>
+        [TestMethod]
+        public void AmbiguousWordAsksUntilTheClassIsStated()
+        {
+            Assert.IsTrue(Draft(null, "student", "číst", "kniha", "asi").Gaps().Any(gap => gap.Contains("asi")));
+
+            var overrides = new DraftOverrides();
+            overrides.For("asi").WordCategory = WordCategory.Particle;
+
+            Assert.AreEqual(
+                FgdFunctor.MOD,
+                Draft(overrides, "student", "číst", "kniha", "asi")
+                    .Constituents.Single(constituent => constituent.Lemma == "asi").Functor);
+        }
+
+        /// <summary>
         /// The lexicon path is taken from the settings file the lexicon tool already uses, found by
         /// walking up from the working directory and read relative to the file it stands in.
         /// </summary>

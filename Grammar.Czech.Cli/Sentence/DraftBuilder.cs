@@ -283,6 +283,24 @@ namespace Grammar.Czech.Cli.Sentence
             return draft;
         }
 
+        // Slovník má poslední slovo — u příslovce je to jediný zdroj, protože 'dnes' je kdy a odvodit
+        // se to nedá. Kde mlčí, rozhodne třída: částice svým typem, citoslovce tím, že je citoslovce.
+        private FgdFunctor? Inherent(string lemma, CzechWordRequest word)
+        {
+            if (_lexicon.GetEntry(lemma, word.WordCategory ?? WordCategory.Noun)?.InherentFunctor is { } stated)
+            {
+                return stated;
+            }
+
+            return word.WordCategory switch
+            {
+                WordCategory.Particle when _particles.GetParticles().TryGetValue(lemma, out var particle)
+                    => ClassFunctors.Of(particle.Type),
+                WordCategory.Interjection => FgdFunctor.PARTL,
+                _ => null,
+            };
+        }
+
         // Neznámé slovo je buď tvar něčeho známého, nebo opravdu nové slovo, a to jsou dvě různé
         // situace s dvěma různými odpověďmi. Dokud se nerozlišovaly, splývaly do jednoho tichého
         // odhadu: z 'učitele' se stalo ženské jméno vzoru růže a věta vypadala skoro dobře.
@@ -339,7 +357,6 @@ namespace Grammar.Czech.Cli.Sentence
             }
 
             var known = _lexicon.HasEntry(match.Lemma);
-            FgdFunctor? adverbial = null;
             var enriched = _enricher.Enrich(word);
 
             // Předložky, zájmena ani spojky slovník nevede — jsou to uzavřené třídy a bydlí
@@ -360,14 +377,6 @@ namespace Grammar.Czech.Cli.Sentence
                 enriched.WordCategory = WordCategory.Conjunction;
             }
 
-            // Okolnost, kterou příslovce vyjadřuje samo o sobě, ví jen slovník: 'dnes' je kdy, 'doma'
-            // kde, 'rychle' jak. Zapisuje se rovnou jako role, takže se na ni uživatel nemusí ptát —
-            // a jen tam, kde ji sám neurčil, protože zadané vyhrává nad slovníkem i tady.
-            if (stated?.Functor is null
-                && _lexicon.GetEntry(match.Lemma, WordCategory.Adverb)?.AdverbialFunctor is { } circumstance)
-            {
-                adverbial = circumstance;
-            }
 
             // Zbylé čtyři uzavřené třídy, ve stejném duchu a záměrně až za předchozími třemi: 'vedle'
             // je předložka i příslovce, 'tak' spojka i příslovce, 'na' předložka i citoslovce. Kdo
@@ -420,10 +429,13 @@ namespace Grammar.Czech.Cli.Sentence
                 completed.Number = completed.IsPluralOnly == true ? Number.Plural : Number.Singular;
             }
 
+            // Funktor, který si slovo nese samo, a jen tam, kde ho uživatel neurčil. U příslovce
+            // a částice ho ví jedině slovník — 'dnes' je kdy, 'asi' je modalita — kdežto citoslovce
+            // ho má ze své třídy: PARTL je totéž jako „stojí mimo stavbu věty“ a jiné citoslovce není.
             return new ResolvedWord(position, match.Lemma, completed, origin, stated)
             {
                 CompletedSpelling = match.Completed ? lemma : null,
-                AdverbialFunctor = adverbial,
+                InherentFunctor = stated?.Functor is not null ? null : Inherent(match.Lemma, completed),
             };
         }
 
@@ -499,7 +511,7 @@ namespace Grammar.Czech.Cli.Sentence
                     Preposition = word.Stated?.Preposition ?? pendingPreposition,
                     PrepositionCases = [.. _prepositions.GetAllowedCases(
                         word.Stated?.Preposition ?? pendingPreposition ?? string.Empty)],
-                    Functor = word.Stated?.Functor ?? word.AdverbialFunctor,
+                    Functor = word.Stated?.Functor ?? word.InherentFunctor,
                     Status = word.Stated?.Status ?? InformationStatus.New,
                     HasStatedStatus = word.Stated?.Status is not null,
                 };
@@ -699,9 +711,9 @@ namespace Grammar.Czech.Cli.Sentence
             // slovo, které nenapsal, a to se má říct.
             public string? CompletedSpelling { get; init; }
 
-            // Okolnost, kterou to příslovce podle slovníku vyjadřuje. Nese se sem, protože roli dostane
-            // člen až o krok dál a heslo už tam po ruce není.
-            public FgdFunctor? AdverbialFunctor { get; init; }
+            // Funktor, který si slovo nese samo. Nese se sem, protože roli dostane člen až o krok dál
+            // a heslo už tam po ruce není.
+            public FgdFunctor? InherentFunctor { get; init; }
         }
     }
 }

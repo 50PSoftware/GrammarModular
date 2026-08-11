@@ -8,9 +8,10 @@
 -- the Functional Generative Description, the annotation scheme the valency half of this dictionary
 -- already uses.
 --
--- FIRST ADVERBS IN THE DICTIONARY, and the reason is the new column. Until now every adverb lived in
+-- FIRST ADVERBS IN THE DICTIONARY, and the reason is the new column (inherent_functor, called
+-- adverbial_functor when this file was written and widened to particles in schema 8). Until now every adverb lived in
 -- the embedded Data/Rules/adverbs.json, which holds 291 of them with their irregular comparatives —
--- and that is where they stay. What could not live there is `adverbial_functor`: which circumstance
+-- and that is where they stay. What could not live there is `inherent_functor`: which circumstance
 -- the adverb expresses. Correcting it has to be an edit in the admin rather than a release of the
 -- library, the same reasoning that put the verb stems on lemma_entry instead of in irregulars.json.
 --
@@ -51,7 +52,7 @@
 
 INSERT INTO lemma_entry (
     lemma_entry_id, lemma, lemma_key, homonym_index, category,
-    is_indeclinable, adverbial_functor, source, is_verified, note) VALUES
+    is_indeclinable, inherent_functor, source, is_verified, note) VALUES
     (282, 'dnes',    'dnes',    1, 'Adverb', 1, 'TWHEN', 'IJP', 0, NULL),
     (283, 'včera',   'včera',   1, 'Adverb', 1, 'TWHEN', 'IJP', 0, NULL),
     (284, 'zítra',   'zítra',   1, 'Adverb', 1, 'TWHEN', 'IJP', 0, NULL),

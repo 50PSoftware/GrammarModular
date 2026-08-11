@@ -875,7 +875,20 @@ The session stands beside `veta` rather than replacing it. `veta` is still one c
 
 Terms can be asked about by name, in either mode: `? role` explains what functors are and why a role is stated rather than a case, `? cleneni` why dané and nové decide the word order, and `? odhad` what the tool makes up and how the display says so.
 
-Recognizing the class is not the same as being able to place the word. An adverb is not a valency slot, so no frame hands it a role, and until the dictionary could say what circumstance an adverb expresses, every adverb stopped as an open question. `lemma_entry.adverbial_functor` is where that now lives:
+All ten word classes reach a finished sentence. The last two to get there were the particle and the interjection, and not because they were hard to recognize: there was no functor to give them. Neither is a clause member — Czech grammar says *bez větněčlenské platnosti* — so no valency frame hands them a role, and the twenty-five functors this project had were all participants or circumstances. Forcing one on them recorded that *asi* answers "how", which it does not.
+
+The Prague Dependency Treebank has functors for exactly this, and they are now in `FgdFunctor`: `MOD` for modality, `RHEM` for a rhematizer, `ATT` for attitude, `PREC` for tying a sentence to the one before, and `PARTL` for a word standing outside the structure of the clause.
+
+Neither class needs the dictionary for it. The rule data already sorts particles into the nine groups of Nekula's classification and the treebank sorts the same ground into functors, so lining the two up is a rule — `Modal` is `MOD`, `Focusing` is `RHEM`, `Intensifying` is `EXT`, `Response` and `Negative` are `PARTL`. An interjection is `PARTL` from being an interjection, with nothing to look up.
+
+```bash
+gramatika veta student číst kniha ano   # Student čte knihu ano.
+gramatika veta student číst kniha ach   # Student čte knihu ach.
+```
+
+A word that is both an adverb and a particle still reads as an adverb, so `asi` asks for a circumstance the dictionary does not record for it rather than inventing one. `--druh asi=castice` settles it and the group supplies `MOD`.
+
+Recognizing the class is not the same as being able to place the word. An adverb is not a valency slot, so no frame hands it a role, and until the dictionary could say what circumstance an adverb expresses, every adverb stopped as an open question. `lemma_entry.inherent_functor` is where that now lives:
 
 ```bash
 gramatika veta student číst kniha dnes   # Student čte knihu dnes.

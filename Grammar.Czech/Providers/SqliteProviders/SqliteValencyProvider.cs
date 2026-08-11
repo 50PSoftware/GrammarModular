@@ -44,7 +44,7 @@ namespace Grammar.Czech.Providers.SqliteProviders
         /// <summary>
         /// The schema version this provider reads, matching schema_version in lexicon_meta.
         /// </summary>
-        public const int SupportedSchemaVersion = 7;
+        public const int SupportedSchemaVersion = 8;
 
         private const string SchemaVersionQuery =
             "SELECT meta_value FROM lexicon_meta WHERE meta_key = 'schema_version'";
@@ -59,7 +59,7 @@ namespace Grammar.Czech.Providers.SqliteProviders
 
                    -- Na konci, ne u aspect_counterpart, kam patří významem. Připsáním se nemůže posunout
                    -- nic nad ním, a ordinály v ReadEntry jsou jediné, co stojí mezi tímhle dotazem a tichem.
-                   aktionsart, adverbial_functor
+                   aktionsart, inherent_functor
             FROM lemma_entry
 
             """;
@@ -510,9 +510,9 @@ namespace Grammar.Czech.Providers.SqliteProviders
             Infinitive = GetNullableString(reader, 23),
             FormsPassive = GetNullableBoolean(reader, 24),
             Aktionsart = reader.IsDBNull(25) ? null : ParseEnum<Aktionsart>(reader.GetString(25), "aktionsart"),
-            AdverbialFunctor = reader.IsDBNull(26)
+            InherentFunctor = reader.IsDBNull(26)
                 ? null
-                : ParseEnum<FgdFunctor>(reader.GetString(26), "adverbial_functor")
+                : ParseEnum<FgdFunctor>(reader.GetString(26), "inherent_functor")
         };
 
         private DbConnection OpenConnection()

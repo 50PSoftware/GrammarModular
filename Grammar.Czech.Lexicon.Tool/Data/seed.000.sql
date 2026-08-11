@@ -19,7 +19,7 @@
 -- grammars. Nothing is derived from VALLEX, PDT-Vallex or NomVallex, which are CC BY-NC-SA and
 -- therefore cannot be redistributed by this package.
 
-INSERT INTO lexicon_meta (meta_key, meta_value) VALUES ('schema_version', '7');
+INSERT INTO lexicon_meta (meta_key, meta_value) VALUES ('schema_version', '8');
 INSERT INTO lexicon_meta (meta_key, meta_value) VALUES ('license', 'Same as the package.');
 INSERT INTO lexicon_meta (meta_key, meta_value) VALUES ('source', 'Hand-authored from IJP; no CC BY-NC-SA corpus material.');
 
