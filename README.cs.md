@@ -1039,7 +1039,7 @@ Pravidlová data v projektu `Grammar.Czech` jsou embedded JSON resources. Výjim
 - Volající často musí dodat `Pattern`, `Gender`, `Number`, `Case`, `Person`, `Tense`, `Aspect`, `Modus` a `Voice`; projekt zatím není analyzátor přirozeného textu.
 - `MorphologyEngine.GetForm` vrací jedno slovo, takže u slovesa dá jen základní tvar. Slovesné tvary o víc slovech — opisné futurum, pasivum s pomocným slovesem, kondicionál, negace, reflexivum — potřebují `CzechWordFormComposer.GetFullForm`.
 - Pojmenovaný vzor z `irregulars.json` nese kmeny doslova, takže sedí na sloveso samotného vzoru a na jeho předponové odvozeniny — `nese` pokrývá *nést* i *odnést*, `dělá` pokrývá *dělat* i *dodělat*. Nepříbuzné sloveso potřebuje třídní vzor: *prodávat* se vzorem `dělá` vrátí *dělá*, s `trida5` správné *prodává*.
-- CLI je demo, ne uživatelský nástroj pro obecné dotazování.
+- CLI věty skládá, nečte je. Skloňovaný tvar se pozná jako tvar lemmatu a řekne se to, ale jako vstup se nebere — nástroj generuje z lemmat a analyzátor to není.
 
 ### Slovníkový provoz
 
