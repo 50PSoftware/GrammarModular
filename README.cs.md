@@ -1031,6 +1031,8 @@ Pravidlová data v projektu `Grammar.Czech` jsou embedded JSON resources. Výjim
 - Zápor je vlastnost přísudku, ne něco s dosahem: *nepřišel kvůli dešti* má dvě čtení a plán je nerozliší.
 - Kondenzace — propozice vyjádřená jménem nebo infinitivem místo věty (*po jeho příchodu* za *když přišel*) — jako volba modelovaná není; slot se obsadí tak, jak je napsaný.
 
+- Druhá třída tvoří trpné příčestí na *-nut* — *poslechnut*, *tisknut* — což je tvar, který uvádí IJP. Varianta *tištěn*, kterou IJP vede vedle *tisknut* pro význam tisknutí knih, se negeneruje: alternace *sk* → *ště* patří k příčestí na *-en* a nahrazením kmene ji vyrobit nejde, protože koncovka se připojuje k tomu, čím se kmen stane.
+
 ### Kde rozhoduje úzus a vybralo se jedno čtení
 
 - Vokalizace předložek není podle IJP ustálený jev a rozhoduje úzus. Pravidla pokrývají uváděné tendence, zbytek je výčtem v `vocalizeBefore`.

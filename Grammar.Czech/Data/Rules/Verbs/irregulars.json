@@ -155,9 +155,18 @@
     "pastStem": "š",
     "passiveStem": "ji",
     "passiveParticiple": {
-      "masculine": { "singular": "-t", "plural": "-ti" },
-      "feminine": { "singular": "-ta", "plural": "-ty" },
-      "neuter": { "singular": "-to", "plural": "-ta" }
+      "masculine": {
+        "singular": "-t",
+        "plural": "-ti"
+      },
+      "feminine": {
+        "singular": "-ta",
+        "plural": "-ty"
+      },
+      "neuter": {
+        "singular": "-to",
+        "plural": "-ta"
+      }
     },
     "pastParticiple": {
       "masculine": {
@@ -181,9 +190,18 @@
     "pastStem": "je",
     "passiveStem": "je",
     "passiveParticiple": {
-      "masculine": { "singular": "-t", "plural": "-ti" },
-      "feminine": { "singular": "-ta", "plural": "-ty" },
-      "neuter": { "singular": "-to", "plural": "-ta" }
+      "masculine": {
+        "singular": "-t",
+        "plural": "-ti"
+      },
+      "feminine": {
+        "singular": "-ta",
+        "plural": "-ty"
+      },
+      "neuter": {
+        "singular": "-to",
+        "plural": "-ta"
+      }
     }
   },
   "hrát": {
@@ -277,7 +295,21 @@
     "inheritsFrom": "trida2",
     "aspect": "perfective",
     "stem": "řek",
-    "passiveStem": "řeče"
+    "passiveStem": "řeče",
+    "passiveParticiple": {
+      "masculine": {
+        "singular": "-n",
+        "plural": "-ni"
+      },
+      "feminine": {
+        "singular": "-na",
+        "plural": "-ny"
+      },
+      "neuter": {
+        "singular": "-no",
+        "plural": "-na"
+      }
+    }
   },
   "dát": {
     "inheritsFrom": "trida5",
@@ -293,9 +325,18 @@
     "pastStem": "vza",
     "passiveStem": "vza",
     "passiveParticiple": {
-      "masculine": { "singular": "-t", "plural": "-ti" },
-      "feminine": { "singular": "-ta", "plural": "-ty" },
-      "neuter": { "singular": "-to", "plural": "-ta" }
+      "masculine": {
+        "singular": "-t",
+        "plural": "-ti"
+      },
+      "feminine": {
+        "singular": "-ta",
+        "plural": "-ty"
+      },
+      "neuter": {
+        "singular": "-to",
+        "plural": "-ta"
+      }
     }
   },
   "pomoci": {

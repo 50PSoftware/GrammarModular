@@ -70,16 +70,16 @@
     },
     "passiveParticiple": {
       "masculine": {
-        "singular": "-n",
-        "plural": "-ni"
+        "singular": "-nut",
+        "plural": "-nuti"
       },
       "feminine": {
-        "singular": "-na",
-        "plural": "-ny"
+        "singular": "-nuta",
+        "plural": "-nuty"
       },
       "neuter": {
-        "singular": "-no",
-        "plural": "-na"
+        "singular": "-nuto",
+        "plural": "-nuta"
       }
     }
   },

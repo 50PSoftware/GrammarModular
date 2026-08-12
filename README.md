@@ -1034,6 +1034,8 @@ All grammatical data in `Grammar.Czech` ships as embedded JSON resources:
 - Negation is a property of the predicate, not something with a scope: *nepřišel kvůli dešti* has two readings and the plan cannot tell them apart.
 - Condensation — a proposition expressed by a noun or an infinitive instead of a clause (*po jeho příchodu* for *když přišel*) — is not modelled as a choice; a slot is filled the way it is written.
 
+- The second class forms its passive participle on *-nut* — *poslechnut*, *tisknut* — which is what IJP gives. The *tištěn* variant, which IJP lists alongside *tisknut* for the printing sense, is not generated: the *sk* → *ště* alternation belongs to the participle in *-en*, and substituting the stem cannot produce it because the ending is appended to whatever the stem becomes.
+
 ### Where usage decides and one reading was chosen
 
 - Preposition vocalization is, per IJP, not a settled phenomenon and usage decides. The rules cover the documented tendencies; the rest is an enumeration in `vocalizeBefore`.

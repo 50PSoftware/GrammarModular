@@ -1,4 +1,4 @@
-﻿using Grammar.Core.Enums;
+using Grammar.Core.Enums;
 using Grammar.Czech.Models;
 using Grammar.Czech.Providers;
 using Grammar.Czech.Providers.JsonProviders;
@@ -511,5 +511,63 @@ namespace Grammar.Czech.Test
         }
 
         #endregion Imperative
+
+        /// <summary>
+        /// A second-class verb forms its passive participle on -nut, not on the bare stem.
+        /// </summary>
+        /// <remarks>
+        /// The pattern used to append -n and produced <em>poslechna</em>, which is not a word. IJP gives
+        /// <em>poslechnut</em> for poslechnout and lists <em>tisknut</em> for tisknout, so -nut is the
+        /// regular form of the class and the old ending was written from an exception.
+        /// <para>
+        /// What the change costs is the <em>tištěn</em> variant, which IJP also lists: the sk → ště
+        /// alternation belongs to the participle in -en and is now skipped for -nut, and substituting the
+        /// stem cannot express it because the ending is appended to whatever the stem becomes.
+        /// </para>
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("poslechnout", "poslechnut")]
+        [DataRow("tisknout", "tisknut")]
+        [DataRow("mrznout", "mrznut")]
+        [DataRow("blýsknout", "blýsknut")]
+        public void SecondClassFormsThePassiveParticipleOnNut(string lemma, string expected)
+        {
+            var result = service.GetBasicForm(new CzechWordRequest
+            {
+                Lemma = lemma,
+                WordCategory = WordCategory.Verb,
+                Pattern = "trida2",
+                Voice = Voice.Passive,
+                Modus = Modus.Indicative,
+                Gender = Gender.Masculine,
+                Number = Number.Singular,
+                Person = Person.Third,
+                Tense = Tense.Present,
+            });
+
+            Assert.AreEqual(expected, result.Form);
+        }
+
+        /// <summary>
+        /// říct conjugates by the second class and keeps the participle of the first.
+        /// </summary>
+        [TestMethod]
+        public void RictKeepsItsOwnParticiple()
+        {
+            var result = service.GetBasicForm(new CzechWordRequest
+            {
+                Lemma = "říct",
+                WordCategory = WordCategory.Verb,
+                Pattern = "říct",
+                Voice = Voice.Passive,
+                Modus = Modus.Indicative,
+                Gender = Gender.Masculine,
+                Number = Number.Singular,
+                Person = Person.Third,
+                Tense = Tense.Present,
+            });
+
+            Assert.AreEqual("řečen", result.Form);
+        }
     }
 }

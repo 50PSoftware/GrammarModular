@@ -383,6 +383,15 @@ namespace Grammar.Czech.Services
 
             // Heuristické úpravy kmene pasiva.
             // Jde o lexikální výjimky, které nelze pokrýt obecným pravidlem přes phoneme registry.
+            //
+            // Jen u příčestí na -en. Druhá třída tvoří trpné příčestí na -nut a to se věší na holý kmen:
+            // 'tisknut' a 'poslechnut', ne 'tištěnut'. Bez téhle podmínky se alternace pustila i tam a
+            // slepila obojí dohromady.
+            if (ending.TrimStart('-').StartsWith("nut"))
+            {
+                return new WordForm(PrefixedForm(verbStruct.Prefix, stem, ending));
+            }
+
             if (stem.EndsWith("sk"))
                 stem = stem[..^2] + "ště";  // tisk  → tišt(ěn)
             else if (stem.EndsWith("s"))
