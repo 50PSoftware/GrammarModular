@@ -1490,6 +1490,56 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// A clause can be attached across the boundary of a relative clause, which moves it into the
+        /// sentence its new parent belongs to.
+        /// </summary>
+        /// <remarks>
+        /// It changes the sentence rather than the picture of it, and by more than the bracketing: inside
+        /// the relative clause the pronoun already holds the actor slot, so <em>žák</em> takes the
+        /// addressee and comes out in the dative. Attached to the main clause it is the actor of a clause
+        /// of its own.
+        /// </remarks>
+        [TestMethod]
+        public void AttachmentCanCrossTheRelativeClauseBoundary()
+        {
+            string[] lemmas =
+                ["učitel", "vidět", "student", "který", "číst", "kniha", "a", "žák", "psát", "dopis"];
+
+            Assert.AreEqual(
+                "Učitel vidí studenta, který čte knihu a píše žákovi dopis.",
+                Sentence(null, lemmas));
+
+            var overrides = new DraftOverrides();
+            overrides.Attach(3, 1);
+
+            Assert.AreEqual(
+                "Učitel vidí studenta, který čte knihu, a žák píše dopis.",
+                Sentence(overrides, lemmas));
+
+            // A opravdu se přestěhovala: v hlavní větě jsou teď dvě klauze, ve vztažné jedna.
+            var sentence = Whole(overrides, lemmas);
+
+            Assert.AreEqual(2, sentence.Clauses.Count);
+            Assert.AreEqual(1, sentence.AllRelatives.Single().Relative.Clause.Clauses.Count);
+        }
+
+        /// <summary>
+        /// The clause a relativizer opens hangs off a constituent, so attaching it to another clause is
+        /// refused rather than quietly dropped.
+        /// </summary>
+        [TestMethod]
+        public void RelativeClauseRootCannotBeAttachedToAClause()
+        {
+            var overrides = new DraftOverrides();
+            overrides.Attach(2, 1);
+
+            var exception = Assert.ThrowsException<CliException>(() => Whole(
+                overrides, "učitel", "vidět", "student", "který", "číst", "kniha"));
+
+            StringAssert.Contains(exception.Message, "--vztazna");
+        }
+
+        /// <summary>
         /// The terms help has a topic for relative clauses, since the switches point at one.
         /// </summary>
         [TestMethod]

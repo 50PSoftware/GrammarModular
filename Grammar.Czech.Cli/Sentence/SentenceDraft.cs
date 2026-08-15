@@ -74,6 +74,24 @@ namespace Grammar.Czech.Cli.Sentence
             [.. AllClauses.Select(clause => clause.PredicatePosition)];
 
         /// <summary>
+        /// Finds the sentence a clause belongs to: this one, or one hanging inside it.
+        /// </summary>
+        /// <param name="ordinal">The one-based number of the clause to look for.</param>
+        /// <returns>The sentence holding it, or <see langword="null"/> when no clause has that number.</returns>
+        /// <remarks>
+        /// A relative clause is a sentence of its own, so a clause number alone does not say which list it
+        /// lives in. Attaching across that boundary is what needs to know — the clause moves into the
+        /// sentence its new parent belongs to, because that is the sentence whose tree will hold it.
+        /// </remarks>
+        public SentenceDraft? Holding(int ordinal) =>
+            Clauses.Any(clause => clause.Ordinal == ordinal)
+                ? this
+                : Clauses
+                    .SelectMany(Relatives)
+                    .Select(pair => pair.Relative.Clause.Holding(ordinal))
+                    .FirstOrDefault(found => found is not null);
+
+        /// <summary>
         /// Builds the plan the library works from, with each clause hanging off the one it names.
         /// </summary>
         /// <returns>The plan.</returns>

@@ -114,7 +114,15 @@ namespace Grammar.Czech.Cli.Interaction
             bezprostředně předchozí:
 
               učitel vidět student který číst kniha a psát dopis
-              → Učitel vidí studenta, který čte knihu a dopis píše.
+              → Učitel vidí studenta, který čte knihu a píše dopis.
+
+            Připojit klauzi ven z vztažné věty jde přes '--pripojit' ('k' v dialogu) — a je to jiná věta,
+            ne jiné závorkování, protože uvnitř drží konatele zájmeno:
+
+              … a žák psát dopis                → …, který čte knihu a píše žákovi dopis.
+              … a žák psát dopis --pripojit 3=1 → …, který čte knihu, a žák píše dopis.
+
+            Samotnou vztažnou větu přepojit nejde: visí na členu, ne na klauzi. Od toho je '--vztazna'.
 
             ČÍM SE UVOZUJE. Napsat rovnou 'jenž' místo 'který' stačí. Přepnout to jde i dodatečně:
 

@@ -168,15 +168,45 @@ namespace Grammar.Czech.Cli.Sentence
                 }
 
                 var clause = BuildClause(segment.Conjunction, segment.Words, overrides, ++ordinal);
+                var stated = overrides.Attachments.TryGetValue(clause.Ordinal, out var parent)
+                    ? parent
+                    : (int?)null;
 
-                // Nezadáno visí klauze na té bezprostředně předchozí ve své větě. Tak to čte i člověk:
-                // v 'čte, protože píše a zpívá' patří zpívání dovnitř toho protože, ne vedle celé věty.
-                // Uvnitř vztažné věty platí totéž — 'a zpívá' za ní zůstává v ní.
-                clause.ParentOrdinal = current.Clauses.Count == 0
-                    ? null
-                    : overrides.Attachments.GetValueOrDefault(clause.Ordinal, current.Clauses[^1].Ordinal);
+                // Prázdný seznam znamená kořen: buď začátek věty, nebo klauze, kterou právě otevřelo
+                // vztažné slovo. Ta visí na členu, ne na klauzi, takže přepojit ji nejde — a dřív se to
+                // tiše zahodilo, což je přepínač, který nic neudělá a netvrdí to.
+                if (current.Clauses.Count == 0)
+                {
+                    if (stated is { } refused)
+                    {
+                        throw new CliException(
+                            $"Klauze {clause.Ordinal} otevírá vztažnou větu, takže visí na členu, ne na "
+                            + $"klauzi {refused}. Na který člen, se řekne přepínačem --vztazna.");
+                    }
 
-                current.Clauses.Add(clause);
+                    clause.ParentOrdinal = null;
+                }
+                else
+                {
+                    // Nezadáno visí klauze na té bezprostředně předchozí ve své větě. Tak to čte i člověk:
+                    // v 'čte, protože píše a zpívá' patří zpívání dovnitř toho protože, ne vedle celé věty.
+                    // Uvnitř vztažné věty platí totéž — 'a zpívá' za ní zůstává v ní.
+                    clause.ParentOrdinal = stated ?? current.Clauses[^1].Ordinal;
+                }
+
+                // Přepojení smí sáhnout i přes hranici vztažné věty, a klauze se pak přestěhuje do té věty,
+                // ve které bydlí její nový rodič — jinak by v žádném stromu nebyla. Jsou to dvě různé věty
+                // a obě dávají smysl: 'a píše dopis' je jednou součást vztažné věty (píše student) a jednou
+                // souřadná klauze věty hlavní (píše učitel).
+                var target = stated is { } named
+                    ? sentence.Holding(named) ?? throw new CliException(
+                        $"Připojení {clause.Ordinal}={named} ukazuje na klauzi, která ve větě není.")
+                    : current;
+
+                target.Clauses.Add(clause);
+
+                // Další klauze visí na téhle, ať skončila kdekoli — 'bezprostředně předchozí' je pořád ona.
+                current = target;
                 previous = clause;
             }
 

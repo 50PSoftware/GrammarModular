@@ -981,8 +981,20 @@ Zadává se lemma, ne tvar: píše se `ktery` i tam, kde ve větě vyjde *která
 
 ```bash
 gramatika veta ucitel videt student ktery cist kniha a psat dopis
-# Učitel vidí studenta, který čte knihu a dopis píše.
+# Učitel vidí studenta, který čte knihu a píše dopis.
 ```
+
+`--pripojit` dosáhne i přes hranici vztažné věty a klauze se pak přestěhuje do té věty, ve které bydlí její nový rodič. Mění to větu, ne jen obrázek o ní — uvnitř vztažné věty drží konatele zájmeno, takže *žák* zbude adresát a vyjde v dativu; připojený k větě hlavní je konatelem klauze vlastní:
+
+```bash
+gramatika veta ucitel videt student ktery cist kniha a zak psat dopis
+# Učitel vidí studenta, který čte knihu a píše žákovi dopis.
+
+gramatika veta ucitel videt student ktery cist kniha a zak psat dopis --pripojit 3=1
+# Učitel vidí studenta, který čte knihu, a žák píše dopis.
+```
+
+Klauzi, kterou otevřelo vztažné slovo, přepojit nejde — visí na členu, ne na klauzi, a na který člen, se řekne `--vztazna`.
 
 Pád zájmena je jediné, co si nebere z řídícího jména — drží si roli ve své vlastní větě. Nástroj mu dá první slot, který rámec jejího slovesa nechá volný, a v přehledu ho značí `(rámec)` jako každý jiný odvozený pád. Je to odhad, ne výpočet, a proto jde přepsat:
 

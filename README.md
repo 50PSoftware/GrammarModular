@@ -984,8 +984,20 @@ What is written is the lemma, not the form: `ktery` is what you type even where 
 
 ```bash
 gramatika veta ucitel videt student ktery cist kniha a psat dopis
-# Učitel vidí studenta, který čte knihu a dopis píše.
+# Učitel vidí studenta, který čte knihu a píše dopis.
 ```
+
+`--pripojit` reaches across the boundary of a relative clause too, and the clause then moves into the sentence its new parent belongs to. It changes the sentence rather than the picture of it: inside the relative clause the pronoun already holds the actor slot, so *žák* is left the addressee and comes out in the dative, while attached to the main clause it is the actor of a clause of its own:
+
+```bash
+gramatika veta ucitel videt student ktery cist kniha a zak psat dopis
+# Učitel vidí studenta, který čte knihu a píše žákovi dopis.
+
+gramatika veta ucitel videt student ktery cist kniha a zak psat dopis --pripojit 3=1
+# Učitel vidí studenta, který čte knihu, a žák píše dopis.
+```
+
+The clause a relativizer opens cannot be reattached: it hangs off a constituent rather than off a clause, and `--vztazna` is what says which one.
 
 The pronoun's case is the one thing it does not take from the antecedent — it holds a role in its own clause. The tool gives it the first slot its own verb's frame leaves open, and the review marks that `(rámec)` like any other derived case. It is a guess rather than a computation, so it can be overruled:
 
