@@ -150,6 +150,18 @@ namespace Grammar.Czech.Services
             => _pronouns.TryGetValue(lemma, out var data) ? data.Type : null;
 
         /// <summary>
+        /// Gets every reading the pronoun has, the primary one first.
+        /// </summary>
+        /// <param name="lemma">The dictionary form to resolve or analyze.</param>
+        /// <returns>
+        /// The readings, or an empty list when the lemma is not a registered pronoun.
+        /// </returns>
+        public IReadOnlyList<PronounData> GetReadings(string lemma)
+            => _pronouns.TryGetValue(lemma, out var data)
+                ? [data, .. data.AlsoReads]
+                : [];
+
+        /// <summary>
         /// Gets the inflection class used to choose pronoun form lookup.
         /// </summary>
         /// <param name="lemma">The dictionary form to resolve or analyze.</param>

@@ -659,6 +659,66 @@
       }
     }
   },
+  "jejiz": {
+    "Singular": {
+      "MasculineAnimate": {
+        "Nominative": "jejíž",
+        "Genitive": "jejíhož",
+        "Dative": "jejímuž",
+        "Accusative": "jejíhož",
+        "Vocative": "jejíž",
+        "Locative": "jejímž",
+        "Instrumental": "jejímž"
+      },
+      "MasculineInanimate": {
+        "Nominative": "jejíž",
+        "Genitive": "jejíhož",
+        "Dative": "jejímuž",
+        "Accusative": "jejíž",
+        "Vocative": "jejíž",
+        "Locative": "jejímž",
+        "Instrumental": "jejímž"
+      },
+      "Feminine": {
+        "Nominative": "jejíž",
+        "Genitive": "jejíž",
+        "Dative": "jejíž",
+        "Accusative": "jejíž",
+        "Vocative": "jejíž",
+        "Locative": "jejíž",
+        "Instrumental": "jejíž"
+      },
+      "Neuter": {
+        "Nominative": "jejíž",
+        "Genitive": "jejíhož",
+        "Dative": "jejímuž",
+        "Accusative": "jejíž",
+        "Vocative": "jejíž",
+        "Locative": "jejímž",
+        "Instrumental": "jejímž"
+      }
+    },
+    "Plural": {
+      "MasculineAnimate": {
+        "Nominative": "jejíž",
+        "Genitive": "jejíchž",
+        "Dative": "jejímž",
+        "Accusative": "jejíž",
+        "Vocative": "jejíž",
+        "Locative": "jejíchž",
+        "Instrumental": "jejímiž"
+      },
+      "Other": {
+        "Nominative": "jejíž",
+        "Genitive": "jejíchž",
+        "Dative": "jejímž",
+        "Accusative": "jejíž",
+        "Vocative": "jejíž",
+        "Locative": "jejíchž",
+        "Instrumental": "jejímiž"
+      }
+    }
+  },
   "kdo": {
     "Singular": {
       "MasculineAnimate": {

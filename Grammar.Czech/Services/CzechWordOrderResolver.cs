@@ -196,7 +196,11 @@ namespace Grammar.Czech.Services
                 return $"{relative.Relativizer} {renderEmbedded(relative.Clause, true)},";
             }
 
-            if (pronounService.GetPronounType(relative.Relativizer) != PronounType.Relative)
+            // Mezi čteními, ne to primární: 'co' a 'kdo' jsou v datech vedené jako tázací, protože se tak
+            // čtou nejčastěji, ale 'člověk, co přišel' je táž slovní jednotka v jiné konstrukci. Kterou
+            // z nich stavíme, ví tohle místo, ne heslář.
+            if (!pronounService.GetReadings(relative.Relativizer)
+                .Any(reading => reading.Type == PronounType.Relative))
             {
                 throw new InvalidOperationException(
                     $"'{relative.Relativizer}' není vztažné zájmeno ani vztažné příslovce.");

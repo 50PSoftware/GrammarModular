@@ -645,6 +645,142 @@ namespace Grammar.Czech.Test
 
         #endregion Vztažné zájmeno — jenž
 
+        #region Přivlastňovací vztažná zájmena — jehož, jejíž, jejichž
+
+        /// <summary>
+        /// Verifies that the indeclinable possessive relatives keep one form in every case.
+        /// </summary>
+        /// <param name="lemma">The dictionary form to resolve or analyze.</param>
+        /// <param name="caseName">The grammatical case name supplied by the test data.</param>
+        /// <param name="gender">The grammatical gender supplied by the test data.</param>
+        /// <param name="number">The grammatical number supplied by the test data.</param>
+        /// <remarks>
+        /// IJP vede obě jako nesklonná — u <em>jejichž</em> doslova „zájmeno vztažné přivlastňovací;
+        /// nesklonné“ — takže tvar se nemění ani s pádem vlastněného jména.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("jehož", "Nominative", "Masculine", "Singular", DisplayName = "jehož – nom")]
+        [DataRow("jehož", "Genitive", "Masculine", "Singular", DisplayName = "jehož – gen")]
+        [DataRow("jehož", "Instrumental", "Neuter", "Singular", DisplayName = "jehož – ins")]
+        [DataRow("jejichž", "Nominative", "Masculine", "Plural", DisplayName = "jejichž – nom")]
+        [DataRow("jejichž", "Dative", "Feminine", "Singular", DisplayName = "jejichž – dat")]
+        [DataRow("jejichž", "Locative", "Neuter", "Plural", DisplayName = "jejichž – lok")]
+        public void GetForm_IndeclinablePossessiveRelative(
+            string lemma, string caseName, string gender, string number)
+        {
+            var request = BuildRequest(lemma, caseName, gender, number, null);
+            var result = service.GetForm(request);
+            Assert.AreEqual(lemma, result.Form);
+        }
+
+        /// <summary>
+        /// Verifies that jejíž declines like její with the relative suffix on the ending.
+        /// </summary>
+        /// <param name="caseName">The grammatical case name supplied by the test data.</param>
+        /// <param name="gender">The grammatical gender supplied by the test data.</param>
+        /// <param name="number">The grammatical number supplied by the test data.</param>
+        /// <param name="isAnimate">The animacy flag supplied by the test data.</param>
+        /// <param name="expected">The expected surface form asserted by the test.</param>
+        /// <remarks>
+        /// IJP: „skloňuje se jako zájmeno <em>její</em> podle vzoru jarní“ — tedy tvary
+        /// <em>její</em> s připojeným -ž, ne vlastní paradigma.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("Nominative", "Masculine", "Singular", true, "jejíž", DisplayName = "jejíž – sg m.ž. nom")]
+        [DataRow("Genitive", "Masculine", "Singular", true, "jejíhož", DisplayName = "jejíž – sg m.ž. gen")]
+        [DataRow("Dative", "Masculine", "Singular", true, "jejímuž", DisplayName = "jejíž – sg m.ž. dat")]
+        [DataRow("Locative", "Masculine", "Singular", true, "jejímž", DisplayName = "jejíž – sg m.ž. lok")]
+        [DataRow("Accusative", "Masculine", "Singular", false, "jejíž", DisplayName = "jejíž – sg m.n. akuz")]
+        [DataRow("Genitive", "Feminine", "Singular", null, "jejíž", DisplayName = "jejíž – sg f gen")]
+        [DataRow("Genitive", "Neuter", "Singular", null, "jejíhož", DisplayName = "jejíž – sg n gen")]
+        [DataRow("Genitive", "Masculine", "Plural", true, "jejíchž", DisplayName = "jejíž – pl gen")]
+        [DataRow("Instrumental", "Feminine", "Plural", null, "jejímiž", DisplayName = "jejíž – pl f ins")]
+        public void GetForm_JejizRelative(
+            string caseName, string gender, string number, bool? isAnimate, string expected)
+        {
+            var request = BuildRequest("jejíž", caseName, gender, number, isAnimate);
+            var result = service.GetForm(request);
+            Assert.AreEqual(expected, result.Form);
+        }
+
+        #endregion Přivlastňovací vztažná zájmena — jehož, jejíž, jejichž
+
+        #region Čtení zájmena
+
+        /// <summary>
+        /// Verifies that a pronoun with one reading reports exactly that one.
+        /// </summary>
+        [TestMethod]
+        public void GetReadings_SingleReading_ReturnsPrimaryAlone()
+        {
+            var readings = service.GetReadings("který");
+
+            Assert.AreEqual(1, readings.Count);
+            Assert.AreEqual(PronounType.Relative, readings[0].Type);
+        }
+
+        /// <summary>
+        /// Verifies that the interrogatives that also relativize report both readings, primary first.
+        /// </summary>
+        /// <param name="lemma">The dictionary form to resolve or analyze.</param>
+        [DataTestMethod]
+        [DataRow("co", DisplayName = "co – tázací i vztažné")]
+        [DataRow("kdo", DisplayName = "kdo – tázací i vztažné")]
+        [DataRow("jaký", DisplayName = "jaký – tázací i vztažné")]
+        public void GetReadings_InterrogativeThatRelativizes_ReportsBoth(string lemma)
+        {
+            var readings = service.GetReadings(lemma);
+
+            Assert.AreEqual(PronounType.Interrogative, readings[0].Type, "primární čtení má zůstat tázací");
+            Assert.IsTrue(readings.Any(reading => reading.Type == PronounType.Relative));
+        }
+
+        /// <summary>
+        /// Verifies that the primary reading is unchanged by the alternatives hanging off it.
+        /// </summary>
+        /// <remarks>
+        /// GetPronounType je veřejné API a přidání dalšího čtení je aditivní změna — kdo se ptal na
+        /// „co to normálně je“, dostává pořád tutéž odpověď.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("co", PronounType.Interrogative, DisplayName = "co – primárně tázací")]
+        [DataRow("kdo", PronounType.Interrogative, DisplayName = "kdo – primárně tázací")]
+        [DataRow("jaký", PronounType.Interrogative, DisplayName = "jaký – primárně tázací")]
+        [DataRow("jehož", PronounType.Relative, DisplayName = "jehož – primárně vztažné")]
+        [DataRow("jejíž", PronounType.Relative, DisplayName = "jejíž – primárně vztažné")]
+        [DataRow("jejichž", PronounType.Relative, DisplayName = "jejichž – primárně vztažné")]
+        public void GetPronounType_ReturnsPrimaryReading(string lemma, PronounType expected)
+        {
+            Assert.AreEqual(expected, service.GetPronounType(lemma));
+        }
+
+        /// <summary>
+        /// Verifies that the possessive relatives carry the possessive reading alongside the relative one.
+        /// </summary>
+        /// <param name="lemma">The dictionary form to resolve or analyze.</param>
+        [DataTestMethod]
+        [DataRow("jehož", DisplayName = "jehož – i přivlastňovací")]
+        [DataRow("jejíž", DisplayName = "jejíž – i přivlastňovací")]
+        [DataRow("jejichž", DisplayName = "jejichž – i přivlastňovací")]
+        public void GetReadings_PossessiveRelative_ReportsBoth(string lemma)
+        {
+            var readings = service.GetReadings(lemma);
+
+            Assert.IsTrue(readings.Any(reading => reading.Type == PronounType.Relative));
+            Assert.IsTrue(readings.Any(reading => reading.Type == PronounType.Possessive));
+        }
+
+        /// <summary>
+        /// Verifies that a lemma that is not a pronoun reports no readings rather than throwing.
+        /// </summary>
+        [TestMethod]
+        public void GetReadings_UnknownLemma_ReturnsEmpty()
+        {
+            Assert.AreEqual(0, service.GetReadings("student").Count);
+        }
+
+        #endregion Čtení zájmena
+
         #region Helper
 
         private static CzechWordRequest BuildRequest(

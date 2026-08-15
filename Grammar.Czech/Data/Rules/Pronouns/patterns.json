@@ -335,12 +335,14 @@
   "kdo": {
     "type": "Interrogative",
     "inflectionClass": "PronounHard",
-    "paradigmId": "kdo"
+    "paradigmId": "kdo",
+    "alsoReads": [ { "type": "Relative" } ]
   },
   "co": {
     "type": "Interrogative",
     "inflectionClass": "PronounHard",
-    "paradigmId": "co"
+    "paradigmId": "co",
+    "alsoReads": [ { "type": "Relative" } ]
   },
   "čí": {
     "type": "Interrogative",
@@ -350,7 +352,8 @@
   "jaký": {
     "type": "Interrogative",
     "inflectionClass": "AdjectiveHard",
-    "declensionPattern": "mladý"
+    "declensionPattern": "mladý",
+    "alsoReads": [ { "type": "Relative" } ]
   },
   "který": {
     "type": "Relative",
@@ -361,6 +364,22 @@
     "type": "Relative",
     "inflectionClass": "PronounHard",
     "paradigmId": "jenz"
+  },
+  "jehož": {
+    "type": "Relative",
+    "inflectionClass": "Indeclinable",
+    "alsoReads": [ { "type": "Possessive" } ]
+  },
+  "jejíž": {
+    "type": "Relative",
+    "inflectionClass": "PronounHard",
+    "paradigmId": "jejiz",
+    "alsoReads": [ { "type": "Possessive" } ]
+  },
+  "jejichž": {
+    "type": "Relative",
+    "inflectionClass": "Indeclinable",
+    "alsoReads": [ { "type": "Possessive" } ]
   },
   "nikdo": {
     "type": "Negative",
