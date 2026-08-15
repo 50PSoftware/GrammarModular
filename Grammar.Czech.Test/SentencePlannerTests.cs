@@ -984,6 +984,56 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// A clause coordinated inside a relative clause shares the relative pronoun, so it shares the
+        /// theme the pronoun already spoke for and nothing inside it becomes the theme by default.
+        /// </summary>
+        /// <remarks>
+        /// The same inheritance <see cref="CzechRoleResolver"/> gives the reserved slot, and for the same
+        /// reason: one pronoun is the subject of everything coordinated with it. Without it the second
+        /// conjunct took its own first participant as the theme and came out as <em>a dopis píše</em> —
+        /// a marked reading nobody asked for, in a clause whose subject was spoken for two words earlier.
+        /// A subordinator opens a clause with a subject of its own, so there the inheritance stops.
+        /// </remarks>
+        [TestMethod]
+        public void CoordinationInsideARelativeClauseInheritsTheTakenTheme()
+        {
+            PlannedParticipant Reader(string conjunction) => Student(FgdFunctor.ACT) with
+            {
+                Relative = new PlannedRelative
+                {
+                    Relativizer = "který",
+                    Case = Case.Nominative,
+                    Clause = new SentencePlan
+                    {
+                        Predicate = Verb("číst", "číst"),
+                        Participants = [Book(FgdFunctor.PAT)],
+                        Joined =
+                        [
+                            new ClauseLink(conjunction, new SentencePlan
+                            {
+                                Predicate = Verb("psát", "psát"),
+                                Participants = [Noun("dopis", "hrad", Gender.Masculine, functor: FgdFunctor.PAT)],
+                            }),
+                        ],
+                    },
+                },
+            };
+
+            Assert.AreEqual(
+                "Student, který čte knihu a píše dopis, pracuje.",
+                Build(new SentencePlan { Predicate = Verb("pracovat", "trida3"), Participants = [Reader("a")] }));
+
+            // Za podřadicí spojkou je téma zase volné, takže si ho druhá klauze určí sama.
+            Assert.AreEqual(
+                "Student, který čte knihu, protože dopis píše, pracuje.",
+                Build(new SentencePlan
+                {
+                    Predicate = Verb("pracovat", "trida3"),
+                    Participants = [Reader("protože")],
+                }));
+        }
+
+        /// <summary>
         /// A preposition names the free modification the frame cannot: the semantic group of the
         /// preposition and its case is what the functor comes from.
         /// </summary>

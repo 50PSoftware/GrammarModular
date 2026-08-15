@@ -102,11 +102,21 @@ namespace Grammar.Czech.Services
                 Predicate = WithDefaults(plan.Predicate, voice, subject, IsImpersonal(plan, voice)),
                 // Způsob, který řídí spojka, se doplní dřív, než se doplní ten výchozí — jinak by
                 // oznamovací způsob obsadil mezeru, kterou má vyplnit kondicionál z 'aby'.
+                //
+                // Obsazené téma se dědí do souřadné klauze ze stejného důvodu, z jakého se do ní dědí
+                // rezervovaný slot v CzechRoleResolveru: jedno vztažné zájmeno je podmětem všeho, co
+                // s ním souřadí, takže i tam je téma vyslovené dřív, než se dojde k participantům.
+                // Bez toho vycházelo 'který čte knihu a dopis píše' — druhý konjunkt si za téma vzal
+                // svůj vlastní první člen. Podřadicí spojka otevírá klauzi s vlastním podmětem
+                // a dědění na ní končí.
                 Joined =
                 [
                     .. plan.Joined.Select(link => link with
                     {
-                        Clause = Complete(WithGovernedMood(link.Conjunction, link.Clause)),
+                        Clause = Complete(
+                            WithGovernedMood(link.Conjunction, link.Clause),
+                            themeTaken
+                                && conjunctionService.GetType(link.Conjunction) == ConjunctionType.Coordinating),
                     }),
                 ],
             };
