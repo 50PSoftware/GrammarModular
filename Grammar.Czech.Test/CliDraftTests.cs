@@ -1118,6 +1118,81 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// A closed-class word written without diacritics is recognized, the same as a dictionary one.
+        /// </summary>
+        /// <remarks>
+        /// These live in the rule files rather than in the lexicon, and folding covered only the lexicon,
+        /// so exactly the words a person cannot look up were the ones they had to type exactly:
+        /// <c>ktery</c> came back a guessed noun and the sentence failed complaining about verbs.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("ktery", "Učitel vidí studenta, který čte knihu.", DisplayName = "zájmeno")]
+        [DataRow("který", "Učitel vidí studenta, který čte knihu.", DisplayName = "zájmeno s diakritikou")]
+        [DataRow("jenz", "Učitel vidí studenta, jenž čte knihu.", DisplayName = "jenž bez diakritiky")]
+        public void ClosedClassWordIsFoldedLikeADictionaryOne(string relativizer, string expected)
+        {
+            Assert.AreEqual(
+                expected,
+                Sentence(null, "ucitel", "videt", "student", relativizer, "cist", "kniha"));
+        }
+
+        /// <summary>
+        /// A conjunction written without diacritics splits the sentence too.
+        /// </summary>
+        [TestMethod]
+        public void ConjunctionWithoutDiacriticsStillSplitsTheSentence()
+        {
+            Assert.AreEqual(
+                "Student čte knihu, protože žák píše dopis.",
+                Sentence(null, "student", "cist", "kniha", "protoze", "zak", "psat", "dopis"));
+        }
+
+        /// <summary>
+        /// A folded spelling matching two lemmas is a question rather than a decision, and the rule data
+        /// takes part in that: <em>ci</em> is both the pronoun <em>čí</em> and the conjunction <em>či</em>.
+        /// </summary>
+        [TestMethod]
+        public void FoldedSpellingMatchingTwoClosedClassLemmasIsRefused()
+        {
+            var exception = Assert.ThrowsException<CliException>(
+                () => Whole(null, "ucitel", "videt", "ten", "ci", "student", "cist", "kniha"));
+
+            StringAssert.Contains(exception.Message, "čí");
+            StringAssert.Contains(exception.Message, "či");
+        }
+
+        /// <summary>
+        /// A closed-class word typed correctly is not reported as having been completed.
+        /// </summary>
+        /// <remarks>
+        /// Folding is a fallback, so an exact hit has to win for the rule data as it does for the lexicon
+        /// — otherwise the review says it filled in diacritics that were already there.
+        /// </remarks>
+        [TestMethod]
+        public void ExactClosedClassSpellingIsNotReportedAsCompleted()
+        {
+            var sentence = Whole(null, "učitel", "vidět", "student", "který", "číst", "kniha");
+
+            Assert.IsFalse(
+                sentence.Notes.Any(note => note.Contains("diakritiku")),
+                "nic se nedoplňovalo, tak se nemá nic hlásit");
+        }
+
+        /// <summary>
+        /// A lemma stated in a switch is folded the same way a lemma in the word list is.
+        /// </summary>
+        [TestMethod]
+        public void StatedRelativizerIsFoldedToo()
+        {
+            var overrides = new DraftOverrides();
+            overrides.Introduce(3, "jenz");
+
+            Assert.AreEqual(
+                "Učitel vidí studenta, jenž čte knihu.",
+                Sentence(overrides, "ucitel", "videt", "student", "ktery", "cist", "kniha"));
+        }
+
+        /// <summary>
         /// A whole sentence in one argument is refused rather than taken as one enormous lemma.
         /// </summary>
         /// <remarks>

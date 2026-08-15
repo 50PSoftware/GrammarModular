@@ -426,7 +426,7 @@ Bezpodměťovost patří významu, ne slovesu — proto je to rámec, a ne pří
 gramatika veta mrznout                       # Mrzne.
 gramatika veta voda mrznout --ramec freeze   # Voda mrzne.
 gramatika veta voda mrznout
-# Sloveso 'mrznout' je bezpodměťové — 'voda' k němu nepatří a věta s ním nevznikne.
+# Sloveso 'mrznout' je bezpodměťové — 'voda' (č. 1) k němu nepatří a věta s ním nevznikne.
 # Jiný význam podmět bere: --ramec freeze.
 ```
 
@@ -974,7 +974,7 @@ Vztažné slovo je předěl taky, jen jiného druhu: klauze za spojkou je souroz
 
 ```bash
 gramatika veta ucitel videt student ktery cist kniha    # Učitel vidí studenta, který čte knihu.
-gramatika veta ucitel znat dum kde bydlet student       # Učitel zná dům, kde bydlí student.
+gramatika veta ucitel videt skola kde bydlet student    # Učitel vidí školu, kde bydlí student.
 ```
 
 Zadává se lemma, ne tvar: píše se `ktery` i tam, kde ve větě vyjde *která* nebo *kterou*. Rod, číslo a životnost si zájmeno vezme z řídícího jména. Všechno za vztažnou větou patří dovnitř ní, stejně jako se klauze připojuje k bezprostředně předchozí, takže vztažná věta smí souřadit:
@@ -1025,7 +1025,7 @@ gramatika veta zena psat dopis jejiz student videt ucitel --vztazna 1=1 --role s
 # Žena, jejíhož studenta vidí učitel, píše dopis.
 
 gramatika veta student psat dopis jejiz kniha videt ucitel --vztazna 1=1
-# K 'student' patří 'jehož', ne 'jejíž' — které ze tří to je, rozhoduje rod a číslo řídícího jména.
+# K 'student' (č. 1) patří 'jehož', ne 'jejíž' — které ze tří to je, rozhoduje rod a číslo řídícího jména.
 ```
 
 Vztažných slov je víc než *který* a *jenž* a nechovají se stejně. *Jaký* se skloňuje jako *který*. *Co* se neskloňuje a jde jen tam, kde je podmětem — jinde by roli neslo odkazovací zájmeno, které nástroj zadat neumí. *Kdo* chce ukazovací zájmeno, ne jméno:
@@ -1034,11 +1034,12 @@ Vztažných slov je víc než *který* a *jenž* a nechovají se stejně. *Jaký
 gramatika veta ucitel videt student co cist kniha    # Učitel vidí studenta, co čte knihu.
 gramatika veta ucitel videt ten kdo cist kniha       # Učitel vidí toho, kdo čte knihu.
 
-gramatika veta ucitel videt ten ci student cist kniha --role student=PAT
+gramatika veta ucitel videt ten čí student cist kniha --role student=PAT
 # Učitel vidí toho, čího studenta čte kniha.
 
 gramatika veta ucitel videt student kdo cist kniha
-# 'kdo' se neváže na jméno 'student', ale na ukazovací zájmeno: 'ten kdo …'.
+# 'kdo' se neváže na jméno 'student' (č. 3), ale na ukazovací zájmeno: 'ten kdo …'.
+# Na jméno patří 'který' nebo 'jenž'.
 ```
 
 Tázací *který* se od vztažného rozliší pozicí: vztažné stojí za jménem, které rozvíjí, tázací před ním, takže `ktery student cist kniha` žádnou vztažnou větu neotevře. U slov, kterým je vztažné čtení až to druhé — *proč*, *odkud* jsou stejně dobře příslovce — se navíc vyžaduje sloveso za nimi, aby `student cist kniha proc` zůstalo otázkou po důvodu.

@@ -428,7 +428,7 @@ Being impersonal belongs to a sense and not to a verb, which is why it is a fram
 gramatika veta mrznout                       # Mrzne.
 gramatika veta voda mrznout --ramec freeze   # Voda mrzne.
 gramatika veta voda mrznout
-# Sloveso 'mrznout' je bezpodměťové — 'voda' k němu nepatří a věta s ním nevznikne.
+# Sloveso 'mrznout' je bezpodměťové — 'voda' (č. 1) k němu nepatří a věta s ním nevznikne.
 # Jiný význam podmět bere: --ramec freeze.
 ```
 
@@ -977,7 +977,7 @@ A relativizer divides the word list too, only differently: the clause after a co
 
 ```bash
 gramatika veta ucitel videt student ktery cist kniha    # Učitel vidí studenta, který čte knihu.
-gramatika veta ucitel znat dum kde bydlet student       # Učitel zná dům, kde bydlí student.
+gramatika veta ucitel videt skola kde bydlet student    # Učitel vidí školu, kde bydlí student.
 ```
 
 What is written is the lemma, not the form: `ktery` is what you type even where the sentence comes out with *která* or *kterou*. The pronoun takes its gender, number and animacy from the noun it modifies. Everything after a relative clause belongs inside it, the same way a clause attaches to the one immediately before it, so a relative clause may coordinate:
@@ -1028,7 +1028,7 @@ gramatika veta zena psat dopis jejiz student videt ucitel --vztazna 1=1 --role s
 # Žena, jejíhož studenta vidí učitel, píše dopis.
 
 gramatika veta student psat dopis jejiz kniha videt ucitel --vztazna 1=1
-# K 'student' patří 'jehož', ne 'jejíž' — které ze tří to je, rozhoduje rod a číslo řídícího jména.
+# K 'student' (č. 1) patří 'jehož', ne 'jejíž' — které ze tří to je, rozhoduje rod a číslo řídícího jména.
 ```
 
 There are more relativizers than *který* and *jenž*, and they do not behave alike. *Jaký* declines like *který*. *Co* does not decline and works only where it is the subject — elsewhere its role would be carried by a resumptive pronoun, which the tool has no way to be told. *Kdo* wants a demonstrative rather than a noun:
@@ -1037,11 +1037,12 @@ There are more relativizers than *který* and *jenž*, and they do not behave al
 gramatika veta ucitel videt student co cist kniha    # Učitel vidí studenta, co čte knihu.
 gramatika veta ucitel videt ten kdo cist kniha       # Učitel vidí toho, kdo čte knihu.
 
-gramatika veta ucitel videt ten ci student cist kniha --role student=PAT
+gramatika veta ucitel videt ten čí student cist kniha --role student=PAT
 # Učitel vidí toho, čího studenta čte kniha.
 
 gramatika veta ucitel videt student kdo cist kniha
-# 'kdo' se neváže na jméno 'student', ale na ukazovací zájmeno: 'ten kdo …'.
+# 'kdo' se neváže na jméno 'student' (č. 3), ale na ukazovací zájmeno: 'ten kdo …'.
+# Na jméno patří 'který' nebo 'jenž'.
 ```
 
 Interrogative *který* is told from the relative one by position: the relative stands after the noun it modifies and the interrogative before it, so `ktery student cist kniha` opens no relative clause. Words whose relative reading is only the second one — *proč* and *odkud* are just as much adverbs — additionally require a verb after them, so that `student cist kniha proc` stays a question about the reason.

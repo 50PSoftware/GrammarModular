@@ -160,7 +160,9 @@ namespace Grammar.Czech.Cli.Sentence
 
                     host.Relative = new RelativeDraft(
                         relativeOrdinal,
-                        overrides.Relativizers.GetValueOrDefault(host.Position, relativizer.Lemma),
+                        overrides.Relativizers.TryGetValue(host.Position, out var chosen)
+                            ? Stated(chosen)
+                            : relativizer.Lemma,
                         relativizer.Position,
                         inner);
 
@@ -429,7 +431,8 @@ namespace Grammar.Czech.Cli.Sentence
 
             if (completed.Count > 0)
             {
-                draft.Notes.Add($"Doplnil jsem diakritiku podle slovníku: {string.Join(", ", completed)}.");
+                draft.Notes.Add(
+                    $"Doplnil jsem diakritiku podle slovníku a pravidel: {string.Join(", ", completed)}.");
             }
 
             ReportUnknown(draft, words);
@@ -551,17 +554,20 @@ namespace Grammar.Czech.Cli.Sentence
             // Předložky, zájmena ani spojky slovník nevede — jsou to uzavřené třídy a bydlí
             // v pravidlech, ne v hesláři — takže se poznají podle toho, že o nich ta pravidla něco
             // vědí. Bez toho by z 'já' bylo podstatné jméno vzoru hrad.
-            if (enriched.WordCategory is null && _pronouns.GetPronounType(lemma) is not null)
+            //
+            // Ptá se se na 'match.Lemma', ne na to, co uživatel napsal: pravidla jsou klíčovaná
+            // přesně, takže 'ktery' by v nich nikdo nenašel a stalo by se z něj odhadnuté jméno.
+            if (enriched.WordCategory is null && _pronouns.GetPronounType(match.Lemma) is not null)
             {
                 enriched.WordCategory = WordCategory.Pronoun;
             }
 
-            if (enriched.WordCategory is null && _prepositions.GetAllowedCases(lemma).Any())
+            if (enriched.WordCategory is null && _prepositions.GetAllowedCases(match.Lemma).Any())
             {
                 enriched.WordCategory = WordCategory.Preposition;
             }
 
-            if (enriched.WordCategory is null && IsConjunction(lemma))
+            if (enriched.WordCategory is null && IsConjunction(match.Lemma))
             {
                 enriched.WordCategory = WordCategory.Conjunction;
             }
@@ -576,22 +582,22 @@ namespace Grammar.Czech.Cli.Sentence
             // být větný člen, a udělat z 'dobře' částici by ho z věty vyřadilo — kdežto 'asi' jako
             // příslovce se chová stejně jako částice, obojí je neohebné a nic se neskloní. Rozhodnout
             // to lépe by chtělo výčet slov v kódu, což do kódu nepatří; od toho je '--druh'.
-            if (enriched.WordCategory is null && _numerals.IsNumeral(lemma))
+            if (enriched.WordCategory is null && _numerals.IsNumeral(match.Lemma))
             {
                 enriched.WordCategory = WordCategory.Numerale;
             }
 
-            if (enriched.WordCategory is null && _adverbs.GetAdverbs().ContainsKey(lemma))
+            if (enriched.WordCategory is null && _adverbs.GetAdverbs().ContainsKey(match.Lemma))
             {
                 enriched.WordCategory = WordCategory.Adverb;
             }
 
-            if (enriched.WordCategory is null && _particles.GetParticles().ContainsKey(lemma))
+            if (enriched.WordCategory is null && _particles.GetParticles().ContainsKey(match.Lemma))
             {
                 enriched.WordCategory = WordCategory.Particle;
             }
 
-            if (enriched.WordCategory is null && _interjections.GetInterjections().ContainsKey(lemma))
+            if (enriched.WordCategory is null && _interjections.GetInterjections().ContainsKey(match.Lemma))
             {
                 enriched.WordCategory = WordCategory.Interjection;
             }
@@ -990,6 +996,19 @@ namespace Grammar.Czech.Cli.Sentence
                     + $"pro {Terms.Name(kase)} a jeho rod pro něj tvar není. "
                     + "Zkus 'který' nebo 'jenž', které se skloňují podle řídícího jména.");
             }
+        }
+
+        // Lemma zadané v přepínači projde týmž skládáním diakritiky jako lemma ve vstupu — '--relativizator
+        // 4=jenz' píše člověk na téže klávesnici jako 'jenz' mezi slovy a je to totéž slovo.
+        private string Stated(string lemma)
+        {
+            var match = _lookup.Resolve(lemma);
+
+            return match.Candidates.Count == 0
+                ? match.Lemma
+                : throw new CliException(
+                    $"'{lemma}' takhle napsané sedí na víc hesel: {string.Join(", ", match.Candidates)}. "
+                    + "Napiš ho s diakritikou, ať je jasné, které z nich myslíš.");
         }
 
         // Přivlastňuje jméno hned za sebou — 'žena, jejíž dům vidím' — což je ve vstupu první člen věty,
