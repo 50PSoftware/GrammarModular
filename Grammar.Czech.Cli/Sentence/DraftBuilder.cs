@@ -153,23 +153,30 @@ namespace Grammar.Czech.Cli.Sentence
 
             foreach (var segment in Split(words))
             {
+                // Předělové slovo, jehož doplněná diakritika se má ohlásit. U spojky vždycky; u vztažného
+                // slova jen když ho nepřepsal '--relativizator' — přepsané se do věty nedostane a hlásit
+                // u něj doplnění by mluvilo o slově, které tam není.
+                var divider = segment.Conjunction;
+
                 if (segment.Relativizer is { } relativizer)
                 {
                     var inner = new SentenceDraft();
                     var host = Host(sentence, previous, relativizer, overrides, ++relativeOrdinal);
+                    var opener = overrides.Relativizers.TryGetValue(host.Position, out var chosen)
+                        ? Stated(chosen)
+                        : relativizer.Lemma;
 
                     host.Relative = new RelativeDraft(
-                        relativeOrdinal,
-                        overrides.Relativizers.TryGetValue(host.Position, out var chosen)
-                            ? Stated(chosen)
-                            : relativizer.Lemma,
-                        relativizer.Position,
-                        inner);
+                        relativeOrdinal, opener, relativizer.Position, inner);
 
                     current = inner;
+                    divider = string.Equals(opener, relativizer.Lemma, StringComparison.Ordinal)
+                        ? relativizer
+                        : null;
                 }
 
-                var clause = BuildClause(segment.Conjunction, segment.Words, overrides, ++ordinal);
+                var clause = BuildClause(
+                    segment.Conjunction?.Lemma, divider, segment.Words, overrides, ++ordinal);
                 var stated = overrides.Attachments.TryGetValue(clause.Ordinal, out var parent)
                     ? parent
                     : (int?)null;
@@ -258,7 +265,7 @@ namespace Grammar.Czech.Cli.Sentence
         // them are also the files that say how each one joins.
         private IEnumerable<Segment> Split(List<ResolvedWord> words)
         {
-            string? conjunction = null;
+            ResolvedWord? conjunction = null;
             ResolvedWord? relativizer = null;
             var current = new List<ResolvedWord>();
 
@@ -287,7 +294,7 @@ namespace Grammar.Czech.Cli.Sentence
 
                 if (word.Request.WordCategory == WordCategory.Conjunction)
                 {
-                    conjunction = word.Lemma;
+                    conjunction = word;
                     relativizer = null;
                 }
                 else
@@ -304,7 +311,7 @@ namespace Grammar.Czech.Cli.Sentence
                 throw new CliException(relativizer is { } dangling
                     ? $"Za vztažným slovem '{dangling.Lemma}' už žádná slova nejsou, takže vztažná věta "
                         + "nemá z čeho vzniknout."
-                    : $"Za spojkou '{conjunction}' už žádná slova nejsou, takže není co připojit.");
+                    : $"Za spojkou '{conjunction?.Lemma}' už žádná slova nejsou, takže není co připojit.");
             }
 
             if (relativizer is { } opener && current.All(word => word.Request.WordCategory != WordCategory.Verb))
@@ -418,13 +425,19 @@ namespace Grammar.Czech.Cli.Sentence
         }
 
         private ClauseDraft BuildClause(
-            string? conjunction, List<ResolvedWord> words, DraftOverrides overrides, int ordinal)
+            string? conjunction,
+            ResolvedWord? divider,
+            List<ResolvedWord> words,
+            DraftOverrides overrides,
+            int ordinal)
         {
             var draft = new ClauseDraft { Conjunction = conjunction, Ordinal = ordinal };
 
             // Ještě než se slova rozeberou na přísudek a členy, protože potom už není odkud vzít, jak je
-            // uživatel napsal — a věta bude obsahovat slova, která nenapsal.
-            var completed = words
+            // uživatel napsal — a věta bude obsahovat slova, která nenapsal. Předělové slovo se počítá
+            // s nimi, i když v žádné klauzi jako člen nestojí: 'protoze' se ve větě vysloví stejně jako
+            // 'cist', takže se o něm hlásí totéž.
+            var completed = (divider is null ? words : words.Prepend(divider))
                 .Where(word => word.CompletedSpelling is not null)
                 .Select(word => $"{word.CompletedSpelling} → {word.Lemma}")
                 .ToList();
@@ -1079,9 +1092,10 @@ namespace Grammar.Czech.Cli.Sentence
         }
 
         // Co odděluje jeden úsek slov od dalšího: spojka dělá sourozence, vztažné slovo vztažnou větu.
-        // Nikdy obojí naráz — proto dvě pole a ne jedno se značkou.
+        // Nikdy obojí naráz — proto dvě pole a ne jedno se značkou. Celé slovo, ne jen lemma, protože
+        // i předělové slovo mohlo dostat doplněnou diakritiku a to se má říct.
         private sealed record Segment(
-            string? Conjunction,
+            ResolvedWord? Conjunction,
             ResolvedWord? Relativizer,
             List<ResolvedWord> Words);
 

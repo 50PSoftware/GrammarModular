@@ -1179,6 +1179,42 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// A divider word whose diacritics were filled in is reported like any other, even though it
+        /// stands in no clause as a constituent.
+        /// </summary>
+        /// <remarks>
+        /// The sentence contains a word the user did not write, which is the whole reason the note
+        /// exists — and a conjunction or a relativizer is spoken aloud exactly as a noun is.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("protoze → protože", new[] { "student", "cist", "kniha", "protoze", "zak", "psat", "dopis" },
+            DisplayName = "spojka")]
+        [DataRow("ktery → který", new[] { "ucitel", "videt", "student", "ktery", "cist", "kniha" },
+            DisplayName = "vztažné slovo")]
+        public void CompletedDividerIsReported(string expected, string[] lemmas)
+        {
+            Assert.IsTrue(
+                Whole(null, lemmas).Notes.Any(note => note.Contains(expected)),
+                $"'{expected}' se má objevit mezi poznámkami o doplněné diakritice");
+        }
+
+        /// <summary>
+        /// A relativizer the switch replaced is not reported, because it never reached the sentence.
+        /// </summary>
+        [TestMethod]
+        public void ReplacedRelativizerIsNotReportedAsCompleted()
+        {
+            var overrides = new DraftOverrides();
+            overrides.Introduce(3, "jenz");
+
+            var sentence = Whole(overrides, "ucitel", "videt", "student", "ktery", "cist", "kniha");
+
+            Assert.IsFalse(
+                sentence.Notes.Any(note => note.Contains("ktery")),
+                "'ktery' se do věty nedostalo, tak se o něm nemá hlásit");
+        }
+
+        /// <summary>
         /// A lemma stated in a switch is folded the same way a lemma in the word list is.
         /// </summary>
         [TestMethod]
