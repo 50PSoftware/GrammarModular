@@ -100,12 +100,30 @@ namespace Grammar.Czech.Models
         /// <see cref="ConjunctionData.AlsoReads"/> uses, for the same reason.
         /// </para>
         /// <para>
-        /// A reading states its <see cref="Type"/> and nothing else, because it is the same word declined the
-        /// same way — <em>co, čeho, čemu</em> whether it asks or relativizes. Form lookup therefore always
-        /// goes through the primary entry, and repeating the paradigm here would only create somewhere for
-        /// the two copies to disagree.
+        /// A reading carries its own <see cref="InflectionClass"/>, and states it even where it repeats the
+        /// primary one, because omitting it would not mean "the same" but "Substantive" — the first value of
+        /// the enum. It is not always the same: interrogative <em>co</em> declines as <em>co, čeho, čemu</em>,
+        /// while relative <em>co</em> is indeclinable and expresses its role through a resumptive pronoun
+        /// instead (NESČ, <em>Vztažná věta s jmennou hlavou</em>). Two words wearing one spelling can differ
+        /// in how they inflect, not only in what they are for.
         /// </para>
         /// </remarks>
         public IReadOnlyList<PronounData> AlsoReads { get; init; } = [];
+
+        /// <summary>
+        /// Gets a value indicating whether the relativizer needs a pronominal head rather than a noun.
+        /// </summary>
+        /// <remarks>
+        /// True for relative <em>kdo</em> alone. NESČ lists <em>který</em>, <em>jenž</em>, <em>jaký</em> and
+        /// <em>co</em> as the relativizers of a clause with a nominal head and does not include
+        /// <em>kdo</em>: it relativizes an entity rather than a property of a noun, so it wants a
+        /// demonstrative to lean on — <em>ten, kdo přišel</em>, not <em>člověk, kdo přišel</em>.
+        /// <para>
+        /// A flag for one word, like <see cref="ConjunctionData.SecondPosition"/> is for <em>však</em>. The
+        /// alternative is the lemma written into a service, and a fact about one word belongs in the file
+        /// that lists the words.
+        /// </para>
+        /// </remarks>
+        public bool RequiresPronominalHead { get; init; }
     }
 }

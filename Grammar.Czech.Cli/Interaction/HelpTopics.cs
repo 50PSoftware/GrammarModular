@@ -48,8 +48,8 @@ namespace Grammar.Czech.Cli.Interaction
             VZTAŽNÁ VĚTA — jak ji zadat a co si nástroj domyslí
 
             Vztažnou větu otevře vztažné slovo mezi lemmaty. Žádný přepínač k tomu není potřeba:
-            'který' a 'jenž' vedou pravidla jako vztažná zájmena, 'kde', 'kdy' a 'kam' jako vztažná
-            příslovce, a nástroj se jich ptá stejně, jako se ptá na spojky.
+            'který', 'jenž' a 'jaký' vedou pravidla jako vztažná zájmena, 'kde', 'kdy' a 'kam' jako
+            vztažná příslovce, a nástroj se jich ptá stejně, jako se ptá na spojky.
 
               učitel vidět student který číst kniha
               → Učitel vidí studenta, který čte knihu.
@@ -78,6 +78,20 @@ namespace Grammar.Czech.Cli.Interaction
 
             Vztažné příslovce pád nemá — je neohebné a argumentem své věty není, takže se přes ně
             s řídícím jménem neshoduje nic: 'dům, kde bydlím'.
+
+            'CO' A 'KDO'. Obojí vztažné je, ale ani jedno se nechová jako 'který'. 'Co' se neskloňuje —
+            svou roli ve vztažné větě nese odkazovací zájmeno uvnitř ní ('člověk, co jsem ho viděl'),
+            a to nástroj zadat neumí. V nominativu je to zájmeno nulové, takže tam konstrukce vyjde celá
+            a jinde se řekne, co chybí:
+
+              učitel vidět student co číst kniha    → Učitel vidí studenta, co čte knihu.
+
+            'Kdo' relativizuje entitu, ne vlastnost jména, takže se opírá o ukazovací zájmeno. Na jméně
+            by prošlo — tvar pro mužský životný rod má — a vyšla by věta, kterou mluvnice mezi vztažné
+            věty se jmennou hlavou nepočítá, tak se odmítne:
+
+              učitel vidět ten kdo číst kniha       → Učitel vidí toho, kdo čte knihu.
+              učitel vidět student kdo číst kniha   → odmítnuto, na jméno patří 'který'
 
             PŘIVLASTŇOVACÍ. 'jehož', 'jejíž' a 'jejichž' se chovají jinak než ostatní: nestojí za člen,
             ale rozvíjejí ho, a rozvíjejí jméno hned za sebou. Pád proto nedrží žádný — ten má vlastněné

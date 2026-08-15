@@ -913,6 +913,36 @@ namespace Grammar.Czech.Cli.Sentence
                 return;
             }
 
+            var reading = _pronouns.GetReadings(relative.Relativizer)
+                .FirstOrDefault(reading => reading.Type == PronounType.Relative);
+
+            // 'kdo' se neváže na jméno, ale na ukazovací zájmeno: 'ten, kdo přišel'. Na jméně by prošlo,
+            // protože tvar pro mužský životný rod má — a vyšla by věta, kterou NESČ mezi vztažné věty
+            // se jmennou hlavou nepočítá.
+            if (reading?.RequiresPronominalHead == true
+                && host.Word.WordCategory != WordCategory.Pronoun)
+            {
+                throw new CliException(
+                    $"'{relative.Relativizer}' se neváže na jméno '{host.Lemma}' (č. {host.Position}), "
+                    + $"ale na ukazovací zájmeno: 'ten {relative.Relativizer} …'. "
+                    + "Na jméno patří 'který' nebo 'jenž'.");
+            }
+
+            // Nesklonné vztažné 'co' nese svou roli odkazovacím zájmenem uvnitř vztažné věty, a to nástroj
+            // zadat neumí. V nominativu je nulové, takže tam se nic neztratí.
+            if (reading?.InflectionClass == InflectionClass.Indeclinable)
+            {
+                if (kase != Case.Nominative)
+                {
+                    throw new CliException(
+                        $"Vztažné '{relative.Relativizer}' se neskloňuje — svou roli nese odkazovací "
+                        + "zájmeno uvnitř té věty ('člověk, co jsem ho viděl'), a to nástroj zadat neumí. "
+                        + $"Pro {Terms.Name(kase)} použij 'který' nebo 'jenž'.");
+                }
+
+                return;
+            }
+
             var form = _pronouns.TryGetForm(
                 relative.Relativizer, kase, host.Word.Gender, host.Word.Number, host.Word.IsAnimate, null);
 

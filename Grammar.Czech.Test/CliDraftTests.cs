@@ -1288,21 +1288,63 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
-        /// A relativizer that cannot agree with the noun it modifies is refused while the answer is still
-        /// a different word, rather than failing later as a missing form.
+        /// Relative <em>co</em> does not inflect, so it keeps one form after any antecedent, and the
+        /// predicate still agrees with that antecedent through it.
         /// </summary>
         /// <remarks>
-        /// <em>co</em> has no gender and one row of forms, so after a masculine noun there is nothing to
-        /// look up. The clause is good Czech — <em>člověk, co přišel</em> — and the core not rendering it
-        /// is a gap in the core, not in the sentence.
+        /// It is the interrogative <em>co</em> that declines as <em>co, čeho, čemu</em>; the relative one
+        /// is a different word wearing the same spelling. Declining it by the antecedent used to be asked
+        /// for and used to fail, because the paradigm has one row and no gender to select it by.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("student", "Učitel viděl studenta, co četl knihu.", DisplayName = "mužský životný")]
+        [DataRow("žena", "Učitel viděl ženu, co četla knihu.", DisplayName = "ženský")]
+        public void RelativeCoKeepsOneFormAndStillCarriesAgreement(string antecedent, string expected)
+        {
+            var overrides = new DraftOverrides();
+            overrides.Predicate.Tense = Tense.Past;
+
+            Assert.AreEqual(
+                expected,
+                Sentence(overrides, "učitel", "vidět", antecedent, "co", "číst", "kniha"));
+        }
+
+        /// <summary>
+        /// A role other than the subject is carried by a resumptive pronoun inside the clause, which is
+        /// not something the tool can be told, so it is refused with that as the reason.
+        /// </summary>
+        [TestMethod]
+        public void RelativeCoOutsideTheNominativeIsRefused()
+        {
+            var overrides = new DraftOverrides();
+            overrides.For("co").Case = Case.Accusative;
+
+            var exception = Assert.ThrowsException<CliException>(
+                () => Whole(overrides, "učitel", "vidět", "student", "co", "číst", "kniha"));
+
+            StringAssert.Contains(exception.Message, "odkazovací");
+        }
+
+        /// <summary>
+        /// <em>kdo</em> relativizes an entity rather than a property of a noun, so it leans on a
+        /// demonstrative and is refused on a noun.
+        /// </summary>
+        /// <remarks>
+        /// It would otherwise have built: <em>kdo</em> has forms for the masculine animate, so
+        /// <em>student, kdo přišel</em> passed every agreement check there was and came out as a sentence
+        /// NESČ does not count among relative clauses with a nominal head.
         /// </remarks>
         [TestMethod]
-        public void RelativizerThatCannotAgreeIsRefused()
+        public void RelativeKdoNeedsADemonstrativeHead()
         {
-            var exception = Assert.ThrowsException<CliException>(
-                () => Whole(null, "učitel", "vidět", "student", "co", "číst", "kniha"));
+            Assert.AreEqual(
+                "Učitel vidí toho, kdo čte knihu.",
+                Sentence(null, "učitel", "vidět", "ten", "kdo", "číst", "kniha"));
 
-            StringAssert.Contains(exception.Message, "neshodne");
+            var exception = Assert.ThrowsException<CliException>(
+                () => Whole(null, "učitel", "vidět", "student", "kdo", "číst", "kniha"));
+
+            StringAssert.Contains(exception.Message, "ukazovací zájmeno");
         }
 
         /// <summary>

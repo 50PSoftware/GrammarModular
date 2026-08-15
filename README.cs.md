@@ -88,7 +88,13 @@ Zájmena se čtou z `Grammar.Czech/Data/Rules/Pronouns/patterns.json` a paradigm
 
 Data pokrývají osobní, přivlastňovací, zvratná, ukazovací, tázací, vztažná, záporná a neurčitá zájmena. Service podporuje pevné tabulkové tvary, paradigmata, nesklonná zájmena a vybrané zájmenné tvary delegované na adjektivní skloňování.
 
-Některá zájmena jsou dvě slova pod jedním pravopisem a čtení se liší přímo druhem: *co* se ptá v *co čteš?* a uvozuje vztažnou větu v *člověk, co přišel*, stejně *kdo* a *jaký*. Heslo v souboru je primární čtení a ostatní na něm visí v `alsoReads`, přesně jako u spojek. `GetPronounType` vrací primární čtení a nemění se; volající, který ví, jakou konstrukci staví, se ptá `GetReadings` — a to dělá `CzechWordOrderResolver`, když vykresluje vztažnou větu. Čtení uvádí jen svůj druh, protože je to totéž slovo skloňované stejně; paradigma se hledá vždycky přes primární heslo.
+Některá zájmena jsou dvě slova pod jedním pravopisem a čtení se liší přímo druhem: *co* se ptá v *co čteš?* a uvozuje vztažnou větu v *člověk, co přišel*, stejně *kdo* a *jaký*. Heslo v souboru je primární čtení a ostatní na něm visí v `alsoReads`, přesně jako u spojek. `GetPronounType` vrací primární čtení a nemění se; volající, který ví, jakou konstrukci staví, se ptá `GetReadings` — a to dělá `CzechWordOrderResolver`, když vykresluje vztažnou větu.
+
+Čtení si přitom nese vlastní `inflectionClass` a uvádí ji i tam, kde je stejná jako primární: vynechaná by neznamenala „táž“, ale `Substantive`, což je první hodnota enumu. A stejná není vždycky — dvě slova pod jedním pravopisem se můžou lišit i tím, jak se skloňují:
+
+- **tázací *co*** se skloňuje (*co, čeho, čemu*), kdežto **vztažné *co*** je nesklonné. Svou roli ve vztažné větě nevyjadřuje tvarem, ale odkazovacím zájmenem uvnitř té věty — *člověk, co jsem ho viděl* — takže NESČ o něm mluví jako o analytickém relativizátoru a konstrukce s ním podle něj resumptivum obsahují vždycky. V nominativu je to zájmeno nulové, takže *člověk, co přišel* vyjde celé; ostatní pády jádro odmítne, protože resumptivum nemodeluje. Stylově je vztažné *co* hovorové, ne nespisovné — Havránek–Jedlička je z psaného jazyka nevylučují.
+- **vztažné *kdo*** relativizuje entitu, ne vlastnost jména, takže se opírá o ukazovací zájmeno: *ten, kdo přišel*. Mezi relativizátory věty se jmennou hlavou ho NESČ nevede, a `requiresPronominalHead` je to v datech. Bez toho by *student, kdo přišel* prošlo — *kdo* má tvar pro mužský životný rod, takže by shoda nic nenamítla.
+- **vztažné *jaký*** se naopak chová jako *který*: shoduje se s řídícím jménem v rodě a čísle a skloňuje se podle vzoru *mladý*.
 
 Přivlastňovací vztažná zájmena jsou tři a nejsou to tři stejné případy: *jehož* a *jejichž* jsou podle IJP nesklonná, *jejíž* se skloňuje jako *její* podle vzoru *jarní*, tedy s příponou až za koncovkou (*jejíhož*, *jejímuž*, *jejíchž*). Shodují se dvěma směry naráz, a každý směr rozhoduje o něčem jiném: rod a číslo řídícího jména vybírají, **které ze tří slov** to je — mužský a střední rod v jednotném čísle *jehož*, ženský *jejíž*, množné číslo *jejichž* — kdežto tvar samotný se řídí **vlastněným jménem**, protože zájmeno je jeho shodný přívlastek.
 
@@ -1007,6 +1013,16 @@ gramatika veta zena psat dopis jejiz student videt ucitel --vztazna 1=1 --role s
 
 gramatika veta student psat dopis jejiz kniha videt ucitel --vztazna 1=1
 # K 'student' patří 'jehož', ne 'jejíž' — které ze tří to je, rozhoduje rod a číslo řídícího jména.
+```
+
+Vztažných slov je víc než *který* a *jenž* a nechovají se stejně. *Jaký* se skloňuje jako *který*. *Co* se neskloňuje a jde jen tam, kde je podmětem — jinde by roli neslo odkazovací zájmeno, které nástroj zadat neumí. *Kdo* chce ukazovací zájmeno, ne jméno:
+
+```bash
+gramatika veta ucitel videt student co cist kniha    # Učitel vidí studenta, co čte knihu.
+gramatika veta ucitel videt ten kdo cist kniha       # Učitel vidí toho, kdo čte knihu.
+
+gramatika veta ucitel videt student kdo cist kniha
+# 'kdo' se neváže na jméno 'student', ale na ukazovací zájmeno: 'ten kdo …'.
 ```
 
 Tázací *který* se od vztažného rozliší pozicí: vztažné stojí za jménem, které rozvíjí, tázací před ním, takže `ktery student cist kniha` žádnou vztažnou větu neotevře. U slov, kterým je vztažné čtení až to druhé — *proč*, *odkud* jsou stejně dobře příslovce — se navíc vyžaduje sloveso za nimi, aby `student cist kniha proc` zůstalo otázkou po důvodu.

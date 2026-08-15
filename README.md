@@ -88,7 +88,13 @@ Pronouns are read from `Grammar.Czech/Data/Rules/Pronouns/patterns.json`, their 
 
 The data covers personal, possessive, reflexive, demonstrative, interrogative, relative, negative and indefinite pronouns. The service supports fixed tabulated forms, paradigms, indeclinable pronouns, and selected pronominal forms delegated to adjectival declension.
 
-Some pronouns are two words wearing one spelling, and the readings differ in the type itself: *co* asks in *co čteš?* and introduces a relative clause in *člověk, co přišel*, and so do *kdo* and *jaký*. The entry in the file is the primary reading and the alternatives hang off it in `alsoReads`, exactly as for conjunctions. `GetPronounType` returns the primary reading and is unchanged; a caller that knows which construction it is building asks `GetReadings` instead, which is what `CzechWordOrderResolver` does when it renders a relative clause. A reading states only its type, because it is the same word declined the same way; form lookup always goes through the primary entry.
+Some pronouns are two words wearing one spelling, and the readings differ in the type itself: *co* asks in *co čteš?* and introduces a relative clause in *člověk, co přišel*, and so do *kdo* and *jaký*. The entry in the file is the primary reading and the alternatives hang off it in `alsoReads`, exactly as for conjunctions. `GetPronounType` returns the primary reading and is unchanged; a caller that knows which construction it is building asks `GetReadings` instead, which is what `CzechWordOrderResolver` does when it renders a relative clause.
+
+A reading carries its own `inflectionClass` and states it even where it matches the primary one: omitted, it would not mean "the same" but `Substantive`, the first value of the enum. Nor is it always the same — two words under one spelling can differ in how they inflect:
+
+- **interrogative *co*** declines (*co, čeho, čemu*), while **relative *co*** is indeclinable. It expresses its role in the clause not by its form but by a resumptive pronoun inside that clause — *člověk, co jsem ho viděl* — which is why NESČ calls it an analytic relativizer and says structures with *co* always contain a resumptive. In the nominative that pronoun is null, so *člověk, co přišel* comes out whole; other cases are refused, because the resumptive is not modelled. Stylistically it is colloquial rather than substandard — Havránek and Jedlička do not exclude it from the written language.
+- **relative *kdo*** relativizes an entity rather than a property of a noun, so it leans on a demonstrative: *ten, kdo přišel*. NESČ does not list it among the relativizers of a clause with a nominal head, and `requiresPronominalHead` is that fact in the data. Without it *student, kdo přišel* would build — *kdo* has forms for the masculine animate, so no agreement check would object.
+- **relative *jaký***, by contrast, behaves like *který*: it agrees with the head noun in gender and number and declines on the *mladý* pattern.
 
 There are three possessive relative pronouns and they are not three of the same case: IJP has *jehož* and *jejichž* as indeclinable, while *jejíž* declines like *její* on the *jarní* pattern, with the suffix after the ending (*jejíhož*, *jejímuž*, *jejíchž*). They agree in two directions at once, and each direction decides something different: the antecedent's gender and number pick **which of the three words** it is — masculine or neuter singular *jehož*, feminine *jejíž*, plural *jejichž* — while the form itself follows the **noun possessed**, because the pronoun is its agreeing attribute.
 
@@ -1010,6 +1016,16 @@ gramatika veta zena psat dopis jejiz student videt ucitel --vztazna 1=1 --role s
 
 gramatika veta student psat dopis jejiz kniha videt ucitel --vztazna 1=1
 # K 'student' patří 'jehož', ne 'jejíž' — které ze tří to je, rozhoduje rod a číslo řídícího jména.
+```
+
+There are more relativizers than *který* and *jenž*, and they do not behave alike. *Jaký* declines like *který*. *Co* does not decline and works only where it is the subject — elsewhere its role would be carried by a resumptive pronoun, which the tool has no way to be told. *Kdo* wants a demonstrative rather than a noun:
+
+```bash
+gramatika veta ucitel videt student co cist kniha    # Učitel vidí studenta, co čte knihu.
+gramatika veta ucitel videt ten kdo cist kniha       # Učitel vidí toho, kdo čte knihu.
+
+gramatika veta ucitel videt student kdo cist kniha
+# 'kdo' se neváže na jméno 'student', ale na ukazovací zájmeno: 'ten kdo …'.
 ```
 
 Interrogative *který* is told from the relative one by position: the relative stands after the noun it modifies and the interrogative before it, so `ktery student cist kniha` opens no relative clause. Words whose relative reading is only the second one — *proč* and *odkud* are just as much adverbs — additionally require a verb after them, so that `student cist kniha proc` stays a question about the reason.

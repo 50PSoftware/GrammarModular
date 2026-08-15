@@ -207,14 +207,41 @@ namespace Grammar.Czech.Services
                 return $"{renderEmbedded(relative.Clause, false)},";
             }
 
-            // Mezi čteními, ne to primární: 'co' a 'kdo' jsou v datech vedené jako tázací, protože se tak
-            // čtou nejčastěji, ale 'člověk, co přišel' je táž slovní jednotka v jiné konstrukci. Kterou
-            // z nich stavíme, ví tohle místo, ne heslář.
-            if (!pronounService.GetReadings(relative.Relativizer)
-                .Any(reading => reading.Type == PronounType.Relative))
+            // Vztažné čtení, ne to primární: 'co' a 'kdo' jsou v datech vedené jako tázací, protože se tak
+            // čtou nejčastěji, ale 'člověk, co přišel' je táž slovní jednotka v jiné konstrukci. A není to
+            // jen jiný účel — vztažné 'co' se ani neskloňuje jako to tázací, takže se odsud dál čte to
+            // čtení, ne heslo.
+            var reading = pronounService.GetReadings(relative.Relativizer)
+                .FirstOrDefault(reading => reading.Type == PronounType.Relative)
+                ?? throw new InvalidOperationException(
+                    $"'{relative.Relativizer}' není vztažné zájmeno ani vztažné příslovce.");
+
+            // 'kdo' relativizuje entitu, ne vlastnost jména, takže se opírá o ukazovací zájmeno: 'ten, kdo
+            // přišel'. NESČ ho mezi relativizátory věty se jmennou hlavou nevede, a 'student, kdo přišel'
+            // by se přitom postavilo — 'kdo' má tvar pro mužský životný rod a shoda by prošla.
+            if (reading.RequiresPronominalHead && antecedent.WordCategory != WordCategory.Pronoun)
             {
                 throw new InvalidOperationException(
-                    $"'{relative.Relativizer}' není vztažné zájmeno ani vztažné příslovce.");
+                    $"'{relative.Relativizer}' se neváže na jméno '{antecedent.Lemma}', ale na ukazovací "
+                    + $"zájmeno: 'ten, {relative.Relativizer} …'. Na jméno patří 'který' nebo 'jenž'.");
+            }
+
+            // Nesklonné vztažné čtení je 'co'. Svou roli ve větě nevyjadřuje tvarem, ale odkazovacím
+            // zájmenem uvnitř té věty — 'člověk, co jsem ho viděl' — a to jádro nemodeluje. V nominativu
+            // je to zájmeno nulové, takže tam konstrukce vychází celá a jinde se řekne, co chybí.
+            if (reading.InflectionClass == InflectionClass.Indeclinable)
+            {
+                if (relative.Case != Case.Nominative)
+                {
+                    throw new InvalidOperationException(
+                        $"Vztažné '{relative.Relativizer}' se neskloňuje — svou roli nese odkazovací "
+                        + $"zájmeno uvnitř té věty ('člověk, co jsem ho viděl'), a to zatím modelované "
+                        + $"není. V nominativu je nulové, takže {Case.Nominative} projde; pro "
+                        + $"{relative.Case} použij 'který' nebo 'jenž'.");
+                }
+
+                return $"{relative.Relativizer} "
+                    + $"{renderEmbedded(AgreeWithAntecedent(relative.Clause, antecedent), true)},";
             }
 
             var pronoun = pronounService.TryGetForm(
