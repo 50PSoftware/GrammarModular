@@ -196,34 +196,42 @@ namespace Grammar.Czech.Services
                 return $"{relative.Relativizer} {renderEmbedded(relative.Clause, true)},";
             }
 
-            // Přivlastňovací vztažné zájmeno je uvnitř věty jako přívlastek svého jména, kam ho postavil
-            // plánovač, takže se tady nevypisuje podruhé. Z antecedentu si nebere tvar, ale samo slovo:
-            // rod a číslo řídícího jména rozhodují, které ze tří to je, a to je jediné, co jde zkontrolovat.
-            // První pozici drží ten člen, ne zájmeno samo, takže ji klauze obsazuje ze svého.
-            if (pronounService.IsPossessiveRelative(relative.Relativizer))
-            {
-                ValidatePossessive(relative.Relativizer, antecedent);
-
-                return $"{renderEmbedded(relative.Clause, false)},";
-            }
-
-            // Vztažné čtení, ne to primární: 'co' a 'kdo' jsou v datech vedené jako tázací, protože se tak
-            // čtou nejčastěji, ale 'člověk, co přišel' je táž slovní jednotka v jiné konstrukci. A není to
-            // jen jiný účel — vztažné 'co' se ani neskloňuje jako to tázací, takže se odsud dál čte to
-            // čtení, ne heslo.
+            // Vztažné čtení, ne to primární: 'co', 'kdo' a 'čí' jsou v datech vedené jako tázací, protože
+            // se tak čtou nejčastěji, ale 'člověk, co přišel' je táž slovní jednotka v jiné konstrukci.
+            // A není to jen jiný účel — vztažné 'co' se ani neskloňuje jako to tázací, takže se odsud dál
+            // čte to čtení, ne heslo.
             var reading = pronounService.GetReadings(relative.Relativizer)
                 .FirstOrDefault(reading => reading.Type == PronounType.Relative)
                 ?? throw new InvalidOperationException(
                     $"'{relative.Relativizer}' není vztažné zájmeno ani vztažné příslovce.");
 
-            // 'kdo' relativizuje entitu, ne vlastnost jména, takže se opírá o ukazovací zájmeno: 'ten, kdo
-            // přišel'. NESČ ho mezi relativizátory věty se jmennou hlavou nevede, a 'student, kdo přišel'
-            // by se přitom postavilo — 'kdo' má tvar pro mužský životný rod a shoda by prošla.
+            // 'kdo' a 'čí' relativizují entitu, ne vlastnost jména, takže se opírají o ukazovací zájmeno:
+            // 'ten, kdo přišel', 'ten, čí chleba jíš'. NESČ je mezi relativizátory věty se jmennou hlavou
+            // nevede — 'Rel čí v RV s lehkou hlavou, jehož, jejíž, jejichž v RV s nominální hlavou' —
+            // a 'student, kdo přišel' by se přitom postavilo, protože tvar pro mužský životný rod má
+            // a shoda by nic nenamítla.
             if (reading.RequiresPronominalHead && antecedent.WordCategory != WordCategory.Pronoun)
             {
                 throw new InvalidOperationException(
                     $"'{relative.Relativizer}' se neváže na jméno '{antecedent.Lemma}', ale na ukazovací "
                     + $"zájmeno: 'ten, {relative.Relativizer} …'. Na jméno patří 'který' nebo 'jenž'.");
+            }
+
+            // Přivlastňovací vztažné zájmeno je uvnitř věty jako přívlastek svého jména, kam ho postavil
+            // plánovač, takže se tady nevypisuje podruhé. První pozici drží ten člen, ne zájmeno samo,
+            // takže ji klauze obsazuje ze svého.
+            //
+            // Které slovo to je, vybírá řídící jméno jen u těch tří s nominální hlavou: musí vyjádřit dva
+            // rysy rodu a čísla naráz — vlastníkův z antecedentu a vlastněného zevnitř věty — a proto jsou
+            // tři. 'čí' vyjadřuje jen posesora, je jedno pro všechny rody a vybírat není z čeho.
+            if (pronounService.IsPossessiveRelative(relative.Relativizer))
+            {
+                if (!reading.RequiresPronominalHead)
+                {
+                    ValidatePossessive(relative.Relativizer, antecedent);
+                }
+
+                return $"{renderEmbedded(relative.Clause, false)},";
             }
 
             // Nesklonné vztažné čtení je 'co'. Svou roli ve větě nevyjadřuje tvarem, ale odkazovacím

@@ -94,6 +94,7 @@ A reading carries its own `inflectionClass` and states it even where it matches 
 
 - **interrogative *co*** declines (*co, čeho, čemu*), while **relative *co*** is indeclinable. It expresses its role in the clause not by its form but by a resumptive pronoun inside that clause — *člověk, co jsem ho viděl* — which is why NESČ calls it an analytic relativizer and says structures with *co* always contain a resumptive. In the nominative that pronoun is null, so *člověk, co přišel* comes out whole; other cases are refused, because the resumptive is not modelled. Stylistically it is colloquial rather than substandard — Havránek and Jedlička do not exclude it from the written language.
 - **relative *kdo*** relativizes an entity rather than a property of a noun, so it leans on a demonstrative: *ten, kdo přišel*. NESČ does not list it among the relativizers of a clause with a nominal head, and `requiresPronominalHead` is that fact in the data. Without it *student, kdo přišel* would build — *kdo* has forms for the masculine animate, so no agreement check would object.
+- **relative *čí*** possesses like *jehož* but takes its head like *kdo*. NESČ divides the two groups on exactly that: "Rel *čí* v RV s lehkou hlavou, *jehož*, *jejíž*, *jejichž* v RV s nominální hlavou." The three exist because they carry two gender-number features at once — the possessor's from the antecedent and the possessed noun's from inside the clause — whereas *čí* expresses only the possessor and is one word for every gender. So it declines with the noun it possesses and has nothing to select: *ten, čího studenta vidím*.
 - **relative *jaký***, by contrast, behaves like *který*: it agrees with the head noun in gender and number and declines on the *mladý* pattern.
 
 There are three possessive relative pronouns and they are not three of the same case: IJP has *jehož* and *jejichž* as indeclinable, while *jejíž* declines like *její* on the *jarní* pattern, with the suffix after the ending (*jejíhož*, *jejímuž*, *jejíchž*). They agree in two directions at once, and each direction decides something different: the antecedent's gender and number pick **which of the three words** it is — masculine or neuter singular *jehož*, feminine *jejíž*, plural *jejichž* — while the form itself follows the **noun possessed**, because the pronoun is its agreeing attribute.
@@ -1023,6 +1024,9 @@ There are more relativizers than *který* and *jenž*, and they do not behave al
 ```bash
 gramatika veta ucitel videt student co cist kniha    # Učitel vidí studenta, co čte knihu.
 gramatika veta ucitel videt ten kdo cist kniha       # Učitel vidí toho, kdo čte knihu.
+
+gramatika veta ucitel videt ten ci student cist kniha --role student=PAT
+# Učitel vidí toho, čího studenta čte kniha.
 
 gramatika veta ucitel videt student kdo cist kniha
 # 'kdo' se neváže na jméno 'student', ale na ukazovací zájmeno: 'ten kdo …'.

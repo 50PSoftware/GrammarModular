@@ -94,6 +94,7 @@ Některá zájmena jsou dvě slova pod jedním pravopisem a čtení se liší p�
 
 - **tázací *co*** se skloňuje (*co, čeho, čemu*), kdežto **vztažné *co*** je nesklonné. Svou roli ve vztažné větě nevyjadřuje tvarem, ale odkazovacím zájmenem uvnitř té věty — *člověk, co jsem ho viděl* — takže NESČ o něm mluví jako o analytickém relativizátoru a konstrukce s ním podle něj resumptivum obsahují vždycky. V nominativu je to zájmeno nulové, takže *člověk, co přišel* vyjde celé; ostatní pády jádro odmítne, protože resumptivum nemodeluje. Stylově je vztažné *co* hovorové, ne nespisovné — Havránek–Jedlička je z psaného jazyka nevylučují.
 - **vztažné *kdo*** relativizuje entitu, ne vlastnost jména, takže se opírá o ukazovací zájmeno: *ten, kdo přišel*. Mezi relativizátory věty se jmennou hlavou ho NESČ nevede, a `requiresPronominalHead` je to v datech. Bez toho by *student, kdo přišel* prošlo — *kdo* má tvar pro mužský životný rod, takže by shoda nic nenamítla.
+- **vztažné *čí*** je přivlastňovací jako *jehož*, ale hlavu bere jako *kdo*. NESČ ty dvě skupiny dělí právě tím: „Rel *čí* v RV s lehkou hlavou, *jehož*, *jejíž*, *jejichž* v RV s nominální hlavou.“ Ty tři existují proto, že nesou dva rysy rodu a čísla naráz — vlastníkův z antecedentu a vlastněného zevnitř věty — kdežto *čí* vyjadřuje jen posesora a je jedno pro všechny rody. Skloňuje se tedy s vlastněným jménem a vybírat z ničeho nemusí: *ten, čího studenta vidím*.
 - **vztažné *jaký*** se naopak chová jako *který*: shoduje se s řídícím jménem v rodě a čísle a skloňuje se podle vzoru *mladý*.
 
 Přivlastňovací vztažná zájmena jsou tři a nejsou to tři stejné případy: *jehož* a *jejichž* jsou podle IJP nesklonná, *jejíž* se skloňuje jako *její* podle vzoru *jarní*, tedy s příponou až za koncovkou (*jejíhož*, *jejímuž*, *jejíchž*). Shodují se dvěma směry naráz, a každý směr rozhoduje o něčem jiném: rod a číslo řídícího jména vybírají, **které ze tří slov** to je — mužský a střední rod v jednotném čísle *jehož*, ženský *jejíž*, množné číslo *jejichž* — kdežto tvar samotný se řídí **vlastněným jménem**, protože zájmeno je jeho shodný přívlastek.
@@ -1020,6 +1021,9 @@ Vztažných slov je víc než *který* a *jenž* a nechovají se stejně. *Jaký
 ```bash
 gramatika veta ucitel videt student co cist kniha    # Učitel vidí studenta, co čte knihu.
 gramatika veta ucitel videt ten kdo cist kniha       # Učitel vidí toho, kdo čte knihu.
+
+gramatika veta ucitel videt ten ci student cist kniha --role student=PAT
+# Učitel vidí toho, čího studenta čte kniha.
 
 gramatika veta ucitel videt student kdo cist kniha
 # 'kdo' se neváže na jméno 'student', ale na ukazovací zájmeno: 'ten kdo …'.

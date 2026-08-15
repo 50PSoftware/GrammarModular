@@ -354,7 +354,16 @@
   "čí": {
     "type": "Interrogative",
     "inflectionClass": "PronounHard",
-    "paradigmId": "ci"
+    "paradigmId": "ci",
+    "alsoReads": [
+      {
+        "type": "Relative",
+        "inflectionClass": "PronounHard",
+        "paradigmId": "ci",
+        "requiresPronominalHead": true
+      },
+      { "type": "Possessive", "inflectionClass": "PronounHard", "paradigmId": "ci" }
+    ]
   },
   "jaký": {
     "type": "Interrogative",

@@ -1470,6 +1470,26 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// <em>čí</em> possesses like <em>jehož</em> but leans on a demonstrative like <em>kdo</em>, so it
+        /// declines with the noun it possesses and is refused on a noun of its own.
+        /// </summary>
+        [TestMethod]
+        public void RelativeCiPossessesUnderADemonstrativeHead()
+        {
+            var overrides = new DraftOverrides();
+            overrides.For("student").Functor = FgdFunctor.PAT;
+
+            Assert.AreEqual(
+                "Učitel vidí toho, čího studenta čte kniha.",
+                Sentence(overrides, "učitel", "vidět", "ten", "čí", "student", "číst", "kniha"));
+
+            var exception = Assert.ThrowsException<CliException>(
+                () => Whole(null, "učitel", "vidět", "student", "čí", "kniha", "číst", "učitel"));
+
+            StringAssert.Contains(exception.Message, "ukazovací zájmeno");
+        }
+
+        /// <summary>
         /// The terms help has a topic for relative clauses, since the switches point at one.
         /// </summary>
         [TestMethod]

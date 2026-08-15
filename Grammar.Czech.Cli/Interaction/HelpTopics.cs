@@ -93,6 +93,11 @@ namespace Grammar.Czech.Cli.Interaction
               učitel vidět ten kdo číst kniha       → Učitel vidí toho, kdo čte knihu.
               učitel vidět student kdo číst kniha   → odmítnuto, na jméno patří 'který'
 
+            Totéž 'čí', jen přivlastňuje: skloňuje se s vlastněným jménem a hlavu chce taky ukazovací.
+
+              učitel vidět ten čí student číst kniha --role student=PAT
+              → Učitel vidí toho, čího studenta čte kniha.
+
             PŘIVLASTŇOVACÍ. 'jehož', 'jejíž' a 'jejichž' se chovají jinak než ostatní: nestojí za člen,
             ale rozvíjejí ho, a rozvíjejí jméno hned za sebou. Pád proto nedrží žádný — ten má vlastněné
             jméno ze své vlastní role — a skloňují se s ním, ne s řídícím jménem:

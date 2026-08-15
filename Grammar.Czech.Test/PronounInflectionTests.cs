@@ -727,6 +727,7 @@ namespace Grammar.Czech.Test
         [DataRow("co", DisplayName = "co – tázací i vztažné")]
         [DataRow("kdo", DisplayName = "kdo – tázací i vztažné")]
         [DataRow("jaký", DisplayName = "jaký – tázací i vztažné")]
+        [DataRow("čí", DisplayName = "čí – tázací i vztažné")]
         public void GetReadings_InterrogativeThatRelativizes_ReportsBoth(string lemma)
         {
             var readings = service.GetReadings(lemma);
@@ -746,6 +747,7 @@ namespace Grammar.Czech.Test
         [DataRow("co", PronounType.Interrogative, DisplayName = "co – primárně tázací")]
         [DataRow("kdo", PronounType.Interrogative, DisplayName = "kdo – primárně tázací")]
         [DataRow("jaký", PronounType.Interrogative, DisplayName = "jaký – primárně tázací")]
+        [DataRow("čí", PronounType.Interrogative, DisplayName = "čí – primárně tázací")]
         [DataRow("jehož", PronounType.Relative, DisplayName = "jehož – primárně vztažné")]
         [DataRow("jejíž", PronounType.Relative, DisplayName = "jejíž – primárně vztažné")]
         [DataRow("jejichž", PronounType.Relative, DisplayName = "jejichž – primárně vztažné")]
@@ -762,12 +764,37 @@ namespace Grammar.Czech.Test
         [DataRow("jehož", DisplayName = "jehož – i přivlastňovací")]
         [DataRow("jejíž", DisplayName = "jejíž – i přivlastňovací")]
         [DataRow("jejichž", DisplayName = "jejichž – i přivlastňovací")]
+        [DataRow("čí", DisplayName = "čí – i přivlastňovací")]
         public void GetReadings_PossessiveRelative_ReportsBoth(string lemma)
         {
             var readings = service.GetReadings(lemma);
 
             Assert.IsTrue(readings.Any(reading => reading.Type == PronounType.Relative));
             Assert.IsTrue(readings.Any(reading => reading.Type == PronounType.Possessive));
+        }
+
+        /// <summary>
+        /// Verifies which relativizers lean on a demonstrative rather than modifying a noun.
+        /// </summary>
+        /// <remarks>
+        /// NESČ splits the possessive relatives by the head they take: „Rel <em>čí</em> v RV s lehkou
+        /// hlavou, <em>jehož</em>, <em>jejíž</em>, <em>jejichž</em> v RV s nominální hlavou.“ The three
+        /// exist because they carry two gender-number features at once — the possessor's from the
+        /// antecedent and the possessed noun's from inside the clause — while <em>čí</em> expresses only
+        /// the possessor and is one word for every gender.
+        /// </remarks>
+        [DataTestMethod]
+        [DataRow("čí", true, DisplayName = "čí – lehká hlava")]
+        [DataRow("kdo", true, DisplayName = "kdo – lehká hlava")]
+        [DataRow("jehož", false, DisplayName = "jehož – jmenná hlava")]
+        [DataRow("jejíž", false, DisplayName = "jejíž – jmenná hlava")]
+        [DataRow("který", false, DisplayName = "který – jmenná hlava")]
+        public void RelativeReading_SaysWhetherItNeedsAPronominalHead(string lemma, bool expected)
+        {
+            var relative = service.GetReadings(lemma)
+                .Single(reading => reading.Type == PronounType.Relative);
+
+            Assert.AreEqual(expected, relative.RequiresPronominalHead);
         }
 
         /// <summary>

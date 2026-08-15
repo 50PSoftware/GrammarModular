@@ -888,16 +888,38 @@ namespace Grammar.Czech.Cli.Sentence
         // lepší než nechat stavbu věty spadnout na chybějícím tvaru a mluvit přitom o pádu.
         private void CheckAgreement(ConstituentDraft host, RelativeDraft relative)
         {
-            // U přivlastňovacího zájmena neurčuje řídící jméno tvar, ale samo slovo: mužský a střední
-            // rod v jednotném čísle jehož, ženský jejíž, množné číslo jejichž. Všechna tři jsou platná
-            // slova, takže špatná volba by prošla až na povrch jako bezvadná věta o něčem jiném.
+            if (_adverbService.IsRelative(relative.Relativizer))
+            {
+                return;
+            }
+
+            var reading = _pronouns.GetReadings(relative.Relativizer)
+                .FirstOrDefault(reading => reading.Type == PronounType.Relative);
+
+            // 'kdo' a 'čí' se neváží na jméno, ale na ukazovací zájmeno: 'ten, kdo přišel', 'ten, čí
+            // chleba jíš'. Na jméně by prošly, protože tvar pro mužský životný rod mají — a vyšla by
+            // věta, kterou NESČ mezi vztažné věty se jmennou hlavou nepočítá.
+            if (reading?.RequiresPronominalHead == true
+                && host.Word.WordCategory != WordCategory.Pronoun)
+            {
+                throw new CliException(
+                    $"'{relative.Relativizer}' se neváže na jméno '{host.Lemma}' (č. {host.Position}), "
+                    + $"ale na ukazovací zájmeno: 'ten {relative.Relativizer} …'. "
+                    + "Na jméno patří 'který' nebo 'jenž'.");
+            }
+
+            // U přivlastňovacího zájmena s nominální hlavou neurčuje řídící jméno tvar, ale samo slovo:
+            // mužský a střední rod v jednotném čísle jehož, ženský jejíž, množné číslo jejichž. Všechna
+            // tři jsou platná slova, takže špatná volba by prošla až na povrch jako bezvadná věta o něčem
+            // jiném. 'čí' vyjadřuje jen posesora, je jedno pro všechny rody a vybírat není z čeho.
             if (_pronouns.IsPossessiveRelative(relative.Relativizer))
             {
                 var expected = host.Word.Number == Number.Plural
                     ? "jejichž"
                     : host.Word.Gender == Gender.Feminine ? "jejíž" : "jehož";
 
-                if (!string.Equals(relative.Relativizer, expected, StringComparison.Ordinal))
+                if (reading?.RequiresPronominalHead != true
+                    && !string.Equals(relative.Relativizer, expected, StringComparison.Ordinal))
                 {
                     throw new CliException(
                         $"K '{host.Lemma}' (č. {host.Position}) patří '{expected}', ne "
@@ -908,24 +930,9 @@ namespace Grammar.Czech.Cli.Sentence
                 return;
             }
 
-            if (_adverbService.IsRelative(relative.Relativizer) || relative.Case is not { } kase)
+            if (relative.Case is not { } kase)
             {
                 return;
-            }
-
-            var reading = _pronouns.GetReadings(relative.Relativizer)
-                .FirstOrDefault(reading => reading.Type == PronounType.Relative);
-
-            // 'kdo' se neváže na jméno, ale na ukazovací zájmeno: 'ten, kdo přišel'. Na jméně by prošlo,
-            // protože tvar pro mužský životný rod má — a vyšla by věta, kterou NESČ mezi vztažné věty
-            // se jmennou hlavou nepočítá.
-            if (reading?.RequiresPronominalHead == true
-                && host.Word.WordCategory != WordCategory.Pronoun)
-            {
-                throw new CliException(
-                    $"'{relative.Relativizer}' se neváže na jméno '{host.Lemma}' (č. {host.Position}), "
-                    + $"ale na ukazovací zájmeno: 'ten {relative.Relativizer} …'. "
-                    + "Na jméno patří 'který' nebo 'jenž'.");
             }
 
             // Nesklonné vztažné 'co' nese svou roli odkazovacím zájmenem uvnitř vztažné věty, a to nástroj
