@@ -88,6 +88,10 @@ Pronouns are read from `Grammar.Czech/Data/Rules/Pronouns/patterns.json`, their 
 
 The data covers personal, possessive, reflexive, demonstrative, interrogative, relative, negative and indefinite pronouns. The service supports fixed tabulated forms, paradigms, indeclinable pronouns, and selected pronominal forms delegated to adjectival declension.
 
+Some pronouns are two words wearing one spelling, and the readings differ in the type itself: *co* asks in *co čteš?* and introduces a relative clause in *člověk, co přišel*, and so do *kdo* and *jaký*. The entry in the file is the primary reading and the alternatives hang off it in `alsoReads`, exactly as for conjunctions. `GetPronounType` returns the primary reading and is unchanged; a caller that knows which construction it is building asks `GetReadings` instead, which is what `CzechWordOrderResolver` does when it renders a relative clause. A reading states only its type, because it is the same word declined the same way; form lookup always goes through the primary entry.
+
+There are three possessive relative pronouns and they are not three of the same case: IJP has *jehož* and *jejichž* as indeclinable, while *jejíž* declines like *její* on the *jarní* pattern, with the suffix after the ending (*jejíhož*, *jejímuž*, *jejíchž*). They agree in two directions at once — gender and number from the antecedent, case from the noun possessed — and `CzechWordOrderResolver` cannot do that yet: it looks the form up by the antecedent alone. The data for them exists; rendering a relative clause with one does not.
+
 The post-preposition variant is available through `CzechWordRequest.IsAfterPreposition`.
 
 ### Numerals
@@ -959,6 +963,44 @@ gramatika veta student cist kniha aby zak psat dopis a lekar zpivat pisen --prip
 ```
 
 The review shows what each clause hangs off and takes `k 3=1` to move it.
+
+A relativizer divides the word list too, only differently: the clause after a conjunction is a sibling, the clause after *který* hangs off a constituent. Both are recognized from the rule data — *který* and *jenž* are relative pronouns in `patterns.json`, *kde* and *kdy* carry the relative-adverb flag in `adverbs.json` — so neither needs a switch:
+
+```bash
+gramatika veta ucitel videt student ktery cist kniha    # Učitel vidí studenta, který čte knihu.
+gramatika veta ucitel znat dum kde bydlet student       # Učitel zná dům, kde bydlí student.
+```
+
+What is written is the lemma, not the form: `ktery` is what you type even where the sentence comes out with *která* or *kterou*. The pronoun takes its gender, number and animacy from the noun it modifies. Everything after a relative clause belongs inside it, the same way a clause attaches to the one immediately before it, so a relative clause may coordinate:
+
+```bash
+gramatika veta ucitel videt student ktery cist kniha a psat dopis
+# Učitel vidí studenta, který čte knihu a dopis píše.
+```
+
+The pronoun's case is the one thing it does not take from the antecedent — it holds a role in its own clause. The tool gives it the first slot its own verb's frame leaves open, and the review marks that `(rámec)` like any other derived case. It is a guess rather than a computation, so it can be overruled:
+
+```bash
+gramatika veta ucitel videt kniha ktery student cist
+# Učitel vidí knihu, která čte studenta.
+
+gramatika veta ucitel videt kniha ktery student cist --pad ktery=akuzativ
+# Učitel vidí knihu, kterou čte student.
+```
+
+There is no deciding this for the user: *kniha, kterou student čte* and *kniha, která čte studenta* are both sentences, and they differ in meaning rather than in structure. A relative adverb has no case, being uninflected and not an argument of its clause.
+
+Unstated, a relative clause hangs off the last noun of the clause before it — which is how a reader takes it, the pronoun reaching for the nearest preceding noun. `--vztazna` says otherwise and `--relativizator` changes the word it opens with; inside the dialog the two are `v 4=2` and `v 4=jenž`:
+
+```bash
+gramatika veta ucitel videt student ktery cist kniha --vztazna 1=1
+# Učitel, který čte knihu, vidí studenta.
+
+gramatika veta ucitel videt student ktery cist kniha --relativizator 3=jenz
+# Učitel vidí studenta, jenž čte knihu.
+```
+
+Interrogative *který* is told from the relative one by position: the relative stands after the noun it modifies and the interrogative before it, so `ktery student cist kniha` opens no relative clause. Words whose relative reading is only the second one — *proč* and *odkud* are just as much adverbs — additionally require a verb after them, so that `student cist kniha proc` stays a question about the reason.
 
 A predicate switch speaks for the whole sentence unless it names a clause, and a clause that says otherwise wins:
 

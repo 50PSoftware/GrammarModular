@@ -88,6 +88,10 @@ Zájmena se čtou z `Grammar.Czech/Data/Rules/Pronouns/patterns.json` a paradigm
 
 Data pokrývají osobní, přivlastňovací, zvratná, ukazovací, tázací, vztažná, záporná a neurčitá zájmena. Service podporuje pevné tabulkové tvary, paradigmata, nesklonná zájmena a vybrané zájmenné tvary delegované na adjektivní skloňování.
 
+Některá zájmena jsou dvě slova pod jedním pravopisem a čtení se liší přímo druhem: *co* se ptá v *co čteš?* a uvozuje vztažnou větu v *člověk, co přišel*, stejně *kdo* a *jaký*. Heslo v souboru je primární čtení a ostatní na něm visí v `alsoReads`, přesně jako u spojek. `GetPronounType` vrací primární čtení a nemění se; volající, který ví, jakou konstrukci staví, se ptá `GetReadings` — a to dělá `CzechWordOrderResolver`, když vykresluje vztažnou větu. Čtení uvádí jen svůj druh, protože je to totéž slovo skloňované stejně; paradigma se hledá vždycky přes primární heslo.
+
+Přivlastňovací vztažná zájmena jsou tři a nejsou to tři stejné případy: *jehož* a *jejichž* jsou podle IJP nesklonná, *jejíž* se skloňuje jako *její* podle vzoru *jarní*, tedy s příponou až za koncovkou (*jejíhož*, *jejímuž*, *jejíchž*). Shodují se dvěma směry naráz — rod a číslo berou z řídícího jména, pád z vlastněného — a to `CzechWordOrderResolver` zatím neumí: tvar hledá jen podle řídícího jména. Data pro ně tedy existují, vykreslení vztažné věty s nimi ne.
+
 Volitelně se rozlišuje varianta po předložce přes `CzechWordRequest.IsAfterPreposition`.
 
 ### Číslovky
@@ -956,6 +960,44 @@ gramatika veta student cist kniha aby zak psat dopis a lekar zpivat pisen --prip
 ```
 
 Přehled ukazuje, na čem která klauze visí, a přijme `k 3=1`.
+
+Vztažné slovo je předěl taky, jen jiného druhu: klauze za spojkou je sourozenec, klauze za *který* visí na členu. Poznají se stejně jako spojky, z pravidel — *který* a *jenž* jsou v `patterns.json` vedené jako vztažná zájmena, *kde* a *kdy* nesou v `adverbs.json` příznak vztažného příslovce — takže k tomu není potřeba žádný přepínač:
+
+```bash
+gramatika veta ucitel videt student ktery cist kniha    # Učitel vidí studenta, který čte knihu.
+gramatika veta ucitel znat dum kde bydlet student       # Učitel zná dům, kde bydlí student.
+```
+
+Zadává se lemma, ne tvar: píše se `ktery` i tam, kde ve větě vyjde *která* nebo *kterou*. Rod, číslo a životnost si zájmeno vezme z řídícího jména. Všechno za vztažnou větou patří dovnitř ní, stejně jako se klauze připojuje k bezprostředně předchozí, takže vztažná věta smí souřadit:
+
+```bash
+gramatika veta ucitel videt student ktery cist kniha a psat dopis
+# Učitel vidí studenta, který čte knihu a dopis píše.
+```
+
+Pád zájmena je jediné, co si nebere z řídícího jména — drží si roli ve své vlastní větě. Nástroj mu dá první slot, který rámec jejího slovesa nechá volný, a v přehledu ho značí `(rámec)` jako každý jiný odvozený pád. Je to odhad, ne výpočet, a proto jde přepsat:
+
+```bash
+gramatika veta ucitel videt kniha ktery student cist
+# Učitel vidí knihu, která čte studenta.
+
+gramatika veta ucitel videt kniha ktery student cist --pad ktery=akuzativ
+# Učitel vidí knihu, kterou čte student.
+```
+
+Rozhodnout to za uživatele nejde: *kniha, kterou student čte* a *kniha, která čte studenta* jsou obě věty a liší se významem, ne stavbou. Vztažné příslovce pád nemá, protože je neohebné a argumentem své věty není.
+
+Bez přepínače visí vztažná věta na posledním jméně klauze před ní — tak ji čte i člověk, protože zájmeno sahá k nejbližšímu předcházejícímu jménu. `--vztazna` řekne jinak a `--relativizator` přepne slovo, kterým se uvozuje; v dialogu je obojí `v 4=2` a `v 4=jenž`:
+
+```bash
+gramatika veta ucitel videt student ktery cist kniha --vztazna 1=1
+# Učitel, který čte knihu, vidí studenta.
+
+gramatika veta ucitel videt student ktery cist kniha --relativizator 3=jenz
+# Učitel vidí studenta, jenž čte knihu.
+```
+
+Tázací *který* se od vztažného rozliší pozicí: vztažné stojí za jménem, které rozvíjí, tázací před ním, takže `ktery student cist kniha` žádnou vztažnou větu neotevře. U slov, kterým je vztažné čtení až to druhé — *proč*, *odkud* jsou stejně dobře příslovce — se navíc vyžaduje sloveso za nimi, aby `student cist kniha proc` zůstalo otázkou po důvodu.
 
 Přepínač přísudku mluví za celé souvětí, dokud nepojmenuje klauzi — a klauze, která řekne jinak, vyhraje:
 
