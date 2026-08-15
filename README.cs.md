@@ -90,7 +90,9 @@ Data pokrývají osobní, přivlastňovací, zvratná, ukazovací, tázací, vzt
 
 Některá zájmena jsou dvě slova pod jedním pravopisem a čtení se liší přímo druhem: *co* se ptá v *co čteš?* a uvozuje vztažnou větu v *člověk, co přišel*, stejně *kdo* a *jaký*. Heslo v souboru je primární čtení a ostatní na něm visí v `alsoReads`, přesně jako u spojek. `GetPronounType` vrací primární čtení a nemění se; volající, který ví, jakou konstrukci staví, se ptá `GetReadings` — a to dělá `CzechWordOrderResolver`, když vykresluje vztažnou větu. Čtení uvádí jen svůj druh, protože je to totéž slovo skloňované stejně; paradigma se hledá vždycky přes primární heslo.
 
-Přivlastňovací vztažná zájmena jsou tři a nejsou to tři stejné případy: *jehož* a *jejichž* jsou podle IJP nesklonná, *jejíž* se skloňuje jako *její* podle vzoru *jarní*, tedy s příponou až za koncovkou (*jejíhož*, *jejímuž*, *jejíchž*). Shodují se dvěma směry naráz — rod a číslo berou z řídícího jména, pád z vlastněného — a to `CzechWordOrderResolver` zatím neumí: tvar hledá jen podle řídícího jména. Data pro ně tedy existují, vykreslení vztažné věty s nimi ne.
+Přivlastňovací vztažná zájmena jsou tři a nejsou to tři stejné případy: *jehož* a *jejichž* jsou podle IJP nesklonná, *jejíž* se skloňuje jako *její* podle vzoru *jarní*, tedy s příponou až za koncovkou (*jejíhož*, *jejímuž*, *jejíchž*). Shodují se dvěma směry naráz, a každý směr rozhoduje o něčem jiném: rod a číslo řídícího jména vybírají, **které ze tří slov** to je — mužský a střední rod v jednotném čísle *jehož*, ženský *jejíž*, množné číslo *jejichž* — kdežto tvar samotný se řídí **vlastněným jménem**, protože zájmeno je jeho shodný přívlastek.
+
+Modeluje se to tak, že přívlastek je: `PlannedRelative.Possessed` pojmenuje funktorem ten participant vztažné věty, kterému zájmeno patří, a plánovač ho tomu participantu vloží mezi `Modifiers`. Odtud dál se o něj stará stejná shoda jako o *mladý* u *mladý student*, a `CzechRoleResolver` mu žádný slot nerezervuje — slot drží vlastněné jméno, které si pád bere ze své vlastní role. Celý ten člen otevírá vztažnou větu, protože ji otevírá zájmeno v něm, takže se stává tématem a klitika jdou až za ním: *žena, jejíhož studenta jsem viděl*. Volbu ze tří slov `CzechWordOrderResolver` kontroluje proti řídícímu jménu a neshodu odmítne — všechna tři jsou platná slova, takže by špatná volba prošla až na povrch jako bezvadná věta o něčem jiném.
 
 Volitelně se rozlišuje varianta po předložce přes `CzechWordRequest.IsAfterPreposition`.
 
@@ -995,6 +997,16 @@ gramatika veta ucitel videt student ktery cist kniha --vztazna 1=1
 
 gramatika veta ucitel videt student ktery cist kniha --relativizator 3=jenz
 # Učitel vidí studenta, jenž čte knihu.
+```
+
+Přivlastňovací vztažné zájmeno přivlastňuje jménu hned za sebou a nedrží žádný pád — ten má vlastněné jméno ze své vlastní role. Které ze tří slov se píše, rozhoduje řídící jméno, a napsat jiné je chyba, ne varianta:
+
+```bash
+gramatika veta zena psat dopis jejiz student videt ucitel --vztazna 1=1 --role student=PAT
+# Žena, jejíhož studenta vidí učitel, píše dopis.
+
+gramatika veta student psat dopis jejiz kniha videt ucitel --vztazna 1=1
+# K 'student' patří 'jehož', ne 'jejíž' — které ze tří to je, rozhoduje rod a číslo řídícího jména.
 ```
 
 Tázací *který* se od vztažného rozliší pozicí: vztažné stojí za jménem, které rozvíjí, tázací před ním, takže `ktery student cist kniha` žádnou vztažnou větu neotevře. U slov, kterým je vztažné čtení až to druhé — *proč*, *odkud* jsou stejně dobře příslovce — se navíc vyžaduje sloveso za nimi, aby `student cist kniha proc` zůstalo otázkou po důvodu.

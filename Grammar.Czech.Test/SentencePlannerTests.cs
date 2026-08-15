@@ -1034,6 +1034,107 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// A possessive relative pronoun modifies a participant of its clause instead of standing for
+        /// one, and agrees in two directions at once.
+        /// </summary>
+        /// <remarks>
+        /// Which of the three words it is comes from the antecedent — feminine singular žena takes jejíž —
+        /// and the form it takes comes from the noun possessed. Both show here: dům is the patient of
+        /// vidět and therefore accusative, so the pronoun is accusative masculine inanimate singular, and
+        /// the whole constituent opens the clause because the pronoun in it does.
+        /// </remarks>
+        [TestMethod]
+        public void PossessiveRelativeModifiesAParticipantAndAgreesBothWays()
+        {
+            var woman = Noun("žena", "žena", Gender.Feminine, animate: true, FgdFunctor.ACT) with
+            {
+                Relative = new PlannedRelative
+                {
+                    Relativizer = "jejíž",
+                    Possessed = FgdFunctor.PAT,
+                    Clause = new SentencePlan
+                    {
+                        Predicate = Verb("vidět", "vidět") with { Person = Person.First },
+                        Participants = [Noun("dům", "hrad", Gender.Masculine, functor: FgdFunctor.PAT)],
+                        AllowSubjectDrop = true,
+                    },
+                },
+            };
+
+            Assert.AreEqual(
+                "Žena, jejíž dům vidím, pracuje.",
+                Build(new SentencePlan { Predicate = Verb("pracovat", "trida3"), Participants = [woman] }));
+
+            // Týž antecedent, jiná role vlastněného jména: dativ vytáhne z 'jejíž' jiný tvar, takže tohle
+            // je to, co odlišuje skloňování od shody, která se náhodou trefila do nominativu.
+            var giver = Noun("žena", "žena", Gender.Feminine, animate: true, FgdFunctor.ACT) with
+            {
+                Relative = new PlannedRelative
+                {
+                    Relativizer = "jejíž",
+                    Possessed = FgdFunctor.ADDR,
+                    Clause = new SentencePlan
+                    {
+                        Predicate = Verb("dávat", "trida5") with { Person = Person.First },
+                        Participants =
+                        [
+                            Noun("student", "pán", Gender.Masculine, animate: true, FgdFunctor.ADDR),
+                            Noun("kniha", "žena", Gender.Feminine, functor: FgdFunctor.PAT),
+                        ],
+                        AllowSubjectDrop = true,
+                    },
+                },
+            };
+
+            Assert.AreEqual(
+                "Žena, jejímuž studentovi dávám knihu, pracuje.",
+                Build(new SentencePlan { Predicate = Verb("pracovat", "trida3"), Participants = [giver] }));
+        }
+
+        /// <summary>
+        /// The indeclinable two keep one form whatever the noun they possess stands in, and which of the
+        /// three is right is decided by the antecedent rather than left to the caller.
+        /// </summary>
+        [TestMethod]
+        public void PossessiveRelativeIsCheckedAgainstItsAntecedent()
+        {
+            SentencePlan Sentence(string relativizer, PlannedParticipant antecedent) => new()
+            {
+                Predicate = Verb("pracovat", "trida3"),
+                Participants =
+                [
+                    antecedent with
+                    {
+                        Relative = new PlannedRelative
+                        {
+                            Relativizer = relativizer,
+                            Possessed = FgdFunctor.PAT,
+                            Clause = new SentencePlan
+                            {
+                                Predicate = Verb("vidět", "vidět") with { Person = Person.First },
+                                Participants = [Noun("dům", "hrad", Gender.Masculine, functor: FgdFunctor.PAT)],
+                                AllowSubjectDrop = true,
+                            },
+                        },
+                    },
+                ],
+            };
+
+            var student = Noun("student", "pán", Gender.Masculine, animate: true, FgdFunctor.ACT);
+
+            Assert.AreEqual(
+                "Student, jehož dům vidím, pracuje.",
+                Build(Sentence("jehož", student)));
+
+            // Rod řídícího jména rozhoduje, které ze tří slov to je. Všechna tři jsou platná slova,
+            // takže by se věta postavila i špatně — proto se to kontroluje a nehádá.
+            var wrong = Assert.ThrowsException<InvalidOperationException>(
+                () => Build(Sentence("jejíž", student)));
+
+            StringAssert.Contains(wrong.Message, "jehož");
+        }
+
+        /// <summary>
         /// A preposition names the free modification the frame cannot: the semantic group of the
         /// preposition and its case is what the functor comes from.
         /// </summary>

@@ -79,6 +79,17 @@ namespace Grammar.Czech.Cli.Interaction
             Vztažné příslovce pád nemá — je neohebné a argumentem své věty není, takže se přes ně
             s řídícím jménem neshoduje nic: 'dům, kde bydlím'.
 
+            PŘIVLASTŇOVACÍ. 'jehož', 'jejíž' a 'jejichž' se chovají jinak než ostatní: nestojí za člen,
+            ale rozvíjejí ho, a rozvíjejí jméno hned za sebou. Pád proto nedrží žádný — ten má vlastněné
+            jméno ze své vlastní role — a skloňují se s ním, ne s řídícím jménem:
+
+              žena psát dopis jejíž student vidět učitel --vztazna 1=1 --role student=PAT
+              → Žena, jejíhož studenta vidí učitel, píše dopis.
+
+            Řídící jméno rozhoduje jen o tom, které ze tří slov to je: mužský a střední rod v jednotném
+            čísle 'jehož', ženský 'jejíž', množné číslo 'jejichž'. Napsat jiné je chyba, ne varianta —
+            všechna tři jsou platná slova, takže by špatná volba prošla až do hotové věty.
+
             CO SE DÁ DOVNITŘ. Vztažná věta je věta jako každá jiná, takže smí souřadit i nést vedlejší
             větu. Všechno, co stojí za ní, do ní patří — stejně jako se klauze připojuje k té
             bezprostředně předchozí:

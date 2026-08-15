@@ -1381,6 +1381,53 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// A possessive relativizer modifies the noun written after it rather than standing for a
+        /// participant, and declines with that noun rather than with the antecedent.
+        /// </summary>
+        /// <remarks>
+        /// <em>jejíhož studenta</em> is the proof: masculine animate accusative comes from
+        /// <em>student</em>, the patient of the relative clause, while <em>žena</em> only decided that
+        /// the word is <em>jejíž</em> and not one of the other two.
+        /// </remarks>
+        [TestMethod]
+        public void PossessiveRelativeDeclinesWithTheNounItPossesses()
+        {
+            var overrides = new DraftOverrides();
+            overrides.Hang(1, 1);
+            overrides.For("student").Functor = FgdFunctor.PAT;
+
+            Assert.AreEqual(
+                "Žena, jejíhož studenta vidí učitel, píše dopis.",
+                Sentence(overrides, "žena", "psát", "dopis", "jejíž", "student", "vidět", "učitel"));
+
+            var relative = Whole(
+                overrides, "žena", "psát", "dopis", "jejíž", "student", "vidět", "učitel")
+                .AllRelatives.Single().Relative;
+
+            // Přívlastek, ne argument: pád nedrží žádný a vlastněný člen je pojmenovaný funktorem.
+            Assert.IsNull(relative.Case);
+            Assert.AreEqual(FgdFunctor.PAT, relative.Possessed);
+        }
+
+        /// <summary>
+        /// Which of the three possessive relatives is right follows from the antecedent, so writing
+        /// another one is refused rather than built.
+        /// </summary>
+        [DataTestMethod]
+        [DataRow("jejíž", "jehož", DisplayName = "mužské jméno bere jehož")]
+        [DataRow("jejichž", "jehož", DisplayName = "jednotné číslo nebere jejichž")]
+        public void PossessiveRelativeIsCheckedAgainstItsAntecedent(string written, string expected)
+        {
+            var overrides = new DraftOverrides();
+            overrides.Hang(1, 1);
+
+            var exception = Assert.ThrowsException<CliException>(() => Whole(
+                overrides, "student", "psát", "dopis", written, "kniha", "vidět", "učitel"));
+
+            StringAssert.Contains(exception.Message, expected);
+        }
+
+        /// <summary>
         /// The terms help has a topic for relative clauses, since the switches point at one.
         /// </summary>
         [TestMethod]

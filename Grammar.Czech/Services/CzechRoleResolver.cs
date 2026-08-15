@@ -28,6 +28,7 @@ namespace Grammar.Czech.Services
         private readonly CzechFrameSelector frameSelector;
         private readonly ICzechPrepositionService prepositionService;
         private readonly ICzechAdverbService adverbService;
+        private readonly ICzechPronounService pronounService;
         private readonly ICzechConjunctionService conjunctionService;
 
         /// <summary>
@@ -36,16 +37,19 @@ namespace Grammar.Czech.Services
         /// <param name="frameSelector">The selector for the sense of the verb.</param>
         /// <param name="prepositionService">The preposition service, for government and semantic groups.</param>
         /// <param name="adverbService">The adverb service, for telling a relative adverb from a pronoun.</param>
+        /// <param name="pronounService">The pronoun service, for telling a possessive relative from a plain one.</param>
         /// <param name="conjunctionService">The conjunction service, for how a joined clause attaches.</param>
         public CzechRoleResolver(
             CzechFrameSelector frameSelector,
             ICzechPrepositionService prepositionService,
             ICzechAdverbService adverbService,
+            ICzechPronounService pronounService,
             ICzechConjunctionService conjunctionService)
         {
             this.frameSelector = frameSelector;
             this.prepositionService = prepositionService;
             this.adverbService = adverbService;
+            this.pronounService = pronounService;
             this.conjunctionService = conjunctionService;
         }
 
@@ -329,10 +333,15 @@ namespace Grammar.Czech.Services
         };
 
         // A relative adverb is not an argument of its clause — "dům, kde bydlím" has its own subject —
-        // so it reserves nothing. A pronoun does, and which slot it holds is what its case says against
-        // the frame: the nominative one is the subject, the accusative one the patient.
+        // so it reserves nothing. Neither is a possessive relative pronoun: "žena, jejíž dům jsem viděl"
+        // has the house filling the slot and the pronoun only modifying it. A plain relative pronoun does
+        // hold one, and which slot it is is what its case says against the frame: the nominative one is
+        // the subject, the accusative one the patient.
         private Case? RelativizedCase(PlannedRelative relative) =>
-            adverbService.IsRelative(relative.Relativizer) ? null : relative.Case;
+            pronounService.IsPossessiveRelative(relative.Relativizer)
+                || adverbService.IsRelative(relative.Relativizer)
+                ? null
+                : relative.Case;
 
         private static FgdFunctor? Relativized(ValencyFrame frame, Case relativized) => frame.Slots
             .Where(slot => slot.Realizations.Any(realization =>

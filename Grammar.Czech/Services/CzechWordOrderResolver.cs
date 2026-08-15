@@ -196,6 +196,17 @@ namespace Grammar.Czech.Services
                 return $"{relative.Relativizer} {renderEmbedded(relative.Clause, true)},";
             }
 
+            // Přivlastňovací vztažné zájmeno je uvnitř věty jako přívlastek svého jména, kam ho postavil
+            // plánovač, takže se tady nevypisuje podruhé. Z antecedentu si nebere tvar, ale samo slovo:
+            // rod a číslo řídícího jména rozhodují, které ze tří to je, a to je jediné, co jde zkontrolovat.
+            // První pozici drží ten člen, ne zájmeno samo, takže ji klauze obsazuje ze svého.
+            if (pronounService.IsPossessiveRelative(relative.Relativizer))
+            {
+                ValidatePossessive(relative.Relativizer, antecedent);
+
+                return $"{renderEmbedded(relative.Clause, false)},";
+            }
+
             // Mezi čteními, ne to primární: 'co' a 'kdo' jsou v datech vedené jako tázací, protože se tak
             // čtou nejčastěji, ale 'člověk, co přišel' je táž slovní jednotka v jiné konstrukci. Kterou
             // z nich stavíme, ví tohle místo, ne heslář.
@@ -216,6 +227,25 @@ namespace Grammar.Czech.Services
                 : relative.Clause;
 
             return $"{pronoun} {renderEmbedded(clause, true)},";
+        }
+
+        // Které ze tří přivlastňovacích vztažných zájmen se použije, říká řídící jméno: mužský a střední
+        // rod v jednotném čísle jehož, ženský jejíž, množné číslo jejichž. Není to volba stylu — 'žena,
+        // jehož dům' je chyba, a chyba, kterou by nic dalšího nezachytilo, protože všechny tři jsou platná
+        // slova a věta by se postavila.
+        private static void ValidatePossessive(string relativizer, CzechWordRequest antecedent)
+        {
+            var expected = antecedent.Number == Number.Plural
+                ? "jejichž"
+                : antecedent.Gender == Gender.Feminine ? "jejíž" : "jehož";
+
+            if (!string.Equals(relativizer, expected, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"Přivlastňovací vztažné zájmeno se k '{antecedent.Lemma}' neshoduje: čekalo se "
+                    + $"'{expected}', zadané je '{relativizer}'. Rod a číslo bere z řídícího jména, "
+                    + "pád z vlastněného.");
+            }
         }
 
         // A nominative pronoun is the subject of its clause, so the predicate agrees with the antecedent

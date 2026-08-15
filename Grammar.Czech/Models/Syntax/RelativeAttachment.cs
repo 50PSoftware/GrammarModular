@@ -33,6 +33,24 @@ namespace Grammar.Czech.Models.Syntax
         public Case Case { get; init; } = Case.Nominative;
 
         /// <summary>
+        /// Gets the functor of the participant the relativizer possesses, or <see langword="null"/> when
+        /// the relativizer stands for a participant itself.
+        /// </summary>
+        /// <remarks>
+        /// Set for jehož, jejíž and jejichž, which are attributes rather than arguments: in <em>žena,
+        /// jejíž dům jsem viděl</em> the pronoun modifies <em>dům</em> and holds no slot of its own, so
+        /// <see cref="Case"/> says nothing about it.
+        /// <para>
+        /// These agree in two directions at once, which is what makes them different from every other
+        /// relativizer. Gender and number come from the antecedent and decide <em>which</em> of the three
+        /// words it is — masculine or neuter singular jehož, feminine singular jejíž, plural jejichž —
+        /// while gender, number and case of the form itself come from the noun possessed. jejíž is the
+        /// only one where that second agreement shows: the other two are indeclinable.
+        /// </para>
+        /// </remarks>
+        public FgdFunctor? Possessed { get; init; }
+
+        /// <summary>
         /// Gets the relative clause itself, which may be a sentence in its own right.
         /// </summary>
         /// <remarks>

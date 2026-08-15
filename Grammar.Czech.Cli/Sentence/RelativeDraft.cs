@@ -70,6 +70,17 @@ namespace Grammar.Czech.Cli.Sentence
         public bool CaseIsDerived { get; set; }
 
         /// <summary>
+        /// Gets or sets the functor of the participant the relativizer possesses, or
+        /// <see langword="null"/> when the relativizer stands for a participant itself.
+        /// </summary>
+        /// <remarks>
+        /// Set for jehož, jejíž and jejichž, and only once the roles are in: which participant it
+        /// possesses is a fact about word order — the noun written right after it — but the plan names
+        /// participants by functor, and that is not known until the tree has been resolved.
+        /// </remarks>
+        public FgdFunctor? Possessed { get; set; }
+
+        /// <summary>
         /// Gets the clause itself, which is a sentence in its own right.
         /// </summary>
         public SentenceDraft Clause { get; }

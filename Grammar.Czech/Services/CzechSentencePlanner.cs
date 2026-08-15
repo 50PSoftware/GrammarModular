@@ -257,8 +257,59 @@ namespace Grammar.Czech.Services
                 {
                     Relativizer = relative.Relativizer,
                     Case = relative.Case,
-                    Clause = Plan(relative.Clause),
+                    Possessed = relative.Possessed,
+                    Clause = Plan(WithPossessive(relative)),
                 };
+
+        // Přivlastňovací vztažné zájmeno není argument své věty, ale shodný přívlastek jednoho z nich, tak
+        // se jím i stane: 'jejíž' se ke svému jménu chová jako 'mladý' a shodu s ním obstará táž cesta,
+        // která ji obstarává každému jinému přívlastku. Zbývá jen pořadí — celý ten člen otevírá vztažnou
+        // větu, protože ji otevírá zájmeno v něm — a to se řekne tématem a přesunutím na začátek.
+        private SentencePlan WithPossessive(PlannedRelative relative)
+        {
+            if (!pronounService.IsPossessiveRelative(relative.Relativizer))
+            {
+                return relative.Clause;
+            }
+
+            // Které jméno přivlastňuje, z toho slova nevyplývá a uhodnout to nejde: 'žena, jejíž dům
+            // student koupil' i '…, jejíhož studenta dům viděl' jsou obě věty. Musí to říct volající.
+            if (relative.Possessed is not { } possessed)
+            {
+                throw new InvalidOperationException(
+                    $"Přivlastňovací vztažné zájmeno '{relative.Relativizer}' neříká, který participant "
+                    + $"přivlastňuje. Doplň {nameof(PlannedRelative.Possessed)}.");
+            }
+
+            var participants = relative.Clause.Participants.ToList();
+            var index = participants.FindIndex(participant => participant.Functor == possessed);
+
+            if (index < 0)
+            {
+                throw new InvalidOperationException(
+                    $"Vztažné zájmeno '{relative.Relativizer}' přivlastňuje {possessed}, ale vztažná věta "
+                    + $"takový participant nemá.");
+            }
+
+            var owner = participants[index];
+
+            participants.RemoveAt(index);
+            participants.Insert(0, owner with
+            {
+                Modifiers =
+                [
+                    new CzechWordRequest
+                    {
+                        Lemma = relative.Relativizer,
+                        WordCategory = WordCategory.Pronoun,
+                    },
+                    .. owner.Modifiers,
+                ],
+                Status = InformationStatus.Given,
+            });
+
+            return relative.Clause with { Participants = participants };
+        }
 
         private CzechClause PlanClause(SentencePlan plan)
         {

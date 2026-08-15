@@ -44,6 +44,23 @@ namespace Grammar.Czech.Interfaces
         IReadOnlyList<PronounData> GetReadings(string baseForm);
 
         /// <summary>
+        /// Determines whether the lemma is a relative pronoun that possesses rather than stands for a
+        /// participant.
+        /// </summary>
+        /// <param name="baseForm">The dictionary form to resolve or analyze.</param>
+        /// <returns>
+        /// <see langword="true"/> for jehož, jejíž and jejichž; otherwise, <see langword="false"/>.
+        /// </returns>
+        /// <remarks>
+        /// Read off the readings rather than listed in code: these three carry both a relative and a
+        /// possessive reading, and no other pronoun carries that pair. It is the question three separate
+        /// stages have to ask — the role resolver reserves no slot for one, the planner makes it an
+        /// attribute of the noun possessed, and the word-order resolver does not render it a second time
+        /// — so it is asked once, here.
+        /// </remarks>
+        bool IsPossessiveRelative(string baseForm);
+
+        /// <summary>
         /// Gets the inflection class used to choose pronoun form lookup.
         /// </summary>
         /// <param name="lemma">The dictionary form to resolve or analyze.</param>

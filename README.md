@@ -90,7 +90,9 @@ The data covers personal, possessive, reflexive, demonstrative, interrogative, r
 
 Some pronouns are two words wearing one spelling, and the readings differ in the type itself: *co* asks in *co čteš?* and introduces a relative clause in *člověk, co přišel*, and so do *kdo* and *jaký*. The entry in the file is the primary reading and the alternatives hang off it in `alsoReads`, exactly as for conjunctions. `GetPronounType` returns the primary reading and is unchanged; a caller that knows which construction it is building asks `GetReadings` instead, which is what `CzechWordOrderResolver` does when it renders a relative clause. A reading states only its type, because it is the same word declined the same way; form lookup always goes through the primary entry.
 
-There are three possessive relative pronouns and they are not three of the same case: IJP has *jehož* and *jejichž* as indeclinable, while *jejíž* declines like *její* on the *jarní* pattern, with the suffix after the ending (*jejíhož*, *jejímuž*, *jejíchž*). They agree in two directions at once — gender and number from the antecedent, case from the noun possessed — and `CzechWordOrderResolver` cannot do that yet: it looks the form up by the antecedent alone. The data for them exists; rendering a relative clause with one does not.
+There are three possessive relative pronouns and they are not three of the same case: IJP has *jehož* and *jejichž* as indeclinable, while *jejíž* declines like *její* on the *jarní* pattern, with the suffix after the ending (*jejíhož*, *jejímuž*, *jejíchž*). They agree in two directions at once, and each direction decides something different: the antecedent's gender and number pick **which of the three words** it is — masculine or neuter singular *jehož*, feminine *jejíž*, plural *jejichž* — while the form itself follows the **noun possessed**, because the pronoun is its agreeing attribute.
+
+That is how it is modelled: as an attribute. `PlannedRelative.Possessed` names by functor the participant of the relative clause the pronoun belongs to, and the planner puts it into that participant's `Modifiers`. From there the same agreement handles it that handles *mladý* in *mladý student*, and `CzechRoleResolver` reserves no slot for it — the slot is held by the noun possessed, which takes its case from its own role. The whole constituent opens the relative clause, because the pronoun in it does, so it becomes the theme and the clitics follow it: *žena, jejíhož studenta jsem viděl*. `CzechWordOrderResolver` checks the choice of word against the antecedent and refuses a mismatch: all three are valid words, so a wrong choice would otherwise reach the surface as a well-formed sentence about something else.
 
 The post-preposition variant is available through `CzechWordRequest.IsAfterPreposition`.
 
@@ -998,6 +1000,16 @@ gramatika veta ucitel videt student ktery cist kniha --vztazna 1=1
 
 gramatika veta ucitel videt student ktery cist kniha --relativizator 3=jenz
 # Učitel vidí studenta, jenž čte knihu.
+```
+
+A possessive relativizer possesses the noun written right after it and holds no case of its own — the noun possessed takes one from its own role. Which of the three words to write follows from the antecedent, and writing another is an error rather than a variant:
+
+```bash
+gramatika veta zena psat dopis jejiz student videt ucitel --vztazna 1=1 --role student=PAT
+# Žena, jejíhož studenta vidí učitel, píše dopis.
+
+gramatika veta student psat dopis jejiz kniha videt ucitel --vztazna 1=1
+# K 'student' patří 'jehož', ne 'jejíž' — které ze tří to je, rozhoduje rod a číslo řídícího jména.
 ```
 
 Interrogative *který* is told from the relative one by position: the relative stands after the noun it modifies and the interrogative before it, so `ktery student cist kniha` opens no relative clause. Words whose relative reading is only the second one — *proč* and *odkud* are just as much adverbs — additionally require a verb after them, so that `student cist kniha proc` stays a question about the reason.

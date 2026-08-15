@@ -162,6 +162,22 @@ namespace Grammar.Czech.Services
                 : [];
 
         /// <summary>
+        /// Determines whether the lemma is a relative pronoun that possesses rather than stands for a
+        /// participant.
+        /// </summary>
+        /// <param name="lemma">The dictionary form to resolve or analyze.</param>
+        /// <returns>
+        /// <see langword="true"/> for jehož, jejíž and jejichž; otherwise, <see langword="false"/>.
+        /// </returns>
+        public bool IsPossessiveRelative(string lemma)
+        {
+            var readings = GetReadings(lemma);
+
+            return readings.Any(reading => reading.Type == PronounType.Relative)
+                && readings.Any(reading => reading.Type == PronounType.Possessive);
+        }
+
+        /// <summary>
         /// Gets the inflection class used to choose pronoun form lookup.
         /// </summary>
         /// <param name="lemma">The dictionary form to resolve or analyze.</param>

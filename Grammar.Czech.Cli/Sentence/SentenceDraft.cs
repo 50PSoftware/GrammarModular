@@ -85,7 +85,20 @@ namespace Grammar.Czech.Cli.Sentence
         /// </summary>
         /// <returns>The assembled plan.</returns>
         /// <exception cref="CliException">Thrown when a clause has no plan or no conjunction.</exception>
-        public SentencePlan Assemble() => Assemble(Main);
+        public SentencePlan Assemble() => Assemble(Main, Stated);
+
+        /// <summary>
+        /// Assembles the tree again out of what the resolver already worked out.
+        /// </summary>
+        /// <returns>The assembled plan.</returns>
+        /// <exception cref="CliException">Thrown when a clause has no plan or no conjunction.</exception>
+        /// <remarks>
+        /// The same tree the second time, and it exists because one thing about a relative clause cannot
+        /// be known until the first pass is over: a possessive relativizer names the participant it
+        /// possesses by functor, and the functor is what resolving works out. Rebuilding rather than
+        /// patching keeps that one late value on the same path as everything else.
+        /// </remarks>
+        public SentencePlan Reassemble() => Assemble(Main, Resolved);
 
         /// <summary>
         /// Hands each clause back its own part of the resolved tree.
@@ -114,9 +127,9 @@ namespace Grammar.Czech.Cli.Sentence
             new[] { clause }.Concat(
                 Relatives(clause).SelectMany(pair => pair.Relative.Clause.AllClauses));
 
-        private SentencePlan Assemble(ClauseDraft clause)
+        private SentencePlan Assemble(ClauseDraft clause, Func<ClauseDraft, SentencePlan> source)
         {
-            var plan = Stated(clause);
+            var plan = source(clause);
             var participants = plan.Participants.ToList();
 
             foreach (var (index, relative) in Relatives(clause))
@@ -127,10 +140,11 @@ namespace Grammar.Czech.Cli.Sentence
                     {
                         Relativizer = relative.Relativizer,
 
-                        // Vztažné příslovce pád nemá; jádro ho u něj ignoruje, tak ať je to nominativ
-                        // a ne vymyšlená hodnota, na které by mohlo něco stavět.
+                        // Vztažné příslovce ani přivlastňovací zájmeno pád nemá; jádro ho u nich ignoruje,
+                        // tak ať je to nominativ a ne vymyšlená hodnota, na které by mohlo něco stavět.
                         Case = relative.Case ?? Case.Nominative,
-                        Clause = relative.Clause.Assemble(),
+                        Possessed = relative.Possessed,
+                        Clause = relative.Clause.Assemble(relative.Clause.Main, source),
                     },
                 };
             }
@@ -143,7 +157,7 @@ namespace Grammar.Czech.Cli.Sentence
                     .. Children(clause).Select(child => new ClauseLink(
                         child.Conjunction ?? throw new CliException(
                             $"Klauze se slovesem '{child.PredicateLemma}' nemá spojku, kterou by se připojila."),
-                        Assemble(child))),
+                        Assemble(child, source))),
                 ],
             };
         }
@@ -173,6 +187,10 @@ namespace Grammar.Czech.Cli.Sentence
         private static SentencePlan Stated(ClauseDraft clause) => clause.Stated
             ?? throw new CliException(
                 $"Klauze se slovesem '{clause.PredicateLemma}' nemá rozebraný plán.");
+
+        private static SentencePlan Resolved(ClauseDraft clause) => clause.Resolved
+            ?? throw new CliException(
+                $"Klauze se slovesem '{clause.PredicateLemma}' neprošla rozdělením rolí.");
 
         private IEnumerable<ClauseDraft> Children(ClauseDraft parent) =>
             Clauses.Where(clause => clause.ParentOrdinal == parent.Ordinal);

@@ -33,6 +33,19 @@ namespace Grammar.Czech.Models.Syntax
         public Case Case { get; init; } = Case.Nominative;
 
         /// <summary>
+        /// Gets the functor of the participant the relativizer possesses, or <see langword="null"/> when
+        /// the relativizer stands for a participant itself.
+        /// </summary>
+        /// <remarks>
+        /// The plan-level counterpart of <see cref="RelativeAttachment.Possessed"/>. Naming the participant
+        /// by functor rather than by position keeps it addressable the way everything else in a plan is,
+        /// and the participant it names keeps its own role and its own case: the pronoun is its attribute,
+        /// not its replacement. <see cref="Case"/> is therefore unused when this is set, and
+        /// <see cref="Services.CzechRoleResolver"/> reserves nothing.
+        /// </remarks>
+        public FgdFunctor? Possessed { get; init; }
+
+        /// <summary>
         /// Gets the plan of the relative clause.
         /// </summary>
         public SentencePlan Clause { get; init; } = new();

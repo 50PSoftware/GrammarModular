@@ -198,7 +198,16 @@ namespace Grammar.Czech.Cli.Sentence
             var resolved = _roles.Resolve(sentence.Assemble());
 
             sentence.TakeResolved(resolved);
-            sentence.Distribute(_planner.Complete(resolved));
+
+            // Až teď: přivlastňovací zájmeno pojmenovává vlastněný člen funktorem a ten se dozvíme
+            // odsud. Strom se proto skládá podruhé, aby ta jedna pozdní hodnota šla toutéž cestou
+            // jako všechno ostatní, místo aby se dodatečně vpisovala do hotového plánu.
+            foreach (var (_, relative) in sentence.AllRelatives)
+            {
+                SettlePossessed(relative);
+            }
+
+            sentence.Distribute(_planner.Complete(sentence.Reassemble()));
 
             foreach (var clause in sentence.AllClauses)
             {
@@ -854,7 +863,10 @@ namespace Grammar.Czech.Cli.Sentence
         // neodvozuje. U zájmena rozhoduje zadané, a kde nic zadané není, rámec slovesa vztažné věty.
         private void SettleRelativeCase(RelativeDraft relative, DraftOverrides overrides)
         {
-            if (_adverbService.IsRelative(relative.Relativizer))
+            // Přivlastňovací zájmeno není argument své věty, ale přívlastek jednoho z nich, takže si
+            // žádný pád nedrží — ten má vlastněné jméno a bere si ho ze své vlastní role.
+            if (_adverbService.IsRelative(relative.Relativizer)
+                || _pronouns.IsPossessiveRelative(relative.Relativizer))
             {
                 return;
             }
@@ -876,6 +888,26 @@ namespace Grammar.Czech.Cli.Sentence
         // lepší než nechat stavbu věty spadnout na chybějícím tvaru a mluvit přitom o pádu.
         private void CheckAgreement(ConstituentDraft host, RelativeDraft relative)
         {
+            // U přivlastňovacího zájmena neurčuje řídící jméno tvar, ale samo slovo: mužský a střední
+            // rod v jednotném čísle jehož, ženský jejíž, množné číslo jejichž. Všechna tři jsou platná
+            // slova, takže špatná volba by prošla až na povrch jako bezvadná věta o něčem jiném.
+            if (_pronouns.IsPossessiveRelative(relative.Relativizer))
+            {
+                var expected = host.Word.Number == Number.Plural
+                    ? "jejichž"
+                    : host.Word.Gender == Gender.Feminine ? "jejíž" : "jehož";
+
+                if (!string.Equals(relative.Relativizer, expected, StringComparison.Ordinal))
+                {
+                    throw new CliException(
+                        $"K '{host.Lemma}' (č. {host.Position}) patří '{expected}', ne "
+                        + $"'{relative.Relativizer}' — které ze tří to je, rozhoduje rod a číslo "
+                        + "řídícího jména.");
+                }
+
+                return;
+            }
+
             if (_adverbService.IsRelative(relative.Relativizer) || relative.Case is not { } kase)
             {
                 return;
@@ -891,6 +923,29 @@ namespace Grammar.Czech.Cli.Sentence
                     + $"pro {Terms.Name(kase)} a jeho rod pro něj tvar není. "
                     + "Zkus 'který' nebo 'jenž', které se skloňují podle řídícího jména.");
             }
+        }
+
+        // Přivlastňuje jméno hned za sebou — 'žena, jejíž dům vidím' — což je ve vstupu první člen věty,
+        // kterou to zájmeno otevřelo. Plán ho pojmenovává funktorem, ne pořadím, takže se to dá říct až
+        // po rozdělení rolí.
+        private void SettlePossessed(RelativeDraft relative)
+        {
+            if (!_pronouns.IsPossessiveRelative(relative.Relativizer))
+            {
+                return;
+            }
+
+            var main = relative.Clause.Main;
+            var owner = main.Constituents.FirstOrDefault()
+                ?? throw new CliException(
+                    $"Vztažné zájmeno '{relative.Relativizer}' přivlastňuje, ale za ním žádné jméno "
+                    + "nestojí. Napiš, čí co to je: 'žena jejíž dům vidět'.");
+
+            // Z rozebraného plánu, ne z členu: role se do členů vrací až v Absorb, a to je o krok dál.
+            relative.Possessed = main.Resolved?.Participants.FirstOrDefault()?.Functor
+                ?? throw new CliException(
+                    $"U slova '{owner.Lemma}' (č. {owner.Position}) není jasná role, a bez ní nejde "
+                    + $"říct, co '{relative.Relativizer}' přivlastňuje. Doplň ji přepínačem --role.");
         }
 
         // Zájmeno si bere první slot, který mu rámec nechá volný — zrcadlí to výběr slotů
