@@ -13,7 +13,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>gramatika</ToolCommandName>
     <PackageId>50PSoftware.GrammarModular.Cli</PackageId>
-    <Version>1.0.0-preview.4</Version>
+    <Version>1.0.0-preview.5</Version>
     <Authors>Vojtěch Pchálek</Authors>
     <Company>50PSoftware</Company>
     <Description>Klientská aplikace nad Grammar Modular — ze zadaných lemmat poskládá českou větu.</Description>
