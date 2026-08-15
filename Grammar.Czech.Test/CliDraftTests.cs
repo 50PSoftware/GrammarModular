@@ -1304,5 +1304,93 @@ namespace Grammar.Czech.Test
 
             StringAssert.Contains(exception.Message, "neshodne");
         }
+
+        /// <summary>
+        /// A relative clause can be moved onto a constituent further back than the nearest one.
+        /// </summary>
+        [TestMethod]
+        public void RelativeClauseCanBeMovedOntoAnotherConstituent()
+        {
+            var overrides = new DraftOverrides();
+            overrides.Hang(1, 1);
+
+            var sentence = Whole(overrides, "učitel", "vidět", "student", "který", "číst", "kniha");
+
+            Assert.AreEqual("učitel", sentence.AllRelatives.Single().Host.Lemma);
+            Assert.AreEqual(
+                "Učitel, který čte knihu, vidí studenta.",
+                Sentence(overrides, "učitel", "vidět", "student", "který", "číst", "kniha"));
+        }
+
+        /// <summary>
+        /// The word a relative clause opens with can be stated rather than retyped.
+        /// </summary>
+        [TestMethod]
+        public void RelativizerCanBeStated()
+        {
+            var overrides = new DraftOverrides();
+            overrides.Introduce(3, "jenž");
+
+            Assert.AreEqual(
+                "Učitel vidí studenta, jenž čte knihu.",
+                Sentence(overrides, "učitel", "vidět", "student", "který", "číst", "kniha"));
+        }
+
+        /// <summary>
+        /// Verifies what the relative-clause switches are refused for.
+        /// </summary>
+        [TestMethod]
+        public void RelativeSwitchesAreRefusedWhenTheyNameNothing()
+        {
+            var missing = new DraftOverrides();
+            missing.Hang(1, 1);
+
+            StringAssert.Contains(
+                Assert.ThrowsException<CliException>(() => Whole(missing, "učitel", "psát", "dopis")).Message,
+                "žádná není");
+
+            var elsewhere = new DraftOverrides();
+            elsewhere.Introduce(6, "jenž");
+
+            StringAssert.Contains(
+                Assert.ThrowsException<CliException>(
+                    () => Whole(elsewhere, "učitel", "vidět", "student", "který", "číst", "kniha")).Message,
+                "nevisí");
+        }
+
+        /// <summary>
+        /// The review shows the relative clause, because confirming a reading that is not on the table is
+        /// what the table exists to prevent.
+        /// </summary>
+        [TestMethod]
+        public void ReviewShowsTheRelativeClause()
+        {
+            var rendered = services.GetRequiredService<DraftView>().Render(
+                Whole(null, "učitel", "vidět", "student", "který", "číst", "kniha"));
+
+            StringAssert.Contains(rendered, "Vztažná 1");
+            StringAssert.Contains(rendered, "který");
+            StringAssert.Contains(rendered, "student");
+
+            // Odvozený pád se značí stejně jako v tabulce členů, protože je to totéž: údaj, který
+            // v zadání nestojí a rozhoduje o smyslu.
+            StringAssert.Contains(rendered, "nominativ (rámec)");
+
+            // A klauze uvnitř je na výpisu taky, i když v Clauses není.
+            StringAssert.Contains(rendered, "číst");
+        }
+
+        /// <summary>
+        /// The terms help has a topic for relative clauses, since the switches point at one.
+        /// </summary>
+        [TestMethod]
+        public void HelpExplainsRelativeClauses()
+        {
+            var topic = HelpTopics.Find("vztazna");
+
+            Assert.IsNotNull(topic);
+            StringAssert.Contains(topic, "--vztazna");
+            StringAssert.Contains(topic, "--relativizator");
+        }
     }
 }

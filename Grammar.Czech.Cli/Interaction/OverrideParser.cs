@@ -42,6 +42,45 @@ namespace Grammar.Czech.Cli.Interaction
             overrides.Attach(Number(clause), Number(parent));
         }
 
+        /// <summary>
+        /// Applies a relative-clause switch, which moves a relative clause onto another constituent.
+        /// </summary>
+        /// <param name="overrides">The record to write into.</param>
+        /// <param name="assignment">The argument, as <c>člen=vztažná</c>.</param>
+        /// <exception cref="CliException">Thrown when the argument cannot be read.</exception>
+        /// <remarks>
+        /// The number before the equals sign is a constituent and the one after it a relative clause,
+        /// because what moves is the clause and what it moves onto is the constituent — the same shape
+        /// as <c>--pripojit</c>, with the thing that receives named first.
+        /// </remarks>
+        public static void AssignRelative(DraftOverrides overrides, string assignment)
+        {
+            var (member, relative) = Split(assignment,
+                "Přepínač --vztazna se zadává jako člen=vztažná věta, třeba --vztazna 4=2.");
+
+            overrides.Hang(Number(member), Number(relative));
+        }
+
+        /// <summary>
+        /// Applies a relativizer switch, which states the word a relative clause opens with.
+        /// </summary>
+        /// <param name="overrides">The record to write into.</param>
+        /// <param name="assignment">The argument, as <c>člen=lemma</c>.</param>
+        /// <exception cref="CliException">Thrown when the argument cannot be read.</exception>
+        public static void AssignRelativizer(DraftOverrides overrides, string assignment)
+        {
+            var (member, relativizer) = Split(assignment,
+                "Přepínač --relativizator se zadává jako člen=slovo, třeba --relativizator 4=jenž.");
+
+            if (string.IsNullOrWhiteSpace(relativizer))
+            {
+                throw new CliException(
+                    "Přepínač --relativizator potřebuje slovo, kterým se vztažná věta uvozuje.");
+            }
+
+            overrides.Introduce(Number(member), relativizer.Trim());
+        }
+
         private static int Number(string text) => int.TryParse(text, out var value) && value > 0
             ? value
             : throw new CliException($"'{text}' není číslo klauze. Klauze se číslují od jedné.");
@@ -110,6 +149,27 @@ namespace Grammar.Czech.Cli.Interaction
                     var (clause, parent) = Split(pair, $"'{pair}' není dvojice klauze=klauze.");
 
                     overrides.Attach(Number(clause), Number(parent));
+                }
+
+                return;
+            }
+
+            // Vztažná věta se adresuje stejně jako klauze — číslem, ne slovem — jenže dvěma čísly
+            // různého druhu: vlevo člen, na který se má pověsit, vpravo ona sama.
+            if (parts[0] is "v" or "V" or "vztazna" or "vztažná")
+            {
+                foreach (var pair in parts.Skip(1))
+                {
+                    var (member, relative) = Split(pair, $"'{pair}' není dvojice člen=vztažná věta.");
+
+                    if (int.TryParse(relative, out _))
+                    {
+                        overrides.Hang(Number(member), Number(relative));
+
+                        continue;
+                    }
+
+                    overrides.Introduce(Number(member), relative.Trim());
                 }
 
                 return;

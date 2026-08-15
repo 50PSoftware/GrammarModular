@@ -156,9 +156,13 @@ namespace Grammar.Czech.Cli.Sentence
                 if (segment.Relativizer is { } relativizer)
                 {
                     var inner = new SentenceDraft();
+                    var host = Host(sentence, previous, relativizer, overrides, ++relativeOrdinal);
 
-                    Host(previous, relativizer, overrides).Relative = new RelativeDraft(
-                        ++relativeOrdinal, relativizer.Lemma, relativizer.Position, inner);
+                    host.Relative = new RelativeDraft(
+                        relativeOrdinal,
+                        overrides.Relativizers.GetValueOrDefault(host.Position, relativizer.Lemma),
+                        relativizer.Position,
+                        inner);
 
                     current = inner;
                 }
@@ -176,7 +180,7 @@ namespace Grammar.Czech.Cli.Sentence
                 previous = clause;
             }
 
-            ValidateAttachments(sentence, overrides, ordinal);
+            ValidateAttachments(sentence, overrides, ordinal, relativeOrdinal);
 
             // Pád vztažného zájmena musí být znám dřív, než se rozdají role: knihovna podle něj rezervuje
             // slot uvnitř vztažné věty, takže po rozdání by už neměl co ovlivnit.
@@ -305,10 +309,26 @@ namespace Grammar.Czech.Cli.Sentence
         }
 
         // Nezadáno visí vztažná věta na posledním členu klauze před ní — tak ji čte i člověk, protože
-        // vztažné zájmeno se váže k nejbližšímu předcházejícímu jménu. Výjimka se řekne '--vztazna'.
+        // vztažné zájmeno se váže k nejbližšímu předcházejícímu jménu. Výjimka se řekne '--vztazna',
+        // a ta smí ukázat na kterýkoli člen, který už ve větě stojí: rozvíjet jde jen to, co bylo
+        // řečeno dřív, jinak by zájmeno odkazovalo dopředu.
         private static ConstituentDraft Host(
-            ClauseDraft? previous, ResolvedWord relativizer, DraftOverrides overrides)
+            SentenceDraft sentence,
+            ClauseDraft? previous,
+            ResolvedWord relativizer,
+            DraftOverrides overrides,
+            int ordinal)
         {
+            if (overrides.Relatives.FirstOrDefault(entry => entry.Value == ordinal).Key is > 0 and var stated)
+            {
+                return sentence.AllClauses
+                    .SelectMany(clause => clause.Constituents)
+                    .FirstOrDefault(constituent => constituent.Position == stated)
+                    ?? throw new CliException(
+                        $"Vztažná věta {ordinal} se má pověsit na člen {stated}, ale takový člen před ní "
+                        + "není. Číslo je pořadí slova, jak jsi ho zadal.");
+            }
+
             if (previous is null || previous.Constituents.Count == 0)
             {
                 throw new CliException(
@@ -319,8 +339,25 @@ namespace Grammar.Czech.Cli.Sentence
             return previous.Constituents[^1];
         }
 
-        private static void ValidateAttachments(SentenceDraft sentence, DraftOverrides overrides, int clauses)
+        private static void ValidateAttachments(
+            SentenceDraft sentence, DraftOverrides overrides, int clauses, int relatives)
         {
+            foreach (var (member, relative) in overrides.Relatives.Where(entry => entry.Value > relatives))
+            {
+                throw new CliException(relatives == 0
+                    ? $"Přepínač --vztazna {member}={relative} mluví o vztažné větě, ale ve větě žádná "
+                        + "není. Vztažnou větu uvozuje 'který', 'jenž' nebo vztažné příslovce."
+                    : $"Vztažná věta {relative} ve větě není; je jich {relatives}.");
+            }
+
+            foreach (var member in overrides.Relativizers.Keys
+                .Where(member => sentence.AllRelatives.All(pair => pair.Host.Position != member)))
+            {
+                throw new CliException(
+                    $"Přepínač --relativizator {member} mluví o členu, na kterém žádná vztažná věta "
+                    + "nevisí.");
+            }
+
             foreach (var (clause, parent) in overrides.Attachments)
             {
                 if (clause > clauses || parent > clauses)

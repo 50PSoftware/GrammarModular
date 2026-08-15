@@ -27,6 +27,7 @@ namespace Grammar.Czech.Cli.Interaction
             ["ramec"] = Frames,
             ["odhad"] = Guesses,
             ["druh"] = Classes,
+            ["vztazna"] = Relatives,
         };
 
         /// <summary>
@@ -41,6 +42,55 @@ namespace Grammar.Czech.Cli.Interaction
         /// Lists the topic names, for the short help to point at.
         /// </summary>
         public static string Names => string.Join(", ", All.Keys);
+
+        private const string Relatives = """
+
+            VZTAŽNÁ VĚTA — jak ji zadat a co si nástroj domyslí
+
+            Vztažnou větu otevře vztažné slovo mezi lemmaty. Žádný přepínač k tomu není potřeba:
+            'který' a 'jenž' vedou pravidla jako vztažná zájmena, 'kde', 'kdy' a 'kam' jako vztažná
+            příslovce, a nástroj se jich ptá stejně, jako se ptá na spojky.
+
+              učitel vidět student který číst kniha
+              → Učitel vidí studenta, který čte knihu.
+
+            Zadává se lemma, ne tvar: napiš 'který' i tam, kde ve větě vyjde 'která' nebo 'kterou'.
+            Rod, číslo a životnost si zájmeno vezme ze jména, které rozvíjí.
+
+            NA CO VISÍ. Bez přepínače na posledním jméně klauze před ní — tak ji čte i člověk, protože
+            zájmeno sahá k nejbližšímu předcházejícímu jménu. Když patří jinam, řekni to:
+
+              --vztazna 4=2      vztažnou větu č. 2 pověsit na člen č. 4
+
+            Čísla jsou ta z tabulky: vlevo pořadí slova, vpravo pořadí vztažné věty.
+
+            PÁD ZÁJMENA. To jediné, co si zájmeno nebere z řídícího jména — drží si roli ve své vlastní
+            větě. Nástroj mu dá první slot, který rámec jejího slovesa nechá volný, a v přehledu ho
+            značí '(rámec)' jako každý jiný odvozený pád. Odhad to je, ne výpočet:
+
+              učitel vidět kniha který student číst
+              → Učitel vidí knihu, která čte studenta.        ← zájmeno vzalo konatele
+              --pad který=akuzativ
+              → Učitel vidí knihu, kterou čte student.
+
+            Rozhodnout to za tebe nejde: 'kniha, kterou student čte' a 'kniha, která čte studenta' jsou
+            obě věty a liší se významem, ne stavbou. Proto se pád ukazuje a proto jde přepsat.
+
+            Vztažné příslovce pád nemá — je neohebné a argumentem své věty není, takže se přes ně
+            s řídícím jménem neshoduje nic: 'dům, kde bydlím'.
+
+            CO SE DÁ DOVNITŘ. Vztažná věta je věta jako každá jiná, takže smí souřadit i nést vedlejší
+            větu. Všechno, co stojí za ní, do ní patří — stejně jako se klauze připojuje k té
+            bezprostředně předchozí:
+
+              učitel vidět student který číst kniha a psát dopis
+              → Učitel vidí studenta, který čte knihu a dopis píše.
+
+            ČÍM SE UVOZUJE. Napsat rovnou 'jenž' místo 'který' stačí. Přepnout to jde i dodatečně:
+
+              --relativizator 4=jenž
+
+            """;
 
         private const string Classes = """
 

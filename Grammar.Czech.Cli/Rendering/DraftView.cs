@@ -36,9 +36,19 @@ namespace Grammar.Czech.Cli.Rendering
         {
             var text = new StringBuilder();
 
-            foreach (var clause in sentence.Clauses)
+            // Vztažná věta v přehledu být musí. Bez toho se potvrzuje něco, co není vidět, a to je proti
+            // smyslu téhle tabulky — je to jediné místo, kde se špatné čtení pozná dřív, než z něj
+            // vznikne bezvadná věta o něčem jiném.
+            var openers = new Dictionary<ClauseDraft, (ConstituentDraft Host, RelativeDraft Relative)>();
+
+            foreach (var pair in sentence.AllRelatives)
             {
-                text.AppendLine(Render(clause));
+                openers[pair.Relative.Clause.Main] = pair;
+            }
+
+            foreach (var clause in sentence.AllClauses)
+            {
+                text.AppendLine(Render(clause, openers.TryGetValue(clause, out var opener) ? opener : null));
                 text.AppendLine();
             }
 
@@ -59,10 +69,23 @@ namespace Grammar.Czech.Cli.Rendering
         /// Renders one clause: the predicate, the constituents and the frame behind them.
         /// </summary>
         /// <param name="draft">The clause to render.</param>
+        /// <param name="opener">
+        /// The relative clause this one opens with the constituent it hangs off, or
+        /// <see langword="null"/> when the clause is not a relative one.
+        /// </param>
         /// <returns>The text to print.</returns>
-        public string Render(ClauseDraft draft)
+        public string Render(
+            ClauseDraft draft, (ConstituentDraft Host, RelativeDraft Relative)? opener = null)
         {
             var text = new StringBuilder();
+
+            if (opener is { } relative)
+            {
+                text.AppendLine(
+                    $"Vztažná {relative.Relative.Ordinal}  {relative.Relative.Relativizer} — "
+                    + $"rozvíjí '{relative.Host.Lemma}' (č. {relative.Host.Position})"
+                    + Relativized(relative.Relative));
+            }
 
             // Spojka se ukazuje u klauze, kterou připojuje, protože to je to, co z ní dělá vedlejší
             // nebo druhý souřadný člen — a uživatel ji zadal na tomhle místě. S ní i to, na čem ta
@@ -145,6 +168,15 @@ namespace Grammar.Czech.Cli.Rendering
 
             return string.Join(", ", parts);
         }
+
+        // Odvozený pád se značí, protože je to jediný údaj vztažné věty, který uživatel nezadal a přitom
+        // rozhoduje o smyslu: 'kniha, kterou student čte' proti 'kniha, která čte studenta'.
+        private static string Relativized(RelativeDraft relative) => relative.Case switch
+        {
+            null => string.Empty,
+            { } kase when relative.CaseIsDerived => $", {Terms.Name(kase)} (rámec)",
+            { } kase => $", {Terms.Name(kase)}",
+        };
 
         private string Table(ClauseDraft draft)
         {

@@ -84,8 +84,22 @@ namespace Grammar.Czech.Cli.Rendering
                     zivotne = constituent.Word.IsAnimate,
                     privlastky = constituent.Modifiers.Select(modifier => modifier.Lemma).ToList(),
                     zdroj = Source(constituent.Origin),
+
+                    // Vnořeně, ne vedle: vztažná věta patří členu, na kterém visí, a plochý seznam by
+                    // tu vazbu ztratil — právě ta je na ní to, co odlišuje 'kniha, kterou čte' od
+                    // druhé klauze věty.
+                    vztazna = constituent.Relative is null ? null : Describe(constituent.Relative),
                 }).ToList(),
             };
+
+        private static object Describe(RelativeDraft relative) => new
+        {
+            poradi = relative.Ordinal,
+            uvozuje = relative.Relativizer,
+            pad = relative.Case is { } kase ? Terms.Name(kase) : null,
+            pad_z_ramce = relative.CaseIsDerived,
+            klauze = relative.Clause.Clauses.Select(Describe).ToList(),
+        };
 
         private static string Source(MetadataOrigin origin) => origin switch
         {

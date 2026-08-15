@@ -54,6 +54,20 @@ namespace Grammar.Czech.Cli.Commands
                 AllowMultipleArgumentsPerToken = true,
             };
 
+            var relative = new Option<string[]>("--vztazna")
+            {
+                Description = "Na který člen visí vztažná věta: --vztazna 4=2. Bez toho na nejbližší jméno.",
+                Arity = ArgumentArity.OneOrMore,
+                AllowMultipleArgumentsPerToken = true,
+            };
+
+            var relativizer = new Option<string[]>("--relativizator")
+            {
+                Description = "Čím se vztažná věta uvozuje: --relativizator 4=jenž.",
+                Arity = ArgumentArity.OneOrMore,
+                AllowMultipleArgumentsPerToken = true,
+            };
+
             // Přepínače přísudku berou buď holou hodnotu pro celé souvětí, nebo 'klauze=hodnota' pro
             // jednu klauzi. Číslo tu znamená klauzi, ne slovo — přísudek se adresuje klauzí, protože
             // každá má právě jeden.
@@ -87,7 +101,8 @@ namespace Grammar.Czech.Cli.Commands
             {
                 lemmas,
                 role, status, kase, gender, number, pattern, animate, category, degree, preposition, modifier,
-                verb, attach, frame, tense, mood, voice, aspect, person, predicateNumber, reflexive,
+                verb, attach, relative, relativizer,
+                frame, tense, mood, voice, aspect, person, predicateNumber, reflexive,
                 negative, dropSubject, sentenceType, terminator, quiet, json,
             };
 
@@ -128,6 +143,16 @@ namespace Grammar.Czech.Cli.Commands
                 foreach (var assignment in parse.GetValue(attach) ?? [])
                 {
                     OverrideParser.AssignAttachment(overrides, assignment);
+                }
+
+                foreach (var assignment in parse.GetValue(relative) ?? [])
+                {
+                    OverrideParser.AssignRelative(overrides, assignment);
+                }
+
+                foreach (var assignment in parse.GetValue(relativizer) ?? [])
+                {
+                    OverrideParser.AssignRelativizer(overrides, assignment);
                 }
 
                 return Run(

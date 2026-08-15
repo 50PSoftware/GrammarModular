@@ -391,6 +391,8 @@ namespace Grammar.Czech.Cli.Interaction
               p podmet=vypustit      vypustit podmětové zájmeno: 'čtu' místo 'já čtu'
               p ramec=transfer       který význam slovesa se má vzít
               k 3=1                  na kterou klauzi se třetí věší
+              v 4=2                  na který člen se věší druhá vztažná věta
+              v 4=jenž               čím se ta vztažná věta uvozuje
 
             Co řekneš o přísudku a o větě, platí do konce sezení a použije se i na další věty —
             ':stav' to ukáže, ':zapomen' to zruší. Co řekneš o slovu, platí jen pro tu jednu větu:
@@ -407,7 +409,7 @@ namespace Grammar.Czech.Cli.Interaction
               :slova zapomen   zahodit je
               :konec      konec (nebo Ctrl+D)
 
-            Vysvětlení pojmů: ? role, ? cleneni, ? pad, ? ramec, ? odhad
+            Vysvětlení pojmů: ? role, ? cleneni, ? pad, ? ramec, ? odhad, ? vztazna
 
             """;
     }

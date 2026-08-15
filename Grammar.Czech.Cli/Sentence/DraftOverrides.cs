@@ -17,6 +17,8 @@ namespace Grammar.Czech.Cli.Sentence
         private readonly Dictionary<string, WordOverride> _words = new(Terms.LemmaComparer);
         private readonly Dictionary<int, int> _attachments = [];
         private readonly Dictionary<int, PredicateOverride> _predicates = [];
+        private readonly Dictionary<int, int> _relatives = [];
+        private readonly Dictionary<int, string> _relativizers = [];
 
         /// <summary>
         /// Gets the clauses whose attachment the user moved, keyed by the clause and naming the one it
@@ -54,6 +56,48 @@ namespace Grammar.Czech.Cli.Sentence
 
             _attachments[clause] = parent;
         }
+
+        /// <summary>
+        /// Gets the constituent each relative clause was moved onto, keyed by the constituent's position
+        /// and naming the relative clause that is to hang there.
+        /// </summary>
+        /// <remarks>
+        /// Unlisted, a relative clause hangs off the last constituent of the clause before it, which is
+        /// how a reader takes it — the pronoun reaches for the nearest preceding noun. This is only for
+        /// saying that it reaches further back.
+        /// </remarks>
+        public IReadOnlyDictionary<int, int> Relatives => _relatives;
+
+        /// <summary>
+        /// Gets the relativizer each relative clause was given, keyed by the constituent it hangs off.
+        /// </summary>
+        public IReadOnlyDictionary<int, string> Relativizers => _relativizers;
+
+        /// <summary>
+        /// States that a relative clause hangs off a constituent.
+        /// </summary>
+        /// <param name="member">The one-based position of the constituent it is to hang off.</param>
+        /// <param name="relative">The one-based number of the relative clause.</param>
+        /// <exception cref="CliException">Thrown when the constituent already carries another one.</exception>
+        public void Hang(int member, int relative)
+        {
+            // Jeden člen unese jednu vztažnou větu: druhá by se neměla kam připojit a která z nich by
+            // vyhrála, by rozhodlo pořadí přepínačů na řádce, což není odpověď.
+            if (_relatives.TryGetValue(member, out var taken) && taken != relative)
+            {
+                throw new CliException(
+                    $"Na člen {member} už visí vztažná věta {taken}, takže {relative} se tam nevejde.");
+            }
+
+            _relatives[member] = relative;
+        }
+
+        /// <summary>
+        /// States which word introduces the relative clause hanging off a constituent.
+        /// </summary>
+        /// <param name="member">The one-based position of the constituent it hangs off.</param>
+        /// <param name="relativizer">The lemma to introduce it with.</param>
+        public void Introduce(int member, string relativizer) => _relativizers[member] = relativizer;
 
         /// <summary>
         /// Gets or sets the lemma to treat as the predicate, when the tool should not decide.
@@ -114,6 +158,8 @@ namespace Grammar.Czech.Cli.Sentence
             _words.Clear();
             _attachments.Clear();
             _predicates.Clear();
+            _relatives.Clear();
+            _relativizers.Clear();
             PredicateLemma = null;
         }
 
