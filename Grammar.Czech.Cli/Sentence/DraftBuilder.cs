@@ -27,6 +27,7 @@ namespace Grammar.Czech.Cli.Sentence
         private readonly ICzechPronounService _pronouns;
         private readonly ICzechConjunctionService _conjunctions;
         private readonly ICzechNumeralService _numerals;
+        private readonly ICzechAdverbService _adverbService;
         private readonly IAdverbDataProvider _adverbs;
         private readonly IParticleDataProvider _particles;
         private readonly IInterjectionDataProvider _interjections;
@@ -48,6 +49,7 @@ namespace Grammar.Czech.Cli.Sentence
         /// <param name="pronouns">The pronoun service, for recognizing one in the word list.</param>
         /// <param name="conjunctions">The conjunction service, for finding where one clause ends.</param>
         /// <param name="numerals">The numeral service, for recognizing one in the word list.</param>
+        /// <param name="adverbService">The adverb service, for telling a relative adverb from any other.</param>
         /// <param name="adverbs">The adverb data, for recognizing one in the word list.</param>
         /// <param name="particles">The particle data, for recognizing one in the word list.</param>
         /// <param name="interjections">The interjection data, for recognizing one in the word list.</param>
@@ -66,6 +68,7 @@ namespace Grammar.Czech.Cli.Sentence
             ICzechPronounService pronouns,
             ICzechConjunctionService conjunctions,
             ICzechNumeralService numerals,
+            ICzechAdverbService adverbService,
             IAdverbDataProvider adverbs,
             IParticleDataProvider particles,
             IInterjectionDataProvider interjections,
@@ -84,6 +87,7 @@ namespace Grammar.Czech.Cli.Sentence
             _pronouns = pronouns;
             _conjunctions = conjunctions;
             _numerals = numerals;
+            _adverbService = adverbService;
             _adverbs = adverbs;
             _particles = particles;
             _interjections = interjections;
@@ -138,45 +142,61 @@ namespace Grammar.Czech.Cli.Sentence
 
             var sentence = new SentenceDraft();
 
-            // Spojka je předěl mezi klauzemi. Pořadová čísla slov přitom zůstávají globální přes celý
+            // Spojka je předěl mezi klauzemi, vztažné slovo taky — ale jiného druhu. Klauze za spojkou
+            // je sourozenec, klauze za vztažným slovem visí na členu, takže se od ní sestupuje o patro
+            // níž a všechno další patří dovnitř. Pořadová čísla slov přitom zůstávají globální přes celý
             // zadaný seznam, aby '--role kniha=PAT' i '4 pad=dativ' ukazovaly pořád na totéž slovo.
+            var current = sentence;
+            var ordinal = 0;
+            var relativeOrdinal = 0;
+            ClauseDraft? previous = null;
+
             foreach (var segment in Split(words))
             {
-                var clause = BuildClause(
-                    segment.Conjunction, segment.Words, overrides, sentence.Clauses.Count + 1);
-
-                // Nezadáno visí klauze na té bezprostředně předchozí. Tak to čte i člověk: v 'čte,
-                // protože píše a zpívá' patří zpívání dovnitř toho protože, ne vedle celé věty.
-                clause.ParentOrdinal = clause.Ordinal == 1
-                    ? null
-                    : overrides.Attachments.GetValueOrDefault(clause.Ordinal, clause.Ordinal - 1);
-
-                sentence.Clauses.Add(clause);
-            }
-
-            foreach (var (clause, parent) in overrides.Attachments)
-            {
-                if (clause > sentence.Clauses.Count || parent > sentence.Clauses.Count)
+                if (segment.Relativizer is { } relativizer)
                 {
-                    throw new CliException(
-                        $"Připojení {clause}={parent} ukazuje na klauzi, která ve větě není; "
-                        + $"klauzí je {sentence.Clauses.Count}.");
+                    var inner = new SentenceDraft();
+
+                    Host(previous, relativizer, overrides).Relative = new RelativeDraft(
+                        ++relativeOrdinal, relativizer.Lemma, relativizer.Position, inner);
+
+                    current = inner;
                 }
+
+                var clause = BuildClause(segment.Conjunction, segment.Words, overrides, ++ordinal);
+
+                // Nezadáno visí klauze na té bezprostředně předchozí ve své větě. Tak to čte i člověk:
+                // v 'čte, protože píše a zpívá' patří zpívání dovnitř toho protože, ne vedle celé věty.
+                // Uvnitř vztažné věty platí totéž — 'a zpívá' za ní zůstává v ní.
+                clause.ParentOrdinal = current.Clauses.Count == 0
+                    ? null
+                    : overrides.Attachments.GetValueOrDefault(clause.Ordinal, current.Clauses[^1].Ordinal);
+
+                current.Clauses.Add(clause);
+                previous = clause;
             }
 
-            foreach (var singled in overrides.SingledOutClauses.Where(number => number > sentence.Clauses.Count))
+            ValidateAttachments(sentence, overrides, ordinal);
+
+            // Pád vztažného zájmena musí být znám dřív, než se rozdají role: knihovna podle něj rezervuje
+            // slot uvnitř vztažné věty, takže po rozdání by už neměl co ovlivnit.
+            foreach (var (host, relative) in sentence.AllRelatives)
             {
-                throw new CliException(
-                    $"Přísudek klauze {singled} nastavit nejde — tolik klauzí ve větě není, "
-                    + $"je jich {sentence.Clauses.Count}.");
+                SettleRelativeCase(relative, overrides);
+                CheckAgreement(host, relative);
             }
 
-            // Výchozí hodnoty se doplňují až nad celým stromem: co spojka řídí, není klauze sama o sobě
-            // schopná rozhodnout — klauze souřadná uvnitř 'aby' je v kondicionálu kvůli spojce o dvě
-            // úrovně výš. Doplnit to po klauzích znamenalo, že si věta odporovala sama se sebou.
-            sentence.Distribute(_planner.Complete(sentence.Assemble()));
+            // Role i výchozí hodnoty se doplňují až nad celým stromem, a to ze dvou různých důvodů.
+            // Role proto, že vztažné zájmeno drží slot ve své klauzi i ve všem, co s ní souřadí, a to
+            // klauze sama o sobě nevidí. Výchozí hodnoty proto, že co spojka řídí, není klauze sama
+            // o sobě schopná rozhodnout — klauze souřadná uvnitř 'aby' je v kondicionálu kvůli spojce
+            // o dvě úrovně výš. Doplnit obojí po klauzích znamenalo, že si věta odporovala sama se sebou.
+            var resolved = _roles.Resolve(sentence.Assemble());
 
-            foreach (var clause in sentence.Clauses)
+            sentence.TakeResolved(resolved);
+            sentence.Distribute(_planner.Complete(resolved));
+
+            foreach (var clause in sentence.AllClauses)
             {
                 Absorb(clause);
                 ResolveFrame(clause, overrides);
@@ -187,42 +207,136 @@ namespace Grammar.Czech.Cli.Sentence
             return sentence;
         }
 
-        // A conjunction between two verbs is what makes this a complex sentence. It is recognized from
-        // the rule data rather than from a switch, the same as a preposition or a pronoun — conjunctions
-        // are a closed class and the file that lists them is also the file that says how each one joins.
-        private IEnumerable<(string? Conjunction, List<ResolvedWord> Words)> Split(List<ResolvedWord> words)
+        // A conjunction between two verbs is what makes this a complex sentence, and a relativizer is what
+        // makes one of them a relative clause. Both are recognized from the rule data rather than from a
+        // switch, the same as a preposition or a pronoun — they are closed classes and the files that list
+        // them are also the files that say how each one joins.
+        private IEnumerable<Segment> Split(List<ResolvedWord> words)
         {
             string? conjunction = null;
+            ResolvedWord? relativizer = null;
             var current = new List<ResolvedWord>();
 
-            foreach (var word in words)
+            for (var index = 0; index < words.Count; index++)
             {
-                if (word.Request.WordCategory == WordCategory.Conjunction)
+                var word = words[index];
+                var divider = word.Request.WordCategory == WordCategory.Conjunction
+                    || IsRelativizer(word, current, words.Skip(index + 1));
+
+                if (!divider)
                 {
-                    if (current.Count == 0)
-                    {
-                        throw new CliException(
-                            $"Spojka '{word.Lemma}' stojí na začátku, ale spojuje se s tím, co je před ní.");
-                    }
-
-                    yield return (conjunction, current);
-
-                    conjunction = word.Lemma;
-                    current = [];
+                    current.Add(word);
 
                     continue;
                 }
 
-                current.Add(word);
+                if (current.Count == 0)
+                {
+                    throw new CliException(
+                        word.Request.WordCategory == WordCategory.Conjunction
+                            ? $"Spojka '{word.Lemma}' stojí na začátku, ale spojuje se s tím, co je před ní."
+                            : $"Vztažné slovo '{word.Lemma}' stojí na začátku, ale rozvíjí jméno před sebou.");
+                }
+
+                yield return new Segment(conjunction, relativizer, current);
+
+                if (word.Request.WordCategory == WordCategory.Conjunction)
+                {
+                    conjunction = word.Lemma;
+                    relativizer = null;
+                }
+                else
+                {
+                    conjunction = null;
+                    relativizer = word;
+                }
+
+                current = [];
             }
 
             if (current.Count == 0)
             {
-                throw new CliException(
-                    $"Za spojkou '{conjunction}' už žádná slova nejsou, takže není co připojit.");
+                throw new CliException(relativizer is { } dangling
+                    ? $"Za vztažným slovem '{dangling.Lemma}' už žádná slova nejsou, takže vztažná věta "
+                        + "nemá z čeho vzniknout."
+                    : $"Za spojkou '{conjunction}' už žádná slova nejsou, takže není co připojit.");
             }
 
-            yield return (conjunction, current);
+            if (relativizer is { } opener && current.All(word => word.Request.WordCategory != WordCategory.Verb))
+            {
+                throw new CliException(
+                    $"Vztažná věta uvozená slovem '{opener.Lemma}' nemá sloveso. Přidej ho v infinitivu — "
+                    + "vztažná věta je věta, ne přívlastek.");
+            }
+
+            yield return new Segment(conjunction, relativizer, current);
+        }
+
+        // Vztažné slovo se pozná tím, že vztažné čtení vůbec má, a tázací od vztažného rozliší pozice:
+        // vztažné 'který' stojí za jménem, které rozvíjí, tázací před ním. 'Který student čte knihu?'
+        // proto předěl netvoří — před ním nic není. Vztažná příslovce ('kde', 'kdy') zájmena nejsou
+        // a mají vlastní příznak v datech, tak se hledají zvlášť.
+        //
+        // Sloveso za ním se hledá jen u slov, kterým je vztažné čtení až to druhé: 'proč' a 'odkud' jsou
+        // stejně dobře příslovce jako vztažná, takže 'student čte knihu proč' je otázka po důvodu a ne
+        // useknutá vztažná věta. U 'který' a 'jenž' je vztažné čtení to primární — jiné užití nemají —
+        // takže chybějící sloveso je chyba a ohlásí se jako chyba, ne že se slovo tiše přeznačí.
+        private bool IsRelativizer(
+            ResolvedWord word, List<ResolvedWord> current, IEnumerable<ResolvedWord> rest)
+        {
+            if (current.Count == 0 || word.Stated?.WordCategory is not null)
+            {
+                return false;
+            }
+
+            var readings = _pronouns.GetReadings(word.Lemma);
+            var relative = word.Request.WordCategory == WordCategory.Adverb
+                ? _adverbService.IsRelative(word.Lemma)
+                : word.Request.WordCategory == WordCategory.Pronoun
+                    && readings.Any(reading => reading.Type == PronounType.Relative);
+
+            if (!relative)
+            {
+                return false;
+            }
+
+            return readings.FirstOrDefault()?.Type == PronounType.Relative
+                || rest.Any(following => following.Request.WordCategory == WordCategory.Verb);
+        }
+
+        // Nezadáno visí vztažná věta na posledním členu klauze před ní — tak ji čte i člověk, protože
+        // vztažné zájmeno se váže k nejbližšímu předcházejícímu jménu. Výjimka se řekne '--vztazna'.
+        private static ConstituentDraft Host(
+            ClauseDraft? previous, ResolvedWord relativizer, DraftOverrides overrides)
+        {
+            if (previous is null || previous.Constituents.Count == 0)
+            {
+                throw new CliException(
+                    $"Vztažné slovo '{relativizer.Lemma}' nemá co rozvíjet — před ním musí stát jméno, "
+                    + "ke kterému se vztahuje.");
+            }
+
+            return previous.Constituents[^1];
+        }
+
+        private static void ValidateAttachments(SentenceDraft sentence, DraftOverrides overrides, int clauses)
+        {
+            foreach (var (clause, parent) in overrides.Attachments)
+            {
+                if (clause > clauses || parent > clauses)
+                {
+                    throw new CliException(
+                        $"Připojení {clause}={parent} ukazuje na klauzi, která ve větě není; "
+                        + $"klauzí je {clauses}.");
+                }
+            }
+
+            foreach (var singled in overrides.SingledOutClauses.Where(number => number > clauses))
+            {
+                throw new CliException(
+                    $"Přísudek klauze {singled} nastavit nejde — tolik klauzí ve větě není, "
+                    + $"je jich {clauses}.");
+            }
         }
 
         private ClauseDraft BuildClause(
@@ -276,9 +390,8 @@ namespace Grammar.Czech.Cli.Sentence
                 }
             }
 
-            // Odtud rozhoduje knihovna: role se dají odvodit z jedné klauze, takže to jde hned. Co je
-            // řízené zvenčí — a to jsou výchozí hodnoty — počká, až bude stát celý strom.
-            draft.Resolved = _roles.Resolve(ToPlan(draft, overrides));
+            // Jen sesbírané, nic rozhodnutého: role i výchozí hodnoty čekají, až bude stát celý strom.
+            draft.Stated = ToPlan(draft, overrides);
 
             return draft;
         }
@@ -699,6 +812,100 @@ namespace Grammar.Czech.Cli.Sentence
                     $"Sloveso '{draft.PredicateLemma}' má víc významů a žádný z nich není výchozí.");
             }
         }
+
+        // Vztažné příslovce pád nemá — je neohebné a argumentem své klauze není — takže se u něj nic
+        // neodvozuje. U zájmena rozhoduje zadané, a kde nic zadané není, rámec slovesa vztažné věty.
+        private void SettleRelativeCase(RelativeDraft relative, DraftOverrides overrides)
+        {
+            if (_adverbService.IsRelative(relative.Relativizer))
+            {
+                return;
+            }
+
+            if (overrides.Find(relative.Relativizer, relative.Position)?.Case is { } stated)
+            {
+                relative.Case = stated;
+
+                return;
+            }
+
+            relative.Case = DerivedCase(relative.Clause.Main) ?? Case.Nominative;
+            relative.CaseIsDerived = true;
+        }
+
+        // Vztažné zájmeno se shoduje s řídícím jménem v rodě, čísle a životnosti, a ne každé to umí:
+        // 'co' a 'kdo' rod nemají a jejich paradigma má jedinou řadu, takže po jméně jiného rodu z nich
+        // tvar nevyjde. Ptát se na to tady, dokud se ještě dá odpovědět jménem nebo jiným zájmenem, je
+        // lepší než nechat stavbu věty spadnout na chybějícím tvaru a mluvit přitom o pádu.
+        private void CheckAgreement(ConstituentDraft host, RelativeDraft relative)
+        {
+            if (_adverbService.IsRelative(relative.Relativizer) || relative.Case is not { } kase)
+            {
+                return;
+            }
+
+            var form = _pronouns.TryGetForm(
+                relative.Relativizer, kase, host.Word.Gender, host.Word.Number, host.Word.IsAnimate, null);
+
+            if (form is null)
+            {
+                throw new CliException(
+                    $"Vztažné zájmeno '{relative.Relativizer}' se se jménem '{host.Lemma}' neshodne — "
+                    + $"pro {Terms.Name(kase)} a jeho rod pro něj tvar není. "
+                    + "Zkus 'který' nebo 'jenž', které se skloňují podle řídícího jména.");
+            }
+        }
+
+        // Zájmeno si bere první slot, který mu rámec nechá volný — zrcadlí to výběr slotů
+        // v CzechRoleResolver, jen opačným směrem: ten jde od pádu k funktoru, tady se hledá pád
+        // k funktoru. Zadaná role člena slot obsazuje, a první nebo druhá osoba na slovese taky, protože
+        // to je shoda s nevysloveným podmětem: 'dopis, který čtu' je patiens, ne konatel.
+        private Case? DerivedCase(ClauseDraft inner)
+        {
+            var diathesis = inner.Predicate.Voice == Voice.Passive
+                ? Diathesis.PassivePeriphrastic
+                : Diathesis.Active;
+
+            var frame = _frames.Select(
+                inner.PredicateLemma,
+                null,
+                inner.Constituents.Select(constituent => constituent.Lemma),
+                diathesis).Frame;
+
+            if (frame is null)
+            {
+                return null;
+            }
+
+            var speaker = inner.Predicate.Person is Person.First or Person.Second;
+            var taken = inner.Constituents
+                .Select(constituent => constituent.Functor)
+                .Where(functor => functor is not null)
+                .ToHashSet();
+
+            return frame.Slots
+                .Where(slot => !speaker || slot.Functor != FgdFunctor.ACT)
+                .Where(slot => !taken.Contains(slot.Functor))
+                .OrderBy(slot => slot.Functor switch
+                {
+                    FgdFunctor.ACT => 0,
+                    FgdFunctor.ADDR => 1,
+                    _ => 2,
+                })
+                .ThenBy(slot => slot.CanonicalOrder)
+                .SelectMany(slot => slot.Realizations
+                    .Where(realization => realization.Case is not null && realization.Preposition is null)
+                    .OrderBy(realization => realization.Preference))
+                .Select(realization => realization.Case)
+                .FirstOrDefault();
+        }
+
+        // Co odděluje jeden úsek slov od dalšího: spojka dělá sourozence, vztažné slovo vztažnou větu.
+        // Nikdy obojí naráz — proto dvě pole a ne jedno se značkou.
+        private sealed record Segment(
+            string? Conjunction,
+            ResolvedWord? Relativizer,
+            List<ResolvedWord> Words);
 
         private sealed record ResolvedWord(
             int Position,

@@ -1,3 +1,4 @@
+using Grammar.Core.Enums;
 using Grammar.Czech.Models.Syntax;
 
 namespace Grammar.Czech.Cli.Sentence
@@ -30,22 +31,47 @@ namespace Grammar.Czech.Cli.Sentence
         public ClauseDraft Main => Clauses[0];
 
         /// <summary>
+        /// Gets every clause of the sentence, the siblings and the relative clauses hanging off their
+        /// constituents alike, in the order they were entered.
+        /// </summary>
+        /// <remarks>
+        /// What "the whole sentence" means to anything that reports on it. A relative clause is not in
+        /// <see cref="Clauses"/>, so a gap inside one would otherwise go unmentioned and the review would
+        /// confirm a sentence it had not finished reading.
+        /// </remarks>
+        public IEnumerable<ClauseDraft> AllClauses => Clauses.SelectMany(Descend);
+
+        /// <summary>
+        /// Gets every relative clause of the sentence with the constituent it hangs off, in the order
+        /// they were entered.
+        /// </summary>
+        /// <remarks>
+        /// The two travel together because neither says enough alone: the pronoun's gender and number
+        /// come from the constituent and its case from the clause, and every question worth asking about
+        /// a relative clause needs both sides of that.
+        /// </remarks>
+        public IEnumerable<(ConstituentDraft Host, RelativeDraft Relative)> AllRelatives =>
+            Clauses.SelectMany(clause => Relatives(clause).SelectMany(pair =>
+                new[] { (clause.Constituents[pair.Index], pair.Relative) }
+                    .Concat(pair.Relative.Clause.AllRelatives)));
+
+        /// <summary>
         /// Gets the remarks worth showing with the sentence, from every clause.
         /// </summary>
         public IReadOnlyList<string> Notes =>
-            [.. Clauses.SelectMany(clause => clause.Notes).Distinct()];
+            [.. AllClauses.SelectMany(clause => clause.Notes).Distinct()];
 
         /// <summary>
         /// Gets the reasons the sentence cannot be built yet, from every clause.
         /// </summary>
         /// <returns>The open questions, empty when the sentence is complete.</returns>
-        public IReadOnlyList<string> Gaps() => [.. Clauses.SelectMany(clause => clause.Gaps())];
+        public IReadOnlyList<string> Gaps() => [.. AllClauses.SelectMany(clause => clause.Gaps())];
 
         /// <summary>
         /// Gets the positions the predicates were entered in, which the review refuses as targets.
         /// </summary>
         public IReadOnlyList<int> PredicatePositions =>
-            [.. Clauses.Select(clause => clause.PredicatePosition)];
+            [.. AllClauses.Select(clause => clause.PredicatePosition)];
 
         /// <summary>
         /// Builds the plan the library works from, with each clause hanging off the one it names.
@@ -55,44 +81,96 @@ namespace Grammar.Czech.Cli.Sentence
         public SentencePlan ToPlan() => Main.ToPlan();
 
         /// <summary>
-        /// Assembles the tree out of the clauses' own plans, before anything is defaulted.
+        /// Assembles the tree out of the clauses' own plans, before any role is worked out.
         /// </summary>
         /// <returns>The assembled plan.</returns>
         /// <exception cref="CliException">Thrown when a clause has no plan or no conjunction.</exception>
         public SentencePlan Assemble() => Assemble(Main);
 
         /// <summary>
+        /// Hands each clause back its own part of the resolved tree.
+        /// </summary>
+        /// <param name="resolved">The resolved plan of the whole sentence.</param>
+        public void TakeResolved(SentencePlan resolved) =>
+            Distribute(Main, resolved, static (clause, plan) => clause.Resolved = plan);
+
+        /// <summary>
         /// Hands each clause back the completed plan of its own part of the tree.
         /// </summary>
         /// <param name="completed">The completed plan of the whole sentence.</param>
-        /// <remarks>
-        /// Walks the same order <see cref="Assemble"/> built, which is what makes the pairing safe:
-        /// completing a plan changes what is in each clause, never how many there are or where.
-        /// </remarks>
-        public void Distribute(SentencePlan completed) => Distribute(Main, completed);
+        public void Distribute(SentencePlan completed) =>
+            Distribute(Main, completed, static (clause, plan) => clause.Plan = plan);
 
-        private SentencePlan Assemble(ClauseDraft clause) => Resolved(clause) with
-        {
-            Joined =
-            [
-                .. Children(clause).Select(child => new ClauseLink(
-                    child.Conjunction ?? throw new CliException(
-                        $"Klauze se slovesem '{child.PredicateLemma}' nemá spojku, kterou by se připojila."),
-                    Assemble(child))),
-            ],
-        };
+        // Jeden průchod stromem pro oba směry. Rozdělit ho na dva znamenalo, že se pořadí dá rozejít
+        // úpravou jednoho z nich, a rozejde se tiše: hodnoty by se doplnily jinam, než odkud se vzaly.
+        // Vztažná věta na členu je přitom klauze, která v Clauses není, takže se musí projít zvlášť.
+        private static IEnumerable<(int Index, RelativeDraft Relative)> Relatives(ClauseDraft clause) =>
+            clause.Constituents
+                .Select((constituent, index) => (Index: index, constituent.Relative))
+                .Where(pair => pair.Relative is not null)
+                .Select(pair => (pair.Index, pair.Relative!));
 
-        private void Distribute(ClauseDraft clause, SentencePlan plan)
+        private static IEnumerable<ClauseDraft> Descend(ClauseDraft clause) =>
+            new[] { clause }.Concat(
+                Relatives(clause).SelectMany(pair => pair.Relative.Clause.AllClauses));
+
+        private SentencePlan Assemble(ClauseDraft clause)
         {
-            clause.Plan = plan;
+            var plan = Stated(clause);
+            var participants = plan.Participants.ToList();
+
+            foreach (var (index, relative) in Relatives(clause))
+            {
+                participants[index] = participants[index] with
+                {
+                    Relative = new PlannedRelative
+                    {
+                        Relativizer = relative.Relativizer,
+
+                        // Vztažné příslovce pád nemá; jádro ho u něj ignoruje, tak ať je to nominativ
+                        // a ne vymyšlená hodnota, na které by mohlo něco stavět.
+                        Case = relative.Case ?? Case.Nominative,
+                        Clause = relative.Clause.Assemble(),
+                    },
+                };
+            }
+
+            return plan with
+            {
+                Participants = participants,
+                Joined =
+                [
+                    .. Children(clause).Select(child => new ClauseLink(
+                        child.Conjunction ?? throw new CliException(
+                            $"Klauze se slovesem '{child.PredicateLemma}' nemá spojku, kterou by se připojila."),
+                        Assemble(child))),
+                ],
+            };
+        }
+
+        // Protějšek Assemble, krok za krokem tímtéž stromem: co tam sestoupilo do vztažné věty a co do
+        // souřadné klauze, sem sestoupí ve stejném pořadí. Doplnění mění, co v klauzi je, ne kolik jich
+        // je ani kde — takže se páruje strukturou, ne hledáním.
+        private void Distribute(ClauseDraft clause, SentencePlan plan, Action<ClauseDraft, SentencePlan> assign)
+        {
+            assign(clause, plan);
+
+            foreach (var (index, relative) in Relatives(clause))
+            {
+                relative.Clause.Distribute(
+                    relative.Clause.Main,
+                    plan.Participants[index].Relative?.Clause ?? throw new CliException(
+                        $"Vztažná věta u slova '{clause.Constituents[index].Lemma}' se v plánu ztratila."),
+                    assign);
+            }
 
             foreach (var (child, link) in Children(clause).Zip(plan.Joined))
             {
-                Distribute(child, link.Clause);
+                Distribute(child, link.Clause, assign);
             }
         }
 
-        private static SentencePlan Resolved(ClauseDraft clause) => clause.Resolved
+        private static SentencePlan Stated(ClauseDraft clause) => clause.Stated
             ?? throw new CliException(
                 $"Klauze se slovesem '{clause.PredicateLemma}' nemá rozebraný plán.");
 

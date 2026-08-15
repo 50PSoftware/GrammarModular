@@ -1133,5 +1133,176 @@ namespace Grammar.Czech.Test
 
             StringAssert.Contains(exception.Message, "zvlášť");
         }
+
+        /// <summary>
+        /// A relative pronoun opens a clause that hangs off a constituent rather than standing beside
+        /// the one before it.
+        /// </summary>
+        [TestMethod]
+        public void RelativePronounHangsItsClauseOffTheNounBeforeIt()
+        {
+            var sentence = Whole(null, "učitel", "vidět", "student", "který", "číst", "kniha");
+
+            Assert.AreEqual(1, sentence.Clauses.Count, "vztažná věta není sourozenec");
+
+            var (host, relative) = sentence.AllRelatives.Single();
+
+            Assert.AreEqual("student", host.Lemma);
+            Assert.AreEqual("který", relative.Relativizer);
+            Assert.AreEqual("číst", relative.Clause.Main.PredicateLemma);
+            Assert.AreEqual("Učitel vidí studenta, který čte knihu.",
+                Sentence(null, "učitel", "vidět", "student", "který", "číst", "kniha"));
+        }
+
+        /// <summary>
+        /// A relative adverb opens one too, and is recognized from the adverb data rather than from the
+        /// pronoun data it is not in.
+        /// </summary>
+        [TestMethod]
+        public void RelativeAdverbOpensARelativeClause()
+        {
+            var sentence = Whole(null, "učitel", "vidět", "škola", "kde", "číst", "student");
+
+            Assert.AreEqual("kde", sentence.AllRelatives.Single().Relative.Relativizer);
+
+            // Neohebné a argumentem své klauze není, takže pád nemá co držet.
+            Assert.IsNull(sentence.AllRelatives.Single().Relative.Case);
+        }
+
+        /// <summary>
+        /// Everything written after a relative clause stays inside it, the same way a clause attaches to
+        /// the one immediately before it.
+        /// </summary>
+        [TestMethod]
+        public void CoordinationAfterARelativeClauseStaysInsideIt()
+        {
+            var sentence = Whole(
+                null, "učitel", "vidět", "student", "který", "číst", "kniha", "a", "psát", "dopis");
+
+            Assert.AreEqual(1, sentence.Clauses.Count);
+            Assert.AreEqual(2, sentence.AllRelatives.Single().Relative.Clause.Clauses.Count);
+        }
+
+        /// <summary>
+        /// Verifies that completing the plan hands every clause back its own part of it, relative
+        /// clauses included.
+        /// </summary>
+        /// <remarks>
+        /// The pairing is what the two passes over the tree are for. A relative clause is a clause that
+        /// is not in <see cref="SentenceDraft.Clauses"/>, so if only one of the passes learned to walk
+        /// into it, the values completing filled would land in a different clause from the one they came
+        /// out of — and would do it silently.
+        /// </remarks>
+        [TestMethod]
+        public void CompletingPairsEveryClauseWithItsOwnPlan()
+        {
+            var overrides = new DraftOverrides();
+            overrides.PredicateOf(3).Tense = Tense.Past;
+
+            var sentence = Whole(
+                overrides, "učitel", "vidět", "student", "který", "číst", "kniha", "a", "psát", "dopis");
+
+            var clauses = sentence.AllClauses.ToList();
+
+            CollectionAssert.AreEqual(
+                new[] { "vidět", "číst", "psát" },
+                clauses.Select(clause => clause.PredicateLemma).ToArray());
+
+            foreach (var clause in clauses)
+            {
+                Assert.AreEqual(
+                    clause.PredicateLemma,
+                    clause.ToPlan().Predicate.Lemma,
+                    "klauze dostala plán jiné klauze");
+            }
+
+            Assert.AreEqual(Tense.Past, clauses[2].ToPlan().Predicate.Tense);
+            Assert.AreEqual(Tense.Present, clauses[1].ToPlan().Predicate.Tense);
+        }
+
+        /// <summary>
+        /// A relative pronoun standing before its noun is not one: it is the interrogative attribute of
+        /// <em>Který student čte knihu?</em>, and the position is the whole difference.
+        /// </summary>
+        [TestMethod]
+        public void PronounBeforeItsNounOpensNothing()
+        {
+            var sentence = Whole(null, "který", "student", "číst", "kniha");
+
+            Assert.AreEqual(0, sentence.AllRelatives.Count());
+            Assert.AreEqual(1, sentence.Clauses.Count);
+        }
+
+        /// <summary>
+        /// The relative pronoun's case comes off the frame of its own clause, and a stated one wins.
+        /// </summary>
+        [TestMethod]
+        public void RelativeCaseComesOffTheFrameAndIsOverridable()
+        {
+            var derived = Whole(null, "učitel", "vidět", "student", "který", "číst", "kniha");
+
+            Assert.AreEqual(Case.Nominative, derived.AllRelatives.Single().Relative.Case);
+            Assert.IsTrue(derived.AllRelatives.Single().Relative.CaseIsDerived);
+
+            var overrides = new DraftOverrides();
+            overrides.For("který").Case = Case.Accusative;
+
+            var stated = Whole(overrides, "učitel", "vidět", "kniha", "který", "číst", "student");
+
+            Assert.AreEqual(Case.Accusative, stated.AllRelatives.Single().Relative.Case);
+            Assert.IsFalse(stated.AllRelatives.Single().Relative.CaseIsDerived);
+            Assert.AreEqual(
+                "Učitel vidí knihu, kterou čte student.",
+                Sentence(overrides, "učitel", "vidět", "kniha", "který", "číst", "student"));
+        }
+
+        /// <summary>
+        /// A gap inside a relative clause is reported with the rest, rather than being invisible because
+        /// the clause is not among the siblings.
+        /// </summary>
+        [TestMethod]
+        public void GapInsideARelativeClauseIsReported()
+        {
+            var sentence = Whole(
+                null, "učitel", "vidět", "student", "který", "číst", "kniha", "v", "škola");
+
+            Assert.IsTrue(
+                sentence.Gaps().Any(gap => gap.Contains("škola")),
+                "otevřená role uvnitř vztažné věty se má hlásit s ostatními");
+        }
+
+        /// <summary>
+        /// Verifies what a relative clause is refused for, in the tool's own words.
+        /// </summary>
+        /// <param name="expected">The word the message has to contain.</param>
+        /// <param name="lemmas">The lemmas to build from.</param>
+        [DataTestMethod]
+        [DataRow("rozvíjet", new[] { "číst", "který", "spát" }, DisplayName = "bez řídícího jména")]
+        [DataRow("sloveso", new[] { "učitel", "vidět", "student", "který", "kniha" }, DisplayName = "bez slovesa")]
+        [DataRow("vzniknout", new[] { "učitel", "vidět", "student", "který" }, DisplayName = "nic za ním")]
+        public void RelativeClauseIsRefusedWithAReason(string expected, string[] lemmas)
+        {
+            var exception = Assert.ThrowsException<CliException>(() => Whole(null, lemmas));
+
+            StringAssert.Contains(exception.Message, expected);
+        }
+
+        /// <summary>
+        /// A relativizer that cannot agree with the noun it modifies is refused while the answer is still
+        /// a different word, rather than failing later as a missing form.
+        /// </summary>
+        /// <remarks>
+        /// <em>co</em> has no gender and one row of forms, so after a masculine noun there is nothing to
+        /// look up. The clause is good Czech — <em>člověk, co přišel</em> — and the core not rendering it
+        /// is a gap in the core, not in the sentence.
+        /// </remarks>
+        [TestMethod]
+        public void RelativizerThatCannotAgreeIsRefused()
+        {
+            var exception = Assert.ThrowsException<CliException>(
+                () => Whole(null, "učitel", "vidět", "student", "co", "číst", "kniha"));
+
+            StringAssert.Contains(exception.Message, "neshodne");
+        }
     }
 }

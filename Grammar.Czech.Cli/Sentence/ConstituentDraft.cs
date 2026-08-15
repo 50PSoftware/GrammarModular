@@ -100,6 +100,16 @@ namespace Grammar.Czech.Cli.Sentence
         public List<CzechWordRequest> Modifiers { get; } = [];
 
         /// <summary>
+        /// Gets or sets the relative clause modifying this constituent, or <see langword="null"/> when
+        /// there is none.
+        /// </summary>
+        /// <remarks>
+        /// The counterpart of <see cref="PlannedParticipant.Relative"/>, and the reason a relative clause
+        /// is not among <see cref="SentenceDraft.Clauses"/>: it hangs off a thing, not off the sentence.
+        /// </remarks>
+        public RelativeDraft? Relative { get; set; }
+
+        /// <summary>
         /// Gets or sets where the head's metadata came from.
         /// </summary>
         public MetadataOrigin Origin { get; set; }

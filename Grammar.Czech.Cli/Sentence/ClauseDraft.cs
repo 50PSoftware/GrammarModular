@@ -94,7 +94,19 @@ namespace Grammar.Czech.Cli.Sentence
         public SentencePlan? Plan { get; set; }
 
         /// <summary>
-        /// Gets or sets the plan of this clause alone, with its roles resolved and nothing defaulted yet.
+        /// Gets or sets the plan of this clause as the user stated it, before any role is worked out.
+        /// </summary>
+        /// <remarks>
+        /// The tree is assembled from these and resolved as a whole, because a relative pronoun reserves
+        /// a slot in its own clause and in everything coordinated with it — <em>který píše dopis a čte
+        /// knihu</em> has the pronoun as the actor of both. Resolving each clause on its own could not
+        /// see that, so the letter took the empty actor slot and came out in the nominative.
+        /// </remarks>
+        public SentencePlan? Stated { get; set; }
+
+        /// <summary>
+        /// Gets or sets this clause's share of the resolved tree, with its roles worked out and nothing
+        /// defaulted yet.
         /// </summary>
         /// <remarks>
         /// The defaults are filled once, over the assembled tree, because some of them are not the
