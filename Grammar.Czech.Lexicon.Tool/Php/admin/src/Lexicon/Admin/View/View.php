@@ -21,6 +21,13 @@ use Throwable;
  */
 final class View
 {
+    /**
+     * Templates are .phtml, not .php: the extension says at a glance which files are markup with holes
+     * in it and which are classes, and it keeps them out of any tooling — a linter, a static analyser,
+     * a glob in a build file — that goes looking for PHP sources.
+     */
+    private const EXTENSION = '.phtml';
+
     public function __construct(
         private readonly string $directory,
         private readonly Url $url,
@@ -51,7 +58,7 @@ final class View
      */
     public function render(string $template, array $data = []): string
     {
-        $path = $this->directory . '/' . $template . '.php';
+        $path = $this->directory . '/' . $template . self::EXTENSION;
 
         if (!is_file($path)) {
             throw new \RuntimeException("Šablona '$template' neexistuje.");
