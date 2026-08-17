@@ -1,0 +1,136 @@
+<?php
+
+declare(strict_types=1);
+
+defined('LEXICON_ADMIN') || exit('Tenhle soubor se nespouští přímo.');
+
+/**
+ * Lexém: jeho hesla, významy a rámce.
+ *
+ * Lexém je abstraktní slovo — vidová dvojice je jeden lexém se dvěma hesly. Význam (lexical_unit) je
+ * to, čemu se ve starém JSONu říkalo frameLabel, a rámec visí na významu, jeden pro každou diatezi.
+ *
+ * @var \Lexicon\Admin\Entity\Lexeme $lexeme
+ * @var list<\Lexicon\Admin\Read\EntryChip> $entries
+ * @var list<\Lexicon\Admin\Entity\LexicalUnit> $senses
+ * @var list<\Lexicon\Admin\Entity\ValencyFrame> $frames
+ * @var \Lexicon\Admin\View\Url $url
+ * @var \Lexicon\Admin\View\FormHelper $form
+ * @var \Lexicon\Admin\Schema $schema
+ */
+
+$id = (int) $lexeme->id;
+?>
+
+<p class="crumbs"><a href="<?= h($url->entries()) ?>">Hesla</a> / lexém <?= h($lexeme->primaryLemma) ?></p>
+
+<form method="post" action="<?= h($url->lexeme($id)) ?>" class="card">
+    <?= $form->csrf() ?>
+    <h2>Lexém</h2>
+    <div class="grid">
+        <p class="field">
+            <label for="primary_lemma">Hlavní lemma</label>
+            <input type="text" id="primary_lemma" name="primary_lemma" value="<?= h($lexeme->primaryLemma) ?>">
+            <small>U vidové dvojice zvykově nedokonavé.</small>
+        </p>
+        <p class="field">
+            <label for="note">Poznámka</label>
+            <input type="text" id="note" name="note" value="<?= h((string) $lexeme->note) ?>">
+        </p>
+    </div>
+    <div class="actions"><button type="submit">Uložit</button></div>
+</form>
+
+<section class="card">
+    <h2>Hesla na tomhle lexému</h2>
+    <?php if ($entries === []): ?>
+        <p class="empty">Žádné. Přiřaď lexém heslu v jeho formuláři.</p>
+    <?php else: ?>
+        <ul class="chips">
+        <?php foreach ($entries as $entry): ?>
+            <li>
+                <a href="<?= h($url->entry($entry->id)) ?>"><?= h($entry->lemma) ?></a>
+                <?php if ($entry->aspect !== null): ?>
+                    <span class="muted"><?= h($schema->label('aspect', $entry->aspect)) ?></span>
+                <?php endif; ?>
+            </li>
+        <?php endforeach; ?>
+        </ul>
+        <p class="hint">Všechna sdílejí rámce níž. Právě proto je vidová dvojice jeden lexém.</p>
+    <?php endif; ?>
+</section>
+
+<section class="card">
+    <h2>Významy a rámce</h2>
+
+    <?php if ($senses === []): ?>
+        <p class="empty">Zatím žádný význam.</p>
+    <?php endif; ?>
+
+    <?php foreach ($senses as $sense): ?>
+        <?php
+        $luId = (int) $sense->id;
+        $own = array_values(array_filter(
+            $frames,
+            static fn (\Lexicon\Admin\Entity\ValencyFrame $frame): bool => $frame->luId === $luId
+        ));
+        ?>
+        <div class="sense">
+            <h3><?= h($sense->displayLabel()) ?></h3>
+
+            <?php /* Editace na místě, ne na vlastní stránce: význam jsou dvě políčka a jeho jediný
+                     smysl je ten, který dává rámcům pod ním. */ ?>
+            <form method="post" action="<?= h($url->sense($id, $luId)) ?>" class="inline">
+                <?= $form->csrf() ?>
+                <label class="sr" for="sense_label_<?= $luId ?>">Název významu</label>
+                <input type="text" id="sense_label_<?= $luId ?>" name="sense_label"
+                       value="<?= h((string) $sense->senseLabel) ?>" placeholder="bez názvu">
+                <label class="sr" for="gloss_<?= $luId ?>">Popis</label>
+                <input type="text" id="gloss_<?= $luId ?>" name="gloss"
+                       value="<?= h((string) $sense->gloss) ?>" placeholder="stručný popis významu"
+                       class="grow">
+                <button type="submit">Uložit význam</button>
+            </form>
+
+            <?php if ($own === []): ?>
+                <p class="empty">Bez rámce.</p>
+            <?php else: ?>
+                <ul class="frames">
+                <?php foreach ($own as $frame): ?>
+                    <li>
+                        <a href="<?= h($url->frame((int) $frame->id)) ?>">
+                            <?= h($schema->label('diathesis', $frame->diathesis)) ?>
+                        </a>
+                        <span class="muted"><?= h($schema->label('kind', $frame->kind)) ?></span>
+                        <span class="badge<?= $frame->slotCount === 0 ? ' warn' : '' ?>"><?= $frame->slotCount ?> slotů</span>
+                        <?php if ($frame->isDefault === 1): ?><span class="badge">výchozí</span><?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+
+            <form method="post" action="<?= h($url->addFrame($id, $luId)) ?>" class="inline">
+                <?= $form->csrf() ?>
+                <?= $form->select('kind', 'kind', 'Verbal', allowEmpty: false) ?>
+                <?= $form->select('diathesis', 'diathesis', 'Active', allowEmpty: false) ?>
+                <label class="check"><input type="checkbox" name="is_default" value="1"> výchozí</label>
+                <button type="submit">Přidat rámec</button>
+            </form>
+
+            <form method="post" action="<?= h($url->deleteSense($id, $luId)) ?>" class="inline"
+                  onsubmit="return confirm('Smazat význam i s rámci?');">
+                <?= $form->csrf() ?>
+                <button type="submit" class="del small">Smazat význam</button>
+            </form>
+        </div>
+    <?php endforeach; ?>
+
+    <form method="post" action="<?= h($url->addSense($id)) ?>" class="inline top">
+        <?= $form->csrf() ?>
+        <label for="sense_label" class="sr">Název významu</label>
+        <input type="text" id="sense_label" name="sense_label" placeholder="transfer, motion, perception…">
+        <label for="gloss" class="sr">Popis</label>
+        <input type="text" id="gloss" name="gloss" placeholder="stručný popis významu">
+        <button type="submit">Přidat význam</button>
+    </form>
+</section>

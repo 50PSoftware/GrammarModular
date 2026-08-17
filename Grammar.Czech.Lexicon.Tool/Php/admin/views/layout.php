@@ -1,0 +1,47 @@
+<?php
+
+declare(strict_types=1);
+
+defined('LEXICON_ADMIN') || exit('Tenhle soubor se nespouští přímo.');
+
+/**
+ * Společný rámec všech stránek.
+ *
+ * @var string $content
+ * @var bool $signedIn
+ * @var list<array{message: string, kind: string}> $flashes
+ * @var \Lexicon\Admin\View\Url $url
+ * @var \Lexicon\Admin\View\FormHelper $form
+ */
+?><!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Slovník — administrace</title>
+<link rel="stylesheet" href="<?= h($url->asset('style.css')) ?>">
+</head>
+<body>
+<?php if ($signedIn): ?>
+<header class="bar">
+    <a class="brand" href="<?= h($url->entries()) ?>">Slovník</a>
+    <nav>
+        <a href="<?= h($url->newEntry()) ?>">Nové heslo</a>
+        <?php /* Odhlášení je POST, ne odkaz: GET jde vyvolat cizí stránkou a token proti CSRF se
+                 kontroluje jen u zápisů. */ ?>
+        <form method="post" action="<?= h($url->signOut()) ?>">
+            <?= $form->csrf() ?>
+            <button type="submit" class="link">Odhlásit</button>
+        </form>
+    </nav>
+</header>
+<?php endif; ?>
+<main>
+<?php foreach ($flashes as $flash): ?>
+    <p class="msg <?= h($flash['kind']) ?>"><?= h($flash['message']) ?></p>
+<?php endforeach; ?>
+<?= $content ?>
+</main>
+</body>
+</html>

@@ -4,19 +4,24 @@
 #   /        the admin      (index.php)
 #   /api/    the API        (api/index.php)
 #
-# There is deliberately no catch-all rewrite. An earlier layout served the endpoint from the root and
-# needed one; now that the admin is at the root and the API has a directory of its own, nothing has to
-# be routed and the whole class of problem goes away — including the worst one, where adding
-# RewriteCond %{REQUEST_FILENAME} !-f to such a rule makes it skip .env precisely because .env is a
-# real file, serving it in the clear from then on with nothing to show anything changed.
+# The admin addresses its pages by path — /hesla, /heslo/42, /ramec/7 — so everything that is not the
+# API and not the stylesheet is handed to index.php.
 #
-# What remains is denies and one header fix.
+# The rule names what to leave alone rather than testing whether the target exists. The tempting form,
+# RewriteCond %{REQUEST_FILENAME} !-f, skips .env precisely because .env is a real file, and from then
+# on the server hands it out in the clear with nothing to show anything changed. An allowlist has no
+# such edge: a file that is not on it is routed to PHP whether or not it exists on disk.
+#
+# What remains besides the rewrite is denies and one header fix.
 #
 # nginx ignores .htaccess entirely. There, put this in the server block:
 #
 #   location ~ /\. { deny all; return 404; }
 #   location ~ ^/(env|schema-tables)\.php$ { deny all; return 404; }
 #   location ^~ /admin/ { deny all; return 404; }
+#   location = /style.css { }
+#   location ^~ /api/ { }
+#   location / { try_files /index.php =404; }
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Denies
@@ -53,11 +58,11 @@
 Options -Indexes
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Authorization header
+# Authorization header and routing
 # ─────────────────────────────────────────────────────────────────────────────
 #
-# Apache with CGI or FPM drops it before PHP sees it, so every API request would arrive
-# unauthenticated and answer 401 to a correct token.
+# Apache with CGI or FPM drops the Authorization header before PHP sees it, so every API request would
+# arrive unauthenticated and answer 401 to a correct token.
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
@@ -65,4 +70,18 @@ Options -Indexes
 
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Per-directory rewriting runs the ruleset again on the rewritten path, and the conditions below
+    # test REQUEST_URI, which a rewrite does not change. Without this line the second pass would match
+    # too and the rule would only stop because the substitution happens to be identical.
+    RewriteRule ^index\.php$ - [L]
+
+    # Everything but the API and the stylesheet is a page of the admin. The API keeps its own
+    # directory and its own index.php, untouched by this.
+    RewriteCond %{REQUEST_URI} !^/api(/|$)
+    RewriteCond %{REQUEST_URI} !^/style\.css$
+    RewriteRule ^ index.php [L]
 </IfModule>
+
+# Without mod_rewrite there is no path to route on. index.php then reads the page from ?_path=, so the
+# admin still works — one link deeper than it should be, but it works.
