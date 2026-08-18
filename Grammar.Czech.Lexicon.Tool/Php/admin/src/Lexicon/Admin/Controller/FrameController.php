@@ -63,7 +63,7 @@ final class FrameController extends Controller
     {
         $id = $route->id('id');
         $this->requireFrame($id);
-        $form = $this->form($request);
+        $form = $this->formData($request);
 
         try {
             $this->frames->update(
@@ -93,7 +93,7 @@ final class FrameController extends Controller
     {
         $id = $route->id('id');
         $this->requireFrame($id);
-        $form = $this->form($request);
+        $form = $this->formData($request);
 
         try {
             $this->frames->addSlot(
@@ -137,7 +137,7 @@ final class FrameController extends Controller
     {
         $id = $route->id('id');
         $slotId = $this->requireSlot($id, $route->id('slotId'));
-        $form = $this->form($request);
+        $form = $this->formData($request);
 
         $case = $form->enum('morph_case', 'morph_case');
         $clause = $form->text('clause_type');

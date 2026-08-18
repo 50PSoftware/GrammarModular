@@ -126,7 +126,7 @@ final class LemmaController extends Controller
         $id = $route->id('id');
         $this->requireEntry($id);
 
-        $form = $this->form($request);
+        $form = $this->formData($request);
         $variant = $form->text('variant_lemma');
 
         if ($variant === null) {
@@ -176,7 +176,7 @@ final class LemmaController extends Controller
             throw HttpException::notFound();
         }
 
-        $form = $this->form($request);
+        $form = $this->formData($request);
         $this->lemmas->saveSenseAktionsart(
             $id,
             $luId,
@@ -222,7 +222,7 @@ final class LemmaController extends Controller
     {
         $isNew = $id === null;
         $back = $isNew ? $this->url->newEntry() : $this->url->entry($id);
-        $form = $this->form($request);
+        $form = $this->formData($request);
 
         $lemma = $form->text('lemma');
 

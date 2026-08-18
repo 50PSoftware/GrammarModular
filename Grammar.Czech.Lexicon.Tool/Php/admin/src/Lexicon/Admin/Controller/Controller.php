@@ -35,8 +35,12 @@ abstract class Controller
 
     /**
      * Odeslaná pole formuláře.
+     *
+     * Jmenuje se formData a ne form, protože form je přirozené jméno akce — SessionController ho má
+     * na routě /prihlaseni. Pomocná metoda předka by takovou akci zablokovala: potomek nesmí zúžit
+     * signaturu, takže by se třída odmítla načíst fatální chybou, kterou try/catch nechytí.
      */
-    protected function form(Request $request): FormData
+    protected function formData(Request $request): FormData
     {
         return new FormData($request->form, $this->schema);
     }

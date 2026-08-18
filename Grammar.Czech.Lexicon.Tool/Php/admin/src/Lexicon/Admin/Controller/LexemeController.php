@@ -64,7 +64,7 @@ final class LexemeController extends Controller
     {
         $id = $route->id('id');
         $lexeme = $this->requireLexeme($id);
-        $form = $this->form($request);
+        $form = $this->formData($request);
 
         $this->lexemes->update(
             $id,
@@ -83,7 +83,7 @@ final class LexemeController extends Controller
     {
         $id = $route->id('id');
         $this->requireLexeme($id);
-        $form = $this->form($request);
+        $form = $this->formData($request);
 
         try {
             $this->lexemes->addSense($id, $form->text('sense_label'), $form->text('gloss'));
@@ -102,7 +102,7 @@ final class LexemeController extends Controller
     {
         $id = $route->id('id');
         $luId = $this->requireSense($id, $route->id('luId'));
-        $form = $this->form($request);
+        $form = $this->formData($request);
 
         try {
             $this->lexemes->updateSense($luId, $id, $form->text('sense_label'), $form->text('gloss'));
@@ -137,7 +137,7 @@ final class LexemeController extends Controller
     {
         $id = $route->id('id');
         $luId = $this->requireSense($id, $route->id('luId'));
-        $form = $this->form($request);
+        $form = $this->formData($request);
 
         try {
             $this->lexemes->addFrame(
