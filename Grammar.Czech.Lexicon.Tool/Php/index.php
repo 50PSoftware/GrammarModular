@@ -31,7 +31,9 @@ use Lexicon\Admin\Kernel;
 
 require __DIR__ . '/admin/bootstrap.php';
 
-$request = Request::fromGlobals();
+// Kde administrace v adresáři webu stojí. Prázdné znamená kořen a nechává to na odhadu podle
+// SCRIPT_NAME; vyplněné rozhodne — viz Request::readBasePath().
+$request = Request::fromGlobals(lexicon_config('LEXICON_ADMIN_BASE_PATH'));
 $application = new Application($request, __DIR__ . '/admin/views');
 
 (new Kernel($application, new Router()))->handle($request)->send();

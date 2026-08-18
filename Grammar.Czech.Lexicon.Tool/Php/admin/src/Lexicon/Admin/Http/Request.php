@@ -30,10 +30,13 @@ final class Request
 
     /**
      * Builds the request from the environment PHP was handed.
+     *
+     * The base path is normally worked out from the environment. It can be given instead, for the
+     * deployments where the environment does not say — see readBasePath().
      */
-    public static function fromGlobals(): self
+    public static function fromGlobals(?string $configuredBasePath = null): self
     {
-        $basePath = self::readBasePath();
+        $basePath = self::readBasePath($configuredBasePath);
 
         return new self(
             strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')),
@@ -72,17 +75,40 @@ final class Request
     }
 
     /**
-     * The directory the front controller is served from, without a trailing slash.
+     * The prefix every address of the admin sits under, without a trailing slash.
      *
-     * Everything is addressed relative to this, so the admin works unchanged whether it sits at the
-     * document root — the intended deployment — or in a subdirectory of one.
+     * Empty at the document root. In a subdirectory it is what stands in front of every page —
+     * /czlex for https://example.cz/czlex/prihlaseni — and every link, form action and the stylesheet
+     * href is built on top of it.
+     *
+     * Normally dirname(SCRIPT_NAME) answers this, because SCRIPT_NAME is the front controller's own
+     * address as the server sees it. It does not answer it everywhere: hosting that maps a subdomain
+     * onto a subdirectory, or that rewrites at a level above this one, can hand PHP a SCRIPT_NAME of
+     * /index.php while the browser sits on /czlex/prihlaseni. Detection then reports the root, every
+     * address comes out a directory too high, and the first thing to break is the stylesheet — it is
+     * the one address nothing redirects, so it fails silently instead of landing somewhere useful.
+     *
+     * LEXICON_ADMIN_BASE_PATH settles it where detection cannot. Given, it wins outright: falling
+     * back to a guess when an explicit answer exists would only bring the guessing back.
      */
-    private static function readBasePath(): string
+    private static function readBasePath(?string $configured): string
     {
-        $script = (string) ($_SERVER['SCRIPT_NAME'] ?? '/index.php');
-        $directory = rtrim(str_replace('\\', '/', dirname($script)), '/');
+        if ($configured !== null && trim($configured) !== '') {
+            return self::normalizeBasePath($configured);
+        }
 
-        return $directory === '/' ? '' : $directory;
+        return self::normalizeBasePath(dirname((string) ($_SERVER['SCRIPT_NAME'] ?? '/index.php')));
+    }
+
+    /**
+     * Puts a base path into the one shape the rest of the code expects: a leading slash, no trailing
+     * one, and the empty string for the document root.
+     */
+    private static function normalizeBasePath(string $path): string
+    {
+        $path = '/' . trim(trim($path), '/');
+
+        return $path === '/' ? '' : $path;
     }
 
     /**

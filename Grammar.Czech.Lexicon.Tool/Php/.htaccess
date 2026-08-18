@@ -1,8 +1,9 @@
-# Apache configuration for the deployment where this whole directory IS the document root —
-# shared hosting, where www/ cannot be moved and the secrets therefore have nowhere else to go.
+# Apache configuration for the directory that holds the whole application — normally the document
+# root itself, which on shared hosting is where it has to be: www/ cannot be moved and the secrets
+# therefore have nowhere else to go. A subdirectory of the root works too, and nothing here changes.
 #
-#   /        the admin      (index.php)
-#   /api/    the API        (api/index.php)
+#   .        the admin      (index.php)
+#   api/     the API        (api/index.php)
 #
 # The admin addresses its pages by path — /hesla, /heslo/42, /ramec/7 — so everything that is not the
 # API and not the stylesheet is handed to index.php.
@@ -22,6 +23,10 @@
 #   location = /style.css { }
 #   location ^~ /api/ { }
 #   location / { try_files /index.php =404; }
+#
+# Serving the admin from a subdirectory: nothing here needs changing, but PHP cannot always work out
+# the prefix on its own. If pages load and the stylesheet does not, set LEXICON_ADMIN_BASE_PATH in
+# .env.php — see the note there.
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Denies
@@ -66,20 +71,31 @@ Options -Indexes
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteBase /
 
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-    # Per-directory rewriting runs the ruleset again on the rewritten path, and the conditions below
-    # test REQUEST_URI, which a rewrite does not change. Without this line the second pass would match
-    # too and the rule would only stop because the substitution happens to be identical.
-    RewriteRule ^index\.php$ - [L]
+    # Everything below is matched against the path relative to the directory holding this file, never
+    # against REQUEST_URI, and there is deliberately no RewriteBase. Both of those are what let the
+    # whole directory be dropped anywhere — the document root or /czlex under it — and behave the same.
+    #
+    # Anchoring on REQUEST_URI does not survive the move. Under /czlex the request for the stylesheet
+    # arrives as /czlex/style.css, an exclusion written ^/style\.css$ stops matching, and the front
+    # controller swallows the request and answers it with HTML. The same goes for the API, which is
+    # the worse half of it: the pull client would be handed a login page instead of JSON.
+    #
+    # A relative substitution has the per-directory prefix put back on it by mod_rewrite, so
+    # `index.php` reaches this directory's index.php and not one at the server root. RewriteBase /
+    # would override exactly that.
 
-    # Everything but the API and the stylesheet is a page of the admin. The API keeps its own
-    # directory and its own index.php, untouched by this.
-    RewriteCond %{REQUEST_URI} !^/api(/|$)
-    RewriteCond %{REQUEST_URI} !^/style\.css$
+    # What the server hands out itself. index.php is listed because per-directory rewriting runs the
+    # ruleset again on the rewritten path, and without stopping here the second pass would match too.
+    RewriteRule ^(index\.php|style\.css)$ - [L]
+
+    # The API keeps its own directory and its own index.php, untouched by any of this.
+    RewriteRule ^api(/|$) - [L]
+
+    # Everything else is a page of the admin.
     RewriteRule ^ index.php [L]
 </IfModule>
 
