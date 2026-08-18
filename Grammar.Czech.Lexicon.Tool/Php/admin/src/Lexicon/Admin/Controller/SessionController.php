@@ -8,6 +8,7 @@ defined('LEXICON_ADMIN') || exit('Tenhle soubor se nespouští přímo.');
 
 use Lexicon\Admin\Http\Request;
 use Lexicon\Admin\Http\Response;
+use Lexicon\Admin\Http\RouteParity;
 use Lexicon\Admin\Input\OldInput;
 use Lexicon\Admin\Schema;
 use Lexicon\Admin\Security\Authenticator;
@@ -49,6 +50,8 @@ final class SessionController extends Controller
     public function signIn(Request $request): Response
     {
         if ($this->authenticator->signIn((string) ($request->form['password'] ?? ''))) {
+            $this->reportRouteParity();
+
             return $this->redirect($this->url->entries());
         }
 
@@ -58,6 +61,26 @@ final class SessionController extends Controller
         // Bez upřesnění, jestli je špatně heslo nebo něco jiného — není co upřesňovat, uživatel je
         // jeden a heslo taky.
         return $this->page('login', ['error' => 'Špatné heslo.'], signedIn: false);
+    }
+
+    /**
+     * Ohlásí, jestli se tabulka tras a stavitel adres rozešly.
+     *
+     * Běží při přihlášení, protože na tuhle kontrolu není v projektu jiné místo: PHP půlka se nikde
+     * netestuje a na serveru není composer, kterým by se test dal spustit. Přihlášení je nejbližší
+     * náhrada — je vzácné, takže ta trocha reflexe nic nestojí, a je to jediný okamžik, kdy se do
+     * administrace dívá právě ten člověk, který s nálezem může něco udělat.
+     *
+     * Nic neblokuje. Rozejít se můžou o mrtvou routu, což nikomu nevadí, a přihlásit se nepustit kvůli
+     * odkazu, na který se neklikne, by bylo horší než ta chyba sama. Do logu jde totéž co na obrazovku,
+     * aby to zůstalo i po tom, co se hláška odklikne.
+     */
+    private function reportRouteParity(): void
+    {
+        foreach (RouteParity::problems() as $problem) {
+            error_log('lexikon admin: ' . $problem);
+            $this->flash->error($problem);
+        }
     }
 
     /**

@@ -62,6 +62,16 @@ final class Router
     }
 
     /**
+     * The whole table, for RouteParity to hold Url up against.
+     *
+     * @return list<Route>
+     */
+    public function routes(): array
+    {
+        return $this->routes;
+    }
+
+    /**
      * Finds the route for a request.
      *
      * @throws HttpException When nothing matches the path, or nothing matches it with this method.
