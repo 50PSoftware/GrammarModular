@@ -81,15 +81,16 @@ final class Request
      * /czlex for https://example.cz/czlex/prihlaseni — and every link, form action and the stylesheet
      * href is built on top of it.
      *
-     * Normally dirname(SCRIPT_NAME) answers this, because SCRIPT_NAME is the front controller's own
-     * address as the server sees it. It does not answer it everywhere: hosting that maps a subdomain
-     * onto a subdirectory, or that rewrites at a level above this one, can hand PHP a SCRIPT_NAME of
-     * /index.php while the browser sits on /czlex/prihlaseni. Detection then reports the root, every
-     * address comes out a directory too high, and the first thing to break is the stylesheet — it is
-     * the one address nothing redirects, so it fails silently instead of landing somewhere useful.
+     * dirname(SCRIPT_NAME) proposes it, and the request itself confirms or refuses the proposal.
+     * SCRIPT_NAME is not always the address the browser used: hosting that maps a subdomain onto a
+     * directory reports the path from the account root, so a site served at czlex.example.net/ can be
+     * announced to PHP as /subdom/czlex/index.php. Believing that puts /subdom/czlex in front of every
+     * address, and the first casualty is the stylesheet — it is the one address nothing redirects, so
+     * it fails silently instead of landing somewhere that still works.
      *
-     * LEXICON_ADMIN_BASE_PATH settles it where detection cannot. Given, it wins outright: falling
-     * back to a guess when an explicit answer exists would only bring the guessing back.
+     * A real prefix is one the current request is actually under. Checking that costs nothing and
+     * catches exactly the case detection cannot otherwise see, so a prefix the request does not
+     * confirm is dropped rather than trusted.
      */
     private static function readBasePath(?string $configured): string
     {
@@ -97,12 +98,36 @@ final class Request
             return self::normalizeBasePath($configured);
         }
 
-        return self::normalizeBasePath(dirname((string) ($_SERVER['SCRIPT_NAME'] ?? '/index.php')));
+        $proposed = self::normalizeBasePath(dirname((string) ($_SERVER['SCRIPT_NAME'] ?? '/index.php')));
+
+        return self::isUnder(self::requestPath(), $proposed) ? $proposed : '';
+    }
+
+    /**
+     * The path of the current request, without the query string.
+     */
+    private static function requestPath(): string
+    {
+        return (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+    }
+
+    /**
+     * Determines whether a path sits under a prefix.
+     *
+     * On the segment boundary, not on the characters: /czlexicon starts with /czlex and is a different
+     * place. Stripping by length alone would leave "icon" as the page being asked for.
+     */
+    private static function isUnder(string $path, string $prefix): bool
+    {
+        return $prefix === '' || $path === $prefix || str_starts_with($path, $prefix . '/');
     }
 
     /**
      * Puts a base path into the one shape the rest of the code expects: a leading slash, no trailing
      * one, and the empty string for the document root.
+     *
+     * That shape is also what makes '/' worth writing in the configuration: it normalises to the empty
+     * string, which says "the root, and stop guessing" — an empty setting only says "guess".
      */
     private static function normalizeBasePath(string $path): string
     {
@@ -121,10 +146,9 @@ final class Request
      */
     private static function readPath(string $basePath): string
     {
-        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
-        $path = (string) parse_url($uri, PHP_URL_PATH);
+        $path = self::requestPath();
 
-        if ($basePath !== '' && str_starts_with($path, $basePath)) {
+        if ($basePath !== '' && self::isUnder($path, $basePath)) {
             $path = substr($path, strlen($basePath));
         }
 
