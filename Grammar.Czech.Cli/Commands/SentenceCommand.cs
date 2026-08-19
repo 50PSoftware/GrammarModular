@@ -128,17 +128,19 @@ namespace Grammar.Czech.Cli.Commands
                 AssignFlag(parse, overrides, "zapor", negative);
                 AssignFlag(parse, overrides, "podmet", dropSubject);
 
-                Assign(overrides, "role", parse.GetValue(role));
-                Assign(overrides, "cleneni", parse.GetValue(status));
-                Assign(overrides, "pad", parse.GetValue(kase));
-                Assign(overrides, "rod", parse.GetValue(gender));
-                Assign(overrides, "cislo", parse.GetValue(number));
-                Assign(overrides, "vzor", parse.GetValue(pattern));
-                Assign(overrides, "zivotne", parse.GetValue(animate));
-                Assign(overrides, "druh", parse.GetValue(category));
-                Assign(overrides, "stupen", parse.GetValue(degree));
-                Assign(overrides, "predlozka", parse.GetValue(preposition));
-                Assign(overrides, "privlastek", parse.GetValue(modifier));
+                var sentenceLemmas = parse.GetValue(lemmas) ?? [];
+
+                Assign(overrides, "role", parse.GetValue(role), sentenceLemmas);
+                Assign(overrides, "cleneni", parse.GetValue(status), sentenceLemmas);
+                Assign(overrides, "pad", parse.GetValue(kase), sentenceLemmas);
+                Assign(overrides, "rod", parse.GetValue(gender), sentenceLemmas);
+                Assign(overrides, "cislo", parse.GetValue(number), sentenceLemmas);
+                Assign(overrides, "vzor", parse.GetValue(pattern), sentenceLemmas);
+                Assign(overrides, "zivotne", parse.GetValue(animate), sentenceLemmas);
+                Assign(overrides, "druh", parse.GetValue(category), sentenceLemmas);
+                Assign(overrides, "stupen", parse.GetValue(degree), sentenceLemmas);
+                Assign(overrides, "predlozka", parse.GetValue(preposition), sentenceLemmas);
+                Assign(overrides, "privlastek", parse.GetValue(modifier), sentenceLemmas);
 
                 foreach (var assignment in parse.GetValue(attach) ?? [])
                 {
@@ -232,11 +234,12 @@ namespace Grammar.Czech.Cli.Commands
             AllowMultipleArgumentsPerToken = true,
         };
 
-        private static void Assign(DraftOverrides overrides, string property, string[]? assignments)
+        private static void Assign(
+            DraftOverrides overrides, string property, string[]? assignments, IReadOnlyList<string> lemmas)
         {
             foreach (var assignment in assignments ?? [])
             {
-                OverrideParser.Assign(overrides, property, assignment);
+                OverrideParser.Assign(overrides, property, assignment, lemmas);
             }
         }
 
