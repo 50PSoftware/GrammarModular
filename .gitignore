@@ -382,3 +382,5 @@ lexikon.json
 /.claude/
 /CLAUDE.md
 /Grammar.Czech/Data/Lexicon/grammar.czech.lexicon.db
+/tools/
+/tools/lexicon_gap_finder.py
