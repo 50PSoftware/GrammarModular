@@ -470,7 +470,8 @@ namespace Grammar.Czech.Cli.Sentence
             // '--role zahrada=LOC' vyhraje, a knihovna pak dopočítá jen to, co zbylo.
             if (_rolesWithoutFrame.IsNeeded(draft.PredicateLemma))
             {
-                var invented = _rolesWithoutFrame.Assign(draft.Constituents);
+                var voice = overrides.PredicateFor(ordinal).Voice ?? draft.Predicate.Voice ?? Voice.Active;
+                var invented = _rolesWithoutFrame.Assign(draft.Constituents, voice);
 
                 if (invented.Count > 0)
                 {
@@ -562,6 +563,14 @@ namespace Grammar.Czech.Cli.Sentence
             }
 
             var known = _lexicon.HasEntry(match.Lemma);
+
+            // --zivotne na slovo, které slovník nezná, opravuje jen jeho tvar — u role se pak nesmí
+            // brát jako fakt, jinak jedna oprava skloňování otočí role všem ostatním členům věty.
+            if (stated?.IsAnimate is not null && !known)
+            {
+                word.IsAnimateAssumed = true;
+            }
+
             var enriched = _enricher.Enrich(word);
 
             // Předložky, zájmena ani spojky slovník nevede — jsou to uzavřené třídy a bydlí

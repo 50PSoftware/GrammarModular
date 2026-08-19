@@ -57,7 +57,7 @@ catch (CliException exception)
     return 1;
 }
 catch (Exception exception) when (exception is NotSupportedException or InvalidOperationException
-    or ArgumentException or KeyNotFoundException)
+    or ArgumentException or KeyNotFoundException or FormatException)
 {
     // Hlášky knihovny mluví ke konzumentovi NuGetu: anglicky, o vzorech a rámcích, a bez rady, co
     // udělat jinak. Sem chodí to, na co nástroj nemá vlastní hlášku, a i tak má odejít česky a s

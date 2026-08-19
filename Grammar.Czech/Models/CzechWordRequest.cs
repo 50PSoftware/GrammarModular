@@ -122,6 +122,18 @@ namespace Grammar.Czech.Models
         /// </summary>
         public bool? IsAnimate { get; set; }
         /// <summary>
+        /// Gets or sets a value indicating whether <see cref="IsAnimate"/> is a guess or an unconfirmed
+        /// assertion rather than a fact the lexicon vouches for.
+        /// </summary>
+        /// <remarks>
+        /// A role-assignment heuristic that leans on animacy — an unmarked argument order defaults the
+        /// actor to whichever participant is animate — has to trust only what is actually known. A guess
+        /// from the lemma's ending, or a caller stating animacy purely to fix the declension of a word the
+        /// lexicon does not carry, is not that: treating it as equally strong evidence let a single
+        /// morphology-only correction rotate every role in the clause.
+        /// </remarks>
+        public bool? IsAnimateAssumed { get; set; }
+        /// <summary>
         /// Gets or sets a value indicating whether the pronoun follows a preposition.
         /// </summary>
         public bool IsAfterPreposition { get; set; } = false;

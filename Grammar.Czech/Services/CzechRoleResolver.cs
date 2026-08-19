@@ -257,7 +257,13 @@ namespace Grammar.Czech.Services
                     return;
                 }
 
-                var animate = open.Where(item => item.Participant.Word.IsAnimate == true).ToList();
+                // Jen ověřená životnost smí rozhodnout, kdo je konatel — odhad z koncovky nebo
+                // nepotvrzené --zivotne na slovo mimo slovník sem nesmí, jinak jediná morfologická
+                // oprava přerozdělí role celé větě.
+                var animate = open
+                    .Where(item => item.Participant.Word.IsAnimate == true
+                        && item.Participant.Word.IsAnimateAssumed != true)
+                    .ToList();
 
                 // Jeden životný kandidát rozhoduje; dva už ne — pes vidí kočku má životná obě a tam
                 // nezbývá než pořadí, ve kterém to volající zadal.

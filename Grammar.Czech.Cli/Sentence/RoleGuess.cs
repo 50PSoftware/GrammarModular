@@ -53,16 +53,27 @@ namespace Grammar.Czech.Cli.Sentence
         /// Writes a role onto every constituent that has none, in the order they were written.
         /// </summary>
         /// <param name="constituents">The constituents of the clause.</param>
+        /// <param name="voice">
+        /// The voice the clause was asked for, since it decides the case a guessed role stands in — a
+        /// frame would remap it the same way through its <c>PassivePeriphrastic</c> diathesis, and there
+        /// is no frame here to do that for us.
+        /// </param>
         /// <returns>The constituents a role was invented for, in order.</returns>
+        /// <exception cref="CliException">
+        /// Thrown when the clause asks for the passive but no argument could be guessed as the patient —
+        /// there would be nothing to promote to the subject and no way to know what the sentence means.
+        /// </exception>
         /// <remarks>
         /// Anything already carrying a role keeps it, whether it came from a switch or from the review,
         /// and a constituent opened by a preposition is skipped: a preposition makes it an adverbial and
         /// the role resolver reads those off the preposition itself, which is knowledge rather than a
         /// guess.
         /// </remarks>
-        public IReadOnlyList<ConstituentDraft> Assign(IEnumerable<ConstituentDraft> constituents)
+        public IReadOnlyList<ConstituentDraft> Assign(IEnumerable<ConstituentDraft> constituents, Voice voice)
         {
-            var open = constituents
+            var all = constituents.ToList();
+
+            var open = all
                 .Where(constituent => constituent.Functor is null && constituent.Preposition is null)
                 .ToList();
 
@@ -90,16 +101,29 @@ namespace Grammar.Czech.Cli.Sentence
                 // kopii, kterou getter právě vrátil, a zahodil ho.
                 var word = constituent.Word;
 
-                word.Case ??= functor switch
+                // Trpný rod bez rámce se nezná v aktivní podobě a pak jen přeznačí pád — knihovna to tak
+                // dělá skrz PassivePeriphrastic diatezi (PAT → nominativ, ACT → instrumentál) a bez
+                // rámce je tohle jediné místo, které tu diatezi umí napodobit.
+                word.Case ??= (functor, voice) switch
                 {
-                    FgdFunctor.ACT => Case.Nominative,
-                    FgdFunctor.PAT => Case.Accusative,
+                    (FgdFunctor.ACT, Voice.Passive) => Case.Instrumental,
+                    (FgdFunctor.PAT, Voice.Passive) => Case.Nominative,
+                    (FgdFunctor.ACT, _) => Case.Nominative,
+                    (FgdFunctor.PAT, _) => Case.Accusative,
                     _ => Case.Dative,
                 };
 
                 constituent.Word = word;
 
                 taken.Add(constituent);
+            }
+
+            if (voice == Voice.Passive && all.All(constituent => constituent.Functor != FgdFunctor.PAT))
+            {
+                throw new CliException(
+                    "Trpný rod chce trpitele (PAT), na kterého se dá povýšit podmět — sloveso není ve "
+                    + "slovníku, takže role se hádaly z pořadí slov, a mezi nimi žádný nevyšel jako PAT. "
+                    + "Buď dej trpiteli roli výslovně (--role slovo=PAT), nebo zůstaň v činném rodě.");
             }
 
             return taken;

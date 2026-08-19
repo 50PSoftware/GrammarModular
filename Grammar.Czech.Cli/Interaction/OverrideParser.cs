@@ -246,15 +246,20 @@ namespace Grammar.Czech.Cli.Interaction
             Prepare(overrides, target, property, value)();
 
         // Hodnota se přečte hned a zapíše se až vrácenou akcí, aby šlo celý řádek nejdřív ověřit.
+        //
+        // 'p'/'p2' je přísudek, ale libovolné lemma začínající na 'p' (pokuta, práce, pes, …) přísudek
+        // není — bez ověření, že za 'p' následuje číslo klauze, by se sem propadlo i takové lemma a
+        // int.Parse na jeho zbytku (např. "okuta") by shodil proces nezachycenou výjimkou.
         private static Action Prepare(DraftOverrides overrides, string target, string property, string value)
         {
-            if (target.StartsWith('p'))
+            if (target is "p" or "P")
             {
-                return PreparePredicate(
-                    overrides,
-                    target.Length == 1 ? overrides.Predicate : overrides.PredicateOf(int.Parse(target[1..])),
-                    property,
-                    value);
+                return PreparePredicate(overrides, overrides.Predicate, property, value);
+            }
+
+            if (target.Length > 1 && target[0] is 'p' or 'P' && int.TryParse(target[1..], out var clause) && clause > 0)
+            {
+                return PreparePredicate(overrides, overrides.PredicateOf(clause), property, value);
             }
 
             var word = overrides.For(target);

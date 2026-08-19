@@ -116,7 +116,7 @@ namespace Grammar.Czech.Cli.Sentence
 
         private static CzechWordRequest CompleteNoun(CzechWordRequest word)
         {
-            var (gender, pattern, animate) = GuessNoun(word.Lemma);
+            var (gender, pattern, animate) = GuessNoun(word.Lemma, word.IsAnimate);
 
             word.Gender ??= gender;
             word.Pattern ??= pattern;
@@ -125,7 +125,10 @@ namespace Grammar.Czech.Cli.Sentence
             return word;
         }
 
-        private static (Gender Gender, string Pattern, bool Animate) GuessNoun(string lemma)
+        // Životnost odjinud než z --zivotne nebo z vlastního jména odhadnout nejde — koncovka sama
+        // nerozhodne (zajíc/hrnec). Když ji volající už zná (z --zivotne), musí odhad vzoru vycházet
+        // z ní, ne ji tiše přebít vzorem pro opačnou životnost.
+        private static (Gender Gender, string Pattern, bool Animate) GuessNoun(string lemma, bool? isAnimate)
         {
             // Velké písmeno na začátku bere tvar jako vlastní jméno: Klára je pak žena a Petr pán, ne
             // hrad. Životnost odjinud než z vlastního jména odhadnout nejde.
@@ -173,12 +176,16 @@ namespace Grammar.Czech.Cli.Sentence
                 || Ends(lemma, "š") || Ends(lemma, "č") || Ends(lemma, "ř") || Ends(lemma, "c")
                 || Ends(lemma, "j"))
             {
-                return proper
+                var animateSoft = isAnimate ?? proper;
+
+                return animateSoft
                     ? (Gender.Masculine, "muž", true)
                     : (Gender.Masculine, "stroj", false);
             }
 
-            return proper
+            var animateHard = isAnimate ?? proper;
+
+            return animateHard
                 ? (Gender.Masculine, "pán", true)
                 : (Gender.Masculine, "hrad", false);
         }
