@@ -11,6 +11,7 @@ use Lexicon\Admin\Controller\LemmaController;
 use Lexicon\Admin\Controller\LexemeController;
 use Lexicon\Admin\Controller\ListController;
 use Lexicon\Admin\Controller\SessionController;
+use Lexicon\Admin\Controller\TokenController;
 
 /**
  * The table of what the admin answers on, and the lookup into it.
@@ -35,6 +36,10 @@ final class Router
             new Route('GET', '/prihlaseni', SessionController::class, 'form', isPublic: true),
             new Route('POST', '/prihlaseni', SessionController::class, 'signIn', isPublic: true),
             new Route('POST', '/odhlaseni', SessionController::class, 'signOut'),
+
+            new Route('GET', '/tokeny', TokenController::class, 'index'),
+            new Route('POST', '/tokeny', TokenController::class, 'store'),
+            new Route('POST', '/tokeny/{id}/smazat', TokenController::class, 'destroy'),
 
             new Route('GET', '/heslo/nove', LemmaController::class, 'create'),
             new Route('POST', '/heslo/nove', LemmaController::class, 'store'),

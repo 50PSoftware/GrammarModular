@@ -42,6 +42,16 @@ final class Url
         return $this->to('/odhlaseni');
     }
 
+    public function tokens(): string
+    {
+        return $this->to('/tokeny');
+    }
+
+    public function deleteToken(int $id): string
+    {
+        return $this->to("/tokeny/$id/smazat");
+    }
+
     public function newEntry(): string
     {
         return $this->to('/heslo/nove');

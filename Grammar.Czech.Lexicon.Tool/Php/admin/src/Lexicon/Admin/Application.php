@@ -13,10 +13,13 @@ use Lexicon\Admin\Controller\LemmaController;
 use Lexicon\Admin\Controller\LexemeController;
 use Lexicon\Admin\Controller\ListController;
 use Lexicon\Admin\Controller\SessionController;
+use Lexicon\Admin\Controller\TokenController;
 use Lexicon\Admin\Database\Database;
+use Lexicon\Admin\Database\WebUserDatabase;
 use Lexicon\Admin\Http\Request;
 use Lexicon\Admin\Input\OldInput;
 use Lexicon\Admin\Input\PatternValidator;
+use Lexicon\Admin\Repository\ApiTokenRepository;
 use Lexicon\Admin\Repository\FrameRepository;
 use Lexicon\Admin\Repository\LemmaRepository;
 use Lexicon\Admin\Repository\LexemeRepository;
@@ -69,6 +72,14 @@ final class Application
         return $this->once(Database::class, fn (): Database => new Database($this->config()));
     }
 
+    public function webUserDatabase(): WebUserDatabase
+    {
+        return $this->once(
+            WebUserDatabase::class,
+            fn (): WebUserDatabase => new WebUserDatabase($this->config())
+        );
+    }
+
     public function csrf(): CsrfToken
     {
         return $this->once(CsrfToken::class, fn (): CsrfToken => new CsrfToken($this->session()));
@@ -78,7 +89,7 @@ final class Application
     {
         return $this->once(
             Authenticator::class,
-            fn (): Authenticator => new Authenticator($this->session(), $this->config())
+            fn (): Authenticator => new Authenticator($this->session(), $this->config(), $this->webUserDatabase())
         );
     }
 
@@ -158,6 +169,15 @@ final class Application
                 $this->oldInput(),
                 $this->schema(),
                 $this->authenticator()
+            ),
+            TokenController::class => new TokenController(
+                $this->view(),
+                $this->url(),
+                $this->flash(),
+                $this->oldInput(),
+                $this->schema(),
+                $this->authenticator(),
+                new ApiTokenRepository($this->database())
             ),
             default => throw new InvalidArgumentException("Controller '$class' se nedá sestavit."),
         };

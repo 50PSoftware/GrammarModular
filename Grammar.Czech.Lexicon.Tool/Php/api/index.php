@@ -23,8 +23,12 @@ declare(strict_types=1);
  *
  * Requires PHP 8.1 or newer, for the never return type.
  *
- * Configuration is LEXICON_MYSQL_DSN, LEXICON_MYSQL_USER, LEXICON_MYSQL_PASSWORD and
- * LEXICON_API_TOKEN, read by env.php from the real environment or from Php/.env.php. See .env.php.example.
+ * Configuration is LEXICON_MYSQL_DSN, LEXICON_MYSQL_USER and LEXICON_MYSQL_PASSWORD, read by env.php
+ * from the real environment or from Php/.env.php. See .env.php.example.
+ *
+ * The bearer token is not configuration: each caller presents a personal token minted in the admin
+ * (see admin/schema/api_token.mysql.sql and the "Tokeny" page), and authorize() looks its hash up in
+ * the api_token table rather than comparing against a single shared secret.
  *
  * Deployed as www/api/index.php, with the admin at www/index.php beside it. The shared includes and
  * the secrets sit one level up and are denied by .htaccess; see ../.htaccess.
@@ -68,7 +72,8 @@ try {
  */
 function handle(): array
 {
-    authorize();
+    $pdo = connect();
+    authorize($pdo);
 
     $table = (string) ($_GET['table'] ?? '');
 
@@ -100,7 +105,7 @@ function handle(): array
     $sql .= $after === null ? '' : "WHERE `$keyColumn` > ? ";
     $sql .= "ORDER BY `$keyColumn` LIMIT $limit";
 
-    $statement = connect()->prepare($sql);
+    $statement = $pdo->prepare($sql);
 
     if ($after === null) {
         $statement->execute();
@@ -128,25 +133,29 @@ function handle(): array
     ];
 }
 
-function authorize(): void
+function authorize(PDO $pdo): void
 {
-    $expected = lexicon_config('LEXICON_API_TOKEN');
-
-    // Fails closed. An unset token is a misconfigured deployment, and treating it as "no auth needed"
-    // would publish the whole dictionary the first time someone forgot to set the variable.
-    if ($expected === '') {
-        error_log('api: LEXICON_API_TOKEN není nastaven.');
-        fail(500, 'Server není nastavený.');
-    }
-
     $presented = preg_match('/^Bearer\s+(.+)$/i', trim(readAuthorizationHeader()), $matches) === 1
         ? $matches[1]
         : '';
 
-    // Constant-time, so the comparison does not leak the token one character at a time.
-    if (!hash_equals($expected, $presented)) {
+    if ($presented === '') {
         fail(401, 'Neplatný token.');
     }
+
+    // The token itself is never stored, only its hash — a leaked api_token table hands over nothing
+    // usable, the same reasoning the admin's own sign-in applies to passwords.
+    $hash = hash('sha256', $presented);
+
+    $statement = $pdo->prepare('SELECT id FROM api_token WHERE token_hash = ?');
+    $statement->execute([$hash]);
+    $row = $statement->fetch();
+
+    if ($row === false) {
+        fail(401, 'Neplatný token.');
+    }
+
+    $pdo->prepare('UPDATE api_token SET last_used_at = NOW() WHERE id = ?')->execute([$row['id']]);
 }
 
 /**

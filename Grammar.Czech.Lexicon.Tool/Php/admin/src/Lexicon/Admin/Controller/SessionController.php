@@ -49,7 +49,10 @@ final class SessionController extends Controller
      */
     public function signIn(Request $request): Response
     {
-        if ($this->authenticator->signIn((string) ($request->form['password'] ?? ''))) {
+        $mail = (string) ($request->form['mail'] ?? '');
+        $password = (string) ($request->form['password'] ?? '');
+
+        if ($this->authenticator->signIn($mail, $password)) {
             $this->reportRouteParity();
 
             return $this->redirect($this->url->entries());
@@ -58,9 +61,9 @@ final class SessionController extends Controller
         // Drobné zpomalení, aby hádání dávalo méně pokusů za minutu.
         usleep(400000);
 
-        // Bez upřesnění, jestli je špatně heslo nebo něco jiného — není co upřesňovat, uživatel je
-        // jeden a heslo taky.
-        return $this->page('login', ['error' => 'Špatné heslo.'], signedIn: false);
+        // Bez upřesnění, co přesně nesedělo — špatný e-mail, špatné heslo, neověřený účet nebo
+        // chybějící role. Není co upřesňovat cizímu člověku před přihlášením.
+        return $this->page('login', ['error' => 'Přihlášení se nezdařilo.'], signedIn: false);
     }
 
     /**

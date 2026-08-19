@@ -28,6 +28,7 @@ defined('LEXICON_ADMIN') || exit('Tenhle soubor se nespouští přímo.');
     <a class="brand" href="<?= h($url->entries()) ?>">Slovník</a>
     <nav>
         <a href="<?= h($url->newEntry()) ?>">Nové heslo</a>
+        <a href="<?= h($url->tokens()) ?>">Tokeny</a>
         <?php /* Odhlášení je POST, ne odkaz: GET jde vyvolat cizí stránkou a token proti CSRF se
                  kontroluje jen u zápisů. */ ?>
         <form method="post" action="<?= h($url->signOut()) ?>">
