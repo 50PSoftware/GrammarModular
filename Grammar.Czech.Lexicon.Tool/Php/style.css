@@ -124,7 +124,7 @@ label { font-weight: 600; font-size: 0.85rem; }
 small { color: var(--muted); font-size: 0.78rem; }
 .hint { color: var(--muted); font-size: 0.85rem; margin: 0 0 0.7rem; }
 
-input[type=text], input[type=search], input[type=password], input[type=number], select, textarea {
+input[type=text], input[type=search], input[type=password], input[type=number], input[type=email], select, textarea {
     font: inherit;
     padding: 0.4rem 0.5rem;
     background: var(--card);
