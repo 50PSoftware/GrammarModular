@@ -96,6 +96,8 @@ namespace Grammar.Czech.Services
                 ],
             };
 
+            EnsureUniqueActants(plan);
+
             if (plan.Participants.All(participant => participant.Functor is not null))
             {
                 return plan;
@@ -144,6 +146,45 @@ namespace Grammar.Czech.Services
             ClaimFreeModifications(resolved, open);
 
             return plan with { Participants = resolved };
+        }
+
+        // Uzavřená třída aktantů podle FGD (Urešová et al., PBML 105, 2016): jedinečnost v klauzi je
+        // to, co dělá funktor aktantem, ne volným doplněním, takže se nekontroluje nikde jinde.
+        private static readonly FgdFunctor[] ActantFunctors =
+        [
+            FgdFunctor.ACT,
+            FgdFunctor.PAT,
+            FgdFunctor.ADDR,
+            FgdFunctor.ORIG,
+            FgdFunctor.EFF,
+        ];
+
+        /// <summary>
+        /// Checks that no actant functor is claimed by more than one participant.
+        /// </summary>
+        /// <param name="plan">The plan to check.</param>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when the same actant functor (ACT, PAT, ADDR, ORIG, EFF) is stated on two participants.
+        /// </exception>
+        /// <remarks>
+        /// A participant left with no functor is not checked here — it is either an adjunct, which may
+        /// repeat, or still waiting for <see cref="Resolve(SentencePlan)"/> to place it.
+        /// </remarks>
+        private static void EnsureUniqueActants(SentencePlan plan)
+        {
+            var duplicate = plan.Participants
+                .Where(participant => participant.Functor is { } functor && ActantFunctors.Contains(functor))
+                .GroupBy(participant => participant.Functor)
+                .FirstOrDefault(group => group.Count() > 1);
+
+            if (duplicate is not null)
+            {
+                throw new InvalidOperationException(
+                    $"Klauze se slovesem '{plan.Predicate.Lemma}' má funktor {duplicate.Key} dvakrát. "
+                    + "Aktant se v klauzi smí objevit nejvýš jednou — to je definiční vlastnost aktantu "
+                    + "podle FGD, ne pravidlo, které lze obejít. Druhé doplnění potřebuje jiný funktor, "
+                    + "nebo jde o koordinaci/apozici, kterou tenhle plán zatím nemodeluje.");
+            }
         }
 
         /// <summary>

@@ -58,6 +58,15 @@ namespace Grammar.Czech.Test
                 },
                 functor);
 
+        private static PlannedParticipant Adverb(string lemma, FgdFunctor functor) =>
+            PlannedParticipant.Of(
+                new CzechWordRequest
+                {
+                    Lemma = lemma,
+                    WordCategory = WordCategory.Adverb
+                },
+                functor);
+
         private static PlannedParticipant Pronoun(string lemma, FgdFunctor functor) =>
             PlannedParticipant.Of(
                 new CzechWordRequest
@@ -175,6 +184,44 @@ namespace Grammar.Czech.Test
             var plan = Reads() with { Joined = [new ClauseLink("a", Writes())] };
 
             StringAssert.Contains(Build(plan), "píše");
+        }
+
+        /// <summary>
+        /// Two participants named as the same actant are refused, because in FGD a functor a clause
+        /// can claim twice is a free modification, not an actant (Urešová et al., PBML 105, 2016).
+        /// </summary>
+        [TestMethod]
+        public void RepeatedActantFunctorIsRefused()
+        {
+            var plan = Reads() with
+            {
+                Participants =
+                [
+                    .. Reads().Participants,
+                    Noun("dopis", "hrad", Gender.Masculine, functor: FgdFunctor.PAT)
+                ]
+            };
+
+            Assert.ThrowsException<InvalidOperationException>(() => roles.Resolve(plan));
+        }
+
+        /// <summary>
+        /// A free modification is not an actant, so nothing stops the same functor twice.
+        /// </summary>
+        [TestMethod]
+        public void RepeatedAdjunctFunctorIsAllowed()
+        {
+            var plan = Reads() with
+            {
+                Participants =
+                [
+                    .. Reads().Participants,
+                    Adverb("rychle", FgdFunctor.MANN),
+                    Adverb("pečlivě", FgdFunctor.MANN)
+                ]
+            };
+
+            StringAssert.Contains(Build(roles.Resolve(plan)), "rychle");
         }
 
         /// <summary>
