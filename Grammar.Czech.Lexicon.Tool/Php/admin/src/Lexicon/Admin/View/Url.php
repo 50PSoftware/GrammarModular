@@ -47,6 +47,11 @@ final class Url
         return $this->to('/tokeny');
     }
 
+    public function export(): string
+    {
+        return $this->to('/export');
+    }
+
     public function deleteToken(int $id): string
     {
         return $this->to("/tokeny/$id/smazat");

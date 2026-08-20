@@ -6,6 +6,7 @@ namespace Lexicon\Admin\Http;
 
 defined('LEXICON_ADMIN') || exit('Tenhle soubor se nespouští přímo.');
 
+use Lexicon\Admin\Controller\ExportController;
 use Lexicon\Admin\Controller\FrameController;
 use Lexicon\Admin\Controller\LemmaController;
 use Lexicon\Admin\Controller\LexemeController;
@@ -40,6 +41,8 @@ final class Router
             new Route('GET', '/tokeny', TokenController::class, 'index'),
             new Route('POST', '/tokeny', TokenController::class, 'store'),
             new Route('POST', '/tokeny/{id}/smazat', TokenController::class, 'destroy'),
+
+            new Route('GET', '/export', ExportController::class, 'download'),
 
             new Route('GET', '/heslo/nove', LemmaController::class, 'create'),
             new Route('POST', '/heslo/nove', LemmaController::class, 'store'),

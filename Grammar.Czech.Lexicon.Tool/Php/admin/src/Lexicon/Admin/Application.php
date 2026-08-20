@@ -8,6 +8,7 @@ defined('LEXICON_ADMIN') || exit('Tenhle soubor se nespouští přímo.');
 
 use InvalidArgumentException;
 use Lexicon\Admin\Controller\Controller;
+use Lexicon\Admin\Controller\ExportController;
 use Lexicon\Admin\Controller\FrameController;
 use Lexicon\Admin\Controller\LemmaController;
 use Lexicon\Admin\Controller\LexemeController;
@@ -178,6 +179,14 @@ final class Application
                 $this->schema(),
                 $this->authenticator(),
                 new ApiTokenRepository($this->database())
+            ),
+            ExportController::class => new ExportController(
+                $this->view(),
+                $this->url(),
+                $this->flash(),
+                $this->oldInput(),
+                $this->schema(),
+                $this->database()
             ),
             default => throw new InvalidArgumentException("Controller '$class' se nedá sestavit."),
         };
