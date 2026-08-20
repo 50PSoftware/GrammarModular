@@ -34,6 +34,7 @@ static int Run(string[] args)
             "build" => Build(args, settings),
             "validate" => Validate(args, settings),
             "dump" => Dump(args, settings),
+            "import" => Import(args, settings),
             "pull" => Pull(args, settings),
             "export-json" => ExportJson(args, settings),
             "navrhy" => Proposals(args),
@@ -114,6 +115,20 @@ static int Dump(string[] args, ToolSettings settings)
     Console.WriteLine($"Zapsáno: {Path.GetFullPath(output)}");
 
     return 0;
+}
+
+static int Import(string[] args, ToolSettings settings)
+{
+    // Protějšek `dump` — vstup je stejný formát, ať přišel z něj, z LexiconDumper.cs, nebo z exportu
+    // v PHP adminu, kam se sahá právě když `pull` samo nejde (viz ExportController.php).
+    var input = Argument(args, "--in")
+        ?? throw new InvalidOperationException("Chybí --in s cestou k .sql dumpu.");
+    var destination = Argument(args, "--out") ?? LexiconPath(settings);
+
+    LexiconSqlImporter.Import(input, destination, args.Contains("--force"));
+    Console.WriteLine($"Lexikon vytvořen: {Path.GetFullPath(destination)}");
+
+    return Report(LexiconValidator.Validate(destination), destination);
 }
 
 static int Pull(string[] args, ToolSettings settings)
@@ -286,6 +301,9 @@ static void PrintUsage()
           validate    --server | --url <api>         Zkontroluje, co má server — nic nemění.
           pull        [--url <api>] [--out <cesta>]  Stáhne slovník z API a nahradí jím lokální lexikon.
           dump        [--db <cesta>] --out <sql>     Vypíše lexikon jako přenositelné INSERTy.
+          import      --in <sql> [--db <cesta>] [--force]
+                                                    Postaví lexikon z dumpu (z `dump`, nebo z exportu
+                                                    v adminu, když nejde přes API).
           export-json [--db <cesta>] --out <adresář> Vypíše lexikon ve formátu, který posílá API.
           navrhy      [--soubor <json>] [--out <adresář>] [--jen-potvrzene]
                                                     Udělá návrh seedu ze slov, která posbírala
