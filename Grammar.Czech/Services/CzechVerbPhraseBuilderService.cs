@@ -127,6 +127,29 @@ namespace Grammar.Czech.Services
         }
 
         /// <summary>
+        /// Builds a Czech recipient deobjective verb phrase from the passive participle and the "dostat"
+        /// auxiliary.
+        /// </summary>
+        /// <param name="verbForm">The neuter singular passive participle to combine into a phrase.</param>
+        /// <param name="tense">The requested grammatical tense.</param>
+        /// <param name="number">The grammatical number supplied by the test data.</param>
+        /// <param name="person">The requested grammatical person.</param>
+        /// <param name="modus">The requested grammatical mood.</param>
+        /// <param name="gender">The grammatical gender supplied by the test data.</param>
+        /// <param name="isNegative">True when the generated phrase should be negated; otherwise, false.</param>
+        /// <returns>The assembled recipient deobjective verb phrase.</returns>
+        /// <remarks>
+        /// Same shape as <see cref="BuildResultativePhrase"/> — the participle stays neuter singular and
+        /// only the auxiliary agrees, this time with the recipient (ADDR) rather than the actor: <em>Karel
+        /// dostal zaplaceno</em> (Daneš, Naše řeč 51, 1968).
+        /// </remarks>
+        public string BuildRecipientPhrase(string verbForm, Tense? tense, Number? number, Person? person, Modus? modus, Gender? gender, bool isNegative)
+        {
+            var getForm = auxVerbService.GetGetForm(tense, number, person, modus, gender, isNegative);
+            return $"{getForm} {verbForm}";
+        }
+
+        /// <summary>
         /// Places the Czech reflexive particle inside a verb phrase according to its position in the clitic cluster.
         /// </summary>
         /// <param name="verbForm">The finite or participial verb form to combine into a phrase.</param>

@@ -318,6 +318,12 @@
     "pastStem": "da",
     "imperativeStem": "dej"
   },
+  "dostat": {
+    "inheritsFrom": "trida1",
+    "aspect": "perfective",
+    "stem": "dostan",
+    "pastStem": "dosta"
+  },
   "vzít": {
     "inheritsFrom": "trida1",
     "aspect": "perfective",

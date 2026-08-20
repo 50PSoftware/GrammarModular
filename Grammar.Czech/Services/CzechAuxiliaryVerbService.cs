@@ -65,12 +65,70 @@ namespace Grammar.Czech.Services
         /// as an ordinary verb rather than a clitic auxiliary — unlike "být" it has no irregular present
         /// tense worth special-casing, so this conjugates through the regular vzor.
         /// </remarks>
+        /// <exception cref="NotSupportedException">
+        /// Thrown for first or second person past tense: mít's own past ("měl jsem") needs the clitic
+        /// auxiliary, which this method does not attach — third person past needs none.
+        /// </exception>
         public string GetHaveForm(Tense? tense, Number? number, Person? person, Modus? modus, Gender? gender, bool isNegative = false)
         {
+            if (tense == Tense.Past && person is Person.First or Person.Second)
+            {
+                throw new NotSupportedException(
+                    "Rezultativní diateze v 1. nebo 2. osobě minulého času ('měl jsem napsáno') potřebuje "
+                    + "klitiku pomocného slovesa, kterou tahle metoda nepřidává. Zatím podporovaná je jen "
+                    + "3. osoba, kde čeština žádnou klitiku nežádá.");
+            }
+
             var request = new CzechWordRequest
             {
                 Lemma = "mít",
                 Pattern = "mít",
+                WordCategory = WordCategory.Verb,
+                Tense = tense,
+                Number = number,
+                Person = person,
+                Gender = gender,
+                Modus = modus
+            };
+
+            var baseForm = engine.GetBasicForm(request).Form;
+
+            return isNegative ? $"ne{baseForm}" : baseForm;
+        }
+
+        /// <summary>
+        /// Gets the Czech auxiliary form of "dostat" for the requested grammatical context.
+        /// </summary>
+        /// <param name="tense">The requested grammatical tense.</param>
+        /// <param name="number">The grammatical number supplied by the test data.</param>
+        /// <param name="person">The requested grammatical person.</param>
+        /// <param name="modus">The requested grammatical mood.</param>
+        /// <param name="gender">The grammatical gender supplied by the test data.</param>
+        /// <param name="isNegative">True when the generated phrase should be negated; otherwise, false.</param>
+        /// <returns>The auxiliary form, including negation when requested.</returns>
+        /// <remarks>
+        /// Used for the recipient deobjective diathesis (<em>Karel dostal zaplaceno</em>), where "dostat"
+        /// governs the sentence as an ordinary perfective verb (Daneš, Naše řeč 51, 1968).
+        /// </remarks>
+        /// <exception cref="NotSupportedException">
+        /// Thrown for first or second person past tense: "dostat" is perfective, and the past there needs
+        /// the clitic auxiliary (<em>dostal jsem</em>), which this method does not attach — third person
+        /// past needs none, which is every tense Daneš's examples actually use.
+        /// </exception>
+        public string GetGetForm(Tense? tense, Number? number, Person? person, Modus? modus, Gender? gender, bool isNegative = false)
+        {
+            if (tense == Tense.Past && person is Person.First or Person.Second)
+            {
+                throw new NotSupportedException(
+                    "Recipientní diateze v 1. nebo 2. osobě minulého času ('dostal jsem zaplaceno') "
+                    + "potřebuje klitiku pomocného slovesa, kterou tahle metoda nepřidává. Zatím podporovaná "
+                    + "je jen 3. osoba, kde čeština žádnou klitiku nežádá.");
+            }
+
+            var request = new CzechWordRequest
+            {
+                Lemma = "dostat",
+                Pattern = "dostat",
                 WordCategory = WordCategory.Verb,
                 Tense = tense,
                 Number = number,

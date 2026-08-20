@@ -152,12 +152,12 @@ namespace Grammar.Czech.Services
 
             var predicate = WithReflexive(clause.Predicate, governing);
 
-            // Mít + příčestí keeps the active voice — the auxiliary changes, not the frame's mapping of
-            // arguments — so this cannot be read off Voice the way the periphrastic passive is; the
-            // composer needs it carried on the predicate itself.
-            if (clause.Diathesis == Diathesis.Resultative)
+            // Mít/dostat + příčestí keeps the active voice — the auxiliary changes, not the frame's
+            // mapping of arguments — so this cannot be read off Voice the way the periphrastic passive
+            // is; the composer needs it carried on the predicate itself.
+            if (clause.Diathesis is Diathesis.Resultative or Diathesis.RecipientDeobjective)
             {
-                predicate.Diathesis = Diathesis.Resultative;
+                predicate.Diathesis = clause.Diathesis;
             }
 
             return clause with
@@ -363,7 +363,12 @@ namespace Grammar.Czech.Services
             // The passive is what the promotion is for: the patient becomes the subject and the verb agrees
             // with it, so "Kniha byla dána" is feminine off kniha and not off whatever the caller stated.
             // The agent is still ACT, but it stands in the instrumental and governs nothing.
-            var subjectFunctor = predicate.Voice == Voice.Passive ? FgdFunctor.PAT : FgdFunctor.ACT;
+            //
+            // The recipient deobjective promotes ADDR the same way — dostat agrees with the recipient,
+            // not with the actor it demotes to "od" + genitive.
+            var subjectFunctor = clause.Diathesis == Diathesis.RecipientDeobjective ? FgdFunctor.ADDR
+                : predicate.Voice == Voice.Passive ? FgdFunctor.PAT
+                : FgdFunctor.ACT;
 
             // A counted subject stands in the nominative as a phrase while its head noun is genitive, so the
             // phrase case is what identifies it — "pět studentů" is the subject of "pět studentů přišlo".

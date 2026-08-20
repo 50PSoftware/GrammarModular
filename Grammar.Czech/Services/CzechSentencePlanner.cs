@@ -457,7 +457,11 @@ namespace Grammar.Czech.Services
         private CzechWordRequest DropSubject(
             SentencePlan plan, List<PlannedParticipant> participants, Voice voice)
         {
-            var subjectFunctor = voice == Voice.Passive ? FgdFunctor.PAT : FgdFunctor.ACT;
+            // The recipient deobjective promotes ADDR to subject the same way the passive promotes PAT —
+            // dostat agrees with the recipient, not with the actor it demotes to "od" + genitive.
+            var subjectFunctor = DiathesisFor(plan, voice) == Diathesis.RecipientDeobjective ? FgdFunctor.ADDR
+                : voice == Voice.Passive ? FgdFunctor.PAT
+                : FgdFunctor.ACT;
 
             var subject = participants.FirstOrDefault(participant =>
                 participant.Functor == subjectFunctor

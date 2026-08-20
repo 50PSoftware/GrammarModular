@@ -147,6 +147,43 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// The recipient deobjective promotes the recipient (ADDR) to subject — dostat agrees with
+        /// Karel, not with the payer, which is demoted to "od" + genitive and left unstated here since
+        /// it is optional (Daneš, Naše řeč 51, 1968: "Karel dostal (od otce) vyhubováno").
+        /// </summary>
+        [TestMethod]
+        public void RecipientDeobjectivePromotesTheRecipientToSubject()
+        {
+            var recipient = new PlannedParticipant
+            {
+                Word = new CzechWordRequest
+                {
+                    Lemma = "Karel",
+                    WordCategory = WordCategory.Noun,
+                    Gender = Gender.Masculine,
+                    IsAnimate = true,
+                    Number = Number.Singular,
+                },
+                Functor = FgdFunctor.ADDR,
+            };
+
+            Assert.AreEqual(
+                "Karel dostal zaplaceno.",
+                Build(new SentencePlan
+                {
+                    Predicate = new CzechWordRequest
+                    {
+                        Lemma = "zaplatit",
+                        Pattern = "trida4",
+                        WordCategory = WordCategory.Verb,
+                        Tense = Tense.Past,
+                    },
+                    Diathesis = Diathesis.RecipientDeobjective,
+                    Participants = [recipient],
+                }));
+        }
+
+        /// <summary>
         /// Saying nothing still builds the active clause, so the plans written before this keep working.
         /// </summary>
         [TestMethod]
