@@ -19,13 +19,15 @@ namespace Grammar.Czech.Cli.Interaction
         /// <param name="overrides">The record to write into.</param>
         /// <param name="property">The property the switch stands for, unaccented.</param>
         /// <param name="assignment">The argument of the switch, as <c>slovo=hodnota</c>.</param>
+        /// <param name="lemmas">The lemmas of the clause, for resolving a target by name.</param>
         /// <exception cref="CliException">Thrown when the argument or the value cannot be read.</exception>
-        public static void Assign(DraftOverrides overrides, string property, string assignment)
+        public static void Assign(
+            DraftOverrides overrides, string property, string assignment, IReadOnlyList<string> lemmas)
         {
             var (target, value) = Split(assignment,
                 $"Přepínač --{property} se zadává jako slovo=hodnota, třeba --{property} kniha=…");
 
-            Set(overrides, target, property, value);
+            Set(overrides, Resolve(target, lemmas), property, value);
         }
 
         /// <summary>
