@@ -112,10 +112,9 @@ namespace Grammar.Czech.Test
         /// plus the neuter singular participle rather than the verb's own conjugation.
         /// </summary>
         /// <remarks>
-        /// The case is stated rather than left to a frame: no sense of the dictionary carries the
-        /// resultative diathesis yet (that is lexicon work of its own, needing IJP verification per
-        /// seed), and a verb the dictionary does not know for a given diathesis is exactly the case the
-        /// planner already supports on its own — the caller states what the frame would otherwise settle.
+        /// The case comes from the frame seed.025 added for psát/napsat (NESČ, Diateze; MSoČ 2, 2014,
+        /// "mám uvařeno"): a plain nominative ACT and no other slot, since the two examples the diathesis
+        /// is named from — mám napsáno, má uklizeno — do not express an object.
         /// </remarks>
         [TestMethod]
         public void ResultativeKeepsTheActorAsSubject()
@@ -127,7 +126,6 @@ namespace Grammar.Czech.Test
                     Lemma = "student",
                     WordCategory = WordCategory.Noun,
                     Number = Number.Singular,
-                    Case = Case.Nominative,
                 },
                 Functor = FgdFunctor.ACT,
             };
