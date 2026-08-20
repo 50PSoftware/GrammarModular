@@ -113,17 +113,23 @@ namespace Grammar.Czech.Services
         /// <param name="person">The requested grammatical person.</param>
         /// <param name="modus">The requested grammatical mood.</param>
         /// <param name="gender">The grammatical gender supplied by the test data.</param>
+        /// <param name="hasPrecedingConstituent">True when some constituent already occupies first position in the clause.</param>
         /// <param name="isNegative">True when the generated phrase should be negated; otherwise, false.</param>
         /// <returns>The assembled resultative verb phrase.</returns>
         /// <remarks>
         /// Unlike the periphrastic passive the participle does not agree with the subject — <em>mám
         /// napsáno</em> stays neuter singular regardless of what is written — so the caller supplies
-        /// that form already built, and only the auxiliary agrees with the (unexpressed) actor.
+        /// that form already built, and only the auxiliary agrees with the (unexpressed) actor. In the
+        /// past mít is not the finite verb of a compound tense — it is the ordinary l-participle "měl",
+        /// which first/second person needs a clitic auxiliary of its own for ("měl jsem"), so past tense
+        /// goes through the same clitic placement <see cref="BuildPastPhrase"/> uses.
         /// </remarks>
-        public string BuildResultativePhrase(string verbForm, Tense? tense, Number? number, Person? person, Modus? modus, Gender? gender, bool isNegative)
+        public string BuildResultativePhrase(
+            string verbForm, Tense? tense, Number? number, Person? person, Modus? modus, Gender? gender,
+            bool hasPrecedingConstituent, bool isNegative)
         {
-            var haveForm = auxVerbService.GetHaveForm(tense, number, person, modus, gender, isNegative);
-            return $"{haveForm} {verbForm}";
+            var haveForm = auxVerbService.GetHaveForm(tense, number, person, modus, gender, isNegative: tense != Tense.Past && isNegative);
+            return CombineWithPastClitic(haveForm, verbForm, tense, number, person, hasPrecedingConstituent, isNegative);
         }
 
         /// <summary>
@@ -136,17 +142,45 @@ namespace Grammar.Czech.Services
         /// <param name="person">The requested grammatical person.</param>
         /// <param name="modus">The requested grammatical mood.</param>
         /// <param name="gender">The grammatical gender supplied by the test data.</param>
+        /// <param name="hasPrecedingConstituent">True when some constituent already occupies first position in the clause.</param>
         /// <param name="isNegative">True when the generated phrase should be negated; otherwise, false.</param>
         /// <returns>The assembled recipient deobjective verb phrase.</returns>
         /// <remarks>
-        /// Same shape as <see cref="BuildResultativePhrase"/> — the participle stays neuter singular and
-        /// only the auxiliary agrees, this time with the recipient (ADDR) rather than the actor: <em>Karel
-        /// dostal zaplaceno</em> (Daneš, Naše řeč 51, 1968).
+        /// Same shape as <see cref="BuildResultativePhrase"/>, past tense included — the participle stays
+        /// neuter singular and only the auxiliary agrees, this time with the recipient (ADDR) rather than
+        /// the actor: <em>Karel dostal zaplaceno</em>, <em>Dostal jsem zaplaceno</em> (Daneš, Naše řeč 51,
+        /// 1968).
         /// </remarks>
-        public string BuildRecipientPhrase(string verbForm, Tense? tense, Number? number, Person? person, Modus? modus, Gender? gender, bool isNegative)
+        public string BuildRecipientPhrase(
+            string verbForm, Tense? tense, Number? number, Person? person, Modus? modus, Gender? gender,
+            bool hasPrecedingConstituent, bool isNegative)
         {
-            var getForm = auxVerbService.GetGetForm(tense, number, person, modus, gender, isNegative);
-            return $"{getForm} {verbForm}";
+            var getForm = auxVerbService.GetGetForm(tense, number, person, modus, gender, isNegative: tense != Tense.Past && isNegative);
+            return CombineWithPastClitic(getForm, verbForm, tense, number, person, hasPrecedingConstituent, isNegative);
+        }
+
+        // Present tense needs no clitic — mám/dostane already carries person and number on its own. Past
+        // tense is the ordinary l-participle of mít/dostat, and first/second person there is exactly the
+        // case BuildPastPhrase exists for, so this places the clitic the same way rather than a second time.
+        private string CombineWithPastClitic(
+            string auxiliaryForm, string participle, Tense? tense, Number? number, Person? person,
+            bool hasPrecedingConstituent, bool isNegative)
+        {
+            if (tense != Tense.Past)
+            {
+                return $"{auxiliaryForm} {participle}";
+            }
+
+            var negation = isNegative ? prefixService.GetNegativePrefix() : string.Empty;
+            var clitic = cliticService.GetPastAuxiliary(number, person);
+
+            var phrase = clitic is null
+                ? $"{negation}{auxiliaryForm}"
+                : hasPrecedingConstituent
+                    ? $"{clitic} {negation}{auxiliaryForm}"
+                    : $"{negation}{auxiliaryForm} {clitic}";
+
+            return $"{phrase} {participle}";
         }
 
         /// <summary>

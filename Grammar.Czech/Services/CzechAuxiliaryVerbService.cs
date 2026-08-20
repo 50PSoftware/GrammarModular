@@ -63,22 +63,13 @@ namespace Grammar.Czech.Services
         /// <remarks>
         /// Used for the resultative diathesis (<em>mám napsáno</em>), where "mít" governs the sentence
         /// as an ordinary verb rather than a clitic auxiliary — unlike "být" it has no irregular present
-        /// tense worth special-casing, so this conjugates through the regular vzor.
+        /// tense worth special-casing, so this conjugates through the regular vzor. In the past this
+        /// returns the bare l-participle ("měl"); the clitic first/second person needs on top of it
+        /// ("měl jsem") is <see cref="CzechVerbPhraseBuilderService"/>'s to attach, the same as any other
+        /// past tense.
         /// </remarks>
-        /// <exception cref="NotSupportedException">
-        /// Thrown for first or second person past tense: mít's own past ("měl jsem") needs the clitic
-        /// auxiliary, which this method does not attach — third person past needs none.
-        /// </exception>
         public string GetHaveForm(Tense? tense, Number? number, Person? person, Modus? modus, Gender? gender, bool isNegative = false)
         {
-            if (tense == Tense.Past && person is Person.First or Person.Second)
-            {
-                throw new NotSupportedException(
-                    "Rezultativní diateze v 1. nebo 2. osobě minulého času ('měl jsem napsáno') potřebuje "
-                    + "klitiku pomocného slovesa, kterou tahle metoda nepřidává. Zatím podporovaná je jen "
-                    + "3. osoba, kde čeština žádnou klitiku nežádá.");
-            }
-
             var request = new CzechWordRequest
             {
                 Lemma = "mít",
@@ -108,23 +99,13 @@ namespace Grammar.Czech.Services
         /// <returns>The auxiliary form, including negation when requested.</returns>
         /// <remarks>
         /// Used for the recipient deobjective diathesis (<em>Karel dostal zaplaceno</em>), where "dostat"
-        /// governs the sentence as an ordinary perfective verb (Daneš, Naše řeč 51, 1968).
+        /// governs the sentence as an ordinary perfective verb (Daneš, Naše řeč 51, 1968). In the past
+        /// this returns the bare l-participle ("dostal"); the clitic first/second person needs on top of
+        /// it ("dostal jsem") is <see cref="CzechVerbPhraseBuilderService"/>'s to attach, the same as any
+        /// other past tense.
         /// </remarks>
-        /// <exception cref="NotSupportedException">
-        /// Thrown for first or second person past tense: "dostat" is perfective, and the past there needs
-        /// the clitic auxiliary (<em>dostal jsem</em>), which this method does not attach — third person
-        /// past needs none, which is every tense Daneš's examples actually use.
-        /// </exception>
         public string GetGetForm(Tense? tense, Number? number, Person? person, Modus? modus, Gender? gender, bool isNegative = false)
         {
-            if (tense == Tense.Past && person is Person.First or Person.Second)
-            {
-                throw new NotSupportedException(
-                    "Recipientní diateze v 1. nebo 2. osobě minulého času ('dostal jsem zaplaceno') "
-                    + "potřebuje klitiku pomocného slovesa, kterou tahle metoda nepřidává. Zatím podporovaná "
-                    + "je jen 3. osoba, kde čeština žádnou klitiku nežádá.");
-            }
-
             var request = new CzechWordRequest
             {
                 Lemma = "dostat",

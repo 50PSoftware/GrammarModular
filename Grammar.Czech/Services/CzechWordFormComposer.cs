@@ -65,9 +65,11 @@ namespace Grammar.Czech.Services
                     var participleForm = morphologyEngine.GetBasicForm(participleRequest).Form;
                     verbForm = request.Diathesis == Diathesis.Resultative
                         ? verbPhraseBuilderService.BuildResultativePhrase(
-                            participleForm, request.Tense, request.Number, request.Person, request.Modus, request.Gender, request.IsNegative)
+                            participleForm, request.Tense, request.Number, request.Person, request.Modus, request.Gender,
+                            request.HasPrecedingConstituent.GetValueOrDefault(), request.IsNegative)
                         : verbPhraseBuilderService.BuildRecipientPhrase(
-                            participleForm, request.Tense, request.Number, request.Person, request.Modus, request.Gender, request.IsNegative);
+                            participleForm, request.Tense, request.Number, request.Person, request.Modus, request.Gender,
+                            request.HasPrecedingConstituent.GetValueOrDefault(), request.IsNegative);
                     verbNegationApplied = request.IsNegative;
                 }
                 else if (request.Aspect == VerbAspect.Imperfective && request.Tense == Tense.Future)

@@ -147,6 +147,41 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// First person past drops the pronoun the same way any other verb does, but mít's own past is
+        /// an ordinary l-participle and needs the clitic auxiliary on top of it — "měl jsem", not "měl".
+        /// </summary>
+        [TestMethod]
+        public void ResultativePastFirstPersonTakesTheClitic()
+        {
+            var actor = new PlannedParticipant
+            {
+                Word = new CzechWordRequest
+                {
+                    Lemma = "já",
+                    WordCategory = WordCategory.Pronoun,
+                    Number = Number.Singular,
+                    Gender = Gender.Masculine,
+                },
+                Functor = FgdFunctor.ACT,
+            };
+
+            Assert.AreEqual(
+                "Měl jsem napsáno.",
+                Build(new SentencePlan
+                {
+                    Predicate = new CzechWordRequest
+                    {
+                        Lemma = "napsat",
+                        Pattern = "psát",
+                        WordCategory = WordCategory.Verb,
+                        Tense = Tense.Past,
+                    },
+                    Diathesis = Diathesis.Resultative,
+                    Participants = [actor],
+                }));
+        }
+
+        /// <summary>
         /// The recipient deobjective promotes the recipient (ADDR) to subject — dostat agrees with
         /// Karel, not with the payer, which is demoted to "od" + genitive and left unstated here since
         /// it is optional (Daneš, Naše řeč 51, 1968: "Karel dostal (od otce) vyhubováno").
@@ -169,6 +204,42 @@ namespace Grammar.Czech.Test
 
             Assert.AreEqual(
                 "Karel dostal zaplaceno.",
+                Build(new SentencePlan
+                {
+                    Predicate = new CzechWordRequest
+                    {
+                        Lemma = "zaplatit",
+                        Pattern = "trida4",
+                        WordCategory = WordCategory.Verb,
+                        Tense = Tense.Past,
+                    },
+                    Diathesis = Diathesis.RecipientDeobjective,
+                    Participants = [recipient],
+                }));
+        }
+
+        /// <summary>
+        /// First person past drops the pronoun the same way any other verb does, but dostat's own past
+        /// is an ordinary l-participle and needs the clitic auxiliary on top of it — this is the shape
+        /// Daneš's own title example takes: "Dostal jsem přidáno."
+        /// </summary>
+        [TestMethod]
+        public void RecipientDeobjectivePastFirstPersonTakesTheClitic()
+        {
+            var recipient = new PlannedParticipant
+            {
+                Word = new CzechWordRequest
+                {
+                    Lemma = "já",
+                    WordCategory = WordCategory.Pronoun,
+                    Number = Number.Singular,
+                    Gender = Gender.Masculine,
+                },
+                Functor = FgdFunctor.ADDR,
+            };
+
+            Assert.AreEqual(
+                "Dostal jsem zaplaceno.",
                 Build(new SentencePlan
                 {
                     Predicate = new CzechWordRequest
