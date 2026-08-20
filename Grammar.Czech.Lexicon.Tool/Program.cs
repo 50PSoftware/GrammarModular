@@ -1,4 +1,5 @@
 using Grammar.Czech.Lexicon.Tool;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 
@@ -17,6 +18,11 @@ static int Run(string[] args)
         PrintUsage();
 
         return 1;
+    }
+
+    if (args[0] is "--version" or "-v")
+    {
+        return PrintVersion();
     }
 
     try
@@ -40,6 +46,20 @@ static int Run(string[] args)
 
         return 1;
     }
+}
+
+static int PrintVersion()
+{
+    // AssemblyInformationalVersion nese to, co je v <Version> v .csproj i s příponou (`-preview.NN`);
+    // AssemblyVersion by tu příponu utnula.
+    var version = Assembly.GetExecutingAssembly()
+        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+        .InformationalVersion
+        ?? "neznámá";
+
+    Console.WriteLine($"slovnik {version}");
+
+    return 0;
 }
 
 static int Unknown(string command)
@@ -260,6 +280,7 @@ static void PrintUsage()
     Console.WriteLine($"""
         lexikon — správa českého slovníku
 
+          --version | -v                              Vypíše verzi nástroje.
           build       [--db <cesta>] [--force]       Vytvoří lexikon ze schématu a seedů a zvaliduje ho.
           validate    [--db <cesta>]                 Zkontroluje lokální lexikon.
           validate    --server | --url <api>         Zkontroluje, co má server — nic nemění.
