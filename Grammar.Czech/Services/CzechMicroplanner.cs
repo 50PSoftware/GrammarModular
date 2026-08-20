@@ -150,9 +150,19 @@ namespace Grammar.Czech.Services
 
             var governing = passive ?? frame;
 
+            var predicate = WithReflexive(clause.Predicate, governing);
+
+            // Mít + příčestí keeps the active voice — the auxiliary changes, not the frame's mapping of
+            // arguments — so this cannot be read off Voice the way the periphrastic passive is; the
+            // composer needs it carried on the predicate itself.
+            if (clause.Diathesis == Diathesis.Resultative)
+            {
+                predicate.Diathesis = Diathesis.Resultative;
+            }
+
             return clause with
             {
-                Predicate = WithReflexive(clause.Predicate, governing),
+                Predicate = predicate,
                 Elements = clause.Elements.Select(element => ApplySlot(element, governing, clause.Predicate.Lemma)).ToList()
             };
         }

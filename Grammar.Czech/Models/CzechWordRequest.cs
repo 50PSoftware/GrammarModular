@@ -97,6 +97,18 @@ namespace Grammar.Czech.Models
         /// </summary>
         public Voice? Voice { get; set; }
         /// <summary>
+        /// Gets or sets the diathesis the predicate is built in, for the diatheses that keep the active
+        /// voice and change the auxiliary instead.
+        /// </summary>
+        /// <remarks>
+        /// Set only for <see cref="Grammar.Core.Enums.Diathesis.Resultative"/> today: the periphrastic
+        /// passive and the two subjectless diatheses are already reached through <see cref="Voice"/> and
+        /// the reflexive particle, so they leave this unset. It lives on the word request rather than only
+        /// on the clause because <see cref="Services.CzechWordFormComposer"/> composes one word at a time
+        /// and has no other way to see which auxiliary the predicate needs.
+        /// </remarks>
+        public Diathesis? Diathesis { get; set; }
+        /// <summary>
         /// Gets or sets the lexical category of the requested word.
         /// </summary>
         /// <remarks>

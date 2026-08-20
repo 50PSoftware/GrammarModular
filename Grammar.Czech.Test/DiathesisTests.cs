@@ -107,6 +107,48 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// The resultative keeps the actor as an ordinary subject — unlike the deagentive and the
+        /// dispositional, mít governs a normal nominative actor — but the predicate is built from mít
+        /// plus the neuter singular participle rather than the verb's own conjugation.
+        /// </summary>
+        /// <remarks>
+        /// The case is stated rather than left to a frame: no sense of the dictionary carries the
+        /// resultative diathesis yet (that is lexicon work of its own, needing IJP verification per
+        /// seed), and a verb the dictionary does not know for a given diathesis is exactly the case the
+        /// planner already supports on its own — the caller states what the frame would otherwise settle.
+        /// </remarks>
+        [TestMethod]
+        public void ResultativeKeepsTheActorAsSubject()
+        {
+            var actor = new PlannedParticipant
+            {
+                Word = new CzechWordRequest
+                {
+                    Lemma = "student",
+                    WordCategory = WordCategory.Noun,
+                    Number = Number.Singular,
+                    Case = Case.Nominative,
+                },
+                Functor = FgdFunctor.ACT,
+            };
+
+            Assert.AreEqual(
+                "Student má napsáno.",
+                Build(new SentencePlan
+                {
+                    Predicate = new CzechWordRequest
+                    {
+                        Lemma = "napsat",
+                        Pattern = "psát",
+                        WordCategory = WordCategory.Verb,
+                        Tense = Tense.Present,
+                    },
+                    Diathesis = Diathesis.Resultative,
+                    Participants = [actor],
+                }));
+        }
+
+        /// <summary>
         /// Saying nothing still builds the active clause, so the plans written before this keep working.
         /// </summary>
         [TestMethod]

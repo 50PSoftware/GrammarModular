@@ -105,6 +105,28 @@ namespace Grammar.Czech.Services
         }
 
         /// <summary>
+        /// Builds a Czech resultative verb phrase from the passive participle and the "mít" auxiliary.
+        /// </summary>
+        /// <param name="verbForm">The neuter singular passive participle to combine into a phrase.</param>
+        /// <param name="tense">The requested grammatical tense.</param>
+        /// <param name="number">The grammatical number supplied by the test data.</param>
+        /// <param name="person">The requested grammatical person.</param>
+        /// <param name="modus">The requested grammatical mood.</param>
+        /// <param name="gender">The grammatical gender supplied by the test data.</param>
+        /// <param name="isNegative">True when the generated phrase should be negated; otherwise, false.</param>
+        /// <returns>The assembled resultative verb phrase.</returns>
+        /// <remarks>
+        /// Unlike the periphrastic passive the participle does not agree with the subject — <em>mám
+        /// napsáno</em> stays neuter singular regardless of what is written — so the caller supplies
+        /// that form already built, and only the auxiliary agrees with the (unexpressed) actor.
+        /// </remarks>
+        public string BuildResultativePhrase(string verbForm, Tense? tense, Number? number, Person? person, Modus? modus, Gender? gender, bool isNegative)
+        {
+            var haveForm = auxVerbService.GetHaveForm(tense, number, person, modus, gender, isNegative);
+            return $"{haveForm} {verbForm}";
+        }
+
+        /// <summary>
         /// Places the Czech reflexive particle inside a verb phrase according to its position in the clitic cluster.
         /// </summary>
         /// <param name="verbForm">The finite or participial verb form to combine into a phrase.</param>

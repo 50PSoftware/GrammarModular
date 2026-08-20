@@ -49,7 +49,24 @@ namespace Grammar.Czech.Services
                             verbForm, request.ReflexiveType, request.HasPrecedingConstituent.GetValueOrDefault()));
                 }
 
-                if (request.Aspect == VerbAspect.Imperfective && request.Tense == Tense.Future)
+                if (request.Diathesis == Diathesis.Resultative)
+                {
+                    // Mít governs the sentence, not the verb itself: what agrees with the actor is the
+                    // auxiliary, and the participle stays neuter singular no matter what is written
+                    // (mám napsáno, ne *mám napsán/napsanou) — so it is built via a copy asking for the
+                    // periphrastic passive's neuter singular form rather than off request.Voice, which
+                    // stays Active here precisely because the clause is not passive.
+                    var participleRequest = request;
+                    participleRequest.Voice = Voice.Passive;
+                    participleRequest.Gender = Gender.Neuter;
+                    participleRequest.Number = Number.Singular;
+
+                    var participleForm = morphologyEngine.GetBasicForm(participleRequest).Form;
+                    verbForm = verbPhraseBuilderService.BuildResultativePhrase(
+                        participleForm, request.Tense, request.Number, request.Person, request.Modus, request.Gender, request.IsNegative);
+                    verbNegationApplied = request.IsNegative;
+                }
+                else if (request.Aspect == VerbAspect.Imperfective && request.Tense == Tense.Future)
                 {
                     verbForm = verbPhraseBuilderService.BuildSynteticFuturePhrase(verbForm, request.Number, request.Person, request.Modus, request.Gender, request.IsNegative);
                     verbNegationApplied = request.IsNegative;

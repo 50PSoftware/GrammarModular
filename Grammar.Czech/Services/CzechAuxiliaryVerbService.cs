@@ -49,5 +49,39 @@ namespace Grammar.Czech.Services
 
             return isNegative ? $"ne{baseForm}" : baseForm;
         }
+
+        /// <summary>
+        /// Gets the Czech auxiliary form of "mít" for the requested grammatical context.
+        /// </summary>
+        /// <param name="tense">The requested grammatical tense.</param>
+        /// <param name="number">The grammatical number supplied by the test data.</param>
+        /// <param name="person">The requested grammatical person.</param>
+        /// <param name="modus">The requested grammatical mood.</param>
+        /// <param name="gender">The grammatical gender supplied by the test data.</param>
+        /// <param name="isNegative">True when the generated phrase should be negated; otherwise, false.</param>
+        /// <returns>The auxiliary form, including negation when requested.</returns>
+        /// <remarks>
+        /// Used for the resultative diathesis (<em>mám napsáno</em>), where "mít" governs the sentence
+        /// as an ordinary verb rather than a clitic auxiliary — unlike "být" it has no irregular present
+        /// tense worth special-casing, so this conjugates through the regular vzor.
+        /// </remarks>
+        public string GetHaveForm(Tense? tense, Number? number, Person? person, Modus? modus, Gender? gender, bool isNegative = false)
+        {
+            var request = new CzechWordRequest
+            {
+                Lemma = "mít",
+                Pattern = "mít",
+                WordCategory = WordCategory.Verb,
+                Tense = tense,
+                Number = number,
+                Person = person,
+                Gender = gender,
+                Modus = modus
+            };
+
+            var baseForm = engine.GetBasicForm(request).Form;
+
+            return isNegative ? $"ne{baseForm}" : baseForm;
+        }
     }
 }
