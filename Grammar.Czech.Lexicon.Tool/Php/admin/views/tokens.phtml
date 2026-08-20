@@ -29,6 +29,7 @@ defined('LEXICON_ADMIN') || exit('Tenhle soubor se nespouští přímo.');
     <button type="submit">Vygenerovat token</button>
 </form>
 
+<div class="scroller">
 <table>
     <thead>
     <tr>
@@ -47,10 +48,11 @@ defined('LEXICON_ADMIN') || exit('Tenhle soubor se nespouští přímo.');
             <td>
                 <form method="post" action="<?= h($url->deleteToken($token['id'])) ?>">
                     <?= $form->csrf() ?>
-                    <button type="submit" class="link">Zrušit</button>
+                    <button type="submit" class="link">Smazat</button>
                 </form>
             </td>
         </tr>
     <?php endforeach; ?>
     </tbody>
 </table>
+</div>
