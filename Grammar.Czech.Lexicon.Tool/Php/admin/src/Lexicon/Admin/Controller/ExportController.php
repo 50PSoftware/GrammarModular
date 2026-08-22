@@ -6,13 +6,16 @@ namespace Lexicon\Admin\Controller;
 
 defined('LEXICON_ADMIN') || exit('Tenhle soubor se nespouští přímo.');
 
+use Lexicon\Admin\Config;
 use Lexicon\Admin\Database\Database;
 use Lexicon\Admin\Http\FileResponse;
+use Lexicon\Admin\Http\HttpException;
 use Lexicon\Admin\Http\Request;
 use Lexicon\Admin\Http\Response;
 use Lexicon\Admin\Http\RouteMatch;
 use Lexicon\Admin\Input\OldInput;
 use Lexicon\Admin\Schema;
+use Lexicon\Admin\Security\Authenticator;
 use Lexicon\Admin\View\Flash;
 use Lexicon\Admin\View\Url;
 use Lexicon\Admin\View\View;
@@ -36,16 +39,30 @@ final class ExportController extends Controller
         Flash $flash,
         OldInput $old,
         Schema $schema,
-        private readonly Database $database
+        private readonly Database $database,
+        private readonly Authenticator $authenticator,
+        private readonly Config $config
     ) {
         parent::__construct($view, $url, $flash, $old, $schema);
     }
 
     /**
      * Sestaví dump a nabídne ho ke stažení.
+     *
+     * Vyžaduje navíc roli z LEXICON_ADMIN_EXPORT_ROLE — přihlášení samo o sobě k tomu nestačí, protože
+     * dump nese celý slovník včetně nepublikovaného obsahu.
      */
     public function download(Request $request, RouteMatch $route): Response
     {
+        $exportRole = $this->config->require(
+            'LEXICON_ADMIN_EXPORT_ROLE',
+            'Chybí LEXICON_ADMIN_EXPORT_ROLE. Bez něj nemá export, komu věřit.'
+        );
+
+        if (!$this->authenticator->hasRole($exportRole)) {
+            throw HttpException::forbidden();
+        }
+
         $body = "-- Grammar.Czech — lexicon dump.\n"
             . "-- Vyexportováno z administrace, přehraj proti prázdnému schématu.\n\n";
 

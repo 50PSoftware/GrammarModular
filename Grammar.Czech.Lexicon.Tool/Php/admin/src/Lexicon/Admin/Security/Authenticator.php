@@ -39,11 +39,25 @@ final class Authenticator
     /**
      * The signed-in account, or null when there is none.
      *
-     * @return array{id: int, mail: string, name: ?string}|null
+     * @return array{id: int, mail: string, name: ?string, roles: list<string>}|null
      */
     public function currentUser(): ?array
     {
         return $this->session->get(self::KEY);
+    }
+
+    /**
+     * Whether the signed-in account carries the given role.
+     *
+     * Checked against the roles captured in the session at sign-in time, not against the website's
+     * database again — a role revoked mid-session takes effect on the next sign-in, same as the
+     * required role already does.
+     */
+    public function hasRole(string $role): bool
+    {
+        $user = $this->currentUser();
+
+        return $user !== null && in_array($role, $user['roles'], true);
     }
 
     /**
@@ -70,7 +84,9 @@ final class Authenticator
             return false;
         }
 
-        if (!$this->hasRole($account['roles'], $requiredRole)) {
+        $roles = $this->roles($account['roles']);
+
+        if (!in_array($requiredRole, $roles, true)) {
             return false;
         }
 
@@ -81,6 +97,7 @@ final class Authenticator
             'id' => $account['id'],
             'mail' => $account['mail'],
             'name' => $account['name'],
+            'roles' => $roles,
         ]);
 
         return true;
@@ -95,15 +112,17 @@ final class Authenticator
     }
 
     /**
-     * Whether the `roles` JSON array on the account contains the required role.
+     * Decodes the `roles` JSON array on the account.
      *
      * Malformed JSON is treated as no roles at all rather than as an error — a broken column on the
      * website's side should refuse the login it can't make sense of, not turn into a 500 here.
+     *
+     * @return list<string>
      */
-    private function hasRole(string $rolesJson, string $requiredRole): bool
+    private function roles(string $rolesJson): array
     {
         $roles = json_decode($rolesJson, true);
 
-        return is_array($roles) && in_array($requiredRole, $roles, true);
+        return is_array($roles) ? array_values(array_filter($roles, 'is_string')) : [];
     }
 }

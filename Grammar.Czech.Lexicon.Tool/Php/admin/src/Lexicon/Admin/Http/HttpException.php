@@ -41,4 +41,12 @@ final class HttpException extends RuntimeException
     {
         return new self(400, 'Neplatný formulářový token. Načti stránku znovu.');
     }
+
+    /**
+     * The signed-in account lacks the role a route requires.
+     */
+    public static function forbidden(): self
+    {
+        return new self(403, 'K tomuhle nemáš oprávnění.');
+    }
 }

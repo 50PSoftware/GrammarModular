@@ -116,7 +116,9 @@ final class Application
             $this->url(),
             new FormHelper($this->schema(), $this->csrf()),
             $this->schema(),
-            $this->flash()
+            $this->flash(),
+            $this->authenticator(),
+            $this->config()
         ));
     }
 
@@ -186,7 +188,9 @@ final class Application
                 $this->flash(),
                 $this->oldInput(),
                 $this->schema(),
-                $this->database()
+                $this->database(),
+                $this->authenticator(),
+                $this->config()
             ),
             default => throw new InvalidArgumentException("Controller '$class' se nedá sestavit."),
         };

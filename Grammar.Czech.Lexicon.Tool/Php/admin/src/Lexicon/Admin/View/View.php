@@ -6,7 +6,9 @@ namespace Lexicon\Admin\View;
 
 defined('LEXICON_ADMIN') || exit('Tenhle soubor se nespouští přímo.');
 
+use Lexicon\Admin\Config;
 use Lexicon\Admin\Schema;
+use Lexicon\Admin\Security\Authenticator;
 use Throwable;
 
 /**
@@ -33,7 +35,9 @@ final class View
         private readonly Url $url,
         private readonly FormHelper $form,
         private readonly Schema $schema,
-        private readonly Flash $flash
+        private readonly Flash $flash,
+        private readonly Authenticator $authenticator,
+        private readonly Config $config
     ) {
     }
 
@@ -47,6 +51,7 @@ final class View
         return $this->render('layout', [
             'content' => $this->render($template, $data),
             'signedIn' => $signedIn,
+            'canExport' => $signedIn && $this->authenticator->hasRole($this->config->get('LEXICON_ADMIN_EXPORT_ROLE')),
             'flashes' => $this->flash->take(),
         ]);
     }
