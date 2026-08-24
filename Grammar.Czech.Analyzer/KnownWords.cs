@@ -49,8 +49,12 @@ namespace Grammar.Czech.Analyzer
     /// which nothing generates on its own, so it is built here. Prepositions have a vocalized variant
     /// before an awkward cluster (s/se, v/ve, k/ke...), stored right on <see cref="PrepositionData"/>
     /// as a plain string — no service needed, just reading a field the provider already returns.
-    /// Conjunctions, particles and interjections were checked too and are genuinely one form per
-    /// lemma, so they need nothing beyond what <see cref="Add"/> already does.
+    /// Conjunctions and particles were checked too and are genuinely one form per lemma. Interjections
+    /// mostly are as well, except that some name a verb nothing else registers at all — "hop" names
+    /// "hopnout" in its <c>DerivedVerb</c> field, and that verb is in no lexicon entry, so it is not a
+    /// missing-forms gap like the others, it is a missing-word one. These are all onomatopoeic -nout
+    /// coinages, so <see cref="CzechVerbConjugationService.GuessVerbClass"/> reads the class off the
+    /// ending reliably and the derived verb gets the same paradigm expansion a real lexicon verb would.
     /// </para>
     /// </remarks>
     public sealed class KnownWords
@@ -128,7 +132,20 @@ namespace Grammar.Czech.Analyzer
 
             Add(services.GetRequiredService<IConjunctionDataProvider>().GetConjunctions().Keys);
             Add(services.GetRequiredService<IParticleDataProvider>().GetParticles().Keys);
-            Add(services.GetRequiredService<IInterjectionDataProvider>().GetInterjections().Keys);
+
+            var interjectionProvider = services.GetRequiredService<IInterjectionDataProvider>();
+
+            Add(interjectionProvider.GetInterjections().Keys);
+
+            var verbServiceForInterjections = services.GetRequiredService<CzechVerbConjugationService>();
+
+            foreach (var interjection in interjectionProvider.GetInterjections().Values)
+            {
+                if (interjection.DerivedVerb is { } derivedVerb)
+                {
+                    AddInterjectionDerivedVerb(verbServiceForInterjections, derivedVerb);
+                }
+            }
 
             var prepositionProvider = services.GetRequiredService<IPrepositionDataProvider>();
 
@@ -270,6 +287,22 @@ namespace Grammar.Czech.Analyzer
             foreach (var request in Candidates.VerbForms.Requests(lemma, pattern))
             {
                 TryAddForm(() => service.GetBasicForm(request).Form);
+            }
+        }
+
+        // interjections.json names a verb (hop -> hopnout) that lemma_entry has never heard of — not
+        // missing forms, missing entirely. It has no Pattern to read the way a real lexicon verb does,
+        // but these are all onomatopoeic -nout coinages (hopnout, bácnout, ťuknout...), so GuessVerbClass
+        // reads trida2 off the ending reliably; the fallback just keeps the bare infinitive known rather
+        // than proposing nothing, on the rare entry the guess cannot place.
+        private void AddInterjectionDerivedVerb(CzechVerbConjugationService service, string lemma)
+        {
+            _words.Add(Fold(lemma));
+
+            if (service.GuessVerbClass(lemma) is { } verbClass
+                && CzechVerbConjugationService.PatternByVerbClass.TryGetValue(verbClass, out var pattern))
+            {
+                AddVerbForms(service, lemma, pattern);
             }
         }
 

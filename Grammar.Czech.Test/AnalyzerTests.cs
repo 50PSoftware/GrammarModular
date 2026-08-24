@@ -168,6 +168,23 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that a verb named only in an interjection's DerivedVerb field — "hop" names
+        /// "hopnout", which is in no lexicon entry — counts as known, infinitive and conjugated alike.
+        /// This is not a missing-forms gap like the others; the verb was not registered anywhere at
+        /// all, so GuessVerbClass has to place it (reliably, since these are all -nout coinages).
+        /// </summary>
+        [TestMethod]
+        public void KnownWordsRecognizesInterjectionDerivedVerb()
+        {
+            Assert.IsTrue(known.IsKnown("hopnout"));
+            // trida2's past stem equals the present stem (CzechWordStructureResolver.DeriveTrida2), so
+            // the generated past tense is the short literary "hopl", not the colloquial "hopnul" — the
+            // same approximation the resolver already documents for every -nout verb, not something
+            // specific to a derived-from-an-interjection one.
+            Assert.IsTrue(known.IsKnown("hopl"));
+        }
+
+        /// <summary>
         /// Verifies that a preposition's vocalized variant (v/ve, s/se, k/ke...) counts as known.
         /// </summary>
         [TestMethod]
