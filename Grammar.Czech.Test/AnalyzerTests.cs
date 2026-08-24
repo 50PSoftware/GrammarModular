@@ -131,6 +131,31 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that a declined form of a registered pronoun counts as known, not just its bare
+        /// lemma — "který" is registered (Pronouns/patterns.json, declining as the adjective pattern
+        /// mladý), but "která"/"kterému" are not separate entries, only its declension. A real article
+        /// found this: AdjectiveMatcher folded those gender endings straight back to "který" and
+        /// proposed it as a gap, because only the lemma itself, never its forms, had been added.
+        /// </summary>
+        [TestMethod]
+        public void KnownWordsRecognizesDeclinedFormOfPronoun()
+        {
+            Assert.IsTrue(known.IsKnown("která"));
+            Assert.IsTrue(known.IsKnown("kterému"));
+            Assert.IsTrue(known.IsKnown("kterých"));
+        }
+
+        /// <summary>
+        /// Verifies that a declined form of a registered numeral counts as known too, the same fix
+        /// applied to the other closed class with its own irregular paradigm.
+        /// </summary>
+        [TestMethod]
+        public void KnownWordsRecognizesDeclinedFormOfNumeral()
+        {
+            Assert.IsTrue(known.IsKnown("jednoho"));
+        }
+
+        /// <summary>
         /// Verifies that a clitic — held only as a literal list, not a data provider — counts as known.
         /// </summary>
         [TestMethod]

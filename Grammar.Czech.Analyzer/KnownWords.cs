@@ -24,14 +24,23 @@ namespace Grammar.Czech.Analyzer
     /// </para>
     /// <para>
     /// The third kind is the one a lemma-only set misses: every generated form of an already-known
-    /// noun, adjective or verb. Without it, a text repeating <c>město</c> across several cases proposes
-    /// <c>měst</c>, <c>města</c>, <c>městu</c>... as new lemmas in their own right — the matcher has no
-    /// way to know they are forms of a word already on file, only that the exact string "město" is.
-    /// Expanding every known open-class word's own paradigm once at startup, the same way
-    /// <see cref="Candidates.NounMatcher"/>/<see cref="Candidates.VerbMatcher"/> expand a hypothesis,
-    /// closes that hole with the same mechanism rather than a new one — verbs need it just as much as
-    /// nouns did, since <see cref="Candidates.VerbMatcher"/> reconstructs infinitives from conjugated
-    /// tokens exactly the way a text repeating a known verb across tenses would.
+    /// noun, adjective, verb, pronoun or numeral. Without it, a text repeating <c>město</c> across
+    /// several cases proposes <c>měst</c>, <c>města</c>, <c>městu</c>... as new lemmas in their own
+    /// right — the matcher has no way to know they are forms of a word already on file, only that the
+    /// exact string "město" is. Expanding every known word's own paradigm once at startup, the same
+    /// way <see cref="Candidates.NounMatcher"/>/<see cref="Candidates.VerbMatcher"/> expand a
+    /// hypothesis, closes that hole with the same mechanism rather than a new one.
+    /// </para>
+    /// <para>
+    /// Pronouns and numerals were missed by the first pass of this fix, and a real article found it
+    /// within a day: "který" is a registered pronoun (<c>Pronouns/patterns.json</c>, declining as the
+    /// adjective pattern mladý), so the bare lemma was excluded — but "která"/"které"/"kterému" were
+    /// not, since only the lemma itself was ever added, never its declension. <c>AdjectiveMatcher</c>
+    /// then folded those gender endings straight back to "který" and proposed it as if it were a gap.
+    /// <see cref="ICzechPronounService"/> and <see cref="ICzechNumeralService"/> already generate a
+    /// lemma's forms on request (returning <see langword="null"/> for a combination that does not
+    /// apply, never throwing) precisely because pronoun and numeral paradigms are irregular enough
+    /// that nothing else could derive them — which is exactly what expanding them here needs.
     /// </para>
     /// </remarks>
     public sealed class KnownWords
@@ -75,10 +84,28 @@ namespace Grammar.Czech.Analyzer
                 _words.Add(lemma);
             }
 
-            Add(services.GetRequiredService<IPronounDataProvider>().GetPronouns().Keys);
-            Add(services.GetRequiredService<IPronounDataProvider>().GetParadigms().Keys);
-            Add(services.GetRequiredService<INumeralDataProvider>().GetNumerals().Keys);
-            Add(services.GetRequiredService<INumeralDataProvider>().GetParadigms().Keys);
+            var pronounProvider = services.GetRequiredService<IPronounDataProvider>();
+            var pronounService = services.GetRequiredService<ICzechPronounService>();
+
+            Add(pronounProvider.GetPronouns().Keys);
+            Add(pronounProvider.GetParadigms().Keys);
+
+            foreach (var lemma in pronounProvider.GetPronouns().Keys)
+            {
+                AddPronounForms(pronounService, lemma);
+            }
+
+            var numeralProvider = services.GetRequiredService<INumeralDataProvider>();
+            var numeralService = services.GetRequiredService<ICzechNumeralService>();
+
+            Add(numeralProvider.GetNumerals().Keys);
+            Add(numeralProvider.GetParadigms().Keys);
+
+            foreach (var lemma in numeralProvider.GetNumerals().Keys)
+            {
+                AddNumeralForms(numeralService, lemma);
+            }
+
             Add(services.GetRequiredService<IAdverbDataProvider>().GetAdverbs().Keys);
             Add(services.GetRequiredService<IConjunctionDataProvider>().GetConjunctions().Keys);
             Add(services.GetRequiredService<IPrepositionDataProvider>().GetPrepositions().Keys);
@@ -164,6 +191,38 @@ namespace Grammar.Czech.Analyzer
             }
         }
 
+        private void AddPronounForms(ICzechPronounService service, string lemma)
+        {
+            foreach (var @case in Cases)
+            {
+                TryAddForm(() => service.TryGetForm(lemma, @case, null, null, null, null));
+
+                foreach (var (gender, isAnimate) in AdjectiveGenderSlots)
+                {
+                    foreach (var number in Numbers)
+                    {
+                        TryAddForm(() => service.TryGetForm(lemma, @case, gender, number, isAnimate, null));
+                    }
+                }
+            }
+        }
+
+        private void AddNumeralForms(ICzechNumeralService service, string lemma)
+        {
+            foreach (var @case in Cases)
+            {
+                TryAddForm(() => service.TryGetForm(lemma, @case, null, null, null, null));
+
+                foreach (var (gender, isAnimate) in AdjectiveGenderSlots)
+                {
+                    foreach (var number in Numbers)
+                    {
+                        TryAddForm(() => service.TryGetForm(lemma, @case, gender, number, isAnimate, null));
+                    }
+                }
+            }
+        }
+
         private void AddVerbForms(CzechVerbConjugationService service, string lemma, string pattern)
         {
             foreach (var request in Candidates.VerbForms.Requests(lemma, pattern))
@@ -172,11 +231,14 @@ namespace Grammar.Czech.Analyzer
             }
         }
 
-        private void TryAddForm(Func<string> generate)
+        private void TryAddForm(Func<string?> generate)
         {
             try
             {
-                _words.Add(Fold(generate()));
+                if (generate() is { } form)
+                {
+                    _words.Add(Fold(form));
+                }
             }
             catch (InvalidOperationException)
             {
