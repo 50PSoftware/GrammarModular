@@ -495,6 +495,62 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that a possessive-adjective form is dropped once its underlying noun stem is found
+        /// elsewhere in the same run — "papežovo"/"papežova" (papežův, "the pope's") scored as three
+        /// separate fake nouns on a real article about Jan Hus, entirely explained by "papež" (a real
+        /// candidate a few rows above them on the same run) plus the possessive suffix "-ov".
+        /// </summary>
+        [TestMethod]
+        public void CandidateRankingDropsPossessiveAdjectiveDerivativeWhenStemIsFound()
+        {
+            var papez = new MatchCandidate("papež", Core.Enums.WordCategory.Noun, "král", Core.Enums.Gender.Masculine, true, ["papež", "papeže", "papeži", "papežem"]);
+            var papezovo = new MatchCandidate("papežovo", Core.Enums.WordCategory.Noun, "město", Core.Enums.Gender.Neuter, null, ["papežovo", "papežova", "papežovu"]);
+
+            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([papez, papezovo], _ => false);
+
+            Assert.AreEqual(1, dropped.Count);
+            Assert.AreEqual("papež", dropped[0].Lemma);
+        }
+
+        /// <summary>
+        /// Verifies that the bare root "papežov" — the hypothesis <see cref="NounMatcher"/>'s own
+        /// reconstruction invents from "papežova" by stripping a noun case ending and reattaching
+        /// nothing, since a consonant-final pattern's own nominative singular has no ending to add — is
+        /// dropped alongside its possessive sibling rather than surviving as the group's sole winner.
+        /// Filtering candidates before they are grouped by shared root removed only "papežovo" here,
+        /// leaving "papežov" to win the root group on its own on a real run; checking the whole merged
+        /// group is what catches this, the same way one already-known root drops every sibling with it.
+        /// </summary>
+        [TestMethod]
+        public void CandidateRankingDropsBareRootSiblingOfPossessiveAdjectiveDerivative()
+        {
+            var papez = new MatchCandidate("papež", Core.Enums.WordCategory.Noun, "král", Core.Enums.Gender.Masculine, true, ["papež", "papeže", "papeži", "papežem"]);
+            var papezovo = new MatchCandidate("papežovo", Core.Enums.WordCategory.Noun, "město", Core.Enums.Gender.Neuter, null, ["papežovo", "papežova", "papežovu"]);
+            var papezov = new MatchCandidate("papežov", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false, ["papežov", "papežovu", "papežově", "papežovi"]);
+
+            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([papez, papezovo, papezov], _ => false);
+
+            Assert.AreEqual(1, dropped.Count);
+            Assert.AreEqual("papež", dropped[0].Lemma);
+        }
+
+        /// <summary>
+        /// Verifies that an "-ova"-ending noun candidate is not dropped when nothing corroborates it as
+        /// a possessive adjective — the ending alone cannot say which, since "slova" (genitive plural
+        /// of "slovo") ends the same way a possessive like "papežova" does, and stripping "-ova" from
+        /// "slova" lands on "sl", which is neither known nor found elsewhere in the run.
+        /// </summary>
+        [TestMethod]
+        public void CandidateRankingKeepsOvaEndingNounWithoutFoundStem()
+        {
+            var slova = new MatchCandidate("slova", Core.Enums.WordCategory.Noun, "žena", Core.Enums.Gender.Feminine, null, ["slova", "slov", "slovy"]);
+
+            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([slova], _ => false);
+
+            Assert.AreEqual(1, dropped.Count);
+        }
+
+        /// <summary>
         /// Verifies that a whole root group is dropped when the root itself is already a known word —
         /// "jeví" (the verb jevit se, not a noun) reduces to "jev", an ordinary noun already on file.
         /// "jev" never competes as a candidate — it is not a gap — so the check has to ask about the

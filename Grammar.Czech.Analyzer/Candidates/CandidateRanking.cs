@@ -172,6 +172,27 @@ namespace Grammar.Czech.Analyzer.Candidates
         /// grouping by root: a candidate whose own lemma appears as an inflected form of another
         /// candidate is that other candidate's paradigm restated, not a second word.
         /// </para>
+        /// <para>
+        /// A possessive adjective (otcův, matčin — <c>Data/Rules/Adjectives/patterns.json</c>) is
+        /// excluded from <see cref="AdjectiveMatcher"/> on purpose (see its own remarks): it is not a
+        /// separate lexicon headword, it is derived from the noun it belongs to, so nothing there ever
+        /// corroborates one as an adjective in its own right — leaving <see cref="NounMatcher"/> to try
+        /// every one of its inflected forms blindly, the same gap l-participle agreement filled before
+        /// <see cref="ShouldTryAsNoun"/> learned to recognize it. "papežovo"/"papežova" (papežův,
+        /// "the pope's") scored as three separate fake město/turista/žena-pattern nouns on a real
+        /// article, entirely explained by "papež" — itself a real candidate two rows above them on the
+        /// same run — plus the possessive suffix "-ov" and an adjective agreement ending. Unlike
+        /// l-participle, shape alone cannot say which: "-ova" is also the real genitive plural of
+        /// "slovo" ("slova"), so <see cref="IsPossessiveAdjectiveDerivative"/> only drops a candidate
+        /// once stripping a possessive suffix actually lands on a word already known or already found
+        /// elsewhere in the same run — "sl" is neither, so "slova" survives untouched, but "papežov" |
+        /// "a" does because "papež" is sitting right there in the same candidate list. This only
+        /// catches the ordinary case where the underlying noun's stem does not itself alternate —
+        /// "otcův" is the pattern's own name because "otec" loses its mobile e first (otec → otcův, not
+        /// otecův); a possessive built on a mobile-e noun would need that same lexicon/heuristic
+        /// knowledge <see cref="NounMatcher"/>'s own remarks already flag as unreliable to guess, so it
+        /// is left uncaught rather than guessed at.
+        /// </para>
         /// </remarks>
         /// <param name="candidates">The candidates to filter, any order.</param>
         /// <param name="isKnown">Whether a given lemma is already known, independent of this candidate list.</param>
@@ -179,6 +200,10 @@ namespace Grammar.Czech.Analyzer.Candidates
             IEnumerable<MatchCandidate> candidates, Func<string, bool> isKnown)
         {
             var list = candidates.ToList();
+            var allLemmas = new HashSet<string>(list.Select(c => c.Lemma));
+
+            bool IsKnownOrFound(string lemma) => isKnown(lemma) || allLemmas.Contains(lemma);
+
             var nouns = list.Where(c => c.Category == WordCategory.Noun).ToList();
             var groups = MergeByRootAndSharedForms(nouns);
 
@@ -186,7 +211,14 @@ namespace Grammar.Czech.Analyzer.Candidates
 
             foreach (var group in groups)
             {
-                if (group.Any(c => isKnown(NounRoot(c))))
+                // Checked across the whole merged group, not just the member being scored: "papežov" —
+                // the bare root NounMatcher's own reconstruction invents from "papežova" — never itself
+                // matches a possessive suffix (nothing follows the "-ov"), so filtering candidates
+                // before grouping only removed "papežovo"/"papežova" and left "papežov" to win the
+                // group on its own. Every member shares the same underlying word once merged, so one
+                // possessive-shaped sibling is enough to condemn the whole group, the same way one
+                // already-known root drops it below.
+                if (group.Any(c => isKnown(NounRoot(c)) || IsPossessiveAdjectiveDerivative(c.Lemma, IsKnownOrFound)))
                 {
                     continue;
                 }
@@ -256,6 +288,34 @@ namespace Grammar.Czech.Analyzer.Candidates
             }
 
             return nouns.GroupBy(c => Find(NounRoot(c))).Select(group => (IReadOnlyList<MatchCandidate>)group.ToList());
+        }
+
+        // Every literal suffix "otcův"/"matčin" declare in Data/Rules/Adjectives/patterns.json, dash
+        // stripped: the possessive marker "ov"/"in" plus whatever adjective-agreement ending follows it
+        // (including the bare "ův"/"in" citation form itself). Order does not matter — every candidate
+        // lemma matches at most one of these by construction, since they differ in their own trailing
+        // letters.
+        private static readonly string[] PossessiveAdjectiveSuffixes =
+        [
+            "ových", "ovými", "ovým", "ova", "ovo", "ovu", "ově", "ovi", "ovy", "ův",
+            "iných", "inými", "iným", "ina", "ino", "inu", "ině", "ini", "iny", "in",
+        ];
+
+        // A possessive adjective form is indistinguishable from a real noun's own case form by shape
+        // alone — "papežova" and "slova" (genitive plural of "slovo") end the same way — so this only
+        // fires once stripping the suffix actually lands on a word this run already knows about.
+        private static bool IsPossessiveAdjectiveDerivative(string lemma, Func<string, bool> isKnownOrFound)
+        {
+            foreach (var suffix in PossessiveAdjectiveSuffixes)
+            {
+                if (lemma.Length > suffix.Length && lemma.EndsWith(suffix, StringComparison.Ordinal)
+                    && isKnownOrFound(lemma[..^suffix.Length]))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         // Mirrors CzechWordStructureResolver.ExtractNounRoot: a lemma ending in a vowel loses it,
