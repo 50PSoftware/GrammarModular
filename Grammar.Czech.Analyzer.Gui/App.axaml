@@ -11,5 +11,8 @@
 
     <Application.Styles>
         <FluentTheme />
+        <!-- Avalonia.Controls.DataGrid ships its visuals separately from FluentTheme — without this
+             the grid renders with no headers, no gridlines and no row chrome at all, not just unstyled. -->
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
     </Application.Styles>
 </Application>
