@@ -23,11 +23,13 @@
             <Button Content="Procházet…" Click="OnBrowseClick" />
             <Button Content="Rozebrat" Command="{Binding AnalyzeCommand}" IsEnabled="{Binding !IsBusy}" />
 
+            <!-- NumericUpDown below 110px or so clips its own value text almost entirely — the digit
+                 was there, just rendered mostly outside the visible area, not a color/theme problem. -->
             <TextBlock Text="min. délka" VerticalAlignment="Center" Margin="16,0,0,0" />
-            <NumericUpDown Value="{Binding MinDelka}" Minimum="1" Maximum="20" Width="90" />
+            <NumericUpDown Value="{Binding MinDelka}" Minimum="1" Maximum="20" Width="130" />
 
             <TextBlock Text="vzorů/slovo" VerticalAlignment="Center" Margin="8,0,0,0" />
-            <NumericUpDown Value="{Binding VzoruNaSlovo}" Minimum="1" Maximum="10" Width="90" />
+            <NumericUpDown Value="{Binding VzoruNaSlovo}" Minimum="1" Maximum="10" Width="130" />
 
             <TextBlock Text="limit" VerticalAlignment="Center" Margin="8,0,0,0" />
             <NumericUpDown Value="{Binding Limit}" Minimum="10" Maximum="5000" Width="110" />
