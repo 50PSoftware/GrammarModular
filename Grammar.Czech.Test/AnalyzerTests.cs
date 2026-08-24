@@ -591,6 +591,22 @@ namespace Grammar.Czech.Test
             Assert.IsTrue(candidates.Any(candidate => candidate.Lemma == "existovat"));
         }
 
+        /// <summary>
+        /// Verifies that "jít"-compound l-participle forms are blocked from noun-matching outright,
+        /// with no verb candidate needed first — "přišel"/"přišla"/"přišli" scored as a fake pán-pattern
+        /// noun on a real article, and unlike a regular verb's l-participle, <see cref="VerbMatcher"/>
+        /// can never corroborate one to gate on: class 1 is the only class that would try "přijít", and
+        /// <see cref="Services.CzechWordStructureResolver.DeriveTrida1"/> refuses to derive a stem for
+        /// it on principle, so the verb-candidate count for this token is always zero.
+        /// </summary>
+        [TestMethod]
+        public void ShouldTryAsNounRejectsJitCompoundLParticipleRegardlessOfVerbCandidateCount()
+        {
+            Assert.IsFalse(CandidateRanking.ShouldTryAsNoun("přišel", verbCandidateCount: 0));
+            Assert.IsFalse(CandidateRanking.ShouldTryAsNoun("přišla", verbCandidateCount: 0));
+            Assert.IsFalse(CandidateRanking.ShouldTryAsNoun("přišli", verbCandidateCount: 0));
+        }
+
         // ── AdjectiveMatcher ─────────────────────────────────────────────────────
 
         /// <summary>

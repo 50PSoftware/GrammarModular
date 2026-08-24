@@ -42,13 +42,37 @@ namespace Grammar.Czech.Analyzer.Candidates
         /// infinitive an l-participle token belongs to and corroborate it as a verb in its own right;
         /// the same shape check that already worked for "í" then applies unchanged.
         /// </para>
+        /// <para>
+        /// "jít" and its prefixed compounds (přijít, odejít, vyjít, dojít, najít, sejít se...) never get
+        /// that corroboration, and never can: their l-participle is suppletive — "-jít" becomes "-šel",
+        /// not a chopped-off "-t" — so class 1 is the only class that could try them, and
+        /// <see cref="Services.CzechWordStructureResolver.DeriveTrida1"/> refuses on principle rather than
+        /// hand back a wrong stem (nést → nél was the standing example of the alternative). "přišel"
+        /// therefore corroborates zero verb candidates no matter how <see cref="VerbMatcher"/> reconstructs,
+        /// and would slip through the count-based check above the same way it did before l-participle
+        /// endings were recognized at all — "přišel"/"přišla"/"přišli" scored as a fake pán-pattern noun
+        /// on the same real article. Unlike everywhere else in this class, this one shape is hard-coded
+        /// rather than generate-and-test, because there is nothing left to generate and test: the jít
+        /// compounds are a small, closed, genuinely irregular family (not a productive ending any other
+        /// verb shares), so recognizing "-šel"/"-šla"/"-šlo"/"-šli"/"-šly" directly costs nothing a real
+        /// noun would ever pay — no citation form in the twenty noun patterns ends this way.
+        /// </para>
         /// </remarks>
         /// <param name="token">The case-folded token under consideration.</param>
         /// <param name="verbCandidateCount">How many verb candidates the same token already produced.</param>
-        public static bool ShouldTryAsNoun(string token, int verbCandidateCount) =>
-            verbCandidateCount == 0
-            || !(token.EndsWith("í", StringComparison.Ordinal)
-                || VerbMatcher.LParticipleEndings.Any(ending => token.EndsWith(ending, StringComparison.Ordinal)));
+        public static bool ShouldTryAsNoun(string token, int verbCandidateCount)
+        {
+            if (JitCompoundLParticipleEndings.Any(ending => token.EndsWith(ending, StringComparison.Ordinal)))
+            {
+                return false;
+            }
+
+            return verbCandidateCount == 0
+                || !(token.EndsWith("í", StringComparison.Ordinal)
+                    || VerbMatcher.LParticipleEndings.Any(ending => token.EndsWith(ending, StringComparison.Ordinal)));
+        }
+
+        private static readonly string[] JitCompoundLParticipleEndings = ["šel", "šla", "šlo", "šli", "šly"];
 
         /// <summary>
         /// Keeps, per distinct lemma, only the candidates tied for that lemma's highest score, capped
