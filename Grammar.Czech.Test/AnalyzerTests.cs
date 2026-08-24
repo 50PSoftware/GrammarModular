@@ -329,6 +329,39 @@ namespace Grammar.Czech.Test
             Assert.AreEqual(1, thinned.Count);
         }
 
+        /// <summary>
+        /// Verifies that a vowel-ending noun hypothesis is dropped when a same-pattern candidate for
+        /// the consonant-stripped spelling scores at least as well — "zápasí" (really the verb form,
+        /// not a noun) generates the same oblique-case forms as the real noun "zápas" once a suffix is
+        /// appended, since no noun pattern declares a nominative-singular ending and every other case
+        /// strips a trailing vowel unconditionally (ExtractNounRoot). This was found on a real article.
+        /// </summary>
+        [TestMethod]
+        public void CandidateRankingDropsVowelEndingNounDuplicate()
+        {
+            var real = new MatchCandidate("zápas", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false, ["zápas", "zápasu", "zápase"]);
+            var spurious = new MatchCandidate("zápasí", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false, ["zápasí", "zápasu", "zápase"]);
+
+            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([real, spurious]);
+
+            Assert.AreEqual(1, dropped.Count);
+            Assert.AreEqual("zápas", dropped[0].Lemma);
+        }
+
+        /// <summary>
+        /// Verifies that the vowel-ending candidate survives when it strictly outscores its
+        /// consonant-stripped sibling — the shape a genuine finding with no real sibling looks like.
+        /// </summary>
+        [TestMethod]
+        public void CandidateRankingKeepsVowelEndingNounWithNoWeakerSibling()
+        {
+            var candidate = new MatchCandidate("moře", Core.Enums.WordCategory.Noun, "moře", Core.Enums.Gender.Neuter, null, ["moře", "moři", "mořem"]);
+
+            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([candidate]);
+
+            Assert.AreEqual(1, dropped.Count);
+        }
+
         // ── AdjectiveMatcher ─────────────────────────────────────────────────────
 
         /// <summary>

@@ -1,3 +1,6 @@
+using Grammar.Core.Enums;
+using Grammar.Czech.Helpers;
+
 namespace Grammar.Czech.Analyzer.Candidates
 {
     /// <summary>
@@ -39,6 +42,61 @@ namespace Grammar.Czech.Analyzer.Candidates
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Drops a noun candidate whose lemma ends in a vowel when a same-pattern candidate for the
+        /// consonant-stripped spelling exists and scores at least as well.
+        /// </summary>
+        /// <remarks>
+        /// Traced to a specific mechanism, not a guess: no noun pattern declares an ending for
+        /// nominative singular — <c>Data/Rules/Nouns/patterns.json</c> never has one — so
+        /// <see cref="Services.CzechNounDeclensionService.GetForm"/> returns a hypothesis lemma
+        /// unchanged for that one slot regardless of shape, while every other case runs it through
+        /// <see cref="Services.CzechWordStructureResolver.ExtractNounRoot"/>, which strips a trailing
+        /// vowel unconditionally. A wrong-shaped hypothesis like "zápasí" (really the verb form
+        /// "zápasí", not a noun) therefore generates the exact oblique-case paradigm the real noun
+        /// "zápas" would — zápasu, zápase, zápasem, zápasy... — because both reduce to the same root
+        /// the moment a suffix is appended, and only the pass-through nominative singular differs. The
+        /// result is not a low-confidence guess to filter by score; it is a wrong-spelling duplicate of
+        /// a real finding, which is why this checks for the sibling directly rather than raising the
+        /// corroboration threshold. Compared across every pattern, not just the one that scored this
+        /// candidate: <see cref="Thin"/> has not run yet when this does, so "zápasí" and "zápas" can
+        /// each be carrying their own best-scoring pattern (město vs hrad) with nothing in common but
+        /// the stripped root — and it is the root, not the specific pattern, that says one is a
+        /// respelling of the other.
+        /// </remarks>
+        /// <param name="candidates">The candidates to filter, any order.</param>
+        public static IReadOnlyList<MatchCandidate> DropVowelEndingNounDuplicates(IEnumerable<MatchCandidate> candidates)
+        {
+            var list = candidates.ToList();
+            var suppressed = new HashSet<int>();
+
+            for (var i = 0; i < list.Count; i++)
+            {
+                var candidate = list[i];
+
+                if (candidate.Category != WordCategory.Noun
+                    || candidate.Lemma.Length < 2
+                    || MorphologyHelper.IsConsonant(candidate.Lemma[^1]))
+                {
+                    continue;
+                }
+
+                var stripped = candidate.Lemma[..^1];
+                var bestSiblingScore = list
+                    .Where(other => other.Category == WordCategory.Noun && other.Lemma == stripped)
+                    .Select(other => (int?)other.Score)
+                    .DefaultIfEmpty(null)
+                    .Max();
+
+                if (bestSiblingScore is { } score && score >= candidate.Score)
+                {
+                    suppressed.Add(i);
+                }
+            }
+
+            return list.Where((_, index) => !suppressed.Contains(index)).ToList();
         }
     }
 }
