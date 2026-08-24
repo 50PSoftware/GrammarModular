@@ -472,6 +472,29 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies the case NounRoot's own vowel-stripping rule cannot connect on its own: "forem"
+        /// (genitive plural of "forma", with a vkladné e) ends in a consonant, so NounRoot leaves it
+        /// whole, while "forma" strips down to "form" — two different root keys for the same word,
+        /// unless the shared matched form "forem" (present in both candidates' tvary) is what ties the
+        /// groups together instead. "forma" never appears literally in the text (cetnost 0), only
+        /// "forem" does, so this is the reconstructed-but-never-seen-standalone shape of the same bug
+        /// "kandidát" hit. Found on a real article about the universe.
+        /// </summary>
+        [TestMethod]
+        public void CandidateRankingMergesMobileEDuplicateViaSharedMatchedForm()
+        {
+            string[] foremForms = ["forem", "formy", "formě", "formu", "formou", "formách", "formami"];
+            string[] formaForms = ["formy", "formě", "formu", "formou", "forem", "formách", "formami"];
+            var forem = new MatchCandidate("forem", Core.Enums.WordCategory.Noun, "žena", Core.Enums.Gender.Feminine, null, foremForms);
+            var forma = new MatchCandidate("forma", Core.Enums.WordCategory.Noun, "žena", Core.Enums.Gender.Feminine, null, formaForms);
+
+            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([forem, forma], _ => false);
+
+            Assert.AreEqual(1, dropped.Count);
+            Assert.AreEqual("forma", dropped[0].Lemma);
+        }
+
+        /// <summary>
         /// Verifies that a whole root group is dropped when the root itself is already a known word —
         /// "jeví" (the verb jevit se, not a noun) reduces to "jev", an ordinary noun already on file.
         /// "jev" never competes as a candidate — it is not a gap — so the check has to ask about the

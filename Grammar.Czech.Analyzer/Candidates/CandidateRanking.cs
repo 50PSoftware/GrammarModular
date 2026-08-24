@@ -117,6 +117,22 @@ namespace Grammar.Czech.Analyzer.Candidates
         /// the borrowed paradigm (jevu, jevy, jevů, all real) belongs to the known word, and every
         /// candidate sharing its root is retelling that word's paradigm, not finding a new one.
         /// </para>
+        /// <para>
+        /// The stripped-vowel root is not the only way two candidates turn out to be the same word:
+        /// "forem" (genitive plural of "forma", with a vkladné e — <c>form</c> plus an inserted vowel)
+        /// ends in a consonant, so <see cref="NounRoot"/> — which only strips a trailing vowel — leaves
+        /// it whole, while "forma" strips down to "form"; two different keys for the same word, because
+        /// unlike <see cref="Services.CzechWordStructureResolver.ExtractNounRoot"/> this has no lexicon
+        /// or heuristic to decide which consonant-final lemmas hide a mobile e, and guessing wrong here
+        /// costs a real duplicate escaping instead of a hypothesis quietly failing to corroborate, so
+        /// nothing here tries to guess it (see <see cref="NounMatcher"/>'s remarks on why "jev" needed
+        /// both readings tried rather than one heuristic trusted). What ties them together instead
+        /// needs no phonology: "forem" is one of "forma"'s own matched forms — the corroborating tvary
+        /// list already generated for "forma" contains the literal spelling "forem" — so root groups
+        /// that share a spelling this way are merged into one before scoring, on the same reasoning as
+        /// grouping by root: a candidate whose own lemma appears as an inflected form of another
+        /// candidate is that other candidate's paradigm restated, not a second word.
+        /// </para>
         /// </remarks>
         /// <param name="candidates">The candidates to filter, any order.</param>
         /// <param name="isKnown">Whether a given lemma is already known, independent of this candidate list.</param>
@@ -124,11 +140,14 @@ namespace Grammar.Czech.Analyzer.Candidates
             IEnumerable<MatchCandidate> candidates, Func<string, bool> isKnown)
         {
             var list = candidates.ToList();
+            var nouns = list.Where(c => c.Category == WordCategory.Noun).ToList();
+            var groups = MergeByRootAndSharedForms(nouns);
+
             var result = new List<MatchCandidate>();
 
-            foreach (var group in list.Where(c => c.Category == WordCategory.Noun).GroupBy(NounRoot))
+            foreach (var group in groups)
             {
-                if (isKnown(group.Key))
+                if (group.Any(c => isKnown(NounRoot(c))))
                 {
                     continue;
                 }
@@ -147,6 +166,57 @@ namespace Grammar.Czech.Analyzer.Candidates
             result.AddRange(list.Where(c => c.Category != WordCategory.Noun));
 
             return result;
+        }
+
+        // Groups noun candidates first by their stripped-vowel root (the common case, no mobile e
+        // involved), then merges any two of those groups where one group's lemma turns up as a literal
+        // matched form of a candidate in the other — the signal that catches a mobile-e pair like
+        // "forem"/"forma" without needing to know the phonology rule that would otherwise connect them.
+        private static IEnumerable<IReadOnlyList<MatchCandidate>> MergeByRootAndSharedForms(
+            IReadOnlyList<MatchCandidate> nouns)
+        {
+            var parent = new Dictionary<string, string>();
+
+            string Find(string key)
+            {
+                while (parent[key] != key)
+                {
+                    parent[key] = parent[parent[key]];
+                    key = parent[key];
+                }
+
+                return key;
+            }
+
+            void Union(string a, string b)
+            {
+                var rootA = Find(a);
+                var rootB = Find(b);
+
+                if (rootA != rootB)
+                {
+                    parent[rootA] = rootB;
+                }
+            }
+
+            foreach (var candidate in nouns)
+            {
+                var key = NounRoot(candidate);
+                parent.TryAdd(key, key);
+            }
+
+            foreach (var a in nouns)
+            {
+                foreach (var b in nouns)
+                {
+                    if (a.MatchedForms.Contains(b.Lemma))
+                    {
+                        Union(NounRoot(a), NounRoot(b));
+                    }
+                }
+            }
+
+            return nouns.GroupBy(c => Find(NounRoot(c))).Select(group => (IReadOnlyList<MatchCandidate>)group.ToList());
         }
 
         // Mirrors CzechWordStructureResolver.ExtractNounRoot: a lemma ending in a vowel loses it,
