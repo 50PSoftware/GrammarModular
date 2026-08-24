@@ -454,6 +454,26 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies the tie self-consistency and shorter-wins both let through: "varianta" (žena, ends
+        /// "a" as žena's own pattern expects) and "varianto" (město, ends "o" as město's own pattern
+        /// expects) both pass the shape check on their own pattern, both score identically off the same
+        /// oblique forms, and both are eight letters — but "varianta" is the one actually written in the
+        /// text (its own citation-form spelling is one of its matched forms), while "varianto" is a pure
+        /// reconstruction nobody wrote. Found on a real article about internet and chess.
+        /// </summary>
+        [TestMethod]
+        public void CandidateRankingPrefersAttestedCitationFormOnCrossPatternTie()
+        {
+            var zena = new MatchCandidate("varianta", Core.Enums.WordCategory.Noun, "žena", Core.Enums.Gender.Feminine, null, ["varianta", "varianty", "variantě", "variant"]);
+            var mesto = new MatchCandidate("varianto", Core.Enums.WordCategory.Noun, "město", Core.Enums.Gender.Neuter, null, ["varianta", "variantě", "variant", "varianty"]);
+
+            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([zena, mesto], _ => false);
+
+            Assert.AreEqual(1, dropped.Count);
+            Assert.AreEqual("varianta", dropped[0].Lemma);
+        }
+
+        /// <summary>
         /// Verifies the tie-break needed once <see cref="NounMatcher"/> reconstructs a nominative
         /// singular from a plural token: "kandidát" (reconstructed) and "kandidáti" (the plural token
         /// tried as its own lemma) share the same root and, when "kandidát" itself never appears in the

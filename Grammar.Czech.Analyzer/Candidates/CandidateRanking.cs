@@ -246,9 +246,22 @@ namespace Grammar.Czech.Analyzer.Candidates
 
                 var best = consistent.Max(c => c.Score);
                 var atBest = consistent.Where(c => c.Score == best).ToList();
-                var shortest = atBest.Min(c => c.Lemma.Length);
 
-                result.AddRange(atBest.Where(c => c.Lemma.Length == shortest));
+                // A candidate whose own citation-form spelling was actually written somewhere in the
+                // text outranks one that is a pure reconstruction nobody wrote — "varianta" (found
+                // standalone) over "varianto" (never seen on its own, only reconstructed from the same
+                // oblique forms "varianta" itself corroborates on). Self-consistency alone cannot choose
+                // between the two: žena's own "a" and město's own "o" are each exactly what their
+                // pattern expects, so both pass, and a same-length tie like this one is exactly what
+                // shorter-wins cannot break either — a coincidence shorter-wins already needed a second
+                // rule for once ("vrstva" and its siblings), just across two different patterns instead
+                // of four spellings of one.
+                var attested = atBest.Where(c => c.MatchedForms.Contains(c.Lemma)).ToList();
+                var survivors = attested.Count > 0 ? attested : atBest;
+
+                var shortest = survivors.Min(c => c.Lemma.Length);
+
+                result.AddRange(survivors.Where(c => c.Lemma.Length == shortest));
             }
 
             result.AddRange(list.Where(c => c.Category != WordCategory.Noun));
