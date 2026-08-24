@@ -80,38 +80,61 @@ namespace Grammar.Czech.Analyzer.Candidates
                 }
             }
 
-            return DropRedundantAccentVariant(results);
+            return DropRedundantSuffixVariants(results);
         }
 
-        // Reconstructing from a present-tense token always tries both "-at" and "-át" for class 5,
-        // since the ending alone cannot say which the real infinitive had. Usually only one of the two
-        // corroborates and the other quietly produces nothing — but "-át" can corroborate on its own
-        // wrong stem too (využívát scored the same as real využívat on a live article), leaving two
-        // rows for what a person reads as one word with a typo. "-át" is the rare spelling in Czech —
-        // a small, closed set (znát, hrát, přát...) against the ordinary "-at" — so a tie or an "-at"
-        // lead is resolved toward "-at"; "-át" only survives where it strictly outscores its sibling
-        // or has none, which is what a genuine -át verb like "hrát" looks like.
-        private static List<MatchCandidate> DropRedundantAccentVariant(List<MatchCandidate> results)
+        // DeriveTridaN strips exactly two characters for every one of class 4's four candidate suffixes
+        // (it/ít/et/ět) and class 5's two (at/át), so every reconstruction from the same present-tense
+        // token shares the identical present stem — and therefore the identical score whenever the
+        // evidence is present-tense forms alone, which is the ordinary case. Left alone,
+        // "hudebnit"/"hudebnít"/"hudebnet"/"hudebnět" all tied at the same score on a real article, for
+        // what a person reads as one guess with four spellings. A tie (or a lead) is resolved toward one
+        // preferred spelling per class — "it" for class 4 as the pattern's own canonical example
+        // (prosit), "at" for class 5 as the ordinary spelling against the closed handful of real -át
+        // verbs — and a variant only survives on its own where it strictly outscores every preferred
+        // sibling, which is what a genuine exception (hrát) looks like.
+        private static readonly IReadOnlyDictionary<string, string[]> SuffixPreference = new Dictionary<string, string[]>
         {
-            var filtered = new List<MatchCandidate>();
+            ["trida5"] = ["at", "át"],
+            ["trida4"] = ["it", "et", "ět", "ít"],
+        };
 
-            foreach (var candidate in results)
+        private static List<MatchCandidate> DropRedundantSuffixVariants(List<MatchCandidate> results)
+        {
+            var suppressed = new HashSet<int>();
+
+            for (var i = 0; i < results.Count; i++)
             {
-                if (candidate.Pattern == "trida5" && candidate.Lemma.EndsWith("át", StringComparison.Ordinal))
+                var candidate = results[i];
+
+                if (!SuffixPreference.TryGetValue(candidate.Pattern, out var preference))
                 {
-                    var atSpelling = candidate.Lemma[..^2] + "at";
-                    var sibling = results.Find(other => other.Pattern == "trida5" && other.Lemma == atSpelling);
+                    continue;
+                }
+
+                var suffix = preference.FirstOrDefault(s => candidate.Lemma.EndsWith(s, StringComparison.Ordinal));
+
+                if (suffix is null)
+                {
+                    continue;
+                }
+
+                var stem = candidate.Lemma[..^suffix.Length];
+
+                foreach (var preferred in preference.TakeWhile(s => s != suffix))
+                {
+                    var siblingLemma = stem + preferred;
+                    var sibling = results.Find(other => other.Pattern == candidate.Pattern && other.Lemma == siblingLemma);
 
                     if (sibling is not null && sibling.Score >= candidate.Score)
                     {
-                        continue;
+                        suppressed.Add(i);
+                        break;
                     }
                 }
-
-                filtered.Add(candidate);
             }
 
-            return filtered;
+            return results.Where((_, index) => !suppressed.Contains(index)).ToList();
         }
 
         // Classes 2-5 only ever produce a real paradigm from a lemma shaped like their own infinitive —

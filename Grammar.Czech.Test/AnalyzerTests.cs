@@ -475,6 +475,23 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies the same deduplication for class 4's four-way suffix ambiguity (it/ít/et/ět) — all
+        /// four reconstructions share the identical present stem by construction, so
+        /// "hudebnit"/"hudebnít"/"hudebnet"/"hudebnět" tied at the same score on a real article. Only
+        /// the preferred "it" spelling should survive.
+        /// </summary>
+        [TestMethod]
+        public void VerbMatcherPrefersItSpellingWhenClass4VariantsTie()
+        {
+            var corpus = new Dictionary<string, int> { ["trpí"] = 1, ["trpíme"] = 1 };
+
+            var candidates = verbMatcher.Match("trpí", corpus);
+
+            Assert.IsTrue(candidates.Any(candidate => candidate.Lemma == "trpit" && candidate.Pattern == "trida4"));
+            Assert.IsFalse(candidates.Any(candidate => candidate.Lemma is "trpít" or "trpet" or "trpět"));
+        }
+
+        /// <summary>
         /// Verifies that a token not shaped like any class 2-5 infinitive is not tried under those
         /// classes — "vznik" (the noun, "origin") is not a class-2 infinitive, but class 2's fallback
         /// stem for an unrecognized ending equals the bare lemma, which happens to be exactly
