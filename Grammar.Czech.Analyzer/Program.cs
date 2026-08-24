@@ -130,7 +130,7 @@ root.SetAction(parse =>
         }
     }
 
-    var ranked = CandidateRanking.Thin(CandidateRanking.DropVowelEndingNounDuplicates(candidates), vzoruNaSlovo)
+    var ranked = CandidateRanking.Thin(CandidateRanking.DropVowelEndingNounDuplicates(candidates, known.IsKnown), vzoruNaSlovo)
         .OrderByDescending(candidate => candidate.Score)
         .ThenByDescending(candidate => corpus.GetValueOrDefault(candidate.Lemma))
         .Take(limit)

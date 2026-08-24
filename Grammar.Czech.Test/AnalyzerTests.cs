@@ -280,6 +280,54 @@ namespace Grammar.Czech.Test
             Assert.IsTrue(candidates.All(candidate => candidate.Score >= 2));
         }
 
+        /// <summary>
+        /// Verifies the reconstruction path: a token shaped like a plural case of some pattern, with no
+        /// nominative singular anywhere in the text, still resolves to the "kandidát" hypothesis once a
+        /// second plural form corroborates it — the case that motivated reconstruction for nouns at all.
+        /// </summary>
+        [TestMethod]
+        public void NounMatcherReconstructsNominativeFromPluralToken()
+        {
+            var corpus = new Dictionary<string, int> { ["kandidáti"] = 1, ["kandidátů"] = 1 };
+
+            var candidates = nounMatcher.Match("kandidáti", corpus);
+
+            Assert.IsTrue(candidates.Any(candidate => candidate.Lemma == "kandidát"));
+        }
+
+        /// <summary>
+        /// Verifies that a reconstructed lemma shaped exactly like a mobile-e word — "jev" has the same
+        /// single-syllable, vowel-between-consonants shape as "pes" — is not lost to the mobile-e guess.
+        /// Left to the default, HasLikelyMobileE reads "jev" as mobile-e and generates "jvu" for what
+        /// should be "jevu", so the only slot that ever matched was "jev" itself and the hypothesis
+        /// never reached two — a real, correctly reconstructed lemma disappearing on a real article.
+        /// </summary>
+        [TestMethod]
+        public void NounMatcherFindsReconstructedLemmaDespiteMobileEGuess()
+        {
+            var corpus = new Dictionary<string, int> { ["jevy"] = 1, ["jevu"] = 1, ["jevů"] = 1 };
+
+            var candidates = nounMatcher.Match("jevy", corpus);
+
+            Assert.IsTrue(candidates.Any(candidate => candidate.Lemma == "jev" && candidate.Pattern == "hrad"));
+        }
+
+        /// <summary>
+        /// Verifies that a token ending in ě or é is rejected outright, even with corroborating
+        /// "evidence" in the corpus — no regular noun pattern's own nominative singular ends either
+        /// way, so a token shaped like one is never a citation form to begin with. "nekonečně" (an
+        /// adverb) scored as a noun this way on a real article, borrowing part of the real adjective
+        /// "nekonečný"'s own declension (nekonečnou, nekonečných).
+        /// </summary>
+        [TestMethod]
+        public void NounMatcherRejectsTokenEndingInEWithCaron()
+        {
+            var corpus = new Dictionary<string, int> { ["nekonečně"] = 3, ["nekonečnou"] = 1, ["nekonečné"] = 1 };
+
+            Assert.AreEqual(0, nounMatcher.Match("nekonečně", corpus).Count);
+            Assert.AreEqual(0, nounMatcher.Match("nekonečné", corpus).Count);
+        }
+
         // ── CandidateRanking ─────────────────────────────────────────────────────
 
         /// <summary>
@@ -342,7 +390,7 @@ namespace Grammar.Czech.Test
             var real = new MatchCandidate("zápas", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false, ["zápas", "zápasu", "zápase", "zápasem"]);
             var spurious = new MatchCandidate("zápasí", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false, ["zápasí", "zápasu", "zápase"]);
 
-            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([real, spurious]);
+            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([real, spurious], _ => false);
 
             Assert.AreEqual(1, dropped.Count);
             Assert.AreEqual("zápas", dropped[0].Lemma);
@@ -357,7 +405,7 @@ namespace Grammar.Czech.Test
         {
             var candidate = new MatchCandidate("moře", Core.Enums.WordCategory.Noun, "moře", Core.Enums.Gender.Neuter, null, ["moře", "moři", "mořem"]);
 
-            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([candidate]);
+            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([candidate], _ => false);
 
             Assert.AreEqual(1, dropped.Count);
         }
@@ -374,10 +422,45 @@ namespace Grammar.Czech.Test
             var real = new MatchCandidate("změna", Core.Enums.WordCategory.Noun, "žena", Core.Enums.Gender.Feminine, null, ["změna", "změny", "změnu", "změně"]);
             var spurious = new MatchCandidate("změní", Core.Enums.WordCategory.Noun, "žena", Core.Enums.Gender.Feminine, null, ["změní", "změny", "změnu"]);
 
-            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([real, spurious]);
+            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([real, spurious], _ => false);
 
             Assert.AreEqual(1, dropped.Count);
             Assert.AreEqual("změna", dropped[0].Lemma);
+        }
+
+        /// <summary>
+        /// Verifies the tie-break needed once <see cref="NounMatcher"/> reconstructs a nominative
+        /// singular from a plural token: "kandidát" (reconstructed) and "kandidáti" (the plural token
+        /// tried as its own lemma) share the same root and, when "kandidát" itself never appears in the
+        /// text, the identical paradigm and score — so the shorter, genuinely singular spelling should
+        /// win rather than both surviving as a tie.
+        /// </summary>
+        [TestMethod]
+        public void CandidateRankingPrefersShorterLemmaOnTiedRoot()
+        {
+            var reconstructed = new MatchCandidate("kandidát", Core.Enums.WordCategory.Noun, "pán", Core.Enums.Gender.Masculine, true, ["kandidáti", "kandidátů", "kandidáta"]);
+            var direct = new MatchCandidate("kandidáti", Core.Enums.WordCategory.Noun, "pán", Core.Enums.Gender.Masculine, true, ["kandidáti", "kandidátů", "kandidáta"]);
+
+            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([reconstructed, direct], _ => false);
+
+            Assert.AreEqual(1, dropped.Count);
+            Assert.AreEqual("kandidát", dropped[0].Lemma);
+        }
+
+        /// <summary>
+        /// Verifies that a whole root group is dropped when the root itself is already a known word —
+        /// "jeví" (the verb jevit se, not a noun) reduces to "jev", an ordinary noun already on file.
+        /// "jev" never competes as a candidate — it is not a gap — so the check has to ask about the
+        /// root directly rather than compare candidates against each other.
+        /// </summary>
+        [TestMethod]
+        public void CandidateRankingDropsGroupWhenRootIsAlreadyKnown()
+        {
+            var candidate = new MatchCandidate("jeví", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false, ["jeví", "jevu", "jevy", "jevů"]);
+
+            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([candidate], lemma => lemma == "jev");
+
+            Assert.AreEqual(0, dropped.Count);
         }
 
         /// <summary>

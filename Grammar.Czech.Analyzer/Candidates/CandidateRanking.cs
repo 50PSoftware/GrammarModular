@@ -91,17 +91,46 @@ namespace Grammar.Czech.Analyzer.Candidates
         /// has not run yet when this does, so two candidates sharing a root can each be carrying their
         /// own best-scoring pattern with nothing else in common.
         /// </para>
+        /// <para>
+        /// A tie within the root group is resolved toward the shorter lemma — "kandidát" (9) over
+        /// "kandidáti" (10) — once <see cref="NounMatcher"/> started reconstructing a nominative
+        /// singular from a plural token: the reconstruction and the token-as-its-own-lemma reading
+        /// share the identical paradigm and therefore the identical score whenever <c>kandidát</c>
+        /// itself never appears in the text, and a genuine nominative singular is never longer than an
+        /// inflected form built on top of it. This is narrower than the class-4 verb tie-break — no
+        /// single spelling is "the ordinary one" across every pattern the way "-at" was for class 5 —
+        /// but shorter-wins needs no per-pattern table and happens to be exactly right for a suffix
+        /// stripped down to the bare root.
+        /// </para>
+        /// <para>
+        /// A root that is itself already known drops the whole group, not just its weaker members —
+        /// "jeví" (the verb jevit se, not a noun at all) reduces to "jev", an ordinary hrad-pattern
+        /// noun already on file. "jev" never competes as a candidate — it is not a gap — so nothing in
+        /// the group above would have caught this without asking <paramref name="isKnown"/> directly:
+        /// the borrowed paradigm (jevu, jevy, jevů, all real) belongs to the known word, and every
+        /// candidate sharing its root is retelling that word's paradigm, not finding a new one.
+        /// </para>
         /// </remarks>
         /// <param name="candidates">The candidates to filter, any order.</param>
-        public static IReadOnlyList<MatchCandidate> DropVowelEndingNounDuplicates(IEnumerable<MatchCandidate> candidates)
+        /// <param name="isKnown">Whether a given lemma is already known, independent of this candidate list.</param>
+        public static IReadOnlyList<MatchCandidate> DropVowelEndingNounDuplicates(
+            IEnumerable<MatchCandidate> candidates, Func<string, bool> isKnown)
         {
             var list = candidates.ToList();
             var result = new List<MatchCandidate>();
 
             foreach (var group in list.Where(c => c.Category == WordCategory.Noun).GroupBy(NounRoot))
             {
+                if (isKnown(group.Key))
+                {
+                    continue;
+                }
+
                 var best = group.Max(c => c.Score);
-                result.AddRange(group.Where(c => c.Score == best));
+                var atBest = group.Where(c => c.Score == best).ToList();
+                var shortest = atBest.Min(c => c.Lemma.Length);
+
+                result.AddRange(atBest.Where(c => c.Lemma.Length == shortest));
             }
 
             result.AddRange(list.Where(c => c.Category != WordCategory.Noun));
