@@ -28,6 +28,15 @@
   <ItemGroup>
     <ProjectReference Include="..\Grammar.Core\Grammar.Core.csproj" />
     <ProjectReference Include="..\Grammar.Czech\Grammar.Czech.csproj" />
+
+    <!--
+      Jen kvůli WordProposals/WordProposal — navrhy.json má být jedna fronta pro obě cesty, jak se do
+      ní může dostat slovo (živé sezení v gramatika, dávkový rozbor textu tady), a ten formát (atomický
+      zápis, cesta z GRAMMAR_CZECH_NAVRHY) nemá smysl mít jinde ve dvou kopiích, které se časem
+      rozejdou. Na rozdíl od LexiconSettings, který je tři řádky a je duplikovaný záměrně, tohle je
+      logika s vlastním chováním, kterou stojí za to sdílet, ne přepisovat.
+    -->
+    <ProjectReference Include="..\Grammar.Czech.Cli\Grammar.Czech.Cli.csproj" />
   </ItemGroup>
 
   <!--

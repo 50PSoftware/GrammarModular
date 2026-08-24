@@ -10,6 +10,7 @@ using System.CommandLine;
 using Grammar.Czech;
 using Grammar.Czech.Analyzer;
 using Grammar.Czech.Analyzer.Candidates;
+using Grammar.Czech.Cli.Sentence;
 using Grammar.Czech.Models;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -49,6 +50,18 @@ var outOption = new Option<FileInfo>("--out")
     DefaultValueFactory = _ => new FileInfo("rozbor_candidates.csv"),
 };
 
+var navrhyOption = new Option<FileInfo?>("--navrhy")
+{
+    Description = "Kam zapsat návrhy vedle CSV. Jinak se bere z GRAMMAR_CZECH_NAVRHY nebo z výchozí "
+        + "cesty gramatika (%APPDATA%/gramatika/navrhy.json) — stejný soubor, do kterého píše i živé "
+        + "sezení, takže `lexikon navrhy` zpracuje obojí stejně.",
+};
+
+var bezNavrhuOption = new Option<bool>("--bez-navrhu")
+{
+    Description = "Nezapisovat do navrhy.json, jen CSV — pro rozkoukání, než se něco přidá do fronty.",
+};
+
 var root = new RootCommand("rozbor — najde v textu slova, která Grammar Modular nezná, a navrhne jim kandidáty na lemma")
 {
     textArgument,
@@ -57,6 +70,8 @@ var root = new RootCommand("rozbor — najde v textu slova, která Grammar Modul
     minDelkaOption,
     vzoruNaSlovoOption,
     outOption,
+    navrhyOption,
+    bezNavrhuOption,
 };
 
 root.SetAction(parse =>
@@ -67,6 +82,8 @@ root.SetAction(parse =>
     var minDelka = parse.GetValue(minDelkaOption);
     var vzoruNaSlovo = parse.GetValue(vzoruNaSlovoOption);
     var @out = parse.GetValue(outOption)!;
+    var navrhy = parse.GetValue(navrhyOption);
+    var bezNavrhu = parse.GetValue(bezNavrhuOption);
 
     var lexiconPath = lexicon?.FullName ?? LexiconSettings.DatabasePath();
 
@@ -110,6 +127,13 @@ root.SetAction(parse =>
 
     Reporter.WriteCsv(ranked, corpus, @out.FullName);
     Console.Error.WriteLine($"Zapsáno {ranked.Count} kandidátů do {@out.FullName}");
+
+    if (!bezNavrhu)
+    {
+        var added = ProposalWriter.WriteNew(ranked, new WordProposals(navrhy?.FullName));
+        Console.Error.WriteLine($"Přidáno {added} nových návrhů do navrhy.json "
+            + $"(zbytek už tam byl, z tohohle nebo dřívějšího běhu).");
+    }
 });
 
 return root.Parse(args).Invoke();

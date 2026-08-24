@@ -1,5 +1,6 @@
 using Grammar.Czech.Analyzer;
 using Grammar.Czech.Analyzer.Candidates;
+using Grammar.Czech.Cli.Sentence;
 using Grammar.Czech.Interfaces;
 using Grammar.Czech.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -212,6 +213,77 @@ namespace Grammar.Czech.Test
             var candidate = adjectiveMatcher.Match("hezký", corpus);
 
             Assert.IsNull(candidate);
+        }
+
+        // ── ProposalWriter ───────────────────────────────────────────────────────
+
+        private static WordProposals TemporaryProposals() =>
+            new(Path.Combine(Path.GetTempPath(), $"rozbor-navrhy-test-{Guid.NewGuid():N}.json"));
+
+        /// <summary>
+        /// Verifies that a candidate is written as an unconfirmed proposal whose note records the
+        /// score and matched forms — the batch source has to stay visibly different from a
+        /// hand-typed session word, since it carries much weaker evidence.
+        /// </summary>
+        [TestMethod]
+        public void ProposalWriterWritesUnconfirmedProposalWithScoreInNote()
+        {
+            var store = TemporaryProposals();
+            var candidate = new MatchCandidate(
+                "pořádek", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false,
+                ["pořádek", "pořádku"]);
+
+            var added = ProposalWriter.WriteNew([candidate], store);
+
+            Assert.AreEqual(1, added);
+            var proposal = store.Read().Single();
+            Assert.AreEqual("pořádek", proposal.Lemma);
+            Assert.IsFalse(proposal.IsConfirmed);
+            Assert.IsTrue(proposal.Note!.Contains("skóre 2", StringComparison.OrdinalIgnoreCase));
+
+            store.Clear();
+        }
+
+        /// <summary>
+        /// Verifies that tied alternate patterns for the same word are recorded in the note rather than
+        /// each becoming its own proposal — one lemma is one row in the queue.
+        /// </summary>
+        [TestMethod]
+        public void ProposalWriterListsAlternatePatternsInNote()
+        {
+            var store = TemporaryProposals();
+            var strong = new MatchCandidate("slovo", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false, ["slovo", "slova"]);
+            var tied = new MatchCandidate("slovo", Core.Enums.WordCategory.Noun, "les", Core.Enums.Gender.Masculine, false, ["slovo", "slova"]);
+
+            var added = ProposalWriter.WriteNew([strong, tied], store);
+
+            Assert.AreEqual(1, added);
+            var proposal = store.Read().Single();
+            Assert.IsTrue(proposal.Note!.Contains("les", StringComparison.OrdinalIgnoreCase));
+
+            store.Clear();
+        }
+
+        /// <summary>
+        /// Verifies that a lemma already in the queue is skipped rather than duplicated — "first
+        /// sighting wins", the same rule the live session already follows.
+        /// </summary>
+        [TestMethod]
+        public void ProposalWriterSkipsLemmaAlreadyInQueue()
+        {
+            var store = TemporaryProposals();
+            var candidate = new MatchCandidate(
+                "pořádek", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false,
+                ["pořádek", "pořádku"]);
+
+            store.Write([new WordProposal { Lemma = "pořádek", IsConfirmed = true }]);
+
+            var added = ProposalWriter.WriteNew([candidate], store);
+
+            Assert.AreEqual(0, added);
+            Assert.IsTrue(store.Read().Single().IsConfirmed);
+
+            store.Clear();
         }
 
         // ── Reporter ─────────────────────────────────────────────────────────────
