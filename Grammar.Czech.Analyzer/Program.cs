@@ -29,6 +29,20 @@ var limitOption = new Option<int>("--limit")
     DefaultValueFactory = _ => 200,
 };
 
+var minDelkaOption = new Option<int>("--min-delka")
+{
+    Description = "Nejkratší token, který se zkouší jako lemma. Krátká slova (2-3 písmena) sedí "
+        + "náhodou na spoustu vzorů najednou a zaplavují výstup šumem.",
+    DefaultValueFactory = _ => 4,
+};
+
+var vzoruNaSlovoOption = new Option<int>("--vzoru-na-slovo")
+{
+    Description = "Kolik vzorů se stejným (nejlepším) skóre vypsat pro jedno slovo. Slabší vzory "
+        + "pro totéž slovo se zahodí, ne jen ty s nižším skóre.",
+    DefaultValueFactory = _ => 3,
+};
+
 var outOption = new Option<FileInfo>("--out")
 {
     Description = "Kam zapsat CSV s kandidáty.",
@@ -40,6 +54,8 @@ var root = new RootCommand("rozbor — najde v textu slova, která Grammar Modul
     textArgument,
     lexiconOption,
     limitOption,
+    minDelkaOption,
+    vzoruNaSlovoOption,
     outOption,
 };
 
@@ -48,6 +64,8 @@ root.SetAction(parse =>
     var text = parse.GetValue(textArgument)!;
     var lexicon = parse.GetValue(lexiconOption);
     var limit = parse.GetValue(limitOption);
+    var minDelka = parse.GetValue(minDelkaOption);
+    var vzoruNaSlovo = parse.GetValue(vzoruNaSlovoOption);
     var @out = parse.GetValue(outOption)!;
 
     var lexiconPath = lexicon?.FullName ?? LexiconSettings.DatabasePath();
@@ -71,7 +89,7 @@ root.SetAction(parse =>
 
     foreach (var token in corpus.Keys)
     {
-        if (known.IsKnown(token))
+        if (token.Length < minDelka || known.IsKnown(token))
         {
             continue;
         }
@@ -84,7 +102,7 @@ root.SetAction(parse =>
         }
     }
 
-    var ranked = candidates
+    var ranked = CandidateRanking.Thin(candidates, vzoruNaSlovo)
         .OrderByDescending(candidate => candidate.Score)
         .ThenByDescending(candidate => corpus[candidate.Lemma])
         .Take(limit)

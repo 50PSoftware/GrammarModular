@@ -150,6 +150,39 @@ namespace Grammar.Czech.Test
             Assert.IsTrue(candidates.All(candidate => candidate.Score >= 2));
         }
 
+        // ── CandidateRanking ─────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Verifies that only the candidates tied for the highest score survive thinning, not merely
+        /// sorted ahead of the weaker ones.
+        /// </summary>
+        [TestMethod]
+        public void CandidateRankingDropsLowerScoringSiblingsForSameWord()
+        {
+            var strong = new MatchCandidate("slovo", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false, ["slovo", "slova", "slovu"]);
+            var weak = new MatchCandidate("slovo", Core.Enums.WordCategory.Noun, "město", Core.Enums.Gender.Neuter, null, ["slovo", "slova"]);
+
+            var thinned = CandidateRanking.Thin([strong, weak], maxPerWord: 3);
+
+            Assert.AreEqual(1, thinned.Count);
+            Assert.AreEqual("hrad", thinned[0].Pattern);
+        }
+
+        /// <summary>
+        /// Verifies that ties at the top score are capped to the requested count rather than all kept.
+        /// </summary>
+        [TestMethod]
+        public void CandidateRankingCapsTiedCandidatesPerWord()
+        {
+            var candidates = new[] { "hrad", "les", "pán", "muž" }
+                .Select(pattern => new MatchCandidate("slovo", Core.Enums.WordCategory.Noun, pattern, Core.Enums.Gender.Masculine, false, ["slovo", "slova"]))
+                .ToArray();
+
+            var thinned = CandidateRanking.Thin(candidates, maxPerWord: 2);
+
+            Assert.AreEqual(2, thinned.Count);
+        }
+
         // ── AdjectiveMatcher ─────────────────────────────────────────────────────
 
         /// <summary>
