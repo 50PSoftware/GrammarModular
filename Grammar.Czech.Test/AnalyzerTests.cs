@@ -156,6 +156,28 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that an adverb's comparative and superlative count as known, not just the positive
+        /// — the same shape of gap as the pronoun one, found by checking the rest of the closed classes
+        /// on request rather than waiting for another real article to surface it.
+        /// </summary>
+        [TestMethod]
+        public void KnownWordsRecognizesAdverbComparativeAndSuperlative()
+        {
+            Assert.IsTrue(known.IsKnown("rychleji"));
+            Assert.IsTrue(known.IsKnown("nejrychleji"));
+        }
+
+        /// <summary>
+        /// Verifies that a preposition's vocalized variant (v/ve, s/se, k/ke...) counts as known.
+        /// </summary>
+        [TestMethod]
+        public void KnownWordsRecognizesVocalizedPreposition()
+        {
+            Assert.IsTrue(known.IsKnown("ve"));
+            Assert.IsTrue(known.IsKnown("ke"));
+        }
+
+        /// <summary>
         /// Verifies that a clitic — held only as a literal list, not a data provider — counts as known.
         /// </summary>
         [TestMethod]

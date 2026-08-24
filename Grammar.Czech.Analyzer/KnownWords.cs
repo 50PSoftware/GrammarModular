@@ -42,6 +42,16 @@ namespace Grammar.Czech.Analyzer
     /// apply, never throwing) precisely because pronoun and numeral paradigms are irregular enough
     /// that nothing else could derive them — which is exactly what expanding them here needs.
     /// </para>
+    /// <para>
+    /// Checked the rest of the closed classes for the same hole and found two more, smaller ones.
+    /// Adverbs compare (rychle → rychleji → nejrychleji), and <see cref="ICzechAdverbService"/> already
+    /// exposes every registered comparative for a lemma — the superlative is "nej" plus each of those,
+    /// which nothing generates on its own, so it is built here. Prepositions have a vocalized variant
+    /// before an awkward cluster (s/se, v/ve, k/ke...), stored right on <see cref="PrepositionData"/>
+    /// as a plain string — no service needed, just reading a field the provider already returns.
+    /// Conjunctions, particles and interjections were checked too and are genuinely one form per
+    /// lemma, so they need nothing beyond what <see cref="Add"/> already does.
+    /// </para>
     /// </remarks>
     public sealed class KnownWords
     {
@@ -106,11 +116,31 @@ namespace Grammar.Czech.Analyzer
                 AddNumeralForms(numeralService, lemma);
             }
 
-            Add(services.GetRequiredService<IAdverbDataProvider>().GetAdverbs().Keys);
+            var adverbProvider = services.GetRequiredService<IAdverbDataProvider>();
+            var adverbService = services.GetRequiredService<ICzechAdverbService>();
+
+            Add(adverbProvider.GetAdverbs().Keys);
+
+            foreach (var lemma in adverbProvider.GetAdverbs().Keys)
+            {
+                AddAdverbForms(adverbService, lemma);
+            }
+
             Add(services.GetRequiredService<IConjunctionDataProvider>().GetConjunctions().Keys);
-            Add(services.GetRequiredService<IPrepositionDataProvider>().GetPrepositions().Keys);
             Add(services.GetRequiredService<IParticleDataProvider>().GetParticles().Keys);
             Add(services.GetRequiredService<IInterjectionDataProvider>().GetInterjections().Keys);
+
+            var prepositionProvider = services.GetRequiredService<IPrepositionDataProvider>();
+
+            Add(prepositionProvider.GetPrepositions().Keys);
+
+            foreach (var preposition in prepositionProvider.GetPrepositions().Values)
+            {
+                if (preposition.Vocalized is { } vocalized)
+                {
+                    _words.Add(Fold(vocalized));
+                }
+            }
 
             var lexicon = services.GetRequiredService<IValencyProvider<CzechLexicalEntry>>();
             var nounService = services.GetRequiredService<CzechNounDeclensionService>();
@@ -220,6 +250,18 @@ namespace Grammar.Czech.Analyzer
                         TryAddForm(() => service.TryGetForm(lemma, @case, gender, number, isAnimate, null));
                     }
                 }
+            }
+        }
+
+        // "nej" + comparative je odvození, ne data — GetForm(Degree.Superlative) to dělá interně jen pro
+        // jeden (kanonický) komparativ. GetComparativeVariants dá všechny (snadno → snáze i snadněji),
+        // takže se to samo zopakuje tady, aby known-set znal superlativ z každé varianty, ne jen z první.
+        private void AddAdverbForms(ICzechAdverbService service, string lemma)
+        {
+            foreach (var comparative in service.GetComparativeVariants(lemma))
+            {
+                _words.Add(Fold(comparative));
+                _words.Add(Fold("nej" + comparative));
             }
         }
 
