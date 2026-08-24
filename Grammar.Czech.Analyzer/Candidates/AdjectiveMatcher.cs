@@ -60,7 +60,13 @@ namespace Grammar.Czech.Analyzer.Candidates
         /// </summary>
         /// <param name="token">The case-folded token to test as a candidate lemma.</param>
         /// <param name="corpus">Case-folded tokens found in the text, for corroboration.</param>
-        public MatchCandidate? Match(string token, IReadOnlyDictionary<string, int> corpus)
+        /// <param name="properNouns">
+        /// Case-folded words the text's own capitalization marks as proper nouns, excluded from
+        /// corroboration — see <see cref="NounMatcher.Match"/>'s remarks: an adjective's own case forms
+        /// can coincide with a proper noun's the same way a noun reconstruction can borrow one.
+        /// </param>
+        public MatchCandidate? Match(
+            string token, IReadOnlyDictionary<string, int> corpus, IReadOnlySet<string> properNouns)
         {
             if (!LooksLikeAdjectiveCitationForm(token))
             {
@@ -106,7 +112,7 @@ namespace Grammar.Czech.Analyzer.Candidates
 
                         var folded = form.ToLowerInvariant();
 
-                        if (corpus.ContainsKey(folded) && !matchedForms.Contains(folded))
+                        if (corpus.ContainsKey(folded) && !properNouns.Contains(folded) && !matchedForms.Contains(folded))
                         {
                             matchedForms.Add(folded);
                         }

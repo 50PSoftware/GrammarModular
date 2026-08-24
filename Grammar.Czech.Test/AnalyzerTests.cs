@@ -19,6 +19,7 @@ namespace Grammar.Czech.Test
         private static NounMatcher nounMatcher = null!;
         private static AdjectiveMatcher adjectiveMatcher = null!;
         private static VerbMatcher verbMatcher = null!;
+        private static readonly IReadOnlySet<string> noProperNouns = new HashSet<string>();
 
         /// <summary>
         /// Builds the grammar service graph once for the whole fixture, against the repository's own
@@ -258,7 +259,7 @@ namespace Grammar.Czech.Test
         {
             var corpus = new Dictionary<string, int> { ["nesmyslneslovoxyz"] = 1 };
 
-            var candidates = nounMatcher.Match("nesmyslneslovoxyz", corpus);
+            var candidates = nounMatcher.Match("nesmyslneslovoxyz", corpus, noProperNouns);
 
             Assert.AreEqual(0, candidates.Count);
         }
@@ -273,7 +274,7 @@ namespace Grammar.Czech.Test
         {
             var corpus = new Dictionary<string, int> { ["pořádek"] = 2, ["pořádku"] = 1 };
 
-            var candidates = nounMatcher.Match("pořádek", corpus);
+            var candidates = nounMatcher.Match("pořádek", corpus, noProperNouns);
 
             Assert.IsTrue(candidates.Count > 0);
             Assert.IsTrue(candidates.All(candidate => candidate.MatchedForms.Contains("pořádku")));
@@ -290,7 +291,7 @@ namespace Grammar.Czech.Test
         {
             var corpus = new Dictionary<string, int> { ["kandidáti"] = 1, ["kandidátů"] = 1 };
 
-            var candidates = nounMatcher.Match("kandidáti", corpus);
+            var candidates = nounMatcher.Match("kandidáti", corpus, noProperNouns);
 
             Assert.IsTrue(candidates.Any(candidate => candidate.Lemma == "kandidát"));
         }
@@ -307,9 +308,33 @@ namespace Grammar.Czech.Test
         {
             var corpus = new Dictionary<string, int> { ["jevy"] = 1, ["jevu"] = 1, ["jevů"] = 1 };
 
-            var candidates = nounMatcher.Match("jevy", corpus);
+            var candidates = nounMatcher.Match("jevy", corpus, noProperNouns);
 
             Assert.IsTrue(candidates.Any(candidate => candidate.Lemma == "jev" && candidate.Pattern == "hrad"));
+        }
+
+        /// <summary>
+        /// Verifies that a proper noun's own inflected spelling does not count as corroboration, even
+        /// though <see cref="Tokenizer.CountTokens"/> puts it in <c>corpus</c> regardless of
+        /// capitalization. "polskou" (instrumental of the ordinary adjective "polský", not a name)
+        /// reconstructs to "polska" under the turista pattern — which happens to be the real genitive
+        /// singular of the proper noun "Polsko", corroborated by "polska"/"polsku"/"polsko" turning up
+        /// in the corpus dozens of times on a real article about the Second World War. None of that is
+        /// the adjective's own paradigm; excluding <c>properNouns</c> from what counts as a match is
+        /// what makes the hypothesis fail to corroborate the way a genuine one still would.
+        /// </summary>
+        [TestMethod]
+        public void NounMatcherExcludesProperNounSpellingsFromCorroboration()
+        {
+            var corpus = new Dictionary<string, int>
+            {
+                ["polskou"] = 1, ["polska"] = 15, ["polsku"] = 5, ["polsko"] = 3,
+            };
+            var properNouns = new HashSet<string> { "polska", "polsku", "polsko" };
+
+            var candidates = nounMatcher.Match("polskou", corpus, properNouns);
+
+            Assert.IsFalse(candidates.Any(candidate => candidate.Lemma == "polska"));
         }
 
         /// <summary>
@@ -324,8 +349,8 @@ namespace Grammar.Czech.Test
         {
             var corpus = new Dictionary<string, int> { ["nekonečně"] = 3, ["nekonečnou"] = 1, ["nekonečné"] = 1 };
 
-            Assert.AreEqual(0, nounMatcher.Match("nekonečně", corpus).Count);
-            Assert.AreEqual(0, nounMatcher.Match("nekonečné", corpus).Count);
+            Assert.AreEqual(0, nounMatcher.Match("nekonečně", corpus, noProperNouns).Count);
+            Assert.AreEqual(0, nounMatcher.Match("nekonečné", corpus, noProperNouns).Count);
         }
 
         // ── CandidateRanking ─────────────────────────────────────────────────────
@@ -642,7 +667,7 @@ namespace Grammar.Czech.Test
                 ["existovalo"] = 1, ["existoval"] = 1, ["existovala"] = 1, ["existovaly"] = 1,
             };
 
-            var candidates = verbMatcher.Match("existovalo", corpus);
+            var candidates = verbMatcher.Match("existovalo", corpus, noProperNouns);
 
             Assert.IsTrue(candidates.Any(candidate => candidate.Lemma == "existovat"));
         }
@@ -675,7 +700,7 @@ namespace Grammar.Czech.Test
         {
             var corpus = new Dictionary<string, int> { ["hezký"] = 1, ["hezká"] = 1 };
 
-            var candidate = adjectiveMatcher.Match("hezký", corpus);
+            var candidate = adjectiveMatcher.Match("hezký", corpus, noProperNouns);
 
             Assert.IsNotNull(candidate);
             Assert.IsTrue(candidate.MatchedForms.Contains("hezká"));
@@ -689,7 +714,7 @@ namespace Grammar.Czech.Test
         {
             var corpus = new Dictionary<string, int> { ["hezký"] = 1 };
 
-            var candidate = adjectiveMatcher.Match("hezký", corpus);
+            var candidate = adjectiveMatcher.Match("hezký", corpus, noProperNouns);
 
             Assert.IsNull(candidate);
         }
@@ -705,7 +730,7 @@ namespace Grammar.Czech.Test
         {
             var corpus = new Dictionary<string, int> { ["novin"] = 3, ["novinu"] = 1, ["novinou"] = 1 };
 
-            var candidate = adjectiveMatcher.Match("novin", corpus);
+            var candidate = adjectiveMatcher.Match("novin", corpus, noProperNouns);
 
             Assert.IsNull(candidate);
         }
@@ -721,7 +746,7 @@ namespace Grammar.Czech.Test
         {
             var corpus = new Dictionary<string, int> { ["dýchání"] = 2, ["dýcháním"] = 1 };
 
-            var candidate = adjectiveMatcher.Match("dýchání", corpus);
+            var candidate = adjectiveMatcher.Match("dýchání", corpus, noProperNouns);
 
             Assert.IsNull(candidate);
         }
@@ -737,8 +762,8 @@ namespace Grammar.Czech.Test
         {
             var corpus = new Dictionary<string, int> { ["celý"] = 1, ["celá"] = 1, ["celé"] = 1 };
 
-            var fromFeminine = adjectiveMatcher.Match("celá", corpus);
-            var fromNeuter = adjectiveMatcher.Match("celé", corpus);
+            var fromFeminine = adjectiveMatcher.Match("celá", corpus, noProperNouns);
+            var fromNeuter = adjectiveMatcher.Match("celé", corpus, noProperNouns);
 
             Assert.IsNotNull(fromFeminine);
             Assert.IsNotNull(fromNeuter);
@@ -756,7 +781,7 @@ namespace Grammar.Czech.Test
         {
             var corpus = new Dictionary<string, int> { ["dělat"] = 1 };
 
-            var candidates = verbMatcher.Match("dělat", corpus);
+            var candidates = verbMatcher.Match("dělat", corpus, noProperNouns);
 
             Assert.AreEqual(0, candidates.Count);
         }
@@ -770,7 +795,7 @@ namespace Grammar.Czech.Test
         {
             var corpus = new Dictionary<string, int> { ["dělat"] = 1, ["dělá"] = 1 };
 
-            var candidates = verbMatcher.Match("dělat", corpus);
+            var candidates = verbMatcher.Match("dělat", corpus, noProperNouns);
 
             Assert.IsTrue(candidates.Any(candidate => candidate.Pattern == "trida5" && candidate.MatchedForms.Contains("dělá")));
         }
@@ -785,7 +810,7 @@ namespace Grammar.Czech.Test
         {
             var corpus = new Dictionary<string, int> { ["dělá"] = 1, ["děláme"] = 1 };
 
-            var candidates = verbMatcher.Match("dělá", corpus);
+            var candidates = verbMatcher.Match("dělá", corpus, noProperNouns);
 
             Assert.IsTrue(candidates.Any(candidate => candidate.Lemma == "dělat" && candidate.Pattern == "trida5"));
         }
@@ -802,7 +827,7 @@ namespace Grammar.Czech.Test
         {
             var corpus = new Dictionary<string, int> { ["využívá"] = 1, ["využíváme"] = 1 };
 
-            var candidates = verbMatcher.Match("využívá", corpus);
+            var candidates = verbMatcher.Match("využívá", corpus, noProperNouns);
 
             Assert.IsTrue(candidates.Any(candidate => candidate.Lemma == "využívat" && candidate.Pattern == "trida5"));
             Assert.IsFalse(candidates.Any(candidate => candidate.Lemma == "využívát"));
@@ -819,7 +844,7 @@ namespace Grammar.Czech.Test
         {
             var corpus = new Dictionary<string, int> { ["trpí"] = 1, ["trpíme"] = 1 };
 
-            var candidates = verbMatcher.Match("trpí", corpus);
+            var candidates = verbMatcher.Match("trpí", corpus, noProperNouns);
 
             Assert.IsTrue(candidates.Any(candidate => candidate.Lemma == "trpit" && candidate.Pattern == "trida4"));
             Assert.IsFalse(candidates.Any(candidate => candidate.Lemma is "trpít" or "trpet" or "trpět"));
@@ -837,7 +862,7 @@ namespace Grammar.Czech.Test
         {
             var corpus = new Dictionary<string, int> { ["prostředí"] = 3, ["prostředím"] = 1 };
 
-            var candidates = verbMatcher.Match("prostředí", corpus);
+            var candidates = verbMatcher.Match("prostředí", corpus, noProperNouns);
 
             Assert.IsFalse(candidates.Any(candidate => candidate.Pattern == "trida4"));
         }
@@ -852,7 +877,7 @@ namespace Grammar.Czech.Test
         {
             var corpus = new Dictionary<string, int> { ["změní"] = 2, ["změnit"] = 1 };
 
-            var candidates = verbMatcher.Match("změní", corpus);
+            var candidates = verbMatcher.Match("změní", corpus, noProperNouns);
 
             Assert.IsTrue(candidates.Any(candidate => candidate.Lemma == "změnit" && candidate.Pattern == "trida4"));
         }
@@ -869,7 +894,7 @@ namespace Grammar.Czech.Test
         {
             var corpus = new Dictionary<string, int> { ["vznik"] = 3, ["vznikl"] = 1, ["vzniklo"] = 1, ["vznikly"] = 1 };
 
-            var candidates = verbMatcher.Match("vznik", corpus);
+            var candidates = verbMatcher.Match("vznik", corpus, noProperNouns);
 
             Assert.IsFalse(candidates.Any(candidate => candidate.Pattern is "trida2" or "trida3" or "trida4" or "trida5"));
         }

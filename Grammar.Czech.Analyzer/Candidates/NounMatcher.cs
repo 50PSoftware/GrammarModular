@@ -78,7 +78,25 @@ namespace Grammar.Czech.Analyzer.Candidates
         /// </summary>
         /// <param name="token">The case-folded token to test as a candidate lemma.</param>
         /// <param name="corpus">Case-folded tokens found in the text, for corroboration.</param>
-        public IReadOnlyList<MatchCandidate> Match(string token, IReadOnlyDictionary<string, int> corpus)
+        /// <param name="properNouns">
+        /// Case-folded words the text's own capitalization marks as proper nouns, excluded from
+        /// corroboration — see this method's remarks on why a real word's own reconstruction can still
+        /// need this even though <c>Program.cs</c> never lets a proper noun seed one.
+        /// </param>
+        /// <remarks>
+        /// A proper noun is kept out of <paramref name="token"/> itself — <c>Program.cs</c> checks it
+        /// before ever calling this — but its own inflected spellings stay in <paramref name="corpus"/>
+        /// regardless, because <see cref="Tokenizer.CountTokens"/> collects every token it sees without
+        /// asking whether it looked like a name. "polskou" (instrumental of the ordinary adjective
+        /// "polský", not a name) reconstructs to "polska" the same way any other token does — and
+        /// "polska" happens to be the genitive singular of the real proper noun "Polsko", which turns up
+        /// in the corpus dozens of times as "polska"/"polsku"/"polsko". None of that is the adjective's
+        /// own paradigm; it borrowed a country's declension table by coincidence of spelling. Excluding
+        /// <paramref name="properNouns"/> from what counts as a match, not just from what can seed one,
+        /// is what a hypothesis this borrowed needs to fail to corroborate on its own.
+        /// </remarks>
+        public IReadOnlyList<MatchCandidate> Match(
+            string token, IReadOnlyDictionary<string, int> corpus, IReadOnlySet<string> properNouns)
         {
             if (!LooksLikeNounCitationForm(token))
             {
@@ -105,7 +123,7 @@ namespace Grammar.Czech.Analyzer.Candidates
                         continue;
                     }
 
-                    var matchedForms = GenerateAndCollect(lemma, patternName, gender.Value, isAnimate, corpus);
+                    var matchedForms = GenerateAndCollect(lemma, patternName, gender.Value, isAnimate, corpus, properNouns);
 
                     // A single hit is just the hypothesis matching itself — no corroboration from
                     // elsewhere in the text. Two or more means at least one other case/number form of
@@ -125,7 +143,8 @@ namespace Grammar.Czech.Analyzer.Candidates
             string patternName,
             Gender gender,
             bool? isAnimate,
-            IReadOnlyDictionary<string, int> corpus)
+            IReadOnlyDictionary<string, int> corpus,
+            IReadOnlySet<string> properNouns)
         {
             var matchedForms = new List<string>();
 
@@ -173,7 +192,7 @@ namespace Grammar.Czech.Analyzer.Candidates
 
                         var folded = form.ToLowerInvariant();
 
-                        if (corpus.ContainsKey(folded) && !matchedForms.Contains(folded))
+                        if (corpus.ContainsKey(folded) && !properNouns.Contains(folded) && !matchedForms.Contains(folded))
                         {
                             matchedForms.Add(folded);
                         }

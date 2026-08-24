@@ -56,7 +56,15 @@ namespace Grammar.Czech.Analyzer.Candidates
         /// </summary>
         /// <param name="token">The case-folded token to test.</param>
         /// <param name="corpus">Case-folded tokens found in the text, for corroboration.</param>
-        public IReadOnlyList<MatchCandidate> Match(string token, IReadOnlyDictionary<string, int> corpus)
+        /// <param name="properNouns">
+        /// Case-folded words the text's own capitalization marks as proper nouns, excluded from
+        /// corroboration — see <see cref="NounMatcher.Match"/>'s remarks: a reconstruction from an
+        /// ordinary token can land on a spelling that happens to be a proper noun's own inflected form,
+        /// which stays in <paramref name="corpus"/> regardless of what <c>Program.cs</c> lets seed a
+        /// hypothesis, and the same borrowed-paradigm risk applies here as it does for nouns.
+        /// </param>
+        public IReadOnlyList<MatchCandidate> Match(
+            string token, IReadOnlyDictionary<string, int> corpus, IReadOnlySet<string> properNouns)
         {
             var hypotheses = new HashSet<string> { token };
 
@@ -76,7 +84,7 @@ namespace Grammar.Czech.Analyzer.Candidates
                         continue;
                     }
 
-                    var matchedForms = GenerateAndCollect(lemma, pattern, corpus);
+                    var matchedForms = GenerateAndCollect(lemma, pattern, corpus, properNouns);
 
                     if (matchedForms.Count >= 2 && HasCorroborationBeyondAmbiguousEnding(matchedForms, pattern))
                     {
@@ -177,7 +185,8 @@ namespace Grammar.Czech.Analyzer.Candidates
             pattern != "trida4"
             || matchedForms.Any(form => !form.EndsWith("í", StringComparison.Ordinal) && !form.EndsWith("ím", StringComparison.Ordinal));
 
-        private List<string> GenerateAndCollect(string lemma, string pattern, IReadOnlyDictionary<string, int> corpus)
+        private List<string> GenerateAndCollect(
+            string lemma, string pattern, IReadOnlyDictionary<string, int> corpus, IReadOnlySet<string> properNouns)
         {
             var matchedForms = new List<string>();
 
@@ -204,7 +213,7 @@ namespace Grammar.Czech.Analyzer.Candidates
 
                 var folded = form.ToLowerInvariant();
 
-                if (corpus.ContainsKey(folded) && !matchedForms.Contains(folded))
+                if (corpus.ContainsKey(folded) && !properNouns.Contains(folded) && !matchedForms.Contains(folded))
                 {
                     matchedForms.Add(folded);
                 }
