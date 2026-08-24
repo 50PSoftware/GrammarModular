@@ -99,14 +99,17 @@ root.SetAction(parse =>
     var adjectiveMatcher = new AdjectiveMatcher(
         provider.GetRequiredService<Grammar.Czech.Services.CzechAdjectiveDeclensionService>());
 
-    var corpus = Tokenizer.CountTokens(File.ReadAllText(text.FullName));
-    Console.Error.WriteLine($"Tokenů v textu (různých): {corpus.Count}");
+    var rawText = File.ReadAllText(text.FullName);
+    var corpus = Tokenizer.CountTokens(rawText);
+    var properNouns = Tokenizer.FindLikelyProperNouns(rawText);
+    Console.Error.WriteLine($"Tokenů v textu (různých): {corpus.Count}, "
+        + $"z toho vypadá na vlastní jméno: {properNouns.Count}");
 
     var candidates = new List<MatchCandidate>();
 
     foreach (var token in corpus.Keys)
     {
-        if (token.Length < minDelka || known.IsKnown(token))
+        if (token.Length < minDelka || known.IsKnown(token) || properNouns.Contains(token))
         {
             continue;
         }
@@ -121,7 +124,7 @@ root.SetAction(parse =>
 
     var ranked = CandidateRanking.Thin(candidates, vzoruNaSlovo)
         .OrderByDescending(candidate => candidate.Score)
-        .ThenByDescending(candidate => corpus[candidate.Lemma])
+        .ThenByDescending(candidate => corpus.GetValueOrDefault(candidate.Lemma))
         .Take(limit)
         .ToList();
 

@@ -78,6 +78,44 @@ namespace Grammar.Czech.Test
             Assert.AreEqual(3, counts["pes"]);
         }
 
+        /// <summary>
+        /// Verifies that a word capitalized mid-sentence and never seen lowercase is flagged as a
+        /// likely proper noun — the "Praha" case that was polluting a real article's candidates.
+        /// </summary>
+        [TestMethod]
+        public void FindLikelyProperNounsFlagsWordCapitalizedMidSentenceAndNeverLowercase()
+        {
+            var properNouns = Tokenizer.FindLikelyProperNouns("Byl jsem v Praze. Praha je krásná. Miluji Prahu.");
+
+            Assert.IsTrue(properNouns.Contains("praze"));
+            Assert.IsTrue(properNouns.Contains("prahu"));
+        }
+
+        /// <summary>
+        /// Verifies that sentence-initial capitalization alone does not flag a word — every Czech
+        /// sentence starts capitalized, so that position proves nothing about the word itself.
+        /// </summary>
+        [TestMethod]
+        public void FindLikelyProperNounsIgnoresSentenceInitialCapitalization()
+        {
+            var properNouns = Tokenizer.FindLikelyProperNouns("Pes štěkal. Pes běžel. Pes spal.");
+
+            Assert.IsFalse(properNouns.Contains("pes"));
+        }
+
+        /// <summary>
+        /// Verifies that a word seen lowercase anywhere in the text is not flagged, even if it is also
+        /// capitalized mid-sentence somewhere else — a common word that merely got capitalized once
+        /// (a heading, an emphasis) should not be read as a name.
+        /// </summary>
+        [TestMethod]
+        public void FindLikelyProperNounsIgnoresWordAlsoSeenLowercase()
+        {
+            var properNouns = Tokenizer.FindLikelyProperNouns("Měl velký Dům. Ten dům byl starý.");
+
+            Assert.IsFalse(properNouns.Contains("dům"));
+        }
+
         // ── KnownWords ───────────────────────────────────────────────────────────
 
         /// <summary>
@@ -197,6 +235,22 @@ namespace Grammar.Czech.Test
             Assert.AreEqual(2, thinned.Count);
         }
 
+        /// <summary>
+        /// Verifies that repeated candidates for the same lemma and pattern collapse into one row —
+        /// the case that arises once <see cref="AdjectiveMatcher"/> normalizes several source tokens
+        /// (celý/celá/celé) to the same hypothesis.
+        /// </summary>
+        [TestMethod]
+        public void CandidateRankingCollapsesRepeatedSamePatternCandidate()
+        {
+            var first = new MatchCandidate("celý", Core.Enums.WordCategory.Adjective, "mladý", null, null, ["celý", "celého"]);
+            var second = new MatchCandidate("celý", Core.Enums.WordCategory.Adjective, "mladý", null, null, ["celý", "celého"]);
+
+            var thinned = CandidateRanking.Thin([first, second], maxPerWord: 3);
+
+            Assert.AreEqual(1, thinned.Count);
+        }
+
         // ── AdjectiveMatcher ─────────────────────────────────────────────────────
 
         /// <summary>
@@ -226,6 +280,26 @@ namespace Grammar.Czech.Test
             var candidate = adjectiveMatcher.Match("hezký", corpus);
 
             Assert.IsNull(candidate);
+        }
+
+        /// <summary>
+        /// Verifies that a feminine or neuter citation-shaped token (celá/celé) is folded back to the
+        /// masculine -ý lemma before anything is generated, so it produces the same hypothesis as the
+        /// masculine token would — not a second, competing lemma a person has to recognize as the same
+        /// word by eye.
+        /// </summary>
+        [TestMethod]
+        public void AdjectiveMatcherNormalizesGenderVariantToCitationForm()
+        {
+            var corpus = new Dictionary<string, int> { ["celý"] = 1, ["celá"] = 1, ["celé"] = 1 };
+
+            var fromFeminine = adjectiveMatcher.Match("celá", corpus);
+            var fromNeuter = adjectiveMatcher.Match("celé", corpus);
+
+            Assert.IsNotNull(fromFeminine);
+            Assert.IsNotNull(fromNeuter);
+            Assert.AreEqual("celý", fromFeminine.Lemma);
+            Assert.AreEqual("celý", fromNeuter.Lemma);
         }
 
         // ── ProposalWriter ───────────────────────────────────────────────────────

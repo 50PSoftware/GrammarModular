@@ -30,6 +30,10 @@ namespace Grammar.Czech.Analyzer.Candidates
 
                 result.AddRange(group
                     .Where(candidate => candidate.Score == best)
+                    // Same lemma, same pattern shows up more than once when several source tokens
+                    // normalize to the one hypothesis (AdjectiveMatcher folding mladá/mladé to mladý) —
+                    // that is one piece of evidence restated, not a second pattern worth a second row.
+                    .DistinctBy(candidate => candidate.Pattern)
                     .OrderBy(candidate => candidate.Pattern, StringComparer.Ordinal)
                     .Take(maxPerWord));
             }

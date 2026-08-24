@@ -15,6 +15,15 @@ namespace Grammar.Czech.Analyzer.Candidates
     /// is no reason to duplicate it. Possessive patterns (otcův, matčin) are out of scope on purpose:
     /// the guess never returns them, and a possessive is not really a separate lexicon headword —
     /// it is derived from the noun it belongs to.
+    /// <para>
+    /// The hard pattern (mladý) is the one adjective pattern whose citation form actually varies by
+    /// gender — mladý/mladá/mladé — where the soft pattern (jarní) already reads the same in every
+    /// gender's nominative singular. Left alone, a token read straight off the text would treat
+    /// "celá" and "celé" as two more lemmas beside "celý", each independently corroborated by the
+    /// same underlying word. <see cref="ToCitationForm"/> folds the gender ending back to -ý before
+    /// anything is generated, so all three tokens produce the one hypothesis and its combined
+    /// evidence, instead of three competing entries a person has to recognize as the same word by eye.
+    /// </para>
     /// </remarks>
     public sealed class AdjectiveMatcher
     {
@@ -43,6 +52,7 @@ namespace Grammar.Czech.Analyzer.Candidates
         public MatchCandidate? Match(string token, IReadOnlyDictionary<string, int> corpus)
         {
             var pattern = _declensionService.GuessAdjectivePattern(token);
+            var lemma = pattern == "mladý" ? ToCitationForm(token) : token;
             var matchedForms = new List<string>();
 
             foreach (var number in (Number[]) [Number.Singular, Number.Plural])
@@ -59,7 +69,7 @@ namespace Grammar.Czech.Analyzer.Candidates
                         {
                             form = _declensionService.GetForm(new CzechWordRequest
                             {
-                                Lemma = token,
+                                Lemma = lemma,
                                 Pattern = pattern,
                                 Gender = gender,
                                 IsAnimate = isAnimate,
@@ -89,8 +99,14 @@ namespace Grammar.Czech.Analyzer.Candidates
             }
 
             return matchedForms.Count >= 2
-                ? new MatchCandidate(token, WordCategory.Adjective, pattern, null, null, matchedForms)
+                ? new MatchCandidate(lemma, WordCategory.Adjective, pattern, null, null, matchedForms)
                 : null;
         }
+
+        // mladá/mladé -> mladý. jarní's nominative singular is "-í" in every gender already, so this
+        // is only ever called for the hard pattern's guess, where the gender ending genuinely differs.
+        private static string ToCitationForm(string token) => token.Length >= 2 && token[^1] is 'á' or 'é'
+            ? token[..^1] + "ý"
+            : token;
     }
 }

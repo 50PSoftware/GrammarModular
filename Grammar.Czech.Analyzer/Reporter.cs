@@ -37,7 +37,7 @@ namespace Grammar.Czech.Analyzer
                     Csv(candidate.Pattern),
                     Csv(candidate.Gender?.ToString() ?? ""),
                     Csv(candidate.IsAnimate?.ToString() ?? ""),
-                    corpus[candidate.Lemma].ToString(CultureInfo.InvariantCulture),
+                    corpus.GetValueOrDefault(candidate.Lemma).ToString(CultureInfo.InvariantCulture),
                     candidate.Score.ToString(CultureInfo.InvariantCulture),
                     Csv(string.Join(" ", candidate.MatchedForms)),
                     Csv(string.Format(CultureInfo.InvariantCulture, IjpSearchUrl, candidate.Lemma)),
