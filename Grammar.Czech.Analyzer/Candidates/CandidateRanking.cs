@@ -17,6 +17,25 @@ namespace Grammar.Czech.Analyzer.Candidates
     public static class CandidateRanking
     {
         /// <summary>
+        /// Decides whether a token should be tried as a noun at all, given how many verb candidates the
+        /// same token already produced.
+        /// </summary>
+        /// <remarks>
+        /// "í" is the one noun-citation ending that collides with a verb's own shape — class 3's plural
+        /// "jí" and most of class 4's singular — so a token shaped like a citation form (na)declares
+        /// nothing about which one it really is. Real í-ending nouns (stavení, rozhodčí) are a small,
+        /// closed set that no real verb reconstructs from, so this is not a score comparison — "změní"
+        /// out-corroborated the "změnit" already found for the same token on real text frequency, not a
+        /// weaker guess — it is a shape one: a token whose route to a noun candidate is generate-and-test
+        /// blindly trying every pattern should not get to compete once something specific to its own
+        /// ending already explained it.
+        /// </remarks>
+        /// <param name="token">The case-folded token under consideration.</param>
+        /// <param name="verbCandidateCount">How many verb candidates the same token already produced.</param>
+        public static bool ShouldTryAsNoun(string token, int verbCandidateCount) =>
+            !(token.EndsWith("í", StringComparison.Ordinal) && verbCandidateCount > 0);
+
+        /// <summary>
         /// Keeps, per distinct lemma, only the candidates tied for that lemma's highest score, capped
         /// to at most <paramref name="maxPerWord"/> of them.
         /// </summary>

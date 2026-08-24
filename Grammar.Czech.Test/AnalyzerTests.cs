@@ -380,6 +380,37 @@ namespace Grammar.Czech.Test
             Assert.AreEqual("změna", dropped[0].Lemma);
         }
 
+        /// <summary>
+        /// Verifies that a token ending in í is not tried as a noun once the same token already
+        /// produced a verb candidate — "změní" scored higher as a noun than the "změnit" already found
+        /// for the same token on raw text frequency, not because the noun reading was the better guess.
+        /// </summary>
+        [TestMethod]
+        public void ShouldTryAsNounRejectsIEndingTokenWithVerbCandidate()
+        {
+            Assert.IsFalse(CandidateRanking.ShouldTryAsNoun("změní", verbCandidateCount: 1));
+        }
+
+        /// <summary>
+        /// Verifies that an í-ending token is still tried as a noun when nothing corroborated it as a
+        /// verb — the "stavení"/"rozhodčí" case, a small closed set no real verb reconstructs from.
+        /// </summary>
+        [TestMethod]
+        public void ShouldTryAsNounAcceptsIEndingTokenWithNoVerbCandidate()
+        {
+            Assert.IsTrue(CandidateRanking.ShouldTryAsNoun("stavení", verbCandidateCount: 0));
+        }
+
+        /// <summary>
+        /// Verifies that a token not ending in í is tried as a noun regardless of verb candidates —
+        /// the restriction is specific to the one ending that actually collides with a verb's shape.
+        /// </summary>
+        [TestMethod]
+        public void ShouldTryAsNounAcceptsNonIEndingTokenEvenWithVerbCandidate()
+        {
+            Assert.IsTrue(CandidateRanking.ShouldTryAsNoun("zápas", verbCandidateCount: 1));
+        }
+
         // ── AdjectiveMatcher ─────────────────────────────────────────────────────
 
         /// <summary>

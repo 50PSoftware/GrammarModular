@@ -116,8 +116,13 @@ root.SetAction(parse =>
             continue;
         }
 
-        candidates.AddRange(nounMatcher.Match(token, corpus));
-        candidates.AddRange(verbMatcher.Match(token, corpus));
+        var verbCandidates = verbMatcher.Match(token, corpus);
+        candidates.AddRange(verbCandidates);
+
+        if (CandidateRanking.ShouldTryAsNoun(token, verbCandidates.Count))
+        {
+            candidates.AddRange(nounMatcher.Match(token, corpus));
+        }
 
         if (adjectiveMatcher.Match(token, corpus) is { } adjective)
         {
