@@ -92,15 +92,22 @@ namespace Grammar.Czech.Analyzer.Candidates
         /// own best-scoring pattern with nothing else in common.
         /// </para>
         /// <para>
-        /// A tie within the root group is resolved toward the shorter lemma — "kandidát" (9) over
-        /// "kandidáti" (10) — once <see cref="NounMatcher"/> started reconstructing a nominative
-        /// singular from a plural token: the reconstruction and the token-as-its-own-lemma reading
-        /// share the identical paradigm and therefore the identical score whenever <c>kandidát</c>
-        /// itself never appears in the text, and a genuine nominative singular is never longer than an
-        /// inflected form built on top of it. This is narrower than the class-4 verb tie-break — no
-        /// single spelling is "the ordinary one" across every pattern the way "-at" was for class 5 —
-        /// but shorter-wins needs no per-pattern table and happens to be exactly right for a suffix
-        /// stripped down to the bare root.
+        /// A tie within the root group is resolved first toward whichever candidate's own trailing
+        /// vowel (or lack of one) actually matches its own pattern's nominative-singular shape — a
+        /// consonant-final lemma under a consonant-final pattern like hrad, or the exact vowel a
+        /// vowel-final pattern's own name ends in, the same rule <see cref="NounMatcher"/> uses to
+        /// reattach one when reconstructing. "vrstva", "vrstvu", "vrstvy" and "vrstvo" all reduce to
+        /// the same root and all score identically once any one of them turns up more than once — but
+        /// žena's own nominative singular ends in "a", so only "vrstva" is shaped the way its winning
+        /// pattern says a nominative singular should be; the other three are real inflected forms of
+        /// the same word wearing the citation slot they were never in. Ties the length rule alone could
+        /// not break — every one of the four is six letters — collapse to one this way, because the
+        /// four case endings a žena-pattern word cycles through (a/u/y/o) are all exactly as long as
+        /// the ending they replace. Only once nothing in the tied set is shaped correctly for its own
+        /// pattern (should not happen, since the winning score always came from a real corroborating
+        /// form) does the tie-break fall back to shorter-wins — "kandidát" (9) over "kandidáti" (10) —
+        /// which still matters standing alone in front of a consonant-final pattern where a bare-root
+        /// consonant ending does not narrow anything on its own.
         /// </para>
         /// <para>
         /// A root that is itself already known drops the whole group, not just its weaker members —
@@ -128,9 +135,13 @@ namespace Grammar.Czech.Analyzer.Candidates
 
                 var best = group.Max(c => c.Score);
                 var atBest = group.Where(c => c.Score == best).ToList();
-                var shortest = atBest.Min(c => c.Lemma.Length);
 
-                result.AddRange(atBest.Where(c => c.Lemma.Length == shortest));
+                var selfConsistent = atBest.Where(HasSelfConsistentEnding).ToList();
+                var survivors = selfConsistent.Count > 0 ? selfConsistent : atBest;
+
+                var shortest = survivors.Min(c => c.Lemma.Length);
+
+                result.AddRange(survivors.Where(c => c.Lemma.Length == shortest));
             }
 
             result.AddRange(list.Where(c => c.Category != WordCategory.Noun));
@@ -145,5 +156,25 @@ namespace Grammar.Czech.Analyzer.Candidates
             candidate.Lemma.Length > 1 && !MorphologyHelper.IsConsonant(candidate.Lemma[^1])
                 ? candidate.Lemma[..^1]
                 : candidate.Lemma;
+
+        // Whether a candidate's own trailing vowel (or absence of one) is the shape its own winning
+        // pattern's nominative singular actually has — the same check NounMatcher.NominativeSingularSuffix
+        // makes from a pattern's name when it reconstructs one, applied here to judge a candidate that
+        // was never reconstructed at all but happens to tie with one that was.
+        private static bool HasSelfConsistentEnding(MatchCandidate candidate)
+        {
+            var expected = PatternNominativeSuffix(candidate.Pattern);
+
+            return expected.Length == 0
+                ? candidate.Lemma.Length > 0 && MorphologyHelper.IsConsonant(candidate.Lemma[^1])
+                : candidate.Lemma.EndsWith(expected, StringComparison.Ordinal);
+        }
+
+        // A pattern name is itself a real word in its own nominative singular — see NounMatcher's copy
+        // of this same rule for why that is enough to read the ending straight off the name.
+        private static string PatternNominativeSuffix(string patternName) =>
+            patternName.Length > 1 && !MorphologyHelper.IsConsonant(patternName[^1])
+                ? patternName[^1].ToString()
+                : "";
     }
 }

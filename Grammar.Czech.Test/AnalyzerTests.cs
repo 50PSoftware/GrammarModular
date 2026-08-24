@@ -448,6 +448,30 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies the tie the length rule alone cannot break: "vrstva", "vrstvu", "vrstvy" and
+        /// "vrstvo" all reduce to the same root and, once any one of them turns up more than once in
+        /// the same text, all generate the identical žena-pattern paradigm and therefore the identical
+        /// score — and all four are six letters long, so shorter-wins picks nothing. žena's own
+        /// nominative singular ends in "a", so only "vrstva" is shaped the way its own winning pattern
+        /// says a nominative singular should be; the other three are real inflected forms of the same
+        /// word standing in the citation slot. Found on a real article about global warming.
+        /// </summary>
+        [TestMethod]
+        public void CandidateRankingPrefersSelfConsistentEndingOnSameLengthTie()
+        {
+            string[] forms = ["vrstvy", "vrstvu", "vrstev", "vrstvách"];
+            var a = new MatchCandidate("vrstva", Core.Enums.WordCategory.Noun, "žena", Core.Enums.Gender.Feminine, null, forms);
+            var u = new MatchCandidate("vrstvu", Core.Enums.WordCategory.Noun, "žena", Core.Enums.Gender.Feminine, null, forms);
+            var y = new MatchCandidate("vrstvy", Core.Enums.WordCategory.Noun, "žena", Core.Enums.Gender.Feminine, null, forms);
+            var o = new MatchCandidate("vrstvo", Core.Enums.WordCategory.Noun, "žena", Core.Enums.Gender.Feminine, null, forms);
+
+            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([a, u, y, o], _ => false);
+
+            Assert.AreEqual(1, dropped.Count);
+            Assert.AreEqual("vrstva", dropped[0].Lemma);
+        }
+
+        /// <summary>
         /// Verifies that a whole root group is dropped when the root itself is already a known word —
         /// "jeví" (the verb jevit se, not a noun) reduces to "jev", an ordinary noun already on file.
         /// "jev" never competes as a candidate — it is not a gap — so the check has to ask about the
