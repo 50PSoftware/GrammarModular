@@ -424,6 +424,23 @@ namespace Grammar.Czech.Test
             Assert.IsTrue(candidates.Any(candidate => candidate.Lemma == "dělat" && candidate.Pattern == "trida5"));
         }
 
+        /// <summary>
+        /// Verifies that a token not shaped like any class 2-5 infinitive is not tried under those
+        /// classes — "vznik" (the noun, "origin") is not a class-2 infinitive, but class 2's fallback
+        /// stem for an unrecognized ending equals the bare lemma, which happens to be exactly
+        /// "vzniknout"'s own past stem, so without the shape check this coincidence alone would score
+        /// a false verb candidate as high as a real one.
+        /// </summary>
+        [TestMethod]
+        public void VerbMatcherRejectsTokenNotShapedLikeClass2Through5Infinitive()
+        {
+            var corpus = new Dictionary<string, int> { ["vznik"] = 3, ["vznikl"] = 1, ["vzniklo"] = 1, ["vznikly"] = 1 };
+
+            var candidates = verbMatcher.Match("vznik", corpus);
+
+            Assert.IsFalse(candidates.Any(candidate => candidate.Pattern is "trida2" or "trida3" or "trida4" or "trida5"));
+        }
+
         // ── ProposalWriter ───────────────────────────────────────────────────────
 
         private static WordProposals TemporaryProposals() =>

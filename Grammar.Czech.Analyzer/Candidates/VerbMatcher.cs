@@ -66,6 +66,11 @@ namespace Grammar.Czech.Analyzer.Candidates
             {
                 foreach (var pattern in RegularClasses)
                 {
+                    if (!MatchesInfinitiveShape(lemma, pattern))
+                    {
+                        continue;
+                    }
+
                     var matchedForms = GenerateAndCollect(lemma, pattern, corpus);
 
                     if (matchedForms.Count >= 2)
@@ -77,6 +82,27 @@ namespace Grammar.Czech.Analyzer.Candidates
 
             return results;
         }
+
+        // Classes 2-5 only ever produce a real paradigm from a lemma shaped like their own infinitive —
+        // CzechWordStructureResolver.DeriveTridaN requires the same suffix before it derives anything.
+        // Anything else falls through to UnknownInfinitiveFallback, which sets every stem to the bare
+        // lemma regardless of class — the same stem every other class's fallback would produce too, so
+        // it is not a weak guess, it is a guaranteed source of cross-category collisions: a deverbal
+        // noun sharing its source verb's stem (vznik/vzniknout, cesta/cestovat) matches its OWN unrelated
+        // shape under every class equally, at a score that has nothing to do with which one is real.
+        // Skipping a class whose suffix the lemma does not have removes that class from the search
+        // instead of letting it vote on a fallback nothing in the class actually predicts. Class 1 has
+        // no suffix to check by definition, so it is exempt — trying it as-is is already the best this
+        // matcher can do for it.
+        private static bool MatchesInfinitiveShape(string lemma, string pattern) => pattern switch
+        {
+            "trida5" => lemma.EndsWith("at", StringComparison.Ordinal) || lemma.EndsWith("át", StringComparison.Ordinal),
+            "trida4" => lemma.EndsWith("it", StringComparison.Ordinal) || lemma.EndsWith("ít", StringComparison.Ordinal)
+                || lemma.EndsWith("et", StringComparison.Ordinal) || lemma.EndsWith("ět", StringComparison.Ordinal),
+            "trida3" => lemma.EndsWith("ovat", StringComparison.Ordinal),
+            "trida2" => lemma.EndsWith("nout", StringComparison.Ordinal),
+            _ => true,
+        };
 
         private List<string> GenerateAndCollect(string lemma, string pattern, IReadOnlyDictionary<string, int> corpus)
         {
