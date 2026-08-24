@@ -574,6 +574,38 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that a class-4 reconstruction is rejected when its only corroboration is the
+        /// ambiguous í/ím pair — "prostředit" (invented) scored the same way "konkrétní" (adjective) and
+        /// "prostředí" (noun, stavení-pattern) do, since a jarní adjective's own citation form and
+        /// instrumental singular, or an í-final noun's own citation form and instrumental singular,
+        /// produce exactly those two forms regardless of whether any verb is really there.
+        /// </summary>
+        [TestMethod]
+        public void VerbMatcherRejectsClass4WithOnlyAmbiguousEndingCorroboration()
+        {
+            var corpus = new Dictionary<string, int> { ["prostředí"] = 3, ["prostředím"] = 1 };
+
+            var candidates = verbMatcher.Match("prostředí", corpus);
+
+            Assert.IsFalse(candidates.Any(candidate => candidate.Pattern == "trida4"));
+        }
+
+        /// <summary>
+        /// Verifies that a class-4 reconstruction survives when corroborated by a form outside the
+        /// ambiguous í/ím pair, even if í/ím also matched — "změnit" survived on a real article because
+        /// its infinitive independently appeared in the text.
+        /// </summary>
+        [TestMethod]
+        public void VerbMatcherAcceptsClass4WithCorroborationBeyondAmbiguousEnding()
+        {
+            var corpus = new Dictionary<string, int> { ["změní"] = 2, ["změnit"] = 1 };
+
+            var candidates = verbMatcher.Match("změní", corpus);
+
+            Assert.IsTrue(candidates.Any(candidate => candidate.Lemma == "změnit" && candidate.Pattern == "trida4"));
+        }
+
+        /// <summary>
         /// Verifies that a token not shaped like any class 2-5 infinitive is not tried under those
         /// classes — "vznik" (the noun, "origin") is not a class-2 infinitive, but class 2's fallback
         /// stem for an unrecognized ending equals the bare lemma, which happens to be exactly

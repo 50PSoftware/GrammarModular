@@ -73,7 +73,7 @@ namespace Grammar.Czech.Analyzer.Candidates
 
                     var matchedForms = GenerateAndCollect(lemma, pattern, corpus);
 
-                    if (matchedForms.Count >= 2)
+                    if (matchedForms.Count >= 2 && HasCorroborationBeyondAmbiguousEnding(matchedForms, pattern))
                     {
                         results.Add(new MatchCandidate(lemma, WordCategory.Verb, pattern, null, null, matchedForms));
                     }
@@ -157,6 +157,20 @@ namespace Grammar.Czech.Analyzer.Candidates
             "trida2" => lemma.EndsWith("nout", StringComparison.Ordinal),
             _ => true,
         };
+
+        // Class 4's bare "-í" (3rd person, singular and plural alike) and "-ím" (1st singular) are not
+        // just weak evidence, they are the exact shape of a jarní-pattern adjective's own citation form
+        // and instrumental singular, and of an í-final noun's own citation form and instrumental
+        // singular — konkrétní/konkrétním, prostředí/prostředím. A token that is really one of those
+        // reconstructs into a fake trida4 infinitive whose only "corroboration" is that same word's own
+        // pair of forms seen twice, not two independent sightings. "změnit" survived this check on a
+        // real article because "změnit" itself — the infinitive, not shaped like í or ím at all — also
+        // turned up in the text; "prostředit"/"konkrétnit"/"dalšit" and four more did not, and every one
+        // of them was invented. Requiring one match outside {í, ím} costs nothing for a genuine class-4
+        // verb, since íme/íte/íš, the past participle and the infinitive are all still fair game.
+        private static bool HasCorroborationBeyondAmbiguousEnding(IReadOnlyList<string> matchedForms, string pattern) =>
+            pattern != "trida4"
+            || matchedForms.Any(form => !form.EndsWith("í", StringComparison.Ordinal) && !form.EndsWith("ím", StringComparison.Ordinal));
 
         private List<string> GenerateAndCollect(string lemma, string pattern, IReadOnlyDictionary<string, int> corpus)
         {
