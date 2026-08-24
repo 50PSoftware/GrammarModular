@@ -45,8 +45,8 @@ namespace Grammar.Czech.Analyzer.Candidates
         }
 
         /// <summary>
-        /// Drops a noun candidate whose lemma ends in a vowel when a same-pattern candidate for the
-        /// consonant-stripped spelling exists and scores at least as well.
+        /// Keeps only the best-scoring noun candidate(s) among those that reduce to the same root once
+        /// a trailing vowel is stripped.
         /// </summary>
         /// <remarks>
         /// Traced to a specific mechanism, not a guess: no noun pattern declares an ending for
@@ -54,49 +54,48 @@ namespace Grammar.Czech.Analyzer.Candidates
         /// <see cref="Services.CzechNounDeclensionService.GetForm"/> returns a hypothesis lemma
         /// unchanged for that one slot regardless of shape, while every other case runs it through
         /// <see cref="Services.CzechWordStructureResolver.ExtractNounRoot"/>, which strips a trailing
-        /// vowel unconditionally. A wrong-shaped hypothesis like "zápasí" (really the verb form
-        /// "zápasí", not a noun) therefore generates the exact oblique-case paradigm the real noun
-        /// "zápas" would — zápasu, zápase, zápasem, zápasy... — because both reduce to the same root
-        /// the moment a suffix is appended, and only the pass-through nominative singular differs. The
-        /// result is not a low-confidence guess to filter by score; it is a wrong-spelling duplicate of
-        /// a real finding, which is why this checks for the sibling directly rather than raising the
-        /// corroboration threshold. Compared across every pattern, not just the one that scored this
-        /// candidate: <see cref="Thin"/> has not run yet when this does, so "zápasí" and "zápas" can
-        /// each be carrying their own best-scoring pattern (město vs hrad) with nothing in common but
-        /// the stripped root — and it is the root, not the specific pattern, that says one is a
-        /// respelling of the other.
+        /// vowel unconditionally. A wrong-shaped hypothesis like "zápasí" (really the verb form, not a
+        /// noun) therefore generates the exact oblique-case paradigm the real noun "zápas" would —
+        /// zápasu, zápase, zápasem... — because both reduce to the same root the moment a suffix is
+        /// appended, and only the pass-through nominative singular differs.
+        /// <para>
+        /// Grouping by the stripped root rather than checking one exact spelling against another is
+        /// what catches "změní" against "změna" too: "zápas" happens to end in a consonant, so
+        /// stripping one vowel off "zápasí" lands on it exactly, but "změna" has a vowel ending of its
+        /// own — stripping "a" and stripping "í" both land on "změn", and it is that shared root, not
+        /// either spelling, that says one is a wrong-category duplicate of the other. Every noun
+        /// candidate reduces to a root the same way (or is left alone, unchanged, if it already ends in
+        /// a consonant), so one grouping rule covers both shapes of the coincidence.
+        /// </para>
+        /// <para>
+        /// Compared across every pattern, not just the one that scored a given candidate: <see cref="Thin"/>
+        /// has not run yet when this does, so two candidates sharing a root can each be carrying their
+        /// own best-scoring pattern with nothing else in common.
+        /// </para>
         /// </remarks>
         /// <param name="candidates">The candidates to filter, any order.</param>
         public static IReadOnlyList<MatchCandidate> DropVowelEndingNounDuplicates(IEnumerable<MatchCandidate> candidates)
         {
             var list = candidates.ToList();
-            var suppressed = new HashSet<int>();
+            var result = new List<MatchCandidate>();
 
-            for (var i = 0; i < list.Count; i++)
+            foreach (var group in list.Where(c => c.Category == WordCategory.Noun).GroupBy(NounRoot))
             {
-                var candidate = list[i];
-
-                if (candidate.Category != WordCategory.Noun
-                    || candidate.Lemma.Length < 2
-                    || MorphologyHelper.IsConsonant(candidate.Lemma[^1]))
-                {
-                    continue;
-                }
-
-                var stripped = candidate.Lemma[..^1];
-                var bestSiblingScore = list
-                    .Where(other => other.Category == WordCategory.Noun && other.Lemma == stripped)
-                    .Select(other => (int?)other.Score)
-                    .DefaultIfEmpty(null)
-                    .Max();
-
-                if (bestSiblingScore is { } score && score >= candidate.Score)
-                {
-                    suppressed.Add(i);
-                }
+                var best = group.Max(c => c.Score);
+                result.AddRange(group.Where(c => c.Score == best));
             }
 
-            return list.Where((_, index) => !suppressed.Contains(index)).ToList();
+            result.AddRange(list.Where(c => c.Category != WordCategory.Noun));
+
+            return result;
         }
+
+        // Mirrors CzechWordStructureResolver.ExtractNounRoot: a lemma ending in a vowel loses it,
+        // everything else is the root as-is. Not calling into the service itself because this only
+        // needs the same one-line rule, not the mobile-e/epenthesis machinery that comes with it.
+        private static string NounRoot(MatchCandidate candidate) =>
+            candidate.Lemma.Length > 1 && !MorphologyHelper.IsConsonant(candidate.Lemma[^1])
+                ? candidate.Lemma[..^1]
+                : candidate.Lemma;
     }
 }

@@ -339,7 +339,7 @@ namespace Grammar.Czech.Test
         [TestMethod]
         public void CandidateRankingDropsVowelEndingNounDuplicate()
         {
-            var real = new MatchCandidate("zápas", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false, ["zápas", "zápasu", "zápase"]);
+            var real = new MatchCandidate("zápas", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false, ["zápas", "zápasu", "zápase", "zápasem"]);
             var spurious = new MatchCandidate("zápasí", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false, ["zápasí", "zápasu", "zápase"]);
 
             var dropped = CandidateRanking.DropVowelEndingNounDuplicates([real, spurious]);
@@ -360,6 +360,24 @@ namespace Grammar.Czech.Test
             var dropped = CandidateRanking.DropVowelEndingNounDuplicates([candidate]);
 
             Assert.AreEqual(1, dropped.Count);
+        }
+
+        /// <summary>
+        /// Verifies the case exact-spelling comparison would miss: "změní" (really the verb form) and
+        /// the real noun "změna" have different trailing vowels, so neither is the other minus one
+        /// character — but stripping "í" and stripping "a" both land on the same root "změn", which is
+        /// what should drop the weaker one.
+        /// </summary>
+        [TestMethod]
+        public void CandidateRankingDropsNounDuplicateSharingRootWithDifferentVowel()
+        {
+            var real = new MatchCandidate("změna", Core.Enums.WordCategory.Noun, "žena", Core.Enums.Gender.Feminine, null, ["změna", "změny", "změnu", "změně"]);
+            var spurious = new MatchCandidate("změní", Core.Enums.WordCategory.Noun, "žena", Core.Enums.Gender.Feminine, null, ["změní", "změny", "změnu"]);
+
+            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([real, spurious]);
+
+            Assert.AreEqual(1, dropped.Count);
+            Assert.AreEqual("změna", dropped[0].Lemma);
         }
 
         // ── AdjectiveMatcher ─────────────────────────────────────────────────────
