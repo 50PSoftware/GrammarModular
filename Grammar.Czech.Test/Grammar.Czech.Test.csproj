@@ -25,6 +25,9 @@
 
     <!-- The client application: what it makes of a bare list of lemmas is behaviour like any other. -->
     <ProjectReference Include="..\Grammar.Czech.Cli\Grammar.Czech.Cli.csproj" />
+
+    <!-- Generate-and-test candidate matching, tokenization and known-word filtering. -->
+    <ProjectReference Include="..\Grammar.Czech.Analyzer\Grammar.Czech.Analyzer.csproj" />
   </ItemGroup>
 
   <ItemGroup>

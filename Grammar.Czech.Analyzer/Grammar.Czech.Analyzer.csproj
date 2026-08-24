@@ -1,0 +1,45 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Grammar.Czech.Analyzer</RootNamespace>
+
+    <!--
+      Balí se jako .NET tool: `dotnet tool install` a pak `rozbor text.txt` odkudkoli.
+    -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>rozbor</ToolCommandName>
+    <PackageId>50PSoftware.GrammarModular.Czech.Analyzer</PackageId>
+    <Version>1.0.0-preview.1</Version>
+    <Authors>Vojtěch Pchálek</Authors>
+    <Company>50PSoftware</Company>
+    <Description>Rozebírá český text proti vzorům Grammar Modular a navrhuje kandidáty na doplnění slovníku.</Description>
+    <PackageTags>czech;nlp;morphology;analysis;cli</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.10" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Grammar.Core\Grammar.Core.csproj" />
+    <ProjectReference Include="..\Grammar.Czech\Grammar.Czech.csproj" />
+  </ItemGroup>
+
+  <!--
+    Slovník ven z balíčku nástroje — ze stejného důvodu jako u Grammar.Czech.Cli a
+    Grammar.Czech.Lexicon.Tool. Přes ProjectReference se sem zkopíruje jako Content a `dotnet tool`
+    balí publish výstup, takže by ho dostal každý, kdo si nástroj nainstaluje.
+  -->
+  <Target Name="DropLexiconFromToolPackage" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+                             Condition="'%(Filename)%(Extension)' == 'grammar.czech.lexicon.db'" />
+    </ItemGroup>
+  </Target>
+
+</Project>
