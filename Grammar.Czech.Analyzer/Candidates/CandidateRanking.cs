@@ -131,30 +131,34 @@ namespace Grammar.Czech.Analyzer.Candidates
         /// own best-scoring pattern with nothing else in common.
         /// </para>
         /// <para>
-        /// A tie within the root group is resolved first toward whichever candidate's own trailing
-        /// vowel (or lack of one) actually matches its own pattern's nominative-singular shape — a
-        /// consonant-final lemma under a consonant-final pattern like hrad, or the exact vowel a
-        /// vowel-final pattern's own name ends in, the same rule <see cref="NounMatcher"/> uses to
-        /// reattach one when reconstructing. "vrstva", "vrstvu", "vrstvy" and "vrstvo" all reduce to
-        /// the same root and all score identically once any one of them turns up more than once — but
-        /// žena's own nominative singular ends in "a", so only "vrstva" is shaped the way its winning
-        /// pattern says a nominative singular should be; the other three are real inflected forms of
-        /// the same word wearing the citation slot they were never in. Ties the length rule alone could
-        /// not break — every one of the four is six letters — collapse to one this way, because the
-        /// four case endings a žena-pattern word cycles through (a/u/y/o) are all exactly as long as
-        /// the ending they replace. Only once nothing in the tied set is shaped correctly for its own
-        /// pattern (should not happen, since the winning score always came from a real corroborating
-        /// form) does the tie-break fall back to shorter-wins — "kandidát" (9) over "kandidáti" (10) —
-        /// which still matters standing alone in front of a consonant-final pattern where a bare-root
-        /// consonant ending does not narrow anything on its own.
+        /// Every survivor is first required to be shaped like its own claimed pattern's nominative
+        /// singular — a consonant-final lemma under a consonant-final pattern like hrad, or the exact
+        /// vowel a vowel-final pattern's own name ends in — via <see cref="HasSelfConsistentEnding"/>,
+        /// the same rule <see cref="NounMatcher"/> uses to reattach one when reconstructing. "vrstva",
+        /// "vrstvu", "vrstvy" and "vrstvo" all reduce to the same root and all score identically once
+        /// any one of them turns up more than once — but žena's own nominative singular ends in "a", so
+        /// only "vrstva" is shaped the way its winning pattern says a nominative singular should be; the
+        /// other three are real inflected forms of the same word wearing the citation slot they were
+        /// never in. This is not only a tie-break: a lone candidate with no sibling to lose to is
+        /// rejected the same way if it is not shaped correctly for its own pattern, which is what "jeví"
+        /// ("jevit se", not a noun) needs once nothing else in its root group survives to out-score it —
+        /// see the next paragraph. Among what remains, ties the length rule alone could not break —
+        /// every one of the four vrstva spellings is six letters — collapse to one this way, because the
+        /// four case endings a žena-pattern word cycles through (a/u/y/o) are all exactly as long as the
+        /// ending they replace; shorter-wins only decides between candidates already shaped correctly
+        /// for their own pattern, such as "kandidát" (9) over "kandidáti" (10) once both, standing alone
+        /// in front of a consonant-final pattern, pass the shape check equally.
         /// </para>
         /// <para>
         /// A root that is itself already known drops the whole group, not just its weaker members —
-        /// "jeví" (the verb jevit se, not a noun at all) reduces to "jev", an ordinary hrad-pattern
-        /// noun already on file. "jev" never competes as a candidate — it is not a gap — so nothing in
-        /// the group above would have caught this without asking <paramref name="isKnown"/> directly:
-        /// the borrowed paradigm (jevu, jevy, jevů, all real) belongs to the known word, and every
-        /// candidate sharing its root is retelling that word's paradigm, not finding a new one.
+        /// useful when the borrowed paradigm belongs to a known word whose own citation form happens to
+        /// share the false candidate's shape too closely for <see cref="HasSelfConsistentEnding"/> alone
+        /// to reject it. "jeví" itself no longer needs this: reduced to "jev", an ordinary hrad-pattern
+        /// noun, "jev" is short enough (three letters) to sit below the default <c>--min-delka</c> on
+        /// some articles and never become a competing candidate at all, so nothing was left in the group
+        /// to out-score "jeví" until the shape check above started rejecting a shapeless lone survivor
+        /// on its own. <paramref name="isKnown"/> still matters for the reverse situation: a candidate
+        /// that IS shaped correctly for its pattern but is still someone else's known paradigm restated.
         /// </para>
         /// <para>
         /// The stripped-vowel root is not the only way two candidates turn out to be the same word:
@@ -223,15 +227,28 @@ namespace Grammar.Czech.Analyzer.Candidates
                     continue;
                 }
 
-                var best = group.Max(c => c.Score);
-                var atBest = group.Where(c => c.Score == best).ToList();
+                // A candidate whose own trailing letter does not match what its own claimed pattern's
+                // nominative singular actually looks like was never shaped like that pattern's citation
+                // form to begin with — it only scored because its oblique cases happen to overlap with
+                // a different pattern's (see HasSelfConsistentEnding's remarks). Filtered before scoring,
+                // not just used to break a tie among the top scorers, so a lone inconsistent survivor
+                // with no sibling to lose to — "jeví" ("jevit se", not a noun) tried directly under
+                // město, whose nominative singular ends in "o", not "í" — is rejected on its own shape
+                // rather than needing a competing "jev" candidate or a known root to catch it. "jev" is
+                // three letters, below the default --min-delka, so on some articles no such competitor
+                // is ever generated for it to lose to; this closes that gap without depending on one.
+                var consistent = group.Where(HasSelfConsistentEnding).ToList();
 
-                var selfConsistent = atBest.Where(HasSelfConsistentEnding).ToList();
-                var survivors = selfConsistent.Count > 0 ? selfConsistent : atBest;
+                if (consistent.Count == 0)
+                {
+                    continue;
+                }
 
-                var shortest = survivors.Min(c => c.Lemma.Length);
+                var best = consistent.Max(c => c.Score);
+                var atBest = consistent.Where(c => c.Score == best).ToList();
+                var shortest = atBest.Min(c => c.Lemma.Length);
 
-                result.AddRange(survivors.Where(c => c.Lemma.Length == shortest));
+                result.AddRange(atBest.Where(c => c.Lemma.Length == shortest));
             }
 
             result.AddRange(list.Where(c => c.Category != WordCategory.Noun));

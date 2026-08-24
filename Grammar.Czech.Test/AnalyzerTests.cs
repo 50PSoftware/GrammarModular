@@ -592,6 +592,26 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that a lone candidate with no sibling to lose to is still rejected when it is not
+        /// shaped like its own claimed pattern's nominative singular — "jeví" ("jevit se", not a noun)
+        /// under město, whose nominative singular ends in "o", not "í". Unlike
+        /// <see cref="CandidateRankingDropsGroupWhenRootIsAlreadyKnown"/>, nothing here is known and no
+        /// competing "jev" candidate exists to out-score it — "jev" is three letters, below the default
+        /// --min-delka, so on some real articles no such competitor is ever generated. This is what
+        /// caught the case on a real article the known-root check could not: the group has only one
+        /// member, and it fails the shape test on its own.
+        /// </summary>
+        [TestMethod]
+        public void CandidateRankingRejectsLoneCandidateNotShapedForItsOwnPattern()
+        {
+            var candidate = new MatchCandidate("jeví", Core.Enums.WordCategory.Noun, "město", Core.Enums.Gender.Neuter, null, ["jeví", "jevu", "jevem", "jev", "jevům"]);
+
+            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([candidate], _ => false);
+
+            Assert.AreEqual(0, dropped.Count);
+        }
+
+        /// <summary>
         /// Verifies that a token ending in í is not tried as a noun once the same token already
         /// produced a verb candidate — "změní" scored higher as a noun than the "změnit" already found
         /// for the same token on raw text frequency, not because the noun reading was the better guess.
