@@ -110,6 +110,19 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that an inflected form of an already-known noun counts as known too — otherwise a
+        /// text repeating "město" across cases proposes "měst"/"města"/"městu" as new lemmas in their
+        /// own right, which is exactly the false-positive flood a real article surfaced.
+        /// </summary>
+        [TestMethod]
+        public void KnownWordsRecognizesInflectedFormOfLexiconNoun()
+        {
+            Assert.IsTrue(known.IsKnown("měst"));
+            Assert.IsTrue(known.IsKnown("městu"));
+            Assert.IsTrue(known.IsKnown("městy"));
+        }
+
+        /// <summary>
         /// Verifies that a word in neither the lexicon nor a closed class is reported as unknown.
         /// </summary>
         [TestMethod]
