@@ -29,11 +29,26 @@ namespace Grammar.Czech.Analyzer.Candidates
         /// weaker guess — it is a shape one: a token whose route to a noun candidate is generate-and-test
         /// blindly trying every pattern should not get to compete once something specific to its own
         /// ending already explained it.
+        /// <para>
+        /// L-participle agreement (l/la/lo/li/ly) collides the same way, and worse: unlike "í", none of
+        /// its five endings are themselves rare, so every regular verb's own past tense leaves four or
+        /// five sibling forms (existoval, existovalo, existovala, existovali, existovaly...) sitting in
+        /// the text ready to corroborate each other as a fake žena- or město-pattern noun paradigm —
+        /// "existovalo" (nominative singular, the token itself) with "existoval" as its own genitive
+        /// plural, "existovala" as its genitive singular, and so on, entirely explained by verb
+        /// agreement and nothing to do with noun declension. Nothing distinguishes this from a real
+        /// noun's own paradigm by shape alone — <see cref="NounMatcher"/> tries every pattern blindly by
+        /// design — so this only works once <see cref="VerbMatcher"/> can actually reconstruct the
+        /// infinitive an l-participle token belongs to and corroborate it as a verb in its own right;
+        /// the same shape check that already worked for "í" then applies unchanged.
+        /// </para>
         /// </remarks>
         /// <param name="token">The case-folded token under consideration.</param>
         /// <param name="verbCandidateCount">How many verb candidates the same token already produced.</param>
         public static bool ShouldTryAsNoun(string token, int verbCandidateCount) =>
-            !(token.EndsWith("í", StringComparison.Ordinal) && verbCandidateCount > 0);
+            verbCandidateCount == 0
+            || !(token.EndsWith("í", StringComparison.Ordinal)
+                || VerbMatcher.LParticipleEndings.Any(ending => token.EndsWith(ending, StringComparison.Ordinal)));
 
         /// <summary>
         /// Keeps, per distinct lemma, only the candidates tied for that lemma's highest score, capped

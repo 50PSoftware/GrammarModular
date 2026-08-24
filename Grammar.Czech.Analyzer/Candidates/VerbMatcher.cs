@@ -37,6 +37,11 @@ namespace Grammar.Czech.Analyzer.Candidates
         private static readonly string[] Trida3PresentEndings = ["jeme", "jete", "jí", "ji", "ješ", "je"];
         private static readonly string[] Trida2PresentEndings = ["neme", "nete", "nu", "neš", "ne", "nou"];
 
+        // Minulé příčestí (l/la/lo/li/ly, agreement for gender/number) is not a class-specific shape
+        // the way a present-tense ending is — every regular verb forms it the same way regardless of
+        // class — so this is tried once, not per class, mirroring CandidateRanking.LParticipleEndings.
+        internal static readonly string[] LParticipleEndings = ["li", "ly", "la", "lo", "l"];
+
         private readonly CzechVerbConjugationService _conjugationService;
 
         /// <summary>
@@ -250,6 +255,21 @@ namespace Grammar.Czech.Analyzer.Candidates
                 if (token.Length > ending.Length && token.EndsWith(ending, StringComparison.Ordinal))
                 {
                     yield return token[..^ending.Length] + "nout";
+                }
+            }
+
+            // The infinitive minus its final "t" plus the l-suffix is the l-participle for the ordinary
+            // case (existovat -> existoval), and class 2 often drops "nu" the same way it drops it
+            // everywhere else in the paradigm (vzniknout -> vznikl, not vzniknul) — trying both suffixes
+            // is exactly the same "more than one candidate ending, let the score decide" move already
+            // used for classes 4 and 5, not a new kind of guess.
+            foreach (var ending in LParticipleEndings)
+            {
+                if (token.Length > ending.Length && token.EndsWith(ending, StringComparison.Ordinal))
+                {
+                    var stem = token[..^ending.Length];
+                    yield return stem + "t";
+                    yield return stem + "nout";
                 }
             }
         }

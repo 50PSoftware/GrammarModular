@@ -541,6 +541,56 @@ namespace Grammar.Czech.Test
             Assert.IsTrue(CandidateRanking.ShouldTryAsNoun("zápas", verbCandidateCount: 1));
         }
 
+        /// <summary>
+        /// Verifies that a token shaped like l-participle agreement is not tried as a noun once the
+        /// same token already produced a verb candidate — "existovalo" (neuter, the token itself as a
+        /// fake nominative singular) scored as a noun against "existoval" (fake genitive plural) and
+        /// "existovala" (fake genitive singular), all of which are really just the same verb's own past
+        /// tense agreeing with different genders. Found on a real article about the universe, alongside
+        /// "předpokládali", "nebylo"/"nebyla", "začalo"/"začala", "vytvořili" and "souvisela" — five more
+        /// instances of the same mechanism on the same text, not a one-off.
+        /// </summary>
+        [TestMethod]
+        public void ShouldTryAsNounRejectsLParticipleEndingTokenWithVerbCandidate()
+        {
+            Assert.IsFalse(CandidateRanking.ShouldTryAsNoun("existovalo", verbCandidateCount: 1));
+            Assert.IsFalse(CandidateRanking.ShouldTryAsNoun("existoval", verbCandidateCount: 1));
+            Assert.IsFalse(CandidateRanking.ShouldTryAsNoun("existovala", verbCandidateCount: 1));
+            Assert.IsFalse(CandidateRanking.ShouldTryAsNoun("existovali", verbCandidateCount: 1));
+            Assert.IsFalse(CandidateRanking.ShouldTryAsNoun("existovaly", verbCandidateCount: 1));
+        }
+
+        /// <summary>
+        /// Verifies that a token shaped like l-participle agreement is still tried as a noun when
+        /// nothing corroborated it as a verb — a real noun like "škola"/"školy" is not l-participle
+        /// shaped by coincidence often enough to need blocking on shape alone, only once a verb reading
+        /// actually explains the token.
+        /// </summary>
+        [TestMethod]
+        public void ShouldTryAsNounAcceptsLParticipleEndingTokenWithNoVerbCandidate()
+        {
+            Assert.IsTrue(CandidateRanking.ShouldTryAsNoun("existovalo", verbCandidateCount: 0));
+        }
+
+        /// <summary>
+        /// Verifies that <see cref="VerbMatcher"/> reconstructs the infinitive from an l-participle
+        /// token, the same "generate and test" move it already makes for a present-tense-shaped token —
+        /// this is what makes <see cref="CandidateRanking.ShouldTryAsNoun"/>'s l-participle gate able to
+        /// fire at all, since it needs a real verb candidate to compare against.
+        /// </summary>
+        [TestMethod]
+        public void VerbMatcherReconstructsInfinitiveFromLParticiple()
+        {
+            var corpus = new Dictionary<string, int>
+            {
+                ["existovalo"] = 1, ["existoval"] = 1, ["existovala"] = 1, ["existovaly"] = 1,
+            };
+
+            var candidates = verbMatcher.Match("existovalo", corpus);
+
+            Assert.IsTrue(candidates.Any(candidate => candidate.Lemma == "existovat"));
+        }
+
         // ── AdjectiveMatcher ─────────────────────────────────────────────────────
 
         /// <summary>
