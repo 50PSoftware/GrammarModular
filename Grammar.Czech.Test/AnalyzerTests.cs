@@ -361,6 +361,22 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that a token not shaped like any adjective citation form is rejected outright,
+        /// even with corroborating "evidence" in the corpus — "novin" (genitive plural of "noviny")
+        /// scored as a false adjective candidate on a real article via
+        /// GuessAdjectivePattern's unconditional "mladý" fallback, before this check existed.
+        /// </summary>
+        [TestMethod]
+        public void AdjectiveMatcherRejectsTokenNotShapedLikeCitationForm()
+        {
+            var corpus = new Dictionary<string, int> { ["novin"] = 3, ["novinu"] = 1, ["novinou"] = 1 };
+
+            var candidate = adjectiveMatcher.Match("novin", corpus);
+
+            Assert.IsNull(candidate);
+        }
+
+        /// <summary>
         /// Verifies that a feminine or neuter citation-shaped token (celá/celé) is folded back to the
         /// masculine -ý lemma before anything is generated, so it produces the same hypothesis as the
         /// masculine token would — not a second, competing lemma a person has to recognize as the same

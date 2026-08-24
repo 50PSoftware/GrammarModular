@@ -24,6 +24,17 @@ namespace Grammar.Czech.Analyzer.Candidates
     /// anything is generated, so all three tokens produce the one hypothesis and its combined
     /// evidence, instead of three competing entries a person has to recognize as the same word by eye.
     /// </para>
+    /// <para>
+    /// <see cref="CzechAdjectiveDeclensionService.GuessAdjectivePattern"/> falls back to "mladý" for
+    /// any ending it does not recognize — a reasonable default for its own callers, who already know
+    /// they have an adjective and just need a pattern for it, but fatal for this matcher, which does
+    /// not know that yet and would otherwise hand every non-adjective token in the text a "mladý"
+    /// hypothesis for free. "novin" (genitive plural of noviny) scored as high as a real find on a
+    /// live article this way — nothing about the guess rejects a token that is not shaped like an
+    /// adjective at all. <see cref="LooksLikeAdjectiveCitationForm"/> checks the one thing the guess
+    /// does not: whether the token actually ends the way a citation form has to, before the guess and
+    /// the fallback it hides behind ever run.
+    /// </para>
     /// </remarks>
     public sealed class AdjectiveMatcher
     {
@@ -51,6 +62,11 @@ namespace Grammar.Czech.Analyzer.Candidates
         /// <param name="corpus">Case-folded tokens found in the text, for corroboration.</param>
         public MatchCandidate? Match(string token, IReadOnlyDictionary<string, int> corpus)
         {
+            if (!LooksLikeAdjectiveCitationForm(token))
+            {
+                return null;
+            }
+
             var pattern = _declensionService.GuessAdjectivePattern(token);
             var lemma = pattern == "mladý" ? ToCitationForm(token) : token;
             var matchedForms = new List<string>();
@@ -108,5 +124,11 @@ namespace Grammar.Czech.Analyzer.Candidates
         private static string ToCitationForm(string token) => token.Length >= 2 && token[^1] is 'á' or 'é'
             ? token[..^1] + "ý"
             : token;
+
+        // The four endings a real adjective's nominative singular can end in, across all genders and
+        // both patterns (mladý/mladá/mladé, jarní). Anything else is not a citation form to begin with,
+        // and letting GuessAdjectivePattern's "mladý" fallback run on it anyway is how "novin" scored.
+        private static bool LooksLikeAdjectiveCitationForm(string token) =>
+            token.Length >= 2 && token[^1] is 'ý' or 'á' or 'é' or 'í';
     }
 }
