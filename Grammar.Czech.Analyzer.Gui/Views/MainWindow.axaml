@@ -1,0 +1,67 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Grammar.Czech.Analyzer.Gui.ViewModels"
+        xmlns:models="using:Grammar.Czech.Analyzer.Gui.Models"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
+        x:Class="Grammar.Czech.Analyzer.Gui.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="rozbor — Grammar Modular"
+        Width="1100" Height="700">
+
+    <Design.DataContext>
+        <vm:MainViewModel />
+    </Design.DataContext>
+
+    <DockPanel Margin="12">
+
+        <!-- Volba souboru a parametrů -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBox Text="{Binding FilePath}" PlaceholderText="Cesta k textovému souboru… (nebo vlož)" Width="480" />
+            <Button Content="Procházet…" Click="OnBrowseClick" />
+            <Button Content="Rozebrat" Command="{Binding AnalyzeCommand}" IsEnabled="{Binding !IsBusy}" />
+
+            <TextBlock Text="min. délka" VerticalAlignment="Center" Margin="16,0,0,0" />
+            <NumericUpDown Value="{Binding MinDelka}" Minimum="1" Maximum="20" Width="90" />
+
+            <TextBlock Text="vzorů/slovo" VerticalAlignment="Center" Margin="8,0,0,0" />
+            <NumericUpDown Value="{Binding VzoruNaSlovo}" Minimum="1" Maximum="10" Width="90" />
+
+            <TextBlock Text="limit" VerticalAlignment="Center" Margin="8,0,0,0" />
+            <NumericUpDown Value="{Binding Limit}" Minimum="10" Maximum="5000" Width="110" />
+        </StackPanel>
+
+        <!-- Stav a zápis vybraných -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+            <Button Content="Přidat zaškrtnuté do fronty (navrhy.json)" Command="{Binding WriteSelectedCommand}" />
+            <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <DataGrid ItemsSource="{Binding Candidates}"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="False"
+                  GridLinesVisibility="Horizontal"
+                  CanUserSortColumns="True">
+            <DataGrid.Columns>
+                <DataGridCheckBoxColumn Header="✓" Binding="{Binding IsSelected}" Width="36" />
+                <DataGridTextColumn Header="Slovo" Binding="{Binding Lemma}" Width="160" IsReadOnly="True" />
+                <DataGridTextColumn Header="Kategorie" Binding="{Binding Category}" Width="90" IsReadOnly="True" />
+                <DataGridTextColumn Header="Vzor" Binding="{Binding Pattern}" Width="90" IsReadOnly="True" />
+                <DataGridTextColumn Header="Skóre" Binding="{Binding Score}" Width="60" IsReadOnly="True" />
+                <DataGridTextColumn Header="Četnost" Binding="{Binding Frequency}" Width="70" IsReadOnly="True" />
+                <DataGridTextColumn Header="Tvary v textu" Binding="{Binding MatchedForms}" Width="*" IsReadOnly="True" />
+                <DataGridTemplateColumn Header="IJP" Width="70">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="models:CandidateRow">
+                            <Button Content="otevřít" Command="{Binding OpenIjpCommand}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+    </DockPanel>
+
+</Window>
