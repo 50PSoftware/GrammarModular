@@ -18,6 +18,7 @@ namespace Grammar.Czech.Test
         private static KnownWords known = null!;
         private static NounMatcher nounMatcher = null!;
         private static AdjectiveMatcher adjectiveMatcher = null!;
+        private static VerbMatcher verbMatcher = null!;
 
         /// <summary>
         /// Builds the grammar service graph once for the whole fixture, against the repository's own
@@ -36,6 +37,7 @@ namespace Grammar.Czech.Test
                 services.GetRequiredService<CzechNounDeclensionService>(),
                 services.GetRequiredService<INounDataProvider>());
             adjectiveMatcher = new AdjectiveMatcher(services.GetRequiredService<CzechAdjectiveDeclensionService>());
+            verbMatcher = new VerbMatcher(services.GetRequiredService<CzechVerbConjugationService>());
         }
 
         // ── Tokenizer ────────────────────────────────────────────────────────────
@@ -158,6 +160,18 @@ namespace Grammar.Czech.Test
             Assert.IsTrue(known.IsKnown("měst"));
             Assert.IsTrue(known.IsKnown("městu"));
             Assert.IsTrue(known.IsKnown("městy"));
+        }
+
+        /// <summary>
+        /// Verifies that a conjugated form of an already-known verb counts as known too — "dávat" is a
+        /// class-5 verb in seed.000.sql, so its present tense "dává" must not turn back up as a
+        /// candidate the way "měst" once did for nouns.
+        /// </summary>
+        [TestMethod]
+        public void KnownWordsRecognizesConjugatedFormOfLexiconVerb()
+        {
+            Assert.IsTrue(known.IsKnown("dává"));
+            Assert.IsTrue(known.IsKnown("dával"));
         }
 
         /// <summary>
@@ -300,6 +314,50 @@ namespace Grammar.Czech.Test
             Assert.IsNotNull(fromNeuter);
             Assert.AreEqual("celý", fromFeminine.Lemma);
             Assert.AreEqual("celý", fromNeuter.Lemma);
+        }
+
+        // ── VerbMatcher ──────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Verifies that an infinitive with no other corroborating form is not proposed.
+        /// </summary>
+        [TestMethod]
+        public void VerbMatcherRejectsUncorroboratedToken()
+        {
+            var corpus = new Dictionary<string, int> { ["dělat"] = 1 };
+
+            var candidates = verbMatcher.Match("dělat", corpus);
+
+            Assert.AreEqual(0, candidates.Count);
+        }
+
+        /// <summary>
+        /// Verifies the token-as-infinitive path: a regular class-5 infinitive corroborated by its own
+        /// present tense is proposed under the trida5 pattern.
+        /// </summary>
+        [TestMethod]
+        public void VerbMatcherAcceptsInfinitiveTokenWithCorroboratingPresentForm()
+        {
+            var corpus = new Dictionary<string, int> { ["dělat"] = 1, ["dělá"] = 1 };
+
+            var candidates = verbMatcher.Match("dělat", corpus);
+
+            Assert.IsTrue(candidates.Any(candidate => candidate.Pattern == "trida5" && candidate.MatchedForms.Contains("dělá")));
+        }
+
+        /// <summary>
+        /// Verifies the reconstruction path: a token shaped like a class-5 present-tense form, with no
+        /// infinitive anywhere in the text, still resolves to the "dělat" hypothesis once a second
+        /// present-tense form corroborates it — the case that motivated reconstruction at all.
+        /// </summary>
+        [TestMethod]
+        public void VerbMatcherReconstructsInfinitiveFromPresentTenseToken()
+        {
+            var corpus = new Dictionary<string, int> { ["dělá"] = 1, ["děláme"] = 1 };
+
+            var candidates = verbMatcher.Match("dělá", corpus);
+
+            Assert.IsTrue(candidates.Any(candidate => candidate.Lemma == "dělat" && candidate.Pattern == "trida5"));
         }
 
         // ── ProposalWriter ───────────────────────────────────────────────────────

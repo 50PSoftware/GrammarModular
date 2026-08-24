@@ -98,6 +98,8 @@ root.SetAction(parse =>
         provider.GetRequiredService<Grammar.Czech.Interfaces.INounDataProvider>());
     var adjectiveMatcher = new AdjectiveMatcher(
         provider.GetRequiredService<Grammar.Czech.Services.CzechAdjectiveDeclensionService>());
+    var verbMatcher = new VerbMatcher(
+        provider.GetRequiredService<Grammar.Czech.Services.CzechVerbConjugationService>());
 
     var rawText = File.ReadAllText(text.FullName);
     var corpus = Tokenizer.CountTokens(rawText);
@@ -115,6 +117,7 @@ root.SetAction(parse =>
         }
 
         candidates.AddRange(nounMatcher.Match(token, corpus));
+        candidates.AddRange(verbMatcher.Match(token, corpus));
 
         if (adjectiveMatcher.Match(token, corpus) is { } adjective)
         {

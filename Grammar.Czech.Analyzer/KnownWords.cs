@@ -24,12 +24,14 @@ namespace Grammar.Czech.Analyzer
     /// </para>
     /// <para>
     /// The third kind is the one a lemma-only set misses: every generated form of an already-known
-    /// noun or adjective. Without it, a text repeating <c>město</c> across several cases proposes
-    /// <c>měst</c>, <c>města</c>, <c>městu</c>, <c>měst</c>u... as new lemmas in their own right — the
-    /// matcher has no way to know they are forms of a word already on file, only that the exact string
-    /// "město" is. Expanding every known noun/adjective's own paradigm once at startup, the same way
-    /// <see cref="Candidates.NounMatcher"/> expands a hypothesis, closes that hole with the same
-    /// mechanism rather than a new one.
+    /// noun, adjective or verb. Without it, a text repeating <c>město</c> across several cases proposes
+    /// <c>měst</c>, <c>města</c>, <c>městu</c>... as new lemmas in their own right — the matcher has no
+    /// way to know they are forms of a word already on file, only that the exact string "město" is.
+    /// Expanding every known open-class word's own paradigm once at startup, the same way
+    /// <see cref="Candidates.NounMatcher"/>/<see cref="Candidates.VerbMatcher"/> expand a hypothesis,
+    /// closes that hole with the same mechanism rather than a new one — verbs need it just as much as
+    /// nouns did, since <see cref="Candidates.VerbMatcher"/> reconstructs infinitives from conjugated
+    /// tokens exactly the way a text repeating a known verb across tenses would.
     /// </para>
     /// </remarks>
     public sealed class KnownWords
@@ -86,6 +88,7 @@ namespace Grammar.Czech.Analyzer
             var lexicon = services.GetRequiredService<IValencyProvider<CzechLexicalEntry>>();
             var nounService = services.GetRequiredService<CzechNounDeclensionService>();
             var adjectiveService = services.GetRequiredService<CzechAdjectiveDeclensionService>();
+            var verbService = services.GetRequiredService<CzechVerbConjugationService>();
 
             foreach (var entry in lexicon.GetEntries())
             {
@@ -103,6 +106,10 @@ namespace Grammar.Czech.Analyzer
                 else if (entry.Category == WordCategory.Adjective)
                 {
                     AddAdjectiveForms(adjectiveService, entry.Lemma, pattern);
+                }
+                else if (entry.Category == WordCategory.Verb)
+                {
+                    AddVerbForms(verbService, entry.Lemma, pattern);
                 }
             }
         }
@@ -157,6 +164,14 @@ namespace Grammar.Czech.Analyzer
             }
         }
 
+        private void AddVerbForms(CzechVerbConjugationService service, string lemma, string pattern)
+        {
+            foreach (var request in Candidates.VerbForms.Requests(lemma, pattern))
+            {
+                TryAddForm(() => service.GetBasicForm(request).Form);
+            }
+        }
+
         private void TryAddForm(Func<string> generate)
         {
             try
@@ -167,6 +182,9 @@ namespace Grammar.Czech.Analyzer
             {
             }
             catch (NotSupportedException)
+            {
+            }
+            catch (ArgumentException)
             {
             }
         }
