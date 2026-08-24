@@ -377,6 +377,22 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that a deverbal neuter noun (dýchání, from dýchat) is not tried as a jarní-pattern
+        /// adjective just because it ends in í — that ending is how Czech forms a verbal noun from an
+        /// infinitive, not how a soft adjective is built, and "dýchání" scored as a false adjective on
+        /// a real article before this check existed.
+        /// </summary>
+        [TestMethod]
+        public void AdjectiveMatcherRejectsDeverbalNounEnding()
+        {
+            var corpus = new Dictionary<string, int> { ["dýchání"] = 2, ["dýcháním"] = 1 };
+
+            var candidate = adjectiveMatcher.Match("dýchání", corpus);
+
+            Assert.IsNull(candidate);
+        }
+
+        /// <summary>
         /// Verifies that a feminine or neuter citation-shaped token (celá/celé) is folded back to the
         /// masculine -ý lemma before anything is generated, so it produces the same hypothesis as the
         /// masculine token would — not a second, competing lemma a person has to recognize as the same
@@ -438,6 +454,24 @@ namespace Grammar.Czech.Test
             var candidates = verbMatcher.Match("dělá", corpus);
 
             Assert.IsTrue(candidates.Any(candidate => candidate.Lemma == "dělat" && candidate.Pattern == "trida5"));
+        }
+
+        /// <summary>
+        /// Verifies that reconstructing "-at" and "-át" from the same present-tense token does not
+        /// leave both as separate candidates when they score the same — they always do on present-tense
+        /// evidence alone, since both reconstructions share the identical present stem by construction,
+        /// so only the ordinary "-at" spelling should survive ("využívát" scored the same as real
+        /// "využívat" on a live article before this check existed).
+        /// </summary>
+        [TestMethod]
+        public void VerbMatcherPrefersAtSpellingWhenAtAndAtWithAcuteTie()
+        {
+            var corpus = new Dictionary<string, int> { ["využívá"] = 1, ["využíváme"] = 1 };
+
+            var candidates = verbMatcher.Match("využívá", corpus);
+
+            Assert.IsTrue(candidates.Any(candidate => candidate.Lemma == "využívat" && candidate.Pattern == "trida5"));
+            Assert.IsFalse(candidates.Any(candidate => candidate.Lemma == "využívát"));
         }
 
         /// <summary>

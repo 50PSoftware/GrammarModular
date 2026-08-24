@@ -128,7 +128,17 @@ namespace Grammar.Czech.Analyzer.Candidates
         // The four endings a real adjective's nominative singular can end in, across all genders and
         // both patterns (mladý/mladá/mladé, jarní). Anything else is not a citation form to begin with,
         // and letting GuessAdjectivePattern's "mladý" fallback run on it anyway is how "novin" scored.
+        //
+        // -ání/-ení/-ění is excluded even though it ends in í: that is specifically how a verbal noun
+        // is formed from an infinitive (dýchat -> dýchání, čtení, dělění), not how a soft adjective is
+        // — jarní/letní/národní attach -ní straight to a root, with no theme vowel in front of it. A
+        // real jarní-pattern adjective ending in exactly that three-letter sequence does not turn up in
+        // Czech; a neuter deverbal noun scoring as an adjective on a real article did.
         private static bool LooksLikeAdjectiveCitationForm(string token) =>
-            token.Length >= 2 && token[^1] is 'ý' or 'á' or 'é' or 'í';
+            token.Length >= 2
+            && token[^1] is 'ý' or 'á' or 'é' or 'í'
+            && !token.EndsWith("ání", StringComparison.Ordinal)
+            && !token.EndsWith("ení", StringComparison.Ordinal)
+            && !token.EndsWith("ění", StringComparison.Ordinal);
     }
 }

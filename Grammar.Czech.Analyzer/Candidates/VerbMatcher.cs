@@ -80,7 +80,38 @@ namespace Grammar.Czech.Analyzer.Candidates
                 }
             }
 
-            return results;
+            return DropRedundantAccentVariant(results);
+        }
+
+        // Reconstructing from a present-tense token always tries both "-at" and "-át" for class 5,
+        // since the ending alone cannot say which the real infinitive had. Usually only one of the two
+        // corroborates and the other quietly produces nothing — but "-át" can corroborate on its own
+        // wrong stem too (využívát scored the same as real využívat on a live article), leaving two
+        // rows for what a person reads as one word with a typo. "-át" is the rare spelling in Czech —
+        // a small, closed set (znát, hrát, přát...) against the ordinary "-at" — so a tie or an "-at"
+        // lead is resolved toward "-at"; "-át" only survives where it strictly outscores its sibling
+        // or has none, which is what a genuine -át verb like "hrát" looks like.
+        private static List<MatchCandidate> DropRedundantAccentVariant(List<MatchCandidate> results)
+        {
+            var filtered = new List<MatchCandidate>();
+
+            foreach (var candidate in results)
+            {
+                if (candidate.Pattern == "trida5" && candidate.Lemma.EndsWith("át", StringComparison.Ordinal))
+                {
+                    var atSpelling = candidate.Lemma[..^2] + "at";
+                    var sibling = results.Find(other => other.Pattern == "trida5" && other.Lemma == atSpelling);
+
+                    if (sibling is not null && sibling.Score >= candidate.Score)
+                    {
+                        continue;
+                    }
+                }
+
+                filtered.Add(candidate);
+            }
+
+            return filtered;
         }
 
         // Classes 2-5 only ever produce a real paradigm from a lemma shaped like their own infinitive —
