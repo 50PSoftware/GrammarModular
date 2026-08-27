@@ -6,5 +6,6 @@
   ],
   "url": "https://tvadomena.cz/api/",
   "database": "Grammar.Czech/Data/Lexicon/grammar.czech.lexicon.db",
+  "navrhy": "navrhy.json",
   "pageSize": 5000
 }

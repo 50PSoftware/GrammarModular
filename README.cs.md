@@ -945,7 +945,7 @@ Co nástroj nebere, je celá věta v jednom argumentu. Lemmata jsou samostatné 
 
 Slovník se s balíčkem nástroje nerozdává, stejně jako s balíčkem knihovny. Cesta k němu se hledá v tom pořadí, jaké má nástroj `lexikon` — `--slovnik` pro tohle jedno spuštění, pak klíč `database` v `lexikon.json` pro celý projekt, pak `GRAMMAR_CZECH_LEXICON` pro tenhle stroj, nakonec adresář aplikace. Když není nikde, řekne to nástroj rovnou při startu a všechny čtyři vypíše.
 
-`lexikon.json` je týž soubor, který čte nástroj lexikonu, takže projekt řekne jednou, kde má slovník, a najdou ho oba. Cesta se bere relativně k tomu souboru, ne k pracovnímu adresáři, a soubor se hledá směrem nahoru, takže to funguje z libovolného podadresáře. Čte se odsud jen klíč `database`; adresa a token patří nástroji, který mluví s API.
+`lexikon.json` je týž soubor, který čte nástroj lexikonu, takže projekt řekne jednou, kde má slovník, a najdou ho oba. Cesta se bere relativně k tomu souboru, ne k pracovnímu adresáři, a soubor se hledá směrem nahoru, takže to funguje z libovolného podadresáře. Čte se odsud klíč `database`, a stejným pořadím i `navrhy` — cesta k frontě návrhů, sdílená mezi `gramatika`, `rozbor` a `lexikon navrhy`, takže se všechny tři shodnou na tom, kde fronta je, aniž by to projekt musel říct víc než jednou. Adresa a token patří nástroji, který mluví s API, a odsud se nečtou vůbec.
 
 Sloveso zopakované v druhém konjunktu se vypustí: `Student čte knihu a žák dopis.` Manuál PDT (§12.1.1.1) považuje řídící sloveso za vypuštěné tam, kde je z předchozí klauze jasné, které to bylo — *(Jirka navštívil Marii.) Honza Jiřinu.* — a obnovuje ho kopií toho uzlu; `#EmpVerb` je vyhrazený gramatické elipse, kde se sloveso z kontextu obnovit nedá vůbec.
 
