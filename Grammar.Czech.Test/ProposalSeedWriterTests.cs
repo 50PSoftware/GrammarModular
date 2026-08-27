@@ -44,5 +44,66 @@ namespace Grammar.Czech.Test
                 root.Delete(recursive: true);
             }
         }
+
+        /// <summary>
+        /// Verifies that every proposal written into the draft gets marked with the seed file's own
+        /// name back in <c>navrhy.json</c> — otherwise nothing would ever stop a second run from
+        /// drafting the same lemma into a second seed.
+        /// </summary>
+        [TestMethod]
+        public void ExportedProposalIsMarkedWithTheSeedFileItWentInto()
+        {
+            var root = Directory.CreateTempSubdirectory();
+
+            try
+            {
+                var proposalsPath = Path.Combine(root.FullName, "navrhy.json");
+
+                File.WriteAllText(proposalsPath, """
+                    [
+                      { "Lemma": "novinka", "Category": "Noun", "IsConfirmed": true, "IsRejected": false }
+                    ]
+                    """);
+
+                var seedPath = ProposalSeedWriter.Write(proposalsPath, root.FullName, onlyConfirmed: false);
+
+                Assert.IsNotNull(seedPath);
+                StringAssert.Contains(File.ReadAllText(proposalsPath), Path.GetFileName(seedPath));
+            }
+            finally
+            {
+                root.Delete(recursive: true);
+            }
+        }
+
+        /// <summary>
+        /// Verifies that a proposal already marked with an <c>ExportedTo</c> seed is skipped on a later
+        /// run — the whole point of marking it, since <c>navrhy.json</c> keeps the entry rather than
+        /// removing it once it is drafted.
+        /// </summary>
+        [TestMethod]
+        public void AlreadyExportedProposalIsNotDraftedAgain()
+        {
+            var root = Directory.CreateTempSubdirectory();
+
+            try
+            {
+                var proposalsPath = Path.Combine(root.FullName, "navrhy.json");
+
+                File.WriteAllText(proposalsPath, """
+                    [
+                      { "Lemma": "jizhotove", "Category": "Noun", "IsConfirmed": true, "IsRejected": false, "ExportedTo": "seed.005.sql" }
+                    ]
+                    """);
+
+                var seedPath = ProposalSeedWriter.Write(proposalsPath, root.FullName, onlyConfirmed: false);
+
+                Assert.IsNull(seedPath, "Návrh, který už jednou do seedu šel, se nemá draftovat znovu.");
+            }
+            finally
+            {
+                root.Delete(recursive: true);
+            }
+        }
     }
 }

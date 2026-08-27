@@ -246,6 +246,19 @@ namespace Grammar.Czech.Cli.Sentence
         public bool IsRejected { get; set; }
 
         /// <summary>
+        /// Gets or sets which seed file this proposal was already drafted into, or
+        /// <see langword="null"/> when it has not been exported yet.
+        /// </summary>
+        /// <remarks>
+        /// Set by <c>lexikon navrhy</c>, never by <c>gramatika</c> or <c>rozbor</c>. A proposal is not
+        /// removed from the queue once it is exported — the same reason a rejected one is not removed
+        /// either, the record of what was drafted where is worth more than the entry — so without this,
+        /// a second <c>lexikon navrhy</c> run would draft the same lemma into a second seed just because
+        /// it still sits in <c>navrhy.json</c>.
+        /// </remarks>
+        public string? ExportedTo { get; set; }
+
+        /// <summary>
         /// Gets or sets a free note, for whatever the guess could not carry.
         /// </summary>
         public string? Note { get; set; }
@@ -284,6 +297,11 @@ namespace Grammar.Czech.Cli.Sentence
             }
 
             var state = IsConfirmed ? "potvrzeno" : IsRejected ? "zamítnuto" : "odhad";
+
+            if (ExportedTo is { } seed)
+            {
+                state += $", v {seed}";
+            }
 
             return $"{Lemma} — {string.Join(", ", parts)} [{state}]";
         }

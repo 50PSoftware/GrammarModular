@@ -31,6 +31,16 @@ namespace Grammar.Czech.Lexicon.Tool
             Converters = { new JsonStringEnumConverter() },
         };
 
+        // Matches WordProposals.Format in Grammar.Czech.Cli — same file, same shape, just no
+        // ProjectReference between the two tools to share it through.
+        private static readonly JsonSerializerOptions WriteFormat = new()
+        {
+            WriteIndented = true,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            Converters = { new JsonStringEnumConverter() },
+        };
+
         /// <summary>
         /// Reads the proposals and writes the draft seed.
         /// </summary>
@@ -38,6 +48,12 @@ namespace Grammar.Czech.Lexicon.Tool
         /// <param name="seedDirectory">The directory holding the seed files.</param>
         /// <param name="onlyConfirmed">Whether to skip proposals nobody has confirmed.</param>
         /// <returns>The path of the file written, or null when there was nothing to write.</returns>
+        /// <remarks>
+        /// Also writes <paramref name="proposalsPath"/> back, once, after the seed is composed: every
+        /// proposal that went into this draft gets <see cref="Proposal.ExportedTo"/> set to the seed's
+        /// own file name, so a later run does not draft the same lemma a second time just because
+        /// nothing ever removes it from the queue.
+        /// </remarks>
         public static string? Write(string proposalsPath, string seedDirectory, bool onlyConfirmed)
         {
             if (!File.Exists(proposalsPath))
@@ -54,6 +70,10 @@ namespace Grammar.Czech.Lexicon.Tool
                 // A rejected proposal never belongs in a draft, --jen-potvrzene or not: somebody already
                 // looked at it and turned it down, which is a stronger verdict than "not yet confirmed".
                 .Where(proposal => !proposal.IsRejected)
+                // Already drafted into an earlier seed — navrhy.json keeps the entry (the record of what
+                // went where is worth more than the entry), so without this a second run would draft the
+                // same lemma into a second seed.
+                .Where(proposal => proposal.ExportedTo is null)
                 .Where(proposal => !onlyConfirmed || proposal.IsConfirmed)
                 .Where(proposal => proposal.Lemma.Length > 0)
                 .ToList();
@@ -68,7 +88,29 @@ namespace Grammar.Czech.Lexicon.Tool
 
             File.WriteAllText(path, Compose(taken, number, proposalsPath), new UTF8Encoding(false));
 
+            // taken's entries are the same objects as in proposals (Where does not clone), so marking
+            // them here and rewriting the whole list is what keeps the two in sync on disk.
+            var seedFileName = Path.GetFileName(path);
+
+            foreach (var proposal in taken)
+            {
+                proposal.ExportedTo = seedFileName;
+            }
+
+            WriteBack(proposals, proposalsPath);
+
             return path;
+        }
+
+        // Přes dočasný soubor a přejmenování, stejně jako WordProposals.Write v Grammar.Czech.Cli —
+        // gramatika nebo rozbor mohou do stejného souboru zrovna zapisovat, a přepsání na místě by jim
+        // ukázalo napůl zapsaný soubor.
+        private static void WriteBack(List<Proposal> proposals, string proposalsPath)
+        {
+            var temporary = proposalsPath + ".tmp";
+
+            File.WriteAllText(temporary, JsonSerializer.Serialize(proposals, WriteFormat));
+            File.Move(temporary, proposalsPath, overwrite: true);
         }
 
         // Číslo se bere z disku, ne z gitu: rozepsaný seed, který ještě není commitnutý, je pořád seed
@@ -169,6 +211,8 @@ namespace Grammar.Czech.Lexicon.Tool
             public bool IsConfirmed { get; set; }
 
             public bool IsRejected { get; set; }
+
+            public string? ExportedTo { get; set; }
 
             public string? Note { get; set; }
         }
