@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using Grammar.Czech.Analyzer;
 using Grammar.Czech.Analyzer.Candidates;
 using Grammar.Czech.Cli.Sentence;
@@ -117,6 +118,123 @@ namespace Grammar.Czech.Test
             var properNouns = Tokenizer.FindLikelyProperNouns("Měl velký Dům. Ten dům byl starý.");
 
             Assert.IsFalse(properNouns.Contains("dům"));
+        }
+
+        // ── DocumentReader ───────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Verifies that a plain .txt file is still read as-is — the extension switch's fallback arm.
+        /// </summary>
+        [TestMethod]
+        public void DocumentReaderReadsPlainTextUnchanged()
+        {
+            var path = Path.GetTempFileName();
+
+            try
+            {
+                File.WriteAllText(path, "Obyčejný text.");
+
+                Assert.AreEqual("Obyčejný text.", DocumentReader.ReadText(path));
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        /// <summary>
+        /// Verifies that a .docx's own paragraphs (word/document.xml, w:p/w:t) come back as separate
+        /// lines — built as a real zip-of-XML on the fly rather than checking in a binary fixture,
+        /// since the whole point is exercising the same zip-plus-XML shape a real Word file has.
+        /// </summary>
+        [TestMethod]
+        public void DocumentReaderExtractsParagraphsFromDocx()
+        {
+            var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.docx");
+
+            try
+            {
+                using (var archive = new ZipArchive(File.Create(path), ZipArchiveMode.Create))
+                {
+                    var entry = archive.CreateEntry("word/document.xml");
+                    using var writer = new StreamWriter(entry.Open());
+                    writer.Write("""
+                        <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+                          <w:body>
+                            <w:p><w:r><w:t>První odstavec.</w:t></w:r></w:p>
+                            <w:p><w:r><w:t>Druhý </w:t></w:r><w:r><w:t>odstavec.</w:t></w:r></w:p>
+                          </w:body>
+                        </w:document>
+                        """);
+                }
+
+                Assert.AreEqual("První odstavec.\nDruhý odstavec.", DocumentReader.ReadText(path));
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        /// <summary>
+        /// Verifies that an .odt's own paragraphs (content.xml, text:p) come back as separate lines,
+        /// including text split across a text:span the way real formatting produces.
+        /// </summary>
+        [TestMethod]
+        public void DocumentReaderExtractsParagraphsFromOdt()
+        {
+            var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.odt");
+
+            try
+            {
+                using (var archive = new ZipArchive(File.Create(path), ZipArchiveMode.Create))
+                {
+                    var entry = archive.CreateEntry("content.xml");
+                    using var writer = new StreamWriter(entry.Open());
+                    writer.Write("""
+                        <office:document-content
+                            xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+                            xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0">
+                          <office:body>
+                            <office:text>
+                              <text:p>První odstavec.</text:p>
+                              <text:p>Druhý <text:span>odstavec</text:span>.</text:p>
+                            </office:text>
+                          </office:body>
+                        </office:document-content>
+                        """);
+                }
+
+                Assert.AreEqual("První odstavec.\nDruhý odstavec.", DocumentReader.ReadText(path));
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        /// <summary>
+        /// Verifies that a .docx missing word/document.xml — not actually a Word file, whatever its
+        /// extension claims — fails with a clear message instead of a bare zip- or XML-parsing error.
+        /// </summary>
+        [TestMethod]
+        public void DocumentReaderRejectsDocxWithoutDocumentXml()
+        {
+            var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.docx");
+
+            try
+            {
+                using (var archive = new ZipArchive(File.Create(path), ZipArchiveMode.Create))
+                {
+                    archive.CreateEntry("not-a-word-document.txt");
+                }
+
+                Assert.ThrowsException<InvalidOperationException>(() => DocumentReader.ReadText(path));
+            }
+            finally
+            {
+                File.Delete(path);
+            }
         }
 
         // ── KnownWords ───────────────────────────────────────────────────────────

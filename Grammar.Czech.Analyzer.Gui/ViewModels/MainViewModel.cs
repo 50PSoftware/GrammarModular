@@ -122,7 +122,7 @@ public partial class MainViewModel : ViewModelBase
     // ShouldTryAsNoun/CandidateRanking pipeline — just returning rows instead of writing a CSV.
     private List<CandidateRow> Analyze(string path)
     {
-        var rawText = File.ReadAllText(path);
+        var rawText = DocumentReader.ReadText(path);
         var corpus = Tokenizer.CountTokens(rawText);
         var properNouns = Tokenizer.FindLikelyProperNouns(rawText);
 

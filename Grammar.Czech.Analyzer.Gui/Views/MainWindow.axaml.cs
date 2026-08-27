@@ -33,7 +33,11 @@ public partial class MainWindow : Window
         {
             Title = "Vyber textový soubor",
             AllowMultiple = false,
-            FileTypeFilter = [new FilePickerFileType("Textové soubory") { Patterns = ["*.txt"] }, FilePickerFileTypes.All],
+            FileTypeFilter =
+            [
+                new FilePickerFileType("Textové soubory") { Patterns = ["*.txt", "*.docx", "*.odt"] },
+                FilePickerFileTypes.All,
+            ],
         });
 
         if (files.FirstOrDefault() is { } file)

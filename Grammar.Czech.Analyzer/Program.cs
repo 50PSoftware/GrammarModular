@@ -16,7 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 var textArgument = new Argument<FileInfo>("text")
 {
-    Description = "Cesta k textovému souboru (UTF-8), který se má rozebrat.",
+    Description = "Cesta k souboru (UTF-8 .txt, .docx nebo .odt), který se má rozebrat.",
 };
 
 var lexiconOption = new Option<FileInfo?>("--slovnik")
@@ -101,7 +101,7 @@ root.SetAction(parse =>
     var verbMatcher = new VerbMatcher(
         provider.GetRequiredService<Grammar.Czech.Services.CzechVerbConjugationService>());
 
-    var rawText = File.ReadAllText(text.FullName);
+    var rawText = DocumentReader.ReadText(text.FullName);
     var corpus = Tokenizer.CountTokens(rawText);
     var properNouns = Tokenizer.FindLikelyProperNouns(rawText);
     Console.Error.WriteLine($"Tokenů v textu (různých): {corpus.Count}, "
