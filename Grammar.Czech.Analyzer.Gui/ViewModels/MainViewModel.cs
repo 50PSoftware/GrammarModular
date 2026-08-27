@@ -153,10 +153,11 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void WriteSelected()
     {
-        var confirmed = Candidates.Where(row => row.IsSelected).Select(row => row.Candidate).ToList();
-        var excluded = Candidates.Where(row => row.IsExcluded).Select(row => row.Candidate).ToList();
+        var written = Candidates.Where(row => row.IsSelected || row.IsExcluded).ToList();
+        var confirmed = written.Where(row => row.IsSelected).Select(row => row.Candidate).ToList();
+        var excluded = written.Where(row => row.IsExcluded).Select(row => row.Candidate).ToList();
 
-        if (confirmed.Count == 0 && excluded.Count == 0)
+        if (written.Count == 0)
         {
             StatusText = "Nic není zaškrtnuté.";
             return;
@@ -171,10 +172,12 @@ public partial class MainViewModel : ViewModelBase
         StatusText = $"Přidáno {addedConfirmed} potvrzených a {addedExcluded} vyloučených do navrhy.json "
             + "(zbytek už tam byl).";
 
-        foreach (var row in Candidates.Where(row => row.IsSelected || row.IsExcluded))
+        // Zapsaný řádek zmizí z gridu, ne že by se jen odškrtl — jednou rozhodnuté slovo se v seznamu
+        // ke kontrole plete se skutečně novými kandidáty, a stejné lemma navíc příští rozbor stejně
+        // sám vynechá (DropAlreadyHandled), takže tu už nemá co dělat.
+        foreach (var row in written)
         {
-            row.IsSelected = false;
-            row.IsExcluded = false;
+            Candidates.Remove(row);
         }
     }
 
