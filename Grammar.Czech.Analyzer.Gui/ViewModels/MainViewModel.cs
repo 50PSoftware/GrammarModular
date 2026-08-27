@@ -124,8 +124,8 @@ public partial class MainViewModel : ViewModelBase
             return;
         }
 
-        var added = ProposalWriter.WriteNew(selected, new WordProposals());
-        StatusText = $"Přidáno {added} nových návrhů do navrhy.json (zbytek už tam byl).";
+        var added = ProposalWriter.WriteNew(selected, new WordProposals(), confirmed: true);
+        StatusText = $"Přidáno {added} nových návrhů do navrhy.json, rovnou jako potvrzené (zbytek už tam byl).";
 
         foreach (var row in Candidates.Where(row => row.IsSelected))
         {

@@ -1308,6 +1308,27 @@ namespace Grammar.Czech.Test
             store.Clear();
         }
 
+        /// <summary>
+        /// Verifies that <c>confirmed: true</c> writes the proposal already confirmed — this is what
+        /// the GUI passes for candidates a person checked, since the checkbox selection is itself the
+        /// review and the word should not have to wait for <c>:slova doplnit</c> a second time.
+        /// </summary>
+        [TestMethod]
+        public void ProposalWriterWritesConfirmedProposalWhenToldTheCandidateWasReviewed()
+        {
+            var store = TemporaryProposals();
+            var candidate = new MatchCandidate(
+                "pořádek", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false,
+                ["pořádek", "pořádku"]);
+
+            var added = ProposalWriter.WriteNew([candidate], store, confirmed: true);
+
+            Assert.AreEqual(1, added);
+            Assert.IsTrue(store.Read().Single().IsConfirmed);
+
+            store.Clear();
+        }
+
         // ── Reporter ─────────────────────────────────────────────────────────────
 
         /// <summary>

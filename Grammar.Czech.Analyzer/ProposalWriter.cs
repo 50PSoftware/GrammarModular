@@ -17,10 +17,12 @@ namespace Grammar.Czech.Analyzer
     /// pair keeps the same file, the same atomic-write behaviour and the same "first sighting wins"
     /// rule, without needing a shared contract change in <c>Grammar.Czech.Cli</c>.
     /// <para>
-    /// A word this class writes always has <c>IsConfirmed = false</c> and a <c>Note</c> that says it
-    /// came from a batch text analysis with its score — so whoever reviews <c>navrhy.json</c> can tell
-    /// "I typed this in a session" from "a pattern search in some text thinks this might be a word"
-    /// apart, and weigh them differently.
+    /// Every word this class writes gets a <c>Note</c> that says it came from a batch text analysis with
+    /// its score — so whoever reviews <c>navrhy.json</c> can tell "I typed this in a session" from "a
+    /// pattern search in some text thinks this might be a word" apart, and weigh them differently.
+    /// <c>IsConfirmed</c> follows the <c>confirmed</c> argument: a plain CLI run has nobody looking at
+    /// the candidates, so it stays <see langword="false"/> and waits for <c>:slova doplnit</c>; the GUI's
+    /// checkbox selection is itself the review, so it writes straight through as confirmed.
     /// </para>
     /// </remarks>
     public static class ProposalWriter
@@ -31,8 +33,15 @@ namespace Grammar.Czech.Analyzer
         /// </summary>
         /// <param name="ranked">The already-thinned, already-ranked candidates.</param>
         /// <param name="store">The proposal queue to append to.</param>
+        /// <param name="confirmed">
+        /// Whether a person already reviewed these candidates before they got here — the GUI's checkbox
+        /// selection counts, a bare CLI batch run does not. Passed straight through to
+        /// <see cref="WordProposal.IsConfirmed"/> so a reviewed write skips the review queue instead of
+        /// being indistinguishable from an unreviewed guess.
+        /// </param>
         /// <returns>How many proposals were newly written.</returns>
-        public static int WriteNew(IReadOnlyList<MatchCandidate> ranked, WordProposals store)
+        public static int WriteNew(
+            IReadOnlyList<MatchCandidate> ranked, WordProposals store, bool confirmed = false)
         {
             var existing = store.Read().ToList();
             var known = new HashSet<string>(
@@ -48,7 +57,8 @@ namespace Grammar.Czech.Analyzer
                 }
 
                 var ordered = group.OrderByDescending(candidate => candidate.Score).ToList();
-                additions.Add(ToProposal(ordered[0], ordered.Skip(1).Select(candidate => candidate.Pattern).ToList()));
+                additions.Add(ToProposal(
+                    ordered[0], ordered.Skip(1).Select(candidate => candidate.Pattern).ToList(), confirmed));
             }
 
             if (additions.Count == 0)
@@ -70,7 +80,8 @@ namespace Grammar.Czech.Analyzer
             return additions.Count;
         }
 
-        private static WordProposal ToProposal(MatchCandidate primary, IReadOnlyList<string> alternatePatterns)
+        private static WordProposal ToProposal(
+            MatchCandidate primary, IReadOnlyList<string> alternatePatterns, bool confirmed)
         {
             var note = $"Z rozbor (dávkový rozbor textu). Skóre {primary.Score}, "
                 + $"tvary v textu: {string.Join(", ", primary.MatchedForms)}.";
@@ -87,7 +98,7 @@ namespace Grammar.Czech.Analyzer
                 Gender = primary.Gender,
                 Pattern = primary.Pattern,
                 IsAnimate = primary.IsAnimate,
-                IsConfirmed = false,
+                IsConfirmed = confirmed,
                 Note = note,
                 SeenAt = DateTimeOffset.Now,
             };
