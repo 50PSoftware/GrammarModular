@@ -70,6 +70,13 @@ var bezNavrhuOption = new Option<bool>("--bez-navrhu")
     Description = "Nezapisovat do navrhy.json, jen CSV — pro rozkoukání, než se něco přidá do fronty.",
 };
 
+var benchmarkOption = new Option<bool>("--benchmark")
+{
+    Description = "Místo rozboru vypíše, kolik z dosavadních návrhů rozboru v navrhy.json bylo "
+        + "potvrzeno a kolik zamítnuto — vlastní úspěšnost nástroje, ne rozbor textu. "
+        + "Nepotřebuje ani soubor, ani --wiki.",
+};
+
 var root = new RootCommand("rozbor — najde v textu slova, která Grammar Modular nezná, a navrhne jim kandidáty na lemma")
 {
     textArgument,
@@ -81,12 +88,34 @@ var root = new RootCommand("rozbor — najde v textu slova, která Grammar Modul
     outOption,
     navrhyOption,
     bezNavrhuOption,
+    benchmarkOption,
 };
 
 root.SetAction(async (parse, cancellationToken) =>
 {
     var text = parse.GetValue(textArgument);
     var wiki = parse.GetValue(wikiOption);
+    var navrhy = parse.GetValue(navrhyOption);
+
+    if (parse.GetValue(benchmarkOption))
+    {
+        var result = BenchmarkReporter.Summarize(new WordProposals(navrhy?.FullName).Read());
+
+        if (result.Decided == 0)
+        {
+            Console.WriteLine($"Zatím nic není rozhodnuto ({result.Undecided} návrhů z rozboru čeká na "
+                + "':slova doplnit') — není z čeho počítat úspěšnost.");
+
+            return 0;
+        }
+
+        Console.WriteLine($"Návrhy z rozboru: {result.Confirmed} potvrzeno, {result.Rejected} zamítnuto, "
+            + $"{result.Undecided} zatím nerozhodnuto.");
+        Console.WriteLine($"Úspěšnost (jen z rozhodnutých): {result.SuccessRate:P1} "
+            + $"({result.Confirmed}/{result.Decided}).");
+
+        return 0;
+    }
 
     if (text is null == wiki is null)
     {
@@ -99,7 +128,6 @@ root.SetAction(async (parse, cancellationToken) =>
     var minDelka = parse.GetValue(minDelkaOption);
     var vzoruNaSlovo = parse.GetValue(vzoruNaSlovoOption);
     var @out = parse.GetValue(outOption)!;
-    var navrhy = parse.GetValue(navrhyOption);
     var bezNavrhu = parse.GetValue(bezNavrhuOption);
 
     var lexiconPath = lexicon?.FullName ?? LexiconSettings.DatabasePath();

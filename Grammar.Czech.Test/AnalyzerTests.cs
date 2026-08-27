@@ -290,6 +290,54 @@ namespace Grammar.Czech.Test
                 () => WikipediaReader.ParseExtract(body, "Praha (rozcestník)"));
         }
 
+        // ── BenchmarkReporter ────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Verifies the ordinary case: confirmed and rejected rozbor proposals are counted, the success
+        /// rate is confirmed-over-decided, and a proposal from a live gramatika session (no "Z rozbor"
+        /// note) is not counted at all — the file both write to is the same one, and only rozbor's own
+        /// track record is what this measures.
+        /// </summary>
+        [TestMethod]
+        public void BenchmarkReporterCountsOnlyRozborProposalsBySourceMarker()
+        {
+            var proposals = new List<WordProposal>
+            {
+                new() { Lemma = "dobreslovo1", IsConfirmed = true, Note = "Z rozbor (dávkový rozbor textu). Skóre 5." },
+                new() { Lemma = "dobreslovo2", IsConfirmed = true, Note = "Z rozbor (dávkový rozbor textu). Skóre 4." },
+                new() { Lemma = "spatneslovo", IsRejected = true, Note = "Z rozbor (dávkový rozbor textu). Skóre 2." },
+                new() { Lemma = "nerozhodnuto", Note = "Z rozbor (dávkový rozbor textu). Skóre 2." },
+                new() { Lemma = "ze-sezeni", IsConfirmed = true },
+            };
+
+            var result = BenchmarkReporter.Summarize(proposals);
+
+            Assert.AreEqual(2, result.Confirmed);
+            Assert.AreEqual(1, result.Rejected);
+            Assert.AreEqual(1, result.Undecided);
+            Assert.AreEqual(3, result.Decided);
+            Assert.AreEqual(2.0 / 3.0, result.SuccessRate!.Value, 0.0001);
+        }
+
+        /// <summary>
+        /// Verifies that a success rate is not reported at all when nothing has been decided — the
+        /// whole reason <see cref="WordProposal.IsRejected"/> exists is so an unreviewed backlog cannot
+        /// be silently counted as failure, and reporting 0% here would do exactly that.
+        /// </summary>
+        [TestMethod]
+        public void BenchmarkReporterReportsNoSuccessRateWhenNothingDecided()
+        {
+            var proposals = new List<WordProposal>
+            {
+                new() { Lemma = "nerozhodnuto", Note = "Z rozbor (dávkový rozbor textu). Skóre 2." },
+            };
+
+            var result = BenchmarkReporter.Summarize(proposals);
+
+            Assert.AreEqual(0, result.Decided);
+            Assert.IsNull(result.SuccessRate);
+        }
+
         // ── KnownWords ───────────────────────────────────────────────────────────
 
         /// <summary>
