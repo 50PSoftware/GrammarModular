@@ -93,7 +93,42 @@ namespace Grammar.Czech.Analyzer.Candidates
                 }
             }
 
-            return DropRedundantSuffixVariants(results);
+            return DropRedundantSuffixVariants(DropLParticipleNoutAlternativeWhenTPreferredExists(results));
+        }
+
+        // ReconstructInfinitives tries both "stem+t" and "stem+nout" from the identical l-participle
+        // stem for every candidate — the "+nout" reading exists only for the genuinely irregular class
+        // 2 verbs that drop "-nu-" in their own l-participle (vzniknout -> vznikl, stem "vznik", where
+        // "vznikt" is not a valid shape for any other class and no sibling ever exists to compete with).
+        // For an ordinary verb the l-participle stem already carries the thematic vowel its real class
+        // needs, so "stem+t" alone lands on a validly-shaped trida3/4/5 infinitive on its own — every
+        // one of those classes' own suffixes ends in "t" — and that sibling is corroborated by the
+        // exact same l-participle forms, not a second, independent sighting. "rozvíjenout" tied
+        // "rozvíjet" on a real article for this reason, and "umožninout"/"umožnit" the same way, not
+        // because either is a real word for two different verbs.
+        private static List<MatchCandidate> DropLParticipleNoutAlternativeWhenTPreferredExists(List<MatchCandidate> results)
+        {
+            var suppressed = new HashSet<int>();
+
+            for (var i = 0; i < results.Count; i++)
+            {
+                var candidate = results[i];
+
+                if (candidate.Pattern != "trida2" || !candidate.Lemma.EndsWith("nout", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var tAlternative = candidate.Lemma[..^4] + "t";
+                var sibling = results.Find(other => other.Pattern != "trida2" && other.Lemma == tAlternative);
+
+                if (sibling is not null && sibling.Score >= candidate.Score)
+                {
+                    suppressed.Add(i);
+                }
+            }
+
+            return results.Where((_, index) => !suppressed.Contains(index)).ToList();
         }
 
         // DeriveTridaN strips exactly two characters for every one of class 4's four candidate suffixes

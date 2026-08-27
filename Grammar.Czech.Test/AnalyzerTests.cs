@@ -1120,6 +1120,27 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that the l-participle reconstruction's own "+nout" alternative is dropped once its
+        /// "+t" sibling — the shape trida3/4/5 always land on from the same stem, since every one of
+        /// their own suffixes ends in "t" — exists and scores at least as well. "rozvíjenout" tied
+        /// "rozvíjet" on a real article about painting, corroborated by the exact same three l-participle
+        /// forms (rozvíjela, rozvíjelo, rozvíjeli) as the real trida4 verb, not a second sighting of
+        /// anything. Unlike the genuinely irregular class 2 verbs the "+nout" reading exists for
+        /// (vzniknout, whose l-participle "vznikl" has no "+t" sibling at all — "vznikt" is not a valid
+        /// shape for any class), an ordinary verb's l-participle stem always has one.
+        /// </summary>
+        [TestMethod]
+        public void VerbMatcherDropsNoutAlternativeWhenTSiblingExists()
+        {
+            var corpus = new Dictionary<string, int> { ["rozvíjela"] = 1, ["rozvíjelo"] = 1, ["rozvíjeli"] = 1 };
+
+            var candidates = verbMatcher.Match("rozvíjela", corpus, noProperNouns);
+
+            Assert.IsTrue(candidates.Any(candidate => candidate.Lemma == "rozvíjet" && candidate.Pattern == "trida4"));
+            Assert.IsFalse(candidates.Any(candidate => candidate.Lemma == "rozvíjenout"));
+        }
+
+        /// <summary>
         /// Verifies that a class-4 reconstruction is rejected when its only corroboration is the
         /// ambiguous í/ím pair — "prostředit" (invented) scored the same way "konkrétní" (adjective) and
         /// "prostředí" (noun, stavení-pattern) do, since a jarní adjective's own citation form and
