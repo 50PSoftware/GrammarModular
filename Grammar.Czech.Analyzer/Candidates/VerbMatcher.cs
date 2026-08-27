@@ -32,6 +32,13 @@ namespace Grammar.Czech.Analyzer.Candidates
     {
         private static readonly string[] RegularClasses = ["trida1", "trida2", "trida3", "trida4", "trida5"];
 
+        /// <summary>
+        /// The five regular verb-class patterns this matcher tries. Exposed so the GUI's pattern
+        /// correction combo box offers exactly the patterns a verb candidate could actually be, not a
+        /// free-text field that could write a pattern nothing in the lexicon recognizes.
+        /// </summary>
+        public static IReadOnlyList<string> Patterns => RegularClasses;
+
         private static readonly string[] Trida5PresentEndings = ["ají", "áme", "áte", "ám", "áš", "á"];
         private static readonly string[] Trida4PresentEndings = ["íme", "íte", "ím", "íš", "í"];
         private static readonly string[] Trida3PresentEndings = ["jeme", "jete", "jí", "ji", "ješ", "je"];

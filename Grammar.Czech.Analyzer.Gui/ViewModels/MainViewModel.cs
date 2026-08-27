@@ -1,10 +1,12 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Grammar.Core.Enums;
 using Grammar.Czech.Analyzer.Candidates;
 using Grammar.Czech.Analyzer.Gui.Models;
 using Grammar.Czech.Cli.Sentence;
 using Grammar.Czech.Interfaces;
+using Grammar.Czech.Models;
 using Grammar.Czech.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -29,6 +31,9 @@ public partial class MainViewModel : ViewModelBase
     private readonly NounMatcher _nounMatcher;
     private readonly AdjectiveMatcher _adjectiveMatcher;
     private readonly VerbMatcher _verbMatcher;
+    private readonly IReadOnlyDictionary<string, NounPattern> _nounPatterns;
+    private readonly IReadOnlyList<string> _nounPatternNames;
+    private readonly IReadOnlyList<string> _adjectivePatternNames;
 
     public MainViewModel()
     {
@@ -37,11 +42,43 @@ public partial class MainViewModel : ViewModelBase
         _services = collection.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true });
 
         _known = new KnownWords(_services);
+        var nounDataProvider = _services.GetRequiredService<INounDataProvider>();
         _nounMatcher = new NounMatcher(
-            _services.GetRequiredService<CzechNounDeclensionService>(),
-            _services.GetRequiredService<INounDataProvider>());
+            _services.GetRequiredService<CzechNounDeclensionService>(), nounDataProvider);
         _adjectiveMatcher = new AdjectiveMatcher(_services.GetRequiredService<CzechAdjectiveDeclensionService>());
         _verbMatcher = new VerbMatcher(_services.GetRequiredService<CzechVerbConjugationService>());
+
+        _nounPatterns = nounDataProvider.GetPatterns();
+        _nounPatternNames = _nounPatterns.Keys.OrderBy(name => name, StringComparer.Ordinal).ToList();
+        _adjectivePatternNames = _services.GetRequiredService<IAdjectiveDataProvider>()
+            .GetPatterns().Keys.OrderBy(name => name, StringComparer.Ordinal).ToList();
+    }
+
+    // Only the patterns a candidate's own category could ever be — offering a verb's patterns on a
+    // noun row (or vice versa) would let a correction land on a shape GenerateAndTest never tried for
+    // it in the first place.
+    private IReadOnlyList<string> AvailablePatterns(WordCategory category) => category switch
+    {
+        WordCategory.Noun => _nounPatternNames,
+        WordCategory.Adjective => _adjectivePatternNames,
+        WordCategory.Verb => VerbMatcher.Patterns,
+        _ => [],
+    };
+
+    // Gender/animacy are implied by a noun pattern, not an independent choice (žena is feminine
+    // because it is žena, not because someone also ticked "feminine") — re-deriving them here the same
+    // way NounMatcher itself does keeps a corrected candidate as internally consistent as one rozbor
+    // found on its own. Adjectives and verbs carry no such per-pattern gender/animacy to re-derive.
+    private MatchCandidate Repattern(MatchCandidate candidate, string pattern)
+    {
+        if (candidate.Category != WordCategory.Noun || !_nounPatterns.TryGetValue(pattern, out var nounPattern))
+        {
+            return candidate with { Pattern = pattern };
+        }
+
+        var (gender, isAnimate) = NounMatcher.ParseGender(nounPattern.Gender);
+
+        return candidate with { Pattern = pattern, Gender = gender, IsAnimate = isAnimate };
     }
 
     [ObservableProperty]
@@ -183,6 +220,10 @@ public partial class MainViewModel : ViewModelBase
             .Take(Limit)
             .ToList();
 
-        return ranked.Select(candidate => new CandidateRow(candidate, corpus.GetValueOrDefault(candidate.Lemma))).ToList();
+        return ranked.Select(candidate => new CandidateRow(
+            candidate,
+            corpus.GetValueOrDefault(candidate.Lemma),
+            AvailablePatterns(candidate.Category),
+            Repattern)).ToList();
     }
 }

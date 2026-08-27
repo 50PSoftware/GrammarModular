@@ -270,7 +270,11 @@ namespace Grammar.Czech.Analyzer.Candidates
         // "masculineAnimate"/"masculineInanimate"/"feminine"/"neuter", as Data/Rules/Nouns/patterns.json
         // spells them. Animacy comes bundled with gender here because that is how the patterns
         // themselves are split — pán and hrad are different pattern rows, not one row with a flag.
-        private static (Gender? gender, bool? isAnimate) ParseGender(string patternGender) => patternGender switch
+        //
+        // Public rather than private: the GUI's pattern-correction combo box needs the same mapping when
+        // a person picks a different noun pattern for a candidate, so the gender/animacy it writes stays
+        // consistent with the pattern rather than carrying over whatever the original wrong guess had.
+        public static (Gender? gender, bool? isAnimate) ParseGender(string patternGender) => patternGender switch
         {
             "masculineAnimate" => (Grammar.Core.Enums.Gender.Masculine, true),
             "masculineInanimate" => (Grammar.Core.Enums.Gender.Masculine, false),

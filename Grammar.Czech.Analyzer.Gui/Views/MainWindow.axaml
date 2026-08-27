@@ -79,7 +79,15 @@
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Header="Slovo" Binding="{Binding Lemma}" Width="160" IsReadOnly="True" />
                 <DataGridTextColumn Header="Kategorie" Binding="{Binding Category}" Width="90" IsReadOnly="True" />
-                <DataGridTextColumn Header="Vzor" Binding="{Binding Pattern}" Width="90" IsReadOnly="True" />
+                <DataGridTemplateColumn Header="Vzor" Width="110">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="models:CandidateRow">
+                            <ComboBox ItemsSource="{Binding AvailablePatterns}"
+                                      SelectedItem="{Binding Pattern}"
+                                      HorizontalAlignment="Stretch" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTextColumn Header="Skóre" Binding="{Binding Score}" Width="60" IsReadOnly="True" />
                 <DataGridTextColumn Header="Četnost" Binding="{Binding Frequency}" Width="70" IsReadOnly="True" />
                 <DataGridTextColumn Header="Tvary v textu" Binding="{Binding MatchedForms}" Width="*" IsReadOnly="True" />

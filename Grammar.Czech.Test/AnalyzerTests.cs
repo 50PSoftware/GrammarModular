@@ -622,6 +622,33 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that <see cref="NounMatcher.ParseGender"/> reads gender and animacy off a pattern's
+        /// own registered string the same way it always has — now public because the GUI's pattern
+        /// correction combo box needs the identical mapping to keep a corrected noun candidate's
+        /// gender/animacy consistent with whatever pattern a person picks for it.
+        /// </summary>
+        [TestMethod]
+        public void NounMatcherParseGenderReadsGenderAndAnimacyFromPatternGenderString()
+        {
+            Assert.AreEqual((Core.Enums.Gender.Masculine, true), NounMatcher.ParseGender("masculineAnimate"));
+            Assert.AreEqual((Core.Enums.Gender.Masculine, false), NounMatcher.ParseGender("masculineInanimate"));
+            Assert.AreEqual(((Core.Enums.Gender?)Core.Enums.Gender.Feminine, (bool?)null), NounMatcher.ParseGender("feminine"));
+            Assert.AreEqual(((Core.Enums.Gender?)null, (bool?)null), NounMatcher.ParseGender("cokoliv jineho"));
+        }
+
+        /// <summary>
+        /// Verifies that the five regular verb-class patterns this matcher tries are exposed publicly —
+        /// what the GUI's pattern correction combo box offers for a verb candidate, so a correction can
+        /// only ever land on a pattern <see cref="VerbMatcher"/> itself would actually try.
+        /// </summary>
+        [TestMethod]
+        public void VerbMatcherPatternsListsTheFiveRegularClasses()
+        {
+            CollectionAssert.AreEquivalent(
+                new[] { "trida1", "trida2", "trida3", "trida4", "trida5" }, VerbMatcher.Patterns.ToList());
+        }
+
+        /// <summary>
         /// Verifies that a candidate whose lemma the lexicon already knows is dropped, even though the
         /// token it was reconstructed from never literally appears as that lemma — the gap the per-token
         /// known-word check cannot close on its own.
