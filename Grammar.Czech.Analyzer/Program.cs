@@ -154,6 +154,10 @@ root.SetAction(async (parse, cancellationToken) =>
     Console.Error.WriteLine($"Tokenů v textu (různých): {corpus.Count}, "
         + $"z toho vypadá na vlastní jméno: {properNouns.Count}");
 
+    var store = new WordProposals(navrhy?.FullName);
+    var existingLemmas = new HashSet<string>(
+        store.Read().Select(proposal => proposal.Lemma.ToLowerInvariant()));
+
     var candidates = new List<MatchCandidate>();
 
     foreach (var token in corpus.Keys)
@@ -177,7 +181,8 @@ root.SetAction(async (parse, cancellationToken) =>
         }
     }
 
-    var ranked = CandidateRanking.Thin(CandidateRanking.DropVowelEndingNounDuplicates(candidates, known.IsKnown), vzoruNaSlovo)
+    var handled = CandidateRanking.DropAlreadyHandled(candidates, known.IsKnown, existingLemmas);
+    var ranked = CandidateRanking.Thin(CandidateRanking.DropVowelEndingNounDuplicates(handled, known.IsKnown), vzoruNaSlovo)
         .OrderByDescending(candidate => candidate.Score)
         .ThenByDescending(candidate => corpus.GetValueOrDefault(candidate.Lemma))
         .Take(limit)
@@ -188,7 +193,7 @@ root.SetAction(async (parse, cancellationToken) =>
 
     if (!bezNavrhu)
     {
-        var added = ProposalWriter.WriteNew(ranked, new WordProposals(navrhy?.FullName));
+        var added = ProposalWriter.WriteNew(ranked, store);
         Console.Error.WriteLine($"Přidáno {added} nových návrhů do navrhy.json "
             + $"(zbytek už tam byl, z tohohle nebo dřívějšího běhu).");
     }

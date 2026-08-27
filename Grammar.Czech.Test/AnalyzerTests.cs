@@ -622,6 +622,49 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that a candidate whose lemma the lexicon already knows is dropped, even though the
+        /// token it was reconstructed from never literally appears as that lemma — the gap the per-token
+        /// known-word check cannot close on its own.
+        /// </summary>
+        [TestMethod]
+        public void DropAlreadyHandledDropsCandidateAlreadyKnownToTheLexicon()
+        {
+            var candidate = new MatchCandidate("dělat", Core.Enums.WordCategory.Verb, "trida5", null, null, ["dělal"]);
+
+            var dropped = CandidateRanking.DropAlreadyHandled([candidate], lemma => lemma == "dělat", new HashSet<string>());
+
+            Assert.AreEqual(0, dropped.Count);
+        }
+
+        /// <summary>
+        /// Verifies that a candidate already sitting in navrhy.json under the same lemma is dropped too
+        /// — a person or an earlier run already proposed it, so it should not clutter the CSV/GUI list a
+        /// second time even though it is silently skipped again at write time regardless.
+        /// </summary>
+        [TestMethod]
+        public void DropAlreadyHandledDropsCandidateAlreadyInProposalQueue()
+        {
+            var candidate = new MatchCandidate("pořádek", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false, ["pořádek"]);
+
+            var dropped = CandidateRanking.DropAlreadyHandled([candidate], _ => false, new HashSet<string> { "pořádek" });
+
+            Assert.AreEqual(0, dropped.Count);
+        }
+
+        /// <summary>
+        /// Verifies that a genuinely new candidate — neither known nor already proposed — survives.
+        /// </summary>
+        [TestMethod]
+        public void DropAlreadyHandledKeepsGenuinelyNewCandidate()
+        {
+            var candidate = new MatchCandidate("pořádek", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false, ["pořádek"]);
+
+            var dropped = CandidateRanking.DropAlreadyHandled([candidate], _ => false, new HashSet<string>());
+
+            Assert.AreEqual(1, dropped.Count);
+        }
+
+        /// <summary>
         /// Verifies that a vowel-ending noun hypothesis is dropped when a same-pattern candidate for
         /// the consonant-stripped spelling scores at least as well — "zápasí" (really the verb form,
         /// not a noun) generates the same oblique-case forms as the real noun "zápas" once a suffix is

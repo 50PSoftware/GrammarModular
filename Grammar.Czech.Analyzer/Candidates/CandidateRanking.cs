@@ -75,6 +75,26 @@ namespace Grammar.Czech.Analyzer.Candidates
         private static readonly string[] JitCompoundLParticipleEndings = ["šel", "šla", "šlo", "šli", "šly"];
 
         /// <summary>
+        /// Drops candidates whose lemma is already known or already sitting in the proposal queue.
+        /// </summary>
+        /// <remarks>
+        /// The per-token check in <c>Program.cs</c>/<c>MainViewModel</c> only looks at the exact surface
+        /// form a token was found under — it cannot catch a reconstructed lemma that differs from every
+        /// token in the text (a verb's infinitive is rarely the form actually written). Run first, before
+        /// <see cref="Thin"/> or <see cref="DropVowelEndingNounDuplicates"/>, so an already-known or
+        /// already-proposed word never gets to win a tie-break group and crowd out a real candidate.
+        /// </remarks>
+        /// <param name="candidates">The raw candidates, any order.</param>
+        /// <param name="isKnown">Whether a given lemma is already in the lexicon or a closed class.</param>
+        /// <param name="alreadyProposed">Lemmas already sitting in <c>navrhy.json</c>, case-folded.</param>
+        public static IReadOnlyList<MatchCandidate> DropAlreadyHandled(
+            IEnumerable<MatchCandidate> candidates, Func<string, bool> isKnown, IReadOnlySet<string> alreadyProposed)
+            => candidates
+                .Where(candidate => !isKnown(candidate.Lemma)
+                    && !alreadyProposed.Contains(candidate.Lemma.ToLowerInvariant()))
+                .ToList();
+
+        /// <summary>
         /// Keeps, per distinct lemma, only the candidates tied for that lemma's highest score, capped
         /// to at most <paramref name="maxPerWord"/> of them.
         /// </summary>

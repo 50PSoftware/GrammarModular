@@ -142,6 +142,9 @@ public partial class MainViewModel : ViewModelBase
         var corpus = Tokenizer.CountTokens(rawText);
         var properNouns = Tokenizer.FindLikelyProperNouns(rawText);
 
+        var existingLemmas = new HashSet<string>(
+            new WordProposals().Read().Select(proposal => proposal.Lemma.ToLowerInvariant()));
+
         var candidates = new List<MatchCandidate>();
 
         foreach (var token in corpus.Keys)
@@ -165,7 +168,8 @@ public partial class MainViewModel : ViewModelBase
             }
         }
 
-        var ranked = CandidateRanking.Thin(CandidateRanking.DropVowelEndingNounDuplicates(candidates, _known.IsKnown), VzoruNaSlovo)
+        var handled = CandidateRanking.DropAlreadyHandled(candidates, _known.IsKnown, existingLemmas);
+        var ranked = CandidateRanking.Thin(CandidateRanking.DropVowelEndingNounDuplicates(handled, _known.IsKnown), VzoruNaSlovo)
             .OrderByDescending(candidate => candidate.Score)
             .ThenByDescending(candidate => corpus.GetValueOrDefault(candidate.Lemma))
             .Take(Limit)
