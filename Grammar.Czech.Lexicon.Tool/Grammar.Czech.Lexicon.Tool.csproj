@@ -13,7 +13,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>slovnik</ToolCommandName>
     <PackageId>50PSoftware.GrammarModular.Czech.LexiconTool</PackageId>
-    <Version>1.0.0-preview.33</Version>
+    <Version>1.0.0-preview.34</Version>
     <Authors>Vojtěch Pchálek</Authors>
     <Company>50PSoftware</Company>
     <Description>Správa slovníku pro Grammar Modular — stahování, kontrola a export.</Description>
