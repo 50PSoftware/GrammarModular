@@ -53,9 +53,19 @@ namespace Grammar.Czech.Cli.Sentence
         /// Initializes a new instance of the <see cref="WordProposals"/> type.
         /// </summary>
         /// <param name="path">The file to keep the proposals in, or <see langword="null"/> for the default.</param>
+        /// <remarks>
+        /// Resolution order: an explicit <paramref name="path"/>, then the environment variable, then
+        /// the <c>navrhy</c> key in a <c>lexikon.json</c> a caller's own working directory sits under
+        /// (see <see cref="LexiconSettings.ProposalsPath"/>), then the fixed application-directory
+        /// default. A project that already keeps its lexicon settings in one file no longer needs a
+        /// session-only environment variable just to point every tool at the same proposals queue.
+        /// </remarks>
         public WordProposals(string? path = null)
         {
-            _path = path ?? Environment.GetEnvironmentVariable(PathVariable) ?? DefaultPath();
+            _path = path
+                ?? Environment.GetEnvironmentVariable(PathVariable)
+                ?? LexiconSettings.ProposalsPath()
+                ?? DefaultPath();
         }
 
         /// <summary>

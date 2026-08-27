@@ -4,24 +4,25 @@ using System.Text.Json.Serialization;
 namespace Grammar.Czech.Cli
 {
     /// <summary>
-    /// Reads the lexicon path out of the project settings file the lexicon tool already uses.
+    /// Reads the lexicon and proposals paths out of the project settings file the lexicon tool already
+    /// uses.
     /// </summary>
     /// <remarks>
-    /// The two tools work on the same dictionary and there is no reason for a project to have to say
-    /// where it is twice. <c>lexikon.json</c> is where a project writes down what it always wants, it is
-    /// looked for by walking up from the working directory, and the path in it is taken relative to the
+    /// The tools work on the same project and there is no reason for a project to have to say where its
+    /// files are twice. <c>lexikon.json</c> is where a project writes down what it always wants, it is
+    /// looked for by walking up from the working directory, and a path in it is taken relative to the
     /// file rather than to the working directory — otherwise the same setting would mean a different
     /// file in every subdirectory.
     /// <para>
-    /// Only the <c>database</c> key is read. The address and the token belong to the tool that talks to
-    /// the API, and this application never does; a key it does not understand is simply ignored, so the
-    /// same file serves both.
+    /// Only the <c>database</c> and <c>navrhy</c> keys are read. The address and the token belong to the
+    /// tool that talks to the API, and this application never does; a key it does not understand is
+    /// simply ignored, so the same file serves every tool that reads it.
     /// </para>
     /// <para>
     /// This is a small copy of what <c>ToolSettings</c> does, and it is a copy on purpose: the two are
     /// separate .NET tools and referencing the lexicon tool from here would pull the whole of it —
     /// importer, API client, seeds — into a package that generates sentences. What is duplicated is the
-    /// file name, one key and the upward search, and both sides state the same rule.
+    /// file name, two keys and the upward search, and both sides state the same rule.
     /// </para>
     /// </remarks>
     public static class LexiconSettings
@@ -36,7 +37,23 @@ namespace Grammar.Czech.Cli
         /// </summary>
         /// <returns>The path, or <see langword="null"/> when no file names one.</returns>
         /// <exception cref="CliException">Thrown when the settings file cannot be read.</exception>
-        public static string? DatabasePath()
+        public static string? DatabasePath() => ResolvePath(file => file.Database);
+
+        /// <summary>
+        /// Finds the proposals-queue path a settings file names, if there is one.
+        /// </summary>
+        /// <returns>The path, or <see langword="null"/> when no file names one.</returns>
+        /// <exception cref="CliException">Thrown when the settings file cannot be read.</exception>
+        /// <remarks>
+        /// Sits between the <c>GRAMMAR_CZECH_NAVRHY</c> environment variable and
+        /// <see cref="Sentence.WordProposals"/>'s own application-directory default in the priority a
+        /// caller resolves a proposals path in — a project setting is worth more than a global fallback,
+        /// but an explicit path or a session's own environment variable still wins over what a project
+        /// wrote down once.
+        /// </remarks>
+        public static string? ProposalsPath() => ResolvePath(file => file.Navrhy);
+
+        private static string? ResolvePath(Func<SettingsFile, string?> select)
         {
             if (FindFile() is not { } path)
             {
@@ -58,14 +75,16 @@ namespace Grammar.Czech.Cli
 
             // Prázdný klíč znamená „tady nenastaveno" a propadne dál na proměnnou prostředí, místo aby
             // ji přebil ničím.
-            if (string.IsNullOrWhiteSpace(file?.Database))
+            var value = file is null ? null : select(file);
+
+            if (string.IsNullOrWhiteSpace(value))
             {
                 return null;
             }
 
-            return Path.IsPathRooted(file.Database)
-                ? file.Database
-                : Path.GetFullPath(Path.Combine(Path.GetDirectoryName(path)!, file.Database));
+            return Path.IsPathRooted(value)
+                ? value
+                : Path.GetFullPath(Path.Combine(Path.GetDirectoryName(path)!, value));
         }
 
         // Nahoru od pracovního adresáře, takže globálně nainstalovaný nástroj najde nastavení toho
@@ -93,6 +112,9 @@ namespace Grammar.Czech.Cli
         {
             [JsonPropertyName("database")]
             public string? Database { get; set; }
+
+            [JsonPropertyName("navrhy")]
+            public string? Navrhy { get; set; }
         }
     }
 }

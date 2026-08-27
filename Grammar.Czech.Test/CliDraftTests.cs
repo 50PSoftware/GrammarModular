@@ -915,6 +915,103 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// The proposals-queue path is taken from the same settings file, under its own "navrhy" key —
+        /// a project that already keeps its lexicon settings in one file should not need a
+        /// session-only environment variable just to point every tool at the same queue.
+        /// </summary>
+        [TestMethod]
+        [DoNotParallelize]
+        public void ProposalsPathComesFromTheSettingsFile()
+        {
+            var root = Directory.CreateDirectory(
+                Path.Combine(Path.GetTempPath(), $"gramatika-nastaveni-{Guid.NewGuid():N}"));
+            var deep = root.CreateSubdirectory("a").CreateSubdirectory("b");
+            var previous = Directory.GetCurrentDirectory();
+
+            try
+            {
+                File.WriteAllText(
+                    Path.Combine(root.FullName, LexiconSettings.FileName),
+                    """{ "database": "slovnik/lexikon.db", "navrhy": "navrhy.json" }""");
+
+                Directory.SetCurrentDirectory(deep.FullName);
+
+                Assert.AreEqual(
+                    Path.Combine(root.FullName, "navrhy.json"),
+                    LexiconSettings.ProposalsPath());
+            }
+            finally
+            {
+                Directory.SetCurrentDirectory(previous);
+                root.Delete(recursive: true);
+            }
+        }
+
+        /// <summary>
+        /// A settings file that says nothing about a proposals queue falls through instead of
+        /// overriding the environment variable or the application default with nothing.
+        /// </summary>
+        [TestMethod]
+        [DoNotParallelize]
+        public void SettingsFileWithoutANavrhyKeyFallsThrough()
+        {
+            var root = Directory.CreateDirectory(
+                Path.Combine(Path.GetTempPath(), $"gramatika-nastaveni-{Guid.NewGuid():N}"));
+            var previous = Directory.GetCurrentDirectory();
+
+            try
+            {
+                File.WriteAllText(
+                    Path.Combine(root.FullName, LexiconSettings.FileName),
+                    """{ "database": "slovnik/lexikon.db" }""");
+
+                Directory.SetCurrentDirectory(root.FullName);
+
+                Assert.IsNull(LexiconSettings.ProposalsPath());
+            }
+            finally
+            {
+                Directory.SetCurrentDirectory(previous);
+                root.Delete(recursive: true);
+            }
+        }
+
+        /// <summary>
+        /// A fresh <see cref="WordProposals"/> with no explicit path and no environment variable set
+        /// picks up the "navrhy" key from a <c>lexikon.json</c> its own working directory sits under —
+        /// the actual end-to-end reason the settings-file key exists at all.
+        /// </summary>
+        [TestMethod]
+        [DoNotParallelize]
+        public void WordProposalsUsesSettingsFileNavrhyPathWhenNothingElseIsSet()
+        {
+            var root = Directory.CreateDirectory(
+                Path.Combine(Path.GetTempPath(), $"gramatika-nastaveni-{Guid.NewGuid():N}"));
+            var previous = Directory.GetCurrentDirectory();
+            var previousEnv = Environment.GetEnvironmentVariable(WordProposals.PathVariable);
+
+            try
+            {
+                File.WriteAllText(
+                    Path.Combine(root.FullName, LexiconSettings.FileName),
+                    """{ "navrhy": "navrhy.json" }""");
+
+                Directory.SetCurrentDirectory(root.FullName);
+                Environment.SetEnvironmentVariable(WordProposals.PathVariable, null);
+
+                var proposals = new WordProposals();
+
+                Assert.AreEqual(Path.Combine(root.FullName, "navrhy.json"), proposals.Path);
+            }
+            finally
+            {
+                Directory.SetCurrentDirectory(previous);
+                Environment.SetEnvironmentVariable(WordProposals.PathVariable, previousEnv);
+                root.Delete(recursive: true);
+            }
+        }
+
+        /// <summary>
         /// An inflected word is named as such rather than taken for a lemma of its own.
         /// </summary>
         /// <remarks>
