@@ -116,20 +116,28 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private void WriteSelected()
     {
-        var selected = Candidates.Where(row => row.IsSelected).Select(row => row.Candidate).ToList();
+        var confirmed = Candidates.Where(row => row.IsSelected).Select(row => row.Candidate).ToList();
+        var excluded = Candidates.Where(row => row.IsExcluded).Select(row => row.Candidate).ToList();
 
-        if (selected.Count == 0)
+        if (confirmed.Count == 0 && excluded.Count == 0)
         {
             StatusText = "Nic není zaškrtnuté.";
             return;
         }
 
-        var added = ProposalWriter.WriteNew(selected, new WordProposals(), confirmed: true);
-        StatusText = $"Přidáno {added} nových návrhů do navrhy.json, rovnou jako potvrzené (zbytek už tam byl).";
+        // Jedno úložiště, dva zápisy: druhý přečte soubor znovu, takže vidí i to, co zapsal ten první,
+        // a lemma zaškrtnuté v obou sloupcích (což UI samo nedovolí) by nikdy neskončilo dvakrát.
+        var store = new WordProposals();
+        var addedConfirmed = confirmed.Count > 0 ? ProposalWriter.WriteNew(confirmed, store, confirmed: true) : 0;
+        var addedExcluded = excluded.Count > 0 ? ProposalWriter.WriteNew(excluded, store, rejected: true) : 0;
 
-        foreach (var row in Candidates.Where(row => row.IsSelected))
+        StatusText = $"Přidáno {addedConfirmed} potvrzených a {addedExcluded} vyloučených do navrhy.json "
+            + "(zbytek už tam byl).";
+
+        foreach (var row in Candidates.Where(row => row.IsSelected || row.IsExcluded))
         {
             row.IsSelected = false;
+            row.IsExcluded = false;
         }
     }
 

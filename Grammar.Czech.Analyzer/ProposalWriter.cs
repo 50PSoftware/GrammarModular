@@ -24,6 +24,14 @@ namespace Grammar.Czech.Analyzer
     /// the candidates, so it stays <see langword="false"/> and waits for <c>:slova doplnit</c>; the GUI's
     /// checkbox selection is itself the review, so it writes straight through as confirmed.
     /// </para>
+    /// <para>
+    /// <c>rejected</c> is the mirror case — a person looked at the candidate and decided it is wrong, a
+    /// second checkbox next to the confirming one in the GUI. Writing it straight through as
+    /// <see cref="WordProposal.IsRejected"/>, rather than leaving it unconfirmed for later review, means
+    /// it never comes back: the same "already in the queue" check every future <c>rozbor</c> run applies
+    /// (see <see cref="Candidates.CandidateRanking.DropAlreadyHandled"/>) treats a rejected lemma exactly
+    /// like a confirmed one, so a word marked wrong once is not proposed again either.
+    /// </para>
     /// </remarks>
     public static class ProposalWriter
     {
@@ -37,11 +45,17 @@ namespace Grammar.Czech.Analyzer
         /// Whether a person already reviewed these candidates before they got here — the GUI's checkbox
         /// selection counts, a bare CLI batch run does not. Passed straight through to
         /// <see cref="WordProposal.IsConfirmed"/> so a reviewed write skips the review queue instead of
-        /// being indistinguishable from an unreviewed guess.
+        /// being indistinguishable from an unreviewed guess. Ignored when <paramref name="rejected"/> is
+        /// set — a candidate cannot be both.
+        /// </param>
+        /// <param name="rejected">
+        /// Whether a person already looked at these candidates and decided they are wrong — the GUI's
+        /// exception checkbox. Passed straight through to <see cref="WordProposal.IsRejected"/> so the
+        /// word is excluded for good, the same as if it had been rejected via <c>:slova doplnit</c>.
         /// </param>
         /// <returns>How many proposals were newly written.</returns>
         public static int WriteNew(
-            IReadOnlyList<MatchCandidate> ranked, WordProposals store, bool confirmed = false)
+            IReadOnlyList<MatchCandidate> ranked, WordProposals store, bool confirmed = false, bool rejected = false)
         {
             var existing = store.Read().ToList();
             var known = new HashSet<string>(
@@ -58,7 +72,8 @@ namespace Grammar.Czech.Analyzer
 
                 var ordered = group.OrderByDescending(candidate => candidate.Score).ToList();
                 additions.Add(ToProposal(
-                    ordered[0], ordered.Skip(1).Select(candidate => candidate.Pattern).ToList(), confirmed));
+                    ordered[0], ordered.Skip(1).Select(candidate => candidate.Pattern).ToList(),
+                    confirmed && !rejected, rejected));
             }
 
             if (additions.Count == 0)
@@ -81,7 +96,7 @@ namespace Grammar.Czech.Analyzer
         }
 
         private static WordProposal ToProposal(
-            MatchCandidate primary, IReadOnlyList<string> alternatePatterns, bool confirmed)
+            MatchCandidate primary, IReadOnlyList<string> alternatePatterns, bool confirmed, bool rejected)
         {
             var note = $"Z rozbor (dávkový rozbor textu). Skóre {primary.Score}, "
                 + $"tvary v textu: {string.Join(", ", primary.MatchedForms)}.";
@@ -99,6 +114,7 @@ namespace Grammar.Czech.Analyzer
                 Pattern = primary.Pattern,
                 IsAnimate = primary.IsAnimate,
                 IsConfirmed = confirmed,
+                IsRejected = rejected,
                 Note = note,
                 SeenAt = DateTimeOffset.Now,
             };

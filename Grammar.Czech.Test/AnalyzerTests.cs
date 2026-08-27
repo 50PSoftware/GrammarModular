@@ -1372,6 +1372,50 @@ namespace Grammar.Czech.Test
             store.Clear();
         }
 
+        /// <summary>
+        /// Verifies that <c>rejected: true</c> writes the proposal already rejected, unconfirmed — this
+        /// is what the GUI passes for a candidate checked in the exception column, so it never comes
+        /// back in a later run the same way a manually rejected word from <c>:slova doplnit</c> does not.
+        /// </summary>
+        [TestMethod]
+        public void ProposalWriterWritesRejectedProposalWhenToldTheCandidateWasAnException()
+        {
+            var store = TemporaryProposals();
+            var candidate = new MatchCandidate(
+                "pořádek", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false,
+                ["pořádek", "pořádku"]);
+
+            var added = ProposalWriter.WriteNew([candidate], store, rejected: true);
+
+            Assert.AreEqual(1, added);
+            var proposal = store.Read().Single();
+            Assert.IsTrue(proposal.IsRejected);
+            Assert.IsFalse(proposal.IsConfirmed);
+
+            store.Clear();
+        }
+
+        /// <summary>
+        /// Verifies that <c>rejected</c> wins if both flags are somehow set — a candidate cannot be both
+        /// confirmed and an exception, and rejection is the safer of the two to default to.
+        /// </summary>
+        [TestMethod]
+        public void ProposalWriterRejectedWinsOverConfirmedWhenBothAreSet()
+        {
+            var store = TemporaryProposals();
+            var candidate = new MatchCandidate(
+                "pořádek", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false,
+                ["pořádek", "pořádku"]);
+
+            ProposalWriter.WriteNew([candidate], store, confirmed: true, rejected: true);
+
+            var proposal = store.Read().Single();
+            Assert.IsTrue(proposal.IsRejected);
+            Assert.IsFalse(proposal.IsConfirmed);
+
+            store.Clear();
+        }
+
         // ── Reporter ─────────────────────────────────────────────────────────────
 
         /// <summary>

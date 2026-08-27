@@ -7,7 +7,8 @@ namespace Grammar.Czech.Analyzer.Gui.Models;
 
 /// <summary>
 /// Wraps one <see cref="MatchCandidate"/> with the extra state a row in the review grid needs — the
-/// text's own frequency for the lemma, and whether a person has checked it to go into the queue.
+/// text's own frequency for the lemma, and whether a person has checked it as confirmed or as an
+/// exception.
 /// </summary>
 public partial class CandidateRow(MatchCandidate candidate, int frequency) : ObservableObject
 {
@@ -17,10 +18,33 @@ public partial class CandidateRow(MatchCandidate candidate, int frequency) : Obs
     public MatchCandidate Candidate { get; } = candidate;
 
     /// <summary>
-    /// Whether a person has checked this row to be added to the proposal queue.
+    /// Whether a person has checked this row to be added to the proposal queue as confirmed.
     /// </summary>
     [ObservableProperty]
     public partial bool IsSelected { get; set; }
+
+    /// <summary>
+    /// Whether a person has checked this row as an exception — wrong, and never to be proposed again.
+    /// Mutually exclusive with <see cref="IsSelected"/>: a row cannot be both confirmed and rejected.
+    /// </summary>
+    [ObservableProperty]
+    public partial bool IsExcluded { get; set; }
+
+    partial void OnIsSelectedChanged(bool value)
+    {
+        if (value)
+        {
+            IsExcluded = false;
+        }
+    }
+
+    partial void OnIsExcludedChanged(bool value)
+    {
+        if (value)
+        {
+            IsSelected = false;
+        }
+    }
 
     public string Lemma => Candidate.Lemma;
 
