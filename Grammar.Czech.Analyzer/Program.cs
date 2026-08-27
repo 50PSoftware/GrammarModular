@@ -14,9 +14,17 @@ using Grammar.Czech.Cli.Sentence;
 using Grammar.Czech.Models;
 using Microsoft.Extensions.DependencyInjection;
 
-var textArgument = new Argument<FileInfo>("text")
+var textArgument = new Argument<FileInfo?>("text")
 {
-    Description = "Cesta k souboru (UTF-8 .txt, .docx nebo .odt), který se má rozebrat.",
+    Description = "Cesta k souboru (UTF-8 .txt, .docx nebo .odt), který se má rozebrat. "
+        + "Vynech, pokud používáš --wiki.",
+    Arity = ArgumentArity.ZeroOrOne,
+};
+
+var wikiOption = new Option<string?>("--wiki")
+{
+    Description = "Název článku na cs.wikipedia.org ke stažení a rozboru, místo souboru. "
+        + "Text se do slovníku nekopíruje, jen se z něj ověřují gramatické tvary.",
 };
 
 var lexiconOption = new Option<FileInfo?>("--slovnik")
@@ -65,6 +73,7 @@ var bezNavrhuOption = new Option<bool>("--bez-navrhu")
 var root = new RootCommand("rozbor — najde v textu slova, která Grammar Modular nezná, a navrhne jim kandidáty na lemma")
 {
     textArgument,
+    wikiOption,
     lexiconOption,
     limitOption,
     minDelkaOption,
@@ -74,9 +83,17 @@ var root = new RootCommand("rozbor — najde v textu slova, která Grammar Modul
     bezNavrhuOption,
 };
 
-root.SetAction(parse =>
+root.SetAction(async (parse, cancellationToken) =>
 {
-    var text = parse.GetValue(textArgument)!;
+    var text = parse.GetValue(textArgument);
+    var wiki = parse.GetValue(wikiOption);
+
+    if (text is null == wiki is null)
+    {
+        Console.Error.WriteLine("Zadej buď cestu k souboru, nebo --wiki \"Název článku\" — právě jedno z obojího.");
+        return 1;
+    }
+
     var lexicon = parse.GetValue(lexiconOption);
     var limit = parse.GetValue(limitOption);
     var minDelka = parse.GetValue(minDelkaOption);
@@ -101,7 +118,9 @@ root.SetAction(parse =>
     var verbMatcher = new VerbMatcher(
         provider.GetRequiredService<Grammar.Czech.Services.CzechVerbConjugationService>());
 
-    var rawText = DocumentReader.ReadText(text.FullName);
+    var rawText = wiki is not null
+        ? await WikipediaReader.FetchArticleTextAsync(wiki, cancellationToken)
+        : DocumentReader.ReadText(text!.FullName);
     var corpus = Tokenizer.CountTokens(rawText);
     var properNouns = Tokenizer.FindLikelyProperNouns(rawText);
     Console.Error.WriteLine($"Tokenů v textu (různých): {corpus.Count}, "
@@ -145,6 +164,8 @@ root.SetAction(parse =>
         Console.Error.WriteLine($"Přidáno {added} nových návrhů do navrhy.json "
             + $"(zbytek už tam byl, z tohohle nebo dřívějšího běhu).");
     }
+
+    return 0;
 });
 
-return root.Parse(args).Invoke();
+return await root.Parse(args).InvokeAsync();

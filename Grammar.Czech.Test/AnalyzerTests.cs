@@ -237,6 +237,59 @@ namespace Grammar.Czech.Test
             }
         }
 
+        // ── WikipediaReader ──────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Verifies that a normal MediaWiki extract response yields the article's plain text — the
+        /// only part of <see cref="WikipediaReader.FetchArticleTextAsync"/> testable without a live
+        /// network call, since <see cref="WikipediaReader.ParseExtract"/> only ever needs the response
+        /// body MediaWiki already returned.
+        /// </summary>
+        [TestMethod]
+        public void WikipediaReaderParsesExtractFromNormalResponse()
+        {
+            var body = """
+                {"batchcomplete":"","query":{"pages":{"12345":{"pageid":12345,"ns":0,
+                    "title":"Vesmír","extract":"Vesmír je souhrn veškeré hmoty a energie."}}}}
+                """;
+
+            Assert.AreEqual("Vesmír je souhrn veškeré hmoty a energie.", WikipediaReader.ParseExtract(body, "Vesmír"));
+        }
+
+        /// <summary>
+        /// Verifies that a missing article — MediaWiki's own <c>"missing":""</c> marker on the page
+        /// object, not an HTTP error — fails with a message naming the article, not a raw JSON error.
+        /// </summary>
+        [TestMethod]
+        public void WikipediaReaderRejectsMissingArticle()
+        {
+            var body = """
+                {"batchcomplete":"","query":{"pages":{"-1":{"ns":0,
+                    "title":"Xyzabcneexistuje","missing":""}}}}
+                """;
+
+            var exception = Assert.ThrowsException<InvalidOperationException>(
+                () => WikipediaReader.ParseExtract(body, "Xyzabcneexistuje"));
+            StringAssert.Contains(exception.Message, "Xyzabcneexistuje");
+        }
+
+        /// <summary>
+        /// Verifies that a real page with no extract at all — a disambiguation page, which MediaWiki
+        /// still returns as a normal page object — is rejected as clearly as an outright missing one,
+        /// rather than handing an empty string down the whole analysis pipeline.
+        /// </summary>
+        [TestMethod]
+        public void WikipediaReaderRejectsArticleWithNoExtract()
+        {
+            var body = """
+                {"batchcomplete":"","query":{"pages":{"999":{"pageid":999,"ns":0,
+                    "title":"Praha (rozcestník)","extract":""}}}}
+                """;
+
+            Assert.ThrowsException<InvalidOperationException>(
+                () => WikipediaReader.ParseExtract(body, "Praha (rozcestník)"));
+        }
+
         // ── KnownWords ───────────────────────────────────────────────────────────
 
         /// <summary>
