@@ -26,6 +26,13 @@ namespace Grammar.Czech.Lexicon.Tool
         /// </summary>
         public const string FileName = "lexikon.json";
 
+        /// <summary>
+        /// The environment variable naming the proposals file — the same one <c>gramatika</c> and
+        /// <c>rozbor</c> read, so all three tools agree on where the queue is without a project having
+        /// to say so more than once.
+        /// </summary>
+        public const string ProposalsPathVariable = "GRAMMAR_CZECH_NAVRHY";
+
         private ToolSettings(SettingsFile file, string? source, string[] args)
         {
             SettingsPath = source;
@@ -36,6 +43,12 @@ namespace Grammar.Czech.Lexicon.Tool
             // Jen --db. --out znamená u každého příkazu něco jiného, takže `dump --out vypis.sql` by si
             // tu .sql cestu vzalo za slovník a otevřelo ji jako databázi.
             DatabasePath = Argument(args, "--db") ?? Relative(Blank(file.Database), source);
+
+            // navrhy má vlastní argument (--soubor, ne --db) ze stejného důvodu jako výše, a stejné
+            // pořadí jako u/token/db: argument, pak soubor projektu, pak proměnná prostředí.
+            ProposalsPath = Argument(args, "--soubor")
+                ?? Relative(Blank(file.Navrhy), source)
+                ?? Variable(ProposalsPathVariable);
 
             PageSize = int.TryParse(Argument(args, "--page-size"), out var size) && size > 0
                 ? size
@@ -61,6 +74,12 @@ namespace Grammar.Czech.Lexicon.Tool
         /// Gets the lexicon path, or <see langword="null"/> to fall back to searching the repository.
         /// </summary>
         public string? DatabasePath { get; }
+
+        /// <summary>
+        /// Gets the proposals-queue path, or <see langword="null"/> to fall back to the fixed
+        /// application-directory default <c>gramatika</c> and <c>rozbor</c> also use.
+        /// </summary>
+        public string? ProposalsPath { get; }
 
         /// <summary>
         /// Gets how many rows to ask for at a time.
@@ -156,6 +175,9 @@ namespace Grammar.Czech.Lexicon.Tool
 
             [JsonPropertyName("database")]
             public string? Database { get; set; }
+
+            [JsonPropertyName("navrhy")]
+            public string? Navrhy { get; set; }
 
             [JsonPropertyName("pageSize")]
             public int PageSize { get; set; }

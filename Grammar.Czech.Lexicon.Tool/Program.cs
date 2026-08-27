@@ -37,7 +37,7 @@ static int Run(string[] args)
             "import" => Import(args, settings),
             "pull" => Pull(args, settings),
             "export-json" => ExportJson(args, settings),
-            "navrhy" => Proposals(args),
+            "navrhy" => Proposals(args, settings),
             _ => Unknown(args[0]),
         };
     }
@@ -210,9 +210,9 @@ static int Report(ValidationReport validation, string path)
 // je nevedl, a tenhle příkaz z nich udělá to, čím se do slovníku obsah přidává — návrh seedu. Zapisovat
 // do slovníku sám klient nemůže: lokální .db je kopie, kterou další pull přepíše, id přiděluje server
 // a API umí jen číst.
-static int Proposals(string[] args)
+static int Proposals(string[] args, ToolSettings settings)
 {
-    var path = Argument(args, "--soubor") ?? DefaultProposalsPath();
+    var path = settings.ProposalsPath ?? DefaultProposalsPath();
     var seeds = Argument(args, "--out") ?? DefaultSeedDirectory();
     var written = ProposalSeedWriter.Write(path, seeds, onlyConfirmed: args.Contains("--jen-potvrzene"));
 
@@ -311,9 +311,9 @@ static void PrintUsage()
 
         Nastavení se bere v tomhle pořadí:
 
-          1. argument         --url, --token, --db, --out, --page-size
-          2. {ToolSettings.FileName,-16}    url, token, database, pageSize — hledá se i v nadřazených adresářích
-          3. prostředí        LEXICON_API_URL, LEXICON_API_TOKEN
+          1. argument         --url, --token, --db, --soubor, --out, --page-size
+          2. {ToolSettings.FileName,-16}    url, token, database, navrhy, pageSize — hledá se i v nadřazených adresářích
+          3. prostředí        LEXICON_API_URL, LEXICON_API_TOKEN, {ToolSettings.ProposalsPathVariable}
 
         Token nech v prostředí; {ToolSettings.FileName} patří do gitu, token ne.
         """);

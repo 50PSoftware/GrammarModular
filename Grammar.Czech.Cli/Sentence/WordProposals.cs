@@ -54,17 +54,18 @@ namespace Grammar.Czech.Cli.Sentence
         /// </summary>
         /// <param name="path">The file to keep the proposals in, or <see langword="null"/> for the default.</param>
         /// <remarks>
-        /// Resolution order: an explicit <paramref name="path"/>, then the environment variable, then
-        /// the <c>navrhy</c> key in a <c>lexikon.json</c> a caller's own working directory sits under
-        /// (see <see cref="LexiconSettings.ProposalsPath"/>), then the fixed application-directory
-        /// default. A project that already keeps its lexicon settings in one file no longer needs a
-        /// session-only environment variable just to point every tool at the same proposals queue.
+        /// Resolution order: an explicit <paramref name="path"/>, then the <c>navrhy</c> key in a
+        /// <c>lexikon.json</c> a caller's own working directory sits under (see
+        /// <see cref="LexiconSettings.ProposalsPath"/>), then the environment variable, then the fixed
+        /// application-directory default — the same order <c>ToolSettings</c> in the lexicon tool
+        /// already uses for its own settings, and the same reason: a value written down for the project
+        /// is more deliberate than one left in a shell, so the file wins when both are set.
         /// </remarks>
         public WordProposals(string? path = null)
         {
             _path = path
-                ?? Environment.GetEnvironmentVariable(PathVariable)
                 ?? LexiconSettings.ProposalsPath()
+                ?? Environment.GetEnvironmentVariable(PathVariable)
                 ?? DefaultPath();
         }
 

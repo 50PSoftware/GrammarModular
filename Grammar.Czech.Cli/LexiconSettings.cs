@@ -45,11 +45,11 @@ namespace Grammar.Czech.Cli
         /// <returns>The path, or <see langword="null"/> when no file names one.</returns>
         /// <exception cref="CliException">Thrown when the settings file cannot be read.</exception>
         /// <remarks>
-        /// Sits between the <c>GRAMMAR_CZECH_NAVRHY</c> environment variable and
-        /// <see cref="Sentence.WordProposals"/>'s own application-directory default in the priority a
-        /// caller resolves a proposals path in — a project setting is worth more than a global fallback,
-        /// but an explicit path or a session's own environment variable still wins over what a project
-        /// wrote down once.
+        /// Beats the <c>GRAMMAR_CZECH_NAVRHY</c> environment variable in the priority a caller resolves
+        /// a proposals path in — only an explicit path (a <c>--soubor</c> argument, or the like) wins
+        /// over what a project wrote down here. A value written down for the project is more deliberate
+        /// than one left in a shell, the same reasoning the lexicon tool's own <c>ToolSettings</c> uses
+        /// for its other settings.
         /// </remarks>
         public static string? ProposalsPath() => ResolvePath(file => file.Navrhy);
 

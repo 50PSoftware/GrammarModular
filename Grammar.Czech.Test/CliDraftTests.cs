@@ -1012,6 +1012,42 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// The "navrhy" key in <c>lexikon.json</c> wins over <c>GRAMMAR_CZECH_NAVRHY</c> when both are
+        /// set — the same order <c>ToolSettings</c> in the lexicon tool uses for its own settings, and
+        /// the same reason: a value written down for the project is more deliberate than one left in a
+        /// shell.
+        /// </summary>
+        [TestMethod]
+        [DoNotParallelize]
+        public void WordProposalsPrefersSettingsFileOverEnvironmentVariable()
+        {
+            var root = Directory.CreateDirectory(
+                Path.Combine(Path.GetTempPath(), $"gramatika-nastaveni-{Guid.NewGuid():N}"));
+            var previous = Directory.GetCurrentDirectory();
+            var previousEnv = Environment.GetEnvironmentVariable(WordProposals.PathVariable);
+
+            try
+            {
+                File.WriteAllText(
+                    Path.Combine(root.FullName, LexiconSettings.FileName),
+                    """{ "navrhy": "z-projektu.json" }""");
+
+                Directory.SetCurrentDirectory(root.FullName);
+                Environment.SetEnvironmentVariable(WordProposals.PathVariable, "ze-shellu.json");
+
+                var proposals = new WordProposals();
+
+                Assert.AreEqual(Path.Combine(root.FullName, "z-projektu.json"), proposals.Path);
+            }
+            finally
+            {
+                Directory.SetCurrentDirectory(previous);
+                Environment.SetEnvironmentVariable(WordProposals.PathVariable, previousEnv);
+                root.Delete(recursive: true);
+            }
+        }
+
+        /// <summary>
         /// An inflected word is named as such rather than taken for a lemma of its own.
         /// </summary>
         /// <remarks>
