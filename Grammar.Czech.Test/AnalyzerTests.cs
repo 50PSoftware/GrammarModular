@@ -729,6 +729,64 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that a noun candidate explained away by an adjective's own instrumental singular
+        /// falls below the corroboration threshold and is dropped — "rozsáhla" (žena, not a real word)
+        /// scored on "rozsáhlé"/"rozsáhlou", but "rozsáhlou" is really the real adjective "rozsáhlý"'s
+        /// own accusative/instrumental feminine singular, spelled identically to žena's own
+        /// instrumental singular ending. Once that shared form no longer counts twice, "rozsáhla" has
+        /// only one matched form left and falls below the threshold on its own — no root-sharing or
+        /// self-consistency check needed, since it was never tied against anything to begin with. Found
+        /// on a real article about evolution, alongside "rychla"/"rychlý" and "cela"/"celý" doing the
+        /// same thing.
+        /// </summary>
+        [TestMethod]
+        public void CandidateRankingDropsNounExplainedByAdjectiveInstrumentalOverlap()
+        {
+            var adjective = new MatchCandidate("rozsáhlý", Core.Enums.WordCategory.Adjective, "mladý", null, null, ["rozsáhlá", "rozsáhlou"]);
+            var noun = new MatchCandidate("rozsáhla", Core.Enums.WordCategory.Noun, "žena", Core.Enums.Gender.Feminine, null, ["rozsáhle", "rozsáhlou"]);
+
+            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([adjective, noun], _ => false);
+
+            Assert.AreEqual(1, dropped.Count);
+            Assert.AreEqual("rozsáhlý", dropped[0].Lemma);
+        }
+
+        /// <summary>
+        /// Verifies that an adjective-explained sibling only drops itself out of a merged root group,
+        /// not the whole group — the first version of this check dropped the entire group whenever any
+        /// member was adjective-explained, the same way isKnown and the possessive check still do
+        /// (correctly, for those two: a known or possessive-derived root really does mean the whole
+        /// group is someone else's word). On a real article about evolution, "skupina" (žena, real,
+        /// score 8) shared a merged root group with "skupinový" (mistried as a noun under turista,
+        /// fully explained by the real adjective "skupinový") through
+        /// <see cref="MergeByRootAndSharedForms"/>'s own shared-form linking across the dozens of
+        /// pattern/token combinations one common, richly-inflected word generates — and dropping the
+        /// whole group for the one poisoned member took "skupina" down with it.
+        /// </summary>
+        [TestMethod]
+        public void CandidateRankingKeepsGroupSiblingNotExplainedByAdjectiveOverlap()
+        {
+            // "skupinový" tacked onto skupina's own matched forms stands in for the chain of
+            // intermediate candidates (many token/pattern combinations of one common word) that bridged
+            // the two roots on the real article — MergeByRootAndSharedForms only needs one candidate's
+            // matched forms to contain another's lemma to union their groups, whatever the real path was.
+            var skupina = new MatchCandidate("skupina", Core.Enums.WordCategory.Noun, "žena", Core.Enums.Gender.Feminine, null,
+                ["skupina", "skupiny", "skupině", "skupinu", "skupinou", "skupin", "skupinách", "skupinami", "skupinový"]);
+            var adjective = new MatchCandidate("skupinový", Core.Enums.WordCategory.Adjective, "mladý", null, null,
+                ["skupinový", "skupinová", "skupinové", "skupinového"]);
+
+            // Shares the merged group with "skupina" above via the bridge, and is fully explained by
+            // the adjective — the poisoned sibling that must not take "skupina" down with it.
+            var poisonedSibling = new MatchCandidate("skupinový", Core.Enums.WordCategory.Noun, "turista", Core.Enums.Gender.Masculine, true,
+                ["skupinový", "skupinové"]);
+
+            var dropped = CandidateRanking.DropVowelEndingNounDuplicates([skupina, adjective, poisonedSibling], _ => false);
+
+            Assert.IsTrue(dropped.Any(c => c.Lemma == "skupina" && c.Category == Core.Enums.WordCategory.Noun));
+            Assert.IsFalse(dropped.Any(c => c.Lemma == "skupinový" && c.Category == Core.Enums.WordCategory.Noun));
+        }
+
+        /// <summary>
         /// Verifies that the bare root "papežov" — the hypothesis <see cref="NounMatcher"/>'s own
         /// reconstruction invents from "papežova" by stripping a noun case ending and reattaching
         /// nothing, since a consonant-final pattern's own nominative singular has no ending to add — is

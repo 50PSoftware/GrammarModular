@@ -208,6 +208,16 @@ namespace Grammar.Czech.Analyzer.Candidates
 
             bool IsKnownOrFound(string lemma) => isKnown(lemma) || allLemmas.Contains(lemma);
 
+            // Žena's own instrumental singular ("-ou") is spelled exactly like a hard adjective's own
+            // instrumental/accusative feminine singular — "rozsáhlou" is real evidence for the real
+            // adjective "rozsáhlý" and, by the same spelling, "real" evidence for a žena-pattern noun
+            // "rozsáhla" that does not exist. Nothing marks a matched form as belonging to one category
+            // rather than the other, so a form already claimed by an adjective candidate found in this
+            // same run cannot count a second time toward a noun's own threshold — see
+            // IsExplainedByAdjectiveOverlap's remarks.
+            var adjectiveForms = new HashSet<string>(
+                list.Where(c => c.Category == WordCategory.Adjective).SelectMany(c => c.MatchedForms));
+
             var nouns = list.Where(c => c.Category == WordCategory.Noun).ToList();
             var groups = MergeByRootAndSharedForms(nouns);
 
@@ -215,14 +225,30 @@ namespace Grammar.Czech.Analyzer.Candidates
 
             foreach (var group in groups)
             {
-                // Checked across the whole merged group, not just the member being scored: "papežov" —
+                // Filtered per candidate, not used to condemn the whole group the way isKnown and the
+                // possessive check below do: this is evidence about one hypothesis's own corroboration
+                // double-counting, not a signal that the whole underlying word belongs to someone else.
+                // A merged group for a common, richly-inflected word can transitively span a completely
+                // unrelated root through MergeByRootAndSharedForms's own shared-form linking — "skupina"
+                // (žena, real, score 8) and "skupinový" (mistried as a noun under turista/občan/učitel,
+                // fully explained by the real adjective "skupinový") ended up in the same merged group
+                // on a real article, and dropping the whole group for one poisoned member would have
+                // taken "skupina" down with it.
+                var candidatesInGroup = group.Where(c => !IsExplainedByAdjectiveOverlap(c, adjectiveForms)).ToList();
+
+                if (candidatesInGroup.Count == 0)
+                {
+                    continue;
+                }
+
+                // Checked across the whole remaining group, not just the member being scored: "papežov" —
                 // the bare root NounMatcher's own reconstruction invents from "papežova" — never itself
                 // matches a possessive suffix (nothing follows the "-ov"), so filtering candidates
                 // before grouping only removed "papežovo"/"papežova" and left "papežov" to win the
                 // group on its own. Every member shares the same underlying word once merged, so one
                 // possessive-shaped sibling is enough to condemn the whole group, the same way one
                 // already-known root drops it below.
-                if (group.Any(c => isKnown(NounRoot(c)) || IsPossessiveAdjectiveDerivative(c.Lemma, IsKnownOrFound)))
+                if (candidatesInGroup.Any(c => isKnown(NounRoot(c)) || IsPossessiveAdjectiveDerivative(c.Lemma, IsKnownOrFound)))
                 {
                     continue;
                 }
@@ -237,7 +263,7 @@ namespace Grammar.Czech.Analyzer.Candidates
                 // rather than needing a competing "jev" candidate or a known root to catch it. "jev" is
                 // three letters, below the default --min-delka, so on some articles no such competitor
                 // is ever generated for it to lose to; this closes that gap without depending on one.
-                var consistent = group.Where(HasSelfConsistentEnding).ToList();
+                var consistent = candidatesInGroup.Where(HasSelfConsistentEnding).ToList();
 
                 if (consistent.Count == 0)
                 {
@@ -347,6 +373,19 @@ namespace Grammar.Czech.Analyzer.Candidates
 
             return false;
         }
+
+        // A form already spoken for by an adjective candidate in this same run cannot also count
+        // toward a noun's own two-form threshold — "rozsáhlou" corroborates the real adjective
+        // "rozsáhlý" (its own instrumental/accusative feminine singular) and, by the identical
+        // spelling, the fake noun "rozsáhla" (žena's own instrumental singular) equally well, because
+        // the two patterns share that one ending. Nothing here needs to know "rozsáhle" is really the
+        // adjective's own derived adverb, not a noun case form at all: once "rozsáhlou" is excluded,
+        // "rozsáhla" is left with a single matched form and falls below the threshold on its own,
+        // the same way any other under-corroborated hypothesis does. A candidate whose own evidence
+        // survives this — most do, since the shared ending is one specific case, not the whole
+        // paradigm — is untouched.
+        private static bool IsExplainedByAdjectiveOverlap(MatchCandidate candidate, IReadOnlySet<string> adjectiveForms) =>
+            candidate.MatchedForms.Count(form => !adjectiveForms.Contains(form)) < 2;
 
         // Mirrors CzechWordStructureResolver.ExtractNounRoot: a lemma ending in a vowel loses it,
         // everything else is the root as-is. Not calling into the service itself because this only
