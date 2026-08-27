@@ -301,16 +301,16 @@ namespace Grammar.Czech.Cli.Interaction
         private void FillProposals()
         {
             var proposals = _proposals.Read().ToList();
-            var open = proposals.Where(proposal => !proposal.IsConfirmed).ToList();
+            var open = proposals.Where(proposal => !proposal.IsConfirmed && !proposal.IsRejected).ToList();
 
             if (open.Count == 0)
             {
-                _output.WriteLine("Není se na co ptát — všechno sebrané je potvrzené.");
+                _output.WriteLine("Není se na co ptát — všechno sebrané je vyřízené.");
 
                 return;
             }
 
-            _output.WriteLine($"Projdeme {open.Count}. Enter potvrdí, co je v závorce; 'p' přeskočí.");
+            _output.WriteLine($"Projdeme {open.Count}. Enter potvrdí, co je v závorce; 'n' zamítne; 'p' přeskočí na příště.");
 
             foreach (var proposal in open)
             {
@@ -329,6 +329,12 @@ namespace Grammar.Czech.Cli.Interaction
 
                 if (answer is "p" or "P")
                 {
+                    continue;
+                }
+
+                if (answer is "n" or "N")
+                {
+                    proposal.IsRejected = true;
                     continue;
                 }
 

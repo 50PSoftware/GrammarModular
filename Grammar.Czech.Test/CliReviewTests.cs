@@ -253,5 +253,42 @@ namespace Grammar.Czech.Test
         {
             StringAssert.Contains(Session("p cas=minuly", ":konec"), "napiš nejdřív lemmata");
         }
+
+        /// <summary>
+        /// ":slova doplnit" tells confirming a proposal (Enter) from rejecting one ('n') — and a
+        /// rejected proposal is not asked about again the next time the command runs.
+        /// </summary>
+        /// <remarks>
+        /// Before <see cref="WordProposal.IsRejected"/> existed, the only two states a proposal could
+        /// be in were "confirmed" and "not yet confirmed" — indistinguishable from "somebody looked at
+        /// this and turned it down". Rejecting is what lets a source's own track record (how many of
+        /// its proposals turned out to be real words) be measured at all.
+        /// </remarks>
+        [TestMethod]
+        [DoNotParallelize]
+        public void FillProposalsDistinguishesConfirmedRejectedAndStillOpen()
+        {
+            var proposals = services.GetRequiredService<WordProposals>();
+            proposals.Clear();
+            proposals.Write([
+                new WordProposal { Lemma = "zavrhnout", Category = WordCategory.Verb, SeenAt = DateTimeOffset.Now },
+                new WordProposal { Lemma = "přijmout", Category = WordCategory.Verb, SeenAt = DateTimeOffset.Now },
+            ]);
+
+            Session(":slova doplnit", "n", "", ":konec");
+
+            var byLemma = proposals.Read().ToDictionary(proposal => proposal.Lemma);
+
+            Assert.IsTrue(byLemma["zavrhnout"].IsRejected);
+            Assert.IsFalse(byLemma["zavrhnout"].IsConfirmed);
+            Assert.IsTrue(byLemma["přijmout"].IsConfirmed);
+            Assert.IsFalse(byLemma["přijmout"].IsRejected);
+
+            // A second pass over the same file should find nothing left to ask — both proposals above
+            // are now settled, one way or the other.
+            var secondPass = Session(":slova doplnit", ":konec");
+
+            StringAssert.Contains(secondPass, "všechno sebrané je vyřízené");
+        }
     }
 }

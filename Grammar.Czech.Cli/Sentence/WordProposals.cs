@@ -222,6 +222,19 @@ namespace Grammar.Czech.Cli.Sentence
         public bool IsConfirmed { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether a person has looked at this proposal and decided it
+        /// does not belong in the dictionary.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately separate from <see cref="IsConfirmed"/> being <see langword="false"/>, which
+        /// also covers a proposal nobody has looked at yet — the two used to be the same bit, so a
+        /// batch source's own track record could not be told from its unreviewed backlog. Rejecting one
+        /// does not remove it: the record of what was tried and turned down is what a source's accuracy
+        /// is measured against, not just a single proposal's own fate.
+        /// </remarks>
+        public bool IsRejected { get; set; }
+
+        /// <summary>
         /// Gets or sets a free note, for whatever the guess could not carry.
         /// </summary>
         public string? Note { get; set; }
@@ -259,8 +272,9 @@ namespace Grammar.Czech.Cli.Sentence
                 parts.Add(Terms.Name(aspect));
             }
 
-            return $"{Lemma} — {string.Join(", ", parts)}"
-                + (IsConfirmed ? " [potvrzeno]" : " [odhad]");
+            var state = IsConfirmed ? "potvrzeno" : IsRejected ? "zamítnuto" : "odhad";
+
+            return $"{Lemma} — {string.Join(", ", parts)} [{state}]";
         }
     }
 }

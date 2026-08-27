@@ -51,6 +51,9 @@ namespace Grammar.Czech.Lexicon.Tool
                 ?? [];
 
             var taken = proposals
+                // A rejected proposal never belongs in a draft, --jen-potvrzene or not: somebody already
+                // looked at it and turned it down, which is a stronger verdict than "not yet confirmed".
+                .Where(proposal => !proposal.IsRejected)
                 .Where(proposal => !onlyConfirmed || proposal.IsConfirmed)
                 .Where(proposal => proposal.Lemma.Length > 0)
                 .ToList();
@@ -164,6 +167,8 @@ namespace Grammar.Czech.Lexicon.Tool
             public string? Aspect { get; set; }
 
             public bool IsConfirmed { get; set; }
+
+            public bool IsRejected { get; set; }
 
             public string? Note { get; set; }
         }
