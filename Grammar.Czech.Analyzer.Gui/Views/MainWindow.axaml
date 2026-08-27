@@ -17,11 +17,18 @@
 
     <DockPanel Margin="12">
 
-        <!-- Volba souboru a parametrů -->
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+        <!-- Volba zdroje: soubor, nebo název wiki článku — přesně jeden z obou, stejné pravidlo jako
+             u CLI (wiki přepínač a pozicový argument). AnalyzeCommand se sám zablokuje, dokud to tak není. -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,4">
             <TextBox Text="{Binding FilePath}" PlaceholderText="Cesta k textovému souboru… (nebo vlož)" Width="480" />
             <Button Content="Procházet…" Click="OnBrowseClick" />
-            <Button Content="Rozebrat" Command="{Binding AnalyzeCommand}" IsEnabled="{Binding !IsBusy}" />
+            <TextBlock Text="nebo" VerticalAlignment="Center" Margin="8,0,0,0" />
+            <TextBox Text="{Binding WikiTitle}" PlaceholderText="Název článku na cs.wikipedia.org…" Width="260" />
+        </StackPanel>
+
+        <!-- Parametry rozboru -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <Button Content="Rozebrat" Command="{Binding AnalyzeCommand}" />
 
             <!-- NumericUpDown below 110px or so clips its own value text almost entirely — the digit
                  was there, just rendered mostly outside the visible area, not a color/theme problem. -->

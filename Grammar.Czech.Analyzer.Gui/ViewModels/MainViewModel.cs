@@ -49,7 +49,11 @@ public partial class MainViewModel : ViewModelBase
     public partial string? FilePath { get; set; }
 
     [ObservableProperty]
-    public partial string StatusText { get; set; } = "Vyber textový soubor a klikni na Rozebrat.";
+    [NotifyCanExecuteChangedFor(nameof(AnalyzeCommand))]
+    public partial string? WikiTitle { get; set; }
+
+    [ObservableProperty]
+    public partial string StatusText { get; set; } = "Vyber textový soubor nebo napiš název článku na Wikipedii a klikni na Rozebrat.";
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(AnalyzeCommand))]
@@ -66,27 +70,38 @@ public partial class MainViewModel : ViewModelBase
 
     public ObservableCollection<CandidateRow> Candidates { get; } = [];
 
-    private bool CanAnalyze => !IsBusy && !string.IsNullOrWhiteSpace(FilePath);
+    // Exactly one, the same rule --wiki and the positional file argument follow on the CLI — a token
+    // ambiguous about its own source is worse than one the button simply refuses to run yet.
+    private bool CanAnalyze => !IsBusy && (!string.IsNullOrWhiteSpace(FilePath) != !string.IsNullOrWhiteSpace(WikiTitle));
 
     [RelayCommand(CanExecute = nameof(CanAnalyze))]
     private async Task AnalyzeAsync()
     {
-        var path = FilePath!;
-
         IsBusy = true;
         StatusText = "Rozebírám…";
         Candidates.Clear();
 
+        var fromWiki = !string.IsNullOrWhiteSpace(WikiTitle);
+
         try
         {
-            var rows = await Task.Run(() => Analyze(path));
+            var rawText = fromWiki
+                ? await WikipediaReader.FetchArticleTextAsync(WikiTitle!)
+                : await Task.Run(() => DocumentReader.ReadText(FilePath!));
+
+            var rows = await Task.Run(() => Analyze(rawText));
 
             foreach (var row in rows)
             {
                 Candidates.Add(row);
             }
 
-            StatusText = $"Nalezeno {Candidates.Count} kandidátů.";
+            // WikipediaReader's own licence reminder goes to Console.Error, which nobody sees from a
+            // windowed app with no console — the status line is this build's only way to show it.
+            StatusText = fromWiki
+                ? $"Nalezeno {Candidates.Count} kandidátů. Zdroj: cs.wikipedia.org, článek „{WikiTitle}“ "
+                    + "(CC BY-SA) — text se do slovníku nekopíruje, jen se z něj ověřují gramatické tvary."
+                : $"Nalezeno {Candidates.Count} kandidátů.";
         }
         catch (Exception exception)
         {
@@ -119,10 +134,11 @@ public partial class MainViewModel : ViewModelBase
     }
 
     // Mirrors Program.cs's loop exactly — same gate order (délka, známost, vlastní jméno), same
-    // ShouldTryAsNoun/CandidateRanking pipeline — just returning rows instead of writing a CSV.
-    private List<CandidateRow> Analyze(string path)
+    // ShouldTryAsNoun/CandidateRanking pipeline — just returning rows instead of writing a CSV. Takes
+    // the already-obtained text directly: acquiring it (file vs. wiki fetch) is AnalyzeAsync's job,
+    // not this one's, the same split Program.cs has between reading the input and running the pipeline.
+    private List<CandidateRow> Analyze(string rawText)
     {
-        var rawText = DocumentReader.ReadText(path);
         var corpus = Tokenizer.CountTokens(rawText);
         var properNouns = Tokenizer.FindLikelyProperNouns(rawText);
 
