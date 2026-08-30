@@ -136,6 +136,42 @@ namespace Grammar.Czech.Analyzer.Candidates
         }
 
         /// <summary>
+        /// Drops a noun candidate whose lemma is really the short predicative form of an adjective or
+        /// passive participle already in the lexicon — "schopna" (feminine short form of "schopný",
+        /// capable) generates the exact žena-pattern paradigm a real noun would, because Czech's short
+        /// forms use the same bare/-a/-o endings (masculine/feminine/neuter) that noun citation forms do.
+        /// </summary>
+        /// <remarks>
+        /// Indistinguishable from a real noun by shape alone, the same reasoning
+        /// <see cref="IsPossessiveAdjectiveDerivative"/> already uses for possessive adjectives — this
+        /// only fires once stripping the candidate's own pattern-citation vowel and adding back "ý"
+        /// actually lands on a word this run already knows about. Found on a real article: "schopno",
+        /// "schopna" (from "schopný"), "využit" (from "využitý"), "znám" (from "známý") and "způsobena"
+        /// (from "způsobený") all scored as real nouns under město/žena/hrad, each one a short form of an
+        /// adjective already in the lexicon.
+        /// </remarks>
+        /// <param name="candidates">The candidates to filter, any order.</param>
+        /// <param name="isKnown">Whether a given lemma is already known, independent of this candidate list.</param>
+        public static IReadOnlyList<MatchCandidate> DropShortFormAdjectiveOrParticiple(
+            IEnumerable<MatchCandidate> candidates, Func<string, bool> isKnown)
+            => candidates
+                .Where(candidate =>
+                {
+                    if (candidate.Category != WordCategory.Noun)
+                    {
+                        return true;
+                    }
+
+                    var suffix = PatternNominativeSuffix(candidate.Pattern);
+                    var stem = suffix.Length > 0 && candidate.Lemma.EndsWith(suffix, StringComparison.Ordinal)
+                        ? candidate.Lemma[..^suffix.Length]
+                        : candidate.Lemma;
+
+                    return !isKnown(stem + "ý");
+                })
+                .ToList();
+
+        /// <summary>
         /// Keeps, per distinct lemma, only the candidates tied for that lemma's highest score, capped
         /// to at most <paramref name="maxPerWord"/> of them.
         /// </summary>

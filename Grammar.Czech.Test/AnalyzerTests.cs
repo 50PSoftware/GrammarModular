@@ -1151,6 +1151,79 @@ namespace Grammar.Czech.Test
             Assert.AreEqual(1, dropped.Count);
         }
 
+        /// <summary>
+        /// Verifies that a feminine ("žena") short-form-adjective candidate is dropped once stripping
+        /// its own "a" and adding "ý" lands on a known word — "schopna" (short form of "schopný",
+        /// capable) scored as a real žena-pattern noun on a real article.
+        /// </summary>
+        [TestMethod]
+        public void DropShortFormAdjectiveOrParticipleDropsFeminineShortForm()
+        {
+            var candidate = new MatchCandidate("schopna", Core.Enums.WordCategory.Noun, "žena", Core.Enums.Gender.Feminine, null, ["schopna", "schopnou"]);
+
+            var dropped = CandidateRanking.DropShortFormAdjectiveOrParticiple([candidate], lemma => lemma == "schopný");
+
+            Assert.AreEqual(0, dropped.Count);
+        }
+
+        /// <summary>
+        /// Verifies the same for a neuter ("město") short form — "schopno".
+        /// </summary>
+        [TestMethod]
+        public void DropShortFormAdjectiveOrParticipleDropsNeuterShortForm()
+        {
+            var candidate = new MatchCandidate("schopno", Core.Enums.WordCategory.Noun, "město", Core.Enums.Gender.Neuter, null, ["schopno"]);
+
+            var dropped = CandidateRanking.DropShortFormAdjectiveOrParticiple([candidate], lemma => lemma == "schopný");
+
+            Assert.AreEqual(0, dropped.Count);
+        }
+
+        /// <summary>
+        /// Verifies the same for a masculine short form with no citation vowel to strip — "znám" (short
+        /// form of "známý", known) and "využit" (short form of "využitý", utilized) both scored as fake
+        /// hrad/les-pattern nouns on a real article.
+        /// </summary>
+        [TestMethod]
+        public void DropShortFormAdjectiveOrParticipleDropsMasculineShortFormWithNoVowelToStrip()
+        {
+            var znam = new MatchCandidate("znám", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false, ["znám"]);
+            var vyuzit = new MatchCandidate("využit", Core.Enums.WordCategory.Noun, "les", Core.Enums.Gender.Masculine, false, ["využit"]);
+
+            var dropped = CandidateRanking.DropShortFormAdjectiveOrParticiple(
+                [znam, vyuzit], lemma => lemma is "známý" or "využitý");
+
+            Assert.AreEqual(0, dropped.Count);
+        }
+
+        /// <summary>
+        /// Verifies that a genuine noun survives — "žena" itself is not a short form of "žený" (not a
+        /// word), so nothing here should ever touch it.
+        /// </summary>
+        [TestMethod]
+        public void DropShortFormAdjectiveOrParticipleKeepsGenuineNoun()
+        {
+            var candidate = new MatchCandidate("hodnota", Core.Enums.WordCategory.Noun, "žena", Core.Enums.Gender.Feminine, null, ["hodnota", "hodnotu"]);
+
+            var dropped = CandidateRanking.DropShortFormAdjectiveOrParticiple([candidate], _ => false);
+
+            Assert.AreEqual(1, dropped.Count);
+        }
+
+        /// <summary>
+        /// Verifies that non-noun candidates pass through untouched — the check is noun-specific, since
+        /// Czech short forms only collide with noun citation endings, not adjective or verb ones.
+        /// </summary>
+        [TestMethod]
+        public void DropShortFormAdjectiveOrParticipleIgnoresNonNounCategories()
+        {
+            var candidate = new MatchCandidate("zelený", Core.Enums.WordCategory.Adjective, "mladý", null, null, ["zelený"]);
+
+            var dropped = CandidateRanking.DropShortFormAdjectiveOrParticiple([candidate], _ => true);
+
+            Assert.AreEqual(1, dropped.Count);
+        }
+
         // ── AdjectiveMatcher ─────────────────────────────────────────────────────
 
         /// <summary>
