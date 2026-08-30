@@ -81,6 +81,19 @@ public partial class MainViewModel : ViewModelBase
         return candidate with { Pattern = pattern, Gender = gender, IsAnimate = isAnimate };
     }
 
+    // A category correction is a bigger jump than a pattern one: the old pattern almost never exists
+    // under the new category (no "trida3" among noun patterns), so there is nothing sensible to keep —
+    // clearing gender/animacy and handing the new category's own first pattern to Repattern leaves the
+    // candidate exactly as internally consistent as Recategorize's own noun branch already guarantees
+    // for a plain pattern correction.
+    private MatchCandidate Recategorize(MatchCandidate candidate, WordCategory category)
+    {
+        var reset = candidate with { Category = category, Gender = null, IsAnimate = null };
+        var patterns = AvailablePatterns(category);
+
+        return patterns.Count > 0 ? Repattern(reset, patterns[0]) : reset;
+    }
+
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(AnalyzeCommand))]
     public partial string? FilePath { get; set; }
@@ -229,7 +242,8 @@ public partial class MainViewModel : ViewModelBase
         return ranked.Select(candidate => new CandidateRow(
             candidate,
             corpus.GetValueOrDefault(candidate.Lemma),
-            AvailablePatterns(candidate.Category),
-            Repattern)).ToList();
+            AvailablePatterns,
+            Repattern,
+            Recategorize)).ToList();
     }
 }

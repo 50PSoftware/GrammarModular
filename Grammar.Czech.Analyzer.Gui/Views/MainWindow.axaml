@@ -78,7 +78,15 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Header="Slovo" Binding="{Binding Lemma}" Width="160" IsReadOnly="True" />
-                <DataGridTextColumn Header="Kategorie" Binding="{Binding Category}" Width="90" IsReadOnly="True" />
+                <DataGridTemplateColumn Header="Kategorie" Width="110">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="models:CandidateRow">
+                            <ComboBox ItemsSource="{x:Static models:CandidateRow.AvailableCategories}"
+                                      SelectedItem="{Binding Category}"
+                                      HorizontalAlignment="Stretch" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="Vzor" Width="110">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="models:CandidateRow">
