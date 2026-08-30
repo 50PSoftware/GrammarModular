@@ -216,7 +216,8 @@ public partial class MainViewModel : ViewModelBase
             }
         }
 
-        var handled = CandidateRanking.DropAlreadyHandled(candidates, _known.IsKnown, existingLemmas);
+        var handled = CandidateRanking.DropRedundantMorePattern(
+            CandidateRanking.DropAlreadyHandled(candidates, _known.IsKnown, existingLemmas));
         var ranked = CandidateRanking.Thin(CandidateRanking.DropVowelEndingNounDuplicates(handled, _known.IsKnown), VzoruNaSlovo)
             .OrderByDescending(candidate => candidate.Score)
             .ThenByDescending(candidate => corpus.GetValueOrDefault(candidate.Lemma))

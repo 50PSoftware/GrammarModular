@@ -44,6 +44,14 @@ namespace Grammar.Czech.Analyzer.Candidates
         private static readonly string[] Trida3PresentEndings = ["jeme", "jete", "jí", "ji", "ješ", "je"];
         private static readonly string[] Trida2PresentEndings = ["neme", "nete", "nu", "neš", "ne", "nou"];
 
+        /// <summary>
+        /// Class 3's own present-tense endings ("-uje" and siblings) — exposed so
+        /// <see cref="CandidateRanking.ShouldTryAsNoun"/> can refuse the same token as a noun once this
+        /// class has already corroborated it as a verb, the same way it already does for "í" and the
+        /// l-participle.
+        /// </summary>
+        internal static IReadOnlyList<string> Trida3PresentTenseEndings => Trida3PresentEndings;
+
         // Minulé příčestí (l/la/lo/li/ly, agreement for gender/number) is not a class-specific shape
         // the way a present-tense ending is — every regular verb forms it the same way regardless of
         // class — so this is tried once, not per class, mirroring CandidateRanking.LParticipleEndings.

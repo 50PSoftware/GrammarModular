@@ -501,6 +501,23 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies that "reakce" still generates both the correct "růže" reading and the redundant
+        /// "moře" one at the same score — <see cref="NounMatcher"/>'s own job is only to generate every
+        /// pattern that fits, tied or not; separating the two is <see cref="CandidateRanking"/>'s job.
+        /// </summary>
+        [TestMethod]
+        public void NounMatcherTiesMoreAndRuzeForAFeminineEStemToken()
+        {
+            var corpus = new Dictionary<string, int> { ["reakce"] = 3, ["reakci"] = 2, ["reakcí"] = 2, ["reakcích"] = 1 };
+
+            var candidates = nounMatcher.Match("reakce", corpus, noProperNouns);
+            var moreScore = candidates.Where(c => c.Pattern == "moře").Max(c => c.Score);
+            var ruzeScore = candidates.Where(c => c.Pattern == "růže").Max(c => c.Score);
+
+            Assert.AreEqual(moreScore, ruzeScore);
+        }
+
+        /// <summary>
         /// Verifies the reconstruction path: a token shaped like a plural case of some pattern, with no
         /// nominative singular anywhere in the text, still resolves to the "kandidát" hypothesis once a
         /// second plural form corroborates it — the case that motivated reconstruction for nouns at all.
@@ -1073,6 +1090,65 @@ namespace Grammar.Czech.Test
             Assert.IsFalse(CandidateRanking.ShouldTryAsNoun("přišel", verbCandidateCount: 0));
             Assert.IsFalse(CandidateRanking.ShouldTryAsNoun("přišla", verbCandidateCount: 0));
             Assert.IsFalse(CandidateRanking.ShouldTryAsNoun("přišli", verbCandidateCount: 0));
+        }
+
+        /// <summary>
+        /// Verifies that a class 3 present-tense-shaped token ("obsahuje") is blocked from noun-matching
+        /// once a verb candidate already exists for it — found on a real article, where "moře"/"růže"
+        /// share every plural ending with class 3's own present tense ("obsahují" is both "they contain"
+        /// and the hypothesized noun's own plural genitive), so "obsahuje" scored as a fake noun every
+        /// time it was tried, never correctly as the verb "obsahovat" it actually is.
+        /// </summary>
+        [TestMethod]
+        public void ShouldTryAsNounRejectsTrida3PresentTenseEndingTokenWithVerbCandidate()
+        {
+            Assert.IsFalse(CandidateRanking.ShouldTryAsNoun("obsahuje", verbCandidateCount: 1));
+            Assert.IsFalse(CandidateRanking.ShouldTryAsNoun("zvyšuje", verbCandidateCount: 1));
+        }
+
+        /// <summary>
+        /// Verifies that the same shape is still tried as a noun when nothing corroborated it as a verb
+        /// — the gate is about an already-established verb reading crowding out a competing noun guess,
+        /// not about the ending alone.
+        /// </summary>
+        [TestMethod]
+        public void ShouldTryAsNounAcceptsTrida3PresentTenseEndingTokenWithNoVerbCandidate()
+        {
+            Assert.IsTrue(CandidateRanking.ShouldTryAsNoun("obsahuje", verbCandidateCount: 0));
+        }
+
+        /// <summary>
+        /// Verifies that a "moře" candidate is dropped once the same lemma also has a "růže" candidate —
+        /// found on a real article, where the two patterns tied in score for every e-final consonant
+        /// stem tried (they share every plural ending, <c>Data/Rules/Nouns/patterns.json</c>) and "moře"
+        /// was wrong in every single case ("reakce", "energie", "mitochondrie" are all feminine, never
+        /// the small closed set of real neuter -e nouns "moře" itself belongs to).
+        /// </summary>
+        [TestMethod]
+        public void DropRedundantMorePatternDropsMoreWhenRuzeExistsForSameLemma()
+        {
+            var more = new MatchCandidate("reakce", Core.Enums.WordCategory.Noun, "moře", Core.Enums.Gender.Neuter, null, ["reakce", "reakci", "reakcí", "reakcích"]);
+            var ruze = new MatchCandidate("reakce", Core.Enums.WordCategory.Noun, "růže", Core.Enums.Gender.Feminine, null, ["reakce", "reakci", "reakcí", "reakcích"]);
+
+            var dropped = CandidateRanking.DropRedundantMorePattern([more, ruze]);
+
+            Assert.AreEqual(1, dropped.Count);
+            Assert.AreEqual("růže", dropped[0].Pattern);
+        }
+
+        /// <summary>
+        /// Verifies that a "moře" candidate survives when nothing under "růže" ties it for the same
+        /// lemma — a genuine neuter -e word ("moře" itself, "pole", "srdce") has no reason to lose to a
+        /// pattern that never competed for it.
+        /// </summary>
+        [TestMethod]
+        public void DropRedundantMorePatternKeepsMoreWithoutACompetingRuze()
+        {
+            var more = new MatchCandidate("pole", Core.Enums.WordCategory.Noun, "moře", Core.Enums.Gender.Neuter, null, ["pole", "poli", "polích"]);
+
+            var dropped = CandidateRanking.DropRedundantMorePattern([more]);
+
+            Assert.AreEqual(1, dropped.Count);
         }
 
         // ── AdjectiveMatcher ─────────────────────────────────────────────────────

@@ -57,6 +57,18 @@ namespace Grammar.Czech.Analyzer.Candidates
         /// verb shares), so recognizing "-šel"/"-šla"/"-šlo"/"-šli"/"-šly" directly costs nothing a real
         /// noun would ever pay — no citation form in the twenty noun patterns ends this way.
         /// </para>
+        /// <para>
+        /// Class 3's own present tense ("-uje", "-ují", "-uješ"...) collides the same way "í" does, and
+        /// for the same underlying reason: <c>moře</c> and <c>růže</c> (<c>Data/Rules/Nouns/patterns.json</c>)
+        /// share every plural ending byte for byte, so a token like "obsahuje" reduces to root "obsahuj"
+        /// and its own plural genitive/dative/locative ("obsahují", "obsahujím", "obsahujích") happen to
+        /// be spelled exactly like class 3's own 3rd-person-plural present ("obsahují" — "they contain").
+        /// A real article confirmed it is not a rare coincidence: every "moře"/"růže"-pattern candidate
+        /// generated from a "-uje"-ending token in a 168-word benchmark was really a verb form
+        /// ("obsahuje", "zvyšuje", "dosahuje"...), never a noun. Checked here rather than dropped later
+        /// by score, same reasoning as "í": <see cref="VerbMatcher"/> already corroborated the verb
+        /// reading, so a token shaped like its own present tense should not get to compete as a noun too.
+        /// </para>
         /// </remarks>
         /// <param name="token">The case-folded token under consideration.</param>
         /// <param name="verbCandidateCount">How many verb candidates the same token already produced.</param>
@@ -69,7 +81,8 @@ namespace Grammar.Czech.Analyzer.Candidates
 
             return verbCandidateCount == 0
                 || !(token.EndsWith("í", StringComparison.Ordinal)
-                    || VerbMatcher.LParticipleEndings.Any(ending => token.EndsWith(ending, StringComparison.Ordinal)));
+                    || VerbMatcher.LParticipleEndings.Any(ending => token.EndsWith(ending, StringComparison.Ordinal))
+                    || VerbMatcher.Trida3PresentTenseEndings.Any(ending => token.EndsWith(ending, StringComparison.Ordinal)));
         }
 
         private static readonly string[] JitCompoundLParticipleEndings = ["šel", "šla", "šlo", "šli", "šly"];
@@ -93,6 +106,34 @@ namespace Grammar.Czech.Analyzer.Candidates
                 .Where(candidate => !isKnown(candidate.Lemma)
                     && !alreadyProposed.Contains(candidate.Lemma.ToLowerInvariant()))
                 .ToList();
+
+        /// <summary>
+        /// Drops a "moře" candidate whenever the same lemma also has a "růže" candidate.
+        /// </summary>
+        /// <remarks>
+        /// "moře" (neuter) and "růže" (feminine) share every plural ending byte for byte and differ only
+        /// in singular accusative/instrumental (<c>Data/Rules/Nouns/patterns.json</c>) — cases that
+        /// rarely turn up in running text to independently corroborate one over the other. The two
+        /// therefore tie in score for nearly every e-final consonant stem <see cref="NounMatcher"/>
+        /// tries, even though only one of them can be right: genuine neuter -e nouns (moře, pole, srdce,
+        /// hoře) are a small, closed, already-known set, while the open, productive class this analyzer
+        /// actually finds gaps in — foreign -ce/-e/-ie loanwords (reakce, energie, mitochondrie) — is
+        /// uniformly feminine. Confirmed against a real article: every "moře" candidate tied with "růže"
+        /// in a 168-word batch was wrong, "růže" was always right, so this does not wait for a score
+        /// comparison the way <see cref="VerbMatcher"/>'s own nout/t tie-break does — a same-lemma "růže"
+        /// candidate is reason enough on its own.
+        /// </remarks>
+        /// <param name="candidates">The candidates to filter, any order.</param>
+        public static IReadOnlyList<MatchCandidate> DropRedundantMorePattern(IEnumerable<MatchCandidate> candidates)
+        {
+            var list = candidates.ToList();
+            var ruzeLemmas = new HashSet<string>(
+                list.Where(c => c.Category == WordCategory.Noun && c.Pattern == "růže").Select(c => c.Lemma));
+
+            return list
+                .Where(c => !(c.Category == WordCategory.Noun && c.Pattern == "moře" && ruzeLemmas.Contains(c.Lemma)))
+                .ToList();
+        }
 
         /// <summary>
         /// Keeps, per distinct lemma, only the candidates tied for that lemma's highest score, capped
