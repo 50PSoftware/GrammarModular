@@ -229,11 +229,13 @@ public partial class MainViewModel : ViewModelBase
             }
         }
 
-        var handled = CandidateRanking.DropShortFormAdjectiveOrParticiple(
-            CandidateRanking.DropRedundantMorePattern(
-                CandidateRanking.DropAlreadyHandled(candidates, _known.IsKnown, existingLemmas)),
+        var deduplicated = CandidateRanking.DropVowelEndingNounDuplicates(
+            CandidateRanking.DropShortFormAdjectiveOrParticiple(
+                CandidateRanking.DropRedundantMorePattern(candidates),
+                _known.IsKnown),
             _known.IsKnown);
-        var ranked = CandidateRanking.Thin(CandidateRanking.DropVowelEndingNounDuplicates(handled, _known.IsKnown), VzoruNaSlovo)
+        var handled = CandidateRanking.DropAlreadyHandled(deduplicated, _known.IsKnown, existingLemmas);
+        var ranked = CandidateRanking.Thin(handled, VzoruNaSlovo)
             .OrderByDescending(candidate => candidate.Score)
             .ThenByDescending(candidate => corpus.GetValueOrDefault(candidate.Lemma))
             .Take(Limit)

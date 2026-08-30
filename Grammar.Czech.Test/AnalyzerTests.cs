@@ -709,6 +709,34 @@ namespace Grammar.Czech.Test
         }
 
         /// <summary>
+        /// Verifies the pipeline order Program.cs/MainViewModel actually use — <see cref="DropVowelEndingNounDuplicates"/>
+        /// before <see cref="DropAlreadyHandled"/> — correctly resolves an already-proposed real word's
+        /// spurious co-reconstructed sibling, found on a real article. "proces" (already proposed from an
+        /// earlier run) and "proceso" ("město"'s own dative/instrumental singular happening to spell
+        /// exactly like "proces"'s own genitive/instrumental, so <see cref="NounMatcher"/> reconstructs
+        /// both from the same tokens) share a root and tie in score; the tie-break already prefers
+        /// "proces" (it is self-attested — the literal token — "proceso" never appears on its own). Doing
+        /// <see cref="DropAlreadyHandled"/> first would remove "proces" before that tie-break ever runs,
+        /// leaving "proceso" to survive alone with nothing left to lose to.
+        /// </summary>
+        [TestMethod]
+        public void VowelEndingDuplicatesBeforeAlreadyHandledDropsSpuriousSiblingOfAnAlreadyProposedWord()
+        {
+            var proces = new MatchCandidate(
+                "proces", Core.Enums.WordCategory.Noun, "hrad", Core.Enums.Gender.Masculine, false,
+                ["proces", "procesu", "procesem"]);
+            var proceso = new MatchCandidate(
+                "proceso", Core.Enums.WordCategory.Noun, "město", Core.Enums.Gender.Neuter, null,
+                ["proces", "procesu", "procesem"]);
+
+            var deduplicated = CandidateRanking.DropVowelEndingNounDuplicates([proces, proceso], _ => false);
+            var handled = CandidateRanking.DropAlreadyHandled(
+                deduplicated, _ => false, new HashSet<string> { "proces" });
+
+            Assert.AreEqual(0, handled.Count);
+        }
+
+        /// <summary>
         /// Verifies that a vowel-ending noun hypothesis is dropped when a same-pattern candidate for
         /// the consonant-stripped spelling scores at least as well — "zápasí" (really the verb form,
         /// not a noun) generates the same oblique-case forms as the real noun "zápas" once a suffix is

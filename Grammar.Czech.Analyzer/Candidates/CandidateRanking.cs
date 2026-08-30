@@ -93,9 +93,16 @@ namespace Grammar.Czech.Analyzer.Candidates
         /// <remarks>
         /// The per-token check in <c>Program.cs</c>/<c>MainViewModel</c> only looks at the exact surface
         /// form a token was found under — it cannot catch a reconstructed lemma that differs from every
-        /// token in the text (a verb's infinitive is rarely the form actually written). Run first, before
-        /// <see cref="Thin"/> or <see cref="DropVowelEndingNounDuplicates"/>, so an already-known or
-        /// already-proposed word never gets to win a tie-break group and crowd out a real candidate.
+        /// token in the text (a verb's infinitive is rarely the form actually written). Run after
+        /// <see cref="DropVowelEndingNounDuplicates"/>, not before: an already-proposed real word
+        /// (<c>proces</c>) sharing a root with a spurious sibling <see cref="NounMatcher"/> also
+        /// reconstructed from the same tokens (<c>proceso</c> — "město"'s own dative/instrumental
+        /// singular happening to spell exactly like <c>proces</c>'s own genitive/instrumental) is exactly the
+        /// self-attested candidate that tie-break already knows how to prefer — dropping <c>proces</c>
+        /// first, before that tie-break runs, leaves nothing for <c>proceso</c> to lose to, and it
+        /// survives alone on a real article. Run before <see cref="Thin"/> regardless, so an
+        /// already-known or already-proposed word never gets to win a <em>score</em> tie and crowd out a
+        /// genuinely different real candidate the way it still could there.
         /// </remarks>
         /// <param name="candidates">The raw candidates, any order.</param>
         /// <param name="isKnown">Whether a given lemma is already in the lexicon or a closed class.</param>

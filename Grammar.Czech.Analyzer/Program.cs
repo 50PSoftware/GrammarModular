@@ -181,11 +181,13 @@ root.SetAction(async (parse, cancellationToken) =>
         }
     }
 
-    var handled = CandidateRanking.DropShortFormAdjectiveOrParticiple(
-        CandidateRanking.DropRedundantMorePattern(
-            CandidateRanking.DropAlreadyHandled(candidates, known.IsKnown, existingLemmas)),
+    var deduplicated = CandidateRanking.DropVowelEndingNounDuplicates(
+        CandidateRanking.DropShortFormAdjectiveOrParticiple(
+            CandidateRanking.DropRedundantMorePattern(candidates),
+            known.IsKnown),
         known.IsKnown);
-    var ranked = CandidateRanking.Thin(CandidateRanking.DropVowelEndingNounDuplicates(handled, known.IsKnown), vzoruNaSlovo)
+    var handled = CandidateRanking.DropAlreadyHandled(deduplicated, known.IsKnown, existingLemmas);
+    var ranked = CandidateRanking.Thin(handled, vzoruNaSlovo)
         .OrderByDescending(candidate => candidate.Score)
         .ThenByDescending(candidate => corpus.GetValueOrDefault(candidate.Lemma))
         .Take(limit)
