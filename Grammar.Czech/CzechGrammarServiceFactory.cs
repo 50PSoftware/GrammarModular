@@ -55,6 +55,12 @@ namespace Grammar.Czech
             services.AddSingleton<IValencyProvider<CzechLexicalEntry>>(
                 _ => new SqliteValencyProvider(lexiconPath));
 
+            services.AddSingleton<SqliteSemanticProvider>(_ => new SqliteSemanticProvider(lexiconPath));
+            services.AddSingleton<ISemanticFeatureProvider>(sp =>
+                sp.GetRequiredService<SqliteSemanticProvider>());
+            services.AddSingleton<ISemanticRelationProvider>(sp =>
+                sp.GetRequiredService<SqliteSemanticProvider>());
+
             // ── Phonology ────────────────────────────────────────────────────────────
             services.AddSingleton<IPhonemeRegistry, CzechPhonemeRegistry>();
             services.AddSingleton<ICzechPhonologyService, CzechPhonologyService>();

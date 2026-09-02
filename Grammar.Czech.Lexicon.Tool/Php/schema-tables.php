@@ -241,6 +241,20 @@ const LEXICON_ENUMS = [
         'Locative' => '6. lokál',
         'Instrumental' => '7. instrumentál',
     ],
+    'value_kind' => [
+        'Binary' => 'binární (ano/ne)',
+        'Scalar' => 'škálový (pozice na škále)',
+        'Categorical' => 'kategoriální (nálepka)',
+    ],
+    'relation_type' => [
+        'Synonym' => 'synonymum',
+        'Antonym' => 'antonymum',
+    ],
+    'antonym_subtype' => [
+        'Complementary' => 'komplementární (živý/mrtvý)',
+        'Scalar' => 'škálový (horký/studený)',
+        'Converse' => 'konverzní (manžel/manželka)',
+    ],
 ];
 
 /**

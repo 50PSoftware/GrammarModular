@@ -212,7 +212,10 @@ namespace Grammar.Czech.Test
             ["functor", typeof(Core.Enums.FgdFunctor)],
             ["inherent_functor", typeof(Core.Enums.FgdFunctor)],
             ["obligatoriness", typeof(Core.Enums.Obligatoriness)],
-            ["morph_case", typeof(Core.Enums.Case)]
+            ["morph_case", typeof(Core.Enums.Case)],
+            ["value_kind", typeof(Core.Enums.SemanticValueKind)],
+            ["relation_type", typeof(Core.Enums.SemanticRelationType)],
+            ["antonym_subtype", typeof(Core.Enums.AntonymSubtype)]
         ];
 
         // Each entry is 'ClassN' => ['pattern' => '…', 'ending' => '…', 'examples' => ['…', …]].

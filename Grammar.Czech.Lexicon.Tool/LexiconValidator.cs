@@ -41,7 +41,10 @@ namespace Grammar.Czech.Lexicon.Tool
             ("valency_slot", "functor", typeof(FgdFunctor)),
             ("valency_slot", "control_target", typeof(FgdFunctor)),
             ("valency_slot", "obligatoriness", typeof(Obligatoriness)),
-            ("slot_realization", "morph_case", typeof(Case))
+            ("slot_realization", "morph_case", typeof(Case)),
+            ("semantic_feature", "value_kind", typeof(SemanticValueKind)),
+            ("semantic_relation", "relation_type", typeof(SemanticRelationType)),
+            ("semantic_relation", "antonym_subtype", typeof(AntonymSubtype))
         ];
 
         // The vzory live in Grammar.Czech's embedded JSON, which no CHECK can reach, so the check belongs
