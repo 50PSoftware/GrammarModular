@@ -112,6 +112,16 @@ final class Url
         return $this->to("/lexem/$id/vyznam/$luId/ramec");
     }
 
+    public function addRelation(int $id, int $luId): string
+    {
+        return $this->to("/lexem/$id/vyznam/$luId/vztah");
+    }
+
+    public function deleteRelation(int $id, int $luId, int $relationId): string
+    {
+        return $this->to("/lexem/$id/vyznam/$luId/vztah/$relationId/smazat");
+    }
+
     public function frame(int $id): string
     {
         return $this->to("/ramec/$id");

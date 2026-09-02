@@ -8,6 +8,8 @@ defined('LEXICON_ADMIN') || exit('Tenhle soubor se nespouští přímo.');
 
 use Lexicon\Admin\Database\IntegrityViolation;
 use Lexicon\Admin\Entity\Lexeme;
+use Lexicon\Admin\Entity\LexicalUnit;
+use Lexicon\Admin\Entity\SemanticRelation;
 use Lexicon\Admin\Http\HttpException;
 use Lexicon\Admin\Http\Request;
 use Lexicon\Admin\Http\Response;
@@ -49,12 +51,36 @@ final class LexemeController extends Controller
             return $this->redirect($this->url->entries());
         }
 
+        $senses = $this->lexemes->senses($id);
+
         return $this->page('lexeme/show', [
             'lexeme' => $lexeme,
             'entries' => $this->lexemes->entries($id),
-            'senses' => $this->lexemes->senses($id),
+            'senses' => $senses,
             'frames' => $this->lexemes->frames($id),
+            'relations' => $this->relationsBySense($senses),
         ]);
+    }
+
+    /**
+     * Vztahy každého významu, podle jeho lu_id.
+     *
+     * Rámce se dají vytáhnout jedním dotazem na celý lexém, protože každý patří přesně jednomu lu_id ve
+     * sloupci. Vztah má lu_id dva — a druhá strana může být význam úplně jiného lexému — takže se takhle
+     * jednoduše seskupit nedá a natahuje se po jednom významu.
+     *
+     * @param list<LexicalUnit> $senses
+     * @return array<int, list<SemanticRelation>>
+     */
+    private function relationsBySense(array $senses): array
+    {
+        $relations = [];
+
+        foreach ($senses as $sense) {
+            $relations[(int) $sense->id] = $this->lexemes->relations((int) $sense->id);
+        }
+
+        return $relations;
     }
 
     /**
@@ -153,6 +179,74 @@ final class LexemeController extends Controller
                 $this->url->lexeme($id)
             );
         }
+
+        return $this->redirect($this->url->lexeme($id));
+    }
+
+    /**
+     * Založí významu vztah k jinému významu.
+     *
+     * Druhý význam se zadává číslem (lu_id) přímo ve formuláři, ne výběrem ze seznamu — slovník je
+     * příliš velký na to, aby šel nabídnout celý, a vyhledávání podle lemmatu tahle stránka zatím nemá.
+     * Kdo vztah zakládá, číslo významu druhé strany zjistí na její stránce lexému.
+     */
+    public function addRelation(Request $request, RouteMatch $route): Response
+    {
+        $id = $route->id('id');
+        $luId = $this->requireSense($id, $route->id('luId'));
+        $form = $this->formData($request);
+
+        $otherLuId = $form->int('lu_id_b');
+        $relationType = $form->enumOr('relation_type', 'relation_type', 'Synonym');
+        $antonymSubtype = $relationType === 'Antonym' ? $form->enum('antonym_subtype', 'antonym_subtype') : null;
+
+        if ($otherLuId === null || $otherLuId === $luId) {
+            return $this->refuse(
+                'Zadej číslo významu (lu_id) druhé strany vztahu — jiné, než je tenhle.',
+                $this->url->lexeme($id)
+            );
+        }
+
+        try {
+            $this->lexemes->addRelation(
+                $luId,
+                $otherLuId,
+                $relationType,
+                $antonymSubtype,
+                $form->float('strength'),
+
+                // Založeno tady v admin formuláři, ne stažené z IJP — bez zadání je to 'manual', ne
+                // NULL, protože sloupec je NOT NULL a nezadaný zdroj neznamená totéž co žádný zdroj.
+                $form->text('source') ?? 'manual',
+                $form->text('note')
+            );
+            $this->flash->ok('Vztah přidán.');
+        } catch (IntegrityViolation) {
+            return $this->refuse(
+                'Uložení selhalo — buď význam s tímhle číslem v lexikonu není, nebo tenhle vztah '
+                    . 'mezi oběma významy už existuje.',
+                $this->url->lexeme($id)
+            );
+        }
+
+        return $this->redirect($this->url->lexeme($id));
+    }
+
+    /**
+     * Smaže vztah.
+     */
+    public function deleteRelation(Request $request, RouteMatch $route): Response
+    {
+        $id = $route->id('id');
+        $luId = $this->requireSense($id, $route->id('luId'));
+        $relationId = $route->id('relationId');
+
+        if (!$this->lexemes->hasRelation($luId, $relationId)) {
+            throw HttpException::notFound();
+        }
+
+        $this->lexemes->deleteRelation($relationId);
+        $this->flash->ok('Vztah smazán.');
 
         return $this->redirect($this->url->lexeme($id));
     }

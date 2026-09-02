@@ -9,6 +9,7 @@ defined('LEXICON_ADMIN') || exit('Tenhle soubor se nespouští přímo.');
 use Lexicon\Admin\Database\Database;
 use Lexicon\Admin\Entity\Lexeme;
 use Lexicon\Admin\Entity\LexicalUnit;
+use Lexicon\Admin\Entity\SemanticRelation;
 use Lexicon\Admin\Entity\ValencyFrame;
 use Lexicon\Admin\Read\EntryChip;
 
@@ -187,5 +188,76 @@ final class LexemeRepository
             'INSERT INTO valency_frame (lu_id, kind, diathesis, is_default) VALUES (?, ?, ?, ?)',
             [$luId, $kind, $diathesis, $isDefault]
         );
+    }
+
+    /**
+     * Sémantické vztahy významu, s druhou stranou dvojice dotaženou pro zobrazení.
+     *
+     * Relace je symetrická a uložená jednou, takže OR na obou sloupcích je jediný způsob, jak najít
+     * všechny vztahy jednoho významu bez ohledu na to, na které straně dvojice zrovna sedí. CASE ve
+     * spojení vybírá tu druhou stranu, ať je to kterákoli.
+     *
+     * @return list<SemanticRelation>
+     */
+    public function relations(int $luId): array
+    {
+        return array_map(
+            SemanticRelation::fromRow(...),
+            $this->database->all(
+                'SELECT r.*, ox.primary_lemma AS other_lemma, ou.sense_label AS other_sense_label
+                   FROM semantic_relation r
+                   JOIN lexical_unit ou ON ou.lu_id = CASE WHEN r.lu_id_a = ? THEN r.lu_id_b ELSE r.lu_id_a END
+                   JOIN lexeme ox ON ox.lexeme_id = ou.lexeme_id
+                  WHERE r.lu_id_a = ? OR r.lu_id_b = ?
+                  ORDER BY r.relation_id',
+                [$luId, $luId, $luId]
+            )
+        );
+    }
+
+    /**
+     * Založí významu vztah k jinému významu.
+     *
+     * $otherLuId je cizí klíč na lexical_unit, ne na tenhle lexém — vztah spojuje dva významy bez ohledu
+     * na to, jestli patří stejnému lexému, nebo dvěma různým.
+     */
+    public function addRelation(
+        int $luId,
+        int $otherLuId,
+        string $relationType,
+        ?string $antonymSubtype,
+        ?float $strength,
+        ?string $source,
+        ?string $note
+    ): void {
+        $this->database->run(
+            'INSERT INTO semantic_relation
+                (lu_id_a, lu_id_b, relation_type, antonym_subtype, strength, source, note)
+             VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [$luId, $otherLuId, $relationType, $antonymSubtype, $strength, $source, $note]
+        );
+    }
+
+    /**
+     * Určí, jestli vztah patří tomuhle významu (na kterékoli straně dvojice).
+     *
+     * Volá se před smazáním ze stejného důvodu jako hasSense: podvržené relationId by jinak smazalo
+     * vztah cizího významu, aniž by to stránka dala najevo.
+     */
+    public function hasRelation(int $luId, int $relationId): bool
+    {
+        return $this->database->one(
+            'SELECT relation_id FROM semantic_relation
+              WHERE relation_id = ? AND (lu_id_a = ? OR lu_id_b = ?)',
+            [$relationId, $luId, $luId]
+        ) !== null;
+    }
+
+    /**
+     * Smaže vztah.
+     */
+    public function deleteRelation(int $relationId): void
+    {
+        $this->database->run('DELETE FROM semantic_relation WHERE relation_id = ?', [$relationId]);
     }
 }

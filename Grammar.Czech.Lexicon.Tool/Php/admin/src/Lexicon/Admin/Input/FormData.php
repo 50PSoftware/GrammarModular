@@ -59,6 +59,16 @@ final class FormData
     }
 
     /**
+     * Reads a decimal field, or null when it was left blank.
+     */
+    public function float(string $name): ?float
+    {
+        $value = $this->text($name);
+
+        return $value === null ? null : (float) $value;
+    }
+
+    /**
      * Reads an identifier posted in a hidden field.
      */
     public function id(string $name): int

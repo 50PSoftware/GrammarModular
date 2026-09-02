@@ -14,6 +14,7 @@ defined('LEXICON_ADMIN') || exit('Tenhle soubor se nespouští přímo.');
  * @var list<\Lexicon\Admin\Read\EntryChip> $entries
  * @var list<\Lexicon\Admin\Entity\LexicalUnit> $senses
  * @var list<\Lexicon\Admin\Entity\ValencyFrame> $frames
+ * @var array<int, list<\Lexicon\Admin\Entity\SemanticRelation>> $relations
  * @var \Lexicon\Admin\View\Url $url
  * @var \Lexicon\Admin\View\FormHelper $form
  * @var \Lexicon\Admin\Schema $schema
@@ -115,6 +116,48 @@ $id = (int) $lexeme->id;
                 <?= $form->select('diathesis', 'diathesis', 'Active', allowEmpty: false) ?>
                 <label class="check"><input type="checkbox" name="is_default" value="1"> výchozí</label>
                 <button type="submit">Přidat rámec</button>
+            </form>
+
+            <?php $ownRelations = $relations[$luId] ?? []; ?>
+            <?php if ($ownRelations === []): ?>
+                <p class="empty">Bez sémantického vztahu.</p>
+            <?php else: ?>
+                <ul class="frames">
+                <?php foreach ($ownRelations as $relation): ?>
+                    <li>
+                        <?= h($schema->label('relation_type', $relation->relationType)) ?>
+                        <span class="muted"><?= h($relation->otherDisplayLabel()) ?> (lu_id <?= (int) $relation->otherLuId($luId) ?>)</span>
+                        <?php if ($relation->antonymSubtype !== null): ?>
+                            <span class="badge"><?= h($schema->label('antonym_subtype', $relation->antonymSubtype)) ?></span>
+                        <?php endif; ?>
+                        <?php if ($relation->strength !== null): ?>
+                            <span class="muted"><?= h((string) $relation->strength) ?></span>
+                        <?php endif; ?>
+                        <form method="post"
+                              action="<?= h($url->deleteRelation($id, $luId, (int) $relation->id)) ?>"
+                              class="inline">
+                            <?= $form->csrf() ?>
+                            <button type="submit" class="del small">Smazat</button>
+                        </form>
+                    </li>
+                <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+
+            <form method="post" action="<?= h($url->addRelation($id, $luId)) ?>" class="inline">
+                <?= $form->csrf() ?>
+                <label class="sr" for="lu_id_b_<?= $luId ?>">lu_id druhého významu</label>
+                <input type="number" id="lu_id_b_<?= $luId ?>" name="lu_id_b" placeholder="lu_id druhého významu">
+                <?= $form->select('relation_type', 'relation_type', 'Synonym', allowEmpty: false) ?>
+                <?= $form->select('antonym_subtype', 'antonym_subtype', null) ?>
+                <label class="sr" for="strength_<?= $luId ?>">síla vztahu</label>
+                <input type="number" id="strength_<?= $luId ?>" name="strength" step="0.1" min="0" max="1"
+                       placeholder="síla 0–1">
+                <label class="sr" for="rel_source_<?= $luId ?>">zdroj</label>
+                <input type="text" id="rel_source_<?= $luId ?>" name="source" placeholder="zdroj (IJP, manual…)">
+                <label class="sr" for="rel_note_<?= $luId ?>">poznámka</label>
+                <input type="text" id="rel_note_<?= $luId ?>" name="note" placeholder="poznámka" class="grow">
+                <button type="submit">Přidat vztah</button>
             </form>
 
             <form method="post" action="<?= h($url->deleteSense($id, $luId)) ?>" class="inline"

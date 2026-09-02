@@ -59,6 +59,13 @@ final class Router
             new Route('POST', '/lexem/{id}/vyznam/{luId}', LexemeController::class, 'updateSense'),
             new Route('POST', '/lexem/{id}/vyznam/{luId}/smazat', LexemeController::class, 'deleteSense'),
             new Route('POST', '/lexem/{id}/vyznam/{luId}/ramec', LexemeController::class, 'addFrame'),
+            new Route('POST', '/lexem/{id}/vyznam/{luId}/vztah', LexemeController::class, 'addRelation'),
+            new Route(
+                'POST',
+                '/lexem/{id}/vyznam/{luId}/vztah/{relationId}/smazat',
+                LexemeController::class,
+                'deleteRelation'
+            ),
 
             new Route('GET', '/ramec/{id}', FrameController::class, 'show'),
             new Route('POST', '/ramec/{id}', FrameController::class, 'update'),
