@@ -42,5 +42,17 @@ namespace Grammar.Core.Models.Semantics
         /// unscored.
         /// </summary>
         public double? Strength { get; init; }
+
+        /// <summary>
+        /// Gets the identifier of the lexical unit on the other side of the pair, seen from
+        /// <paramref name="anchorLuId"/>.
+        /// </summary>
+        /// <param name="anchorLuId">The sense the caller already knows about.</param>
+        /// <returns>The identifier of the other sense.</returns>
+        /// <remarks>
+        /// The relation is symmetric and stored once, so every caller otherwise has to work out for
+        /// itself which column holds the sense it did not ask about.
+        /// </remarks>
+        public long OtherLuId(long anchorLuId) => LuIdA == anchorLuId ? LuIdB : LuIdA;
     }
 }

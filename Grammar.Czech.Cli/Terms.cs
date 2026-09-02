@@ -218,6 +218,13 @@ namespace Grammar.Czech.Cli
             ["citoslovce"] = WordCategory.Interjection,
         });
 
+        private static readonly Dictionary<AntonymSubtype, string> AntonymSubtypes = new()
+        {
+            [AntonymSubtype.Complementary] = "komplementární",
+            [AntonymSubtype.Scalar] = "škálový",
+            [AntonymSubtype.Converse] = "konverzní",
+        };
+
         private static readonly Dictionary<Degree, string> Degrees = new()
         {
             [Degree.Positive] = "první",
@@ -311,6 +318,13 @@ namespace Grammar.Czech.Cli
         /// <param name="value">The functor to gloss.</param>
         /// <returns>The Czech gloss.</returns>
         public static string Gloss(FgdFunctor value) => Functors.GetValueOrDefault(value, string.Empty);
+
+        /// <summary>
+        /// Gets the Czech name of the antonym subtype.
+        /// </summary>
+        /// <param name="value">The subtype to name.</param>
+        /// <returns>The Czech name.</returns>
+        public static string Name(AntonymSubtype value) => AntonymSubtypes[value];
 
         /// <summary>
         /// Parses a case written as a Czech name, an abbreviation or a number.

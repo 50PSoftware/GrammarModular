@@ -36,6 +36,7 @@ var root = new RootCommand("gramatika — poskládá českou větu ze zadaných 
 {
     lexicon,
     SentenceCommand.Create(lexicon),
+    RelationsCommand.Create(lexicon),
     TermsCommand.Create(),
 };
 
