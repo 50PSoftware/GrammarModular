@@ -372,6 +372,67 @@ CREATE TABLE construction (
 );
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- Semantic feature — componential feature of one sense
+-- ─────────────────────────────────────────────────────────────────────────────
+-- lu_id, not lemma_entry_id: a feature belongs to one sense, not to every homonym sharing a headword.
+-- kohoutek the tap and kohoutek the bird are different lexical_unit rows and should carry different
+-- features, even though a lemma-level key would have merged them.
+--
+-- feature_value stays VARCHAR rather than an enum, because the set of features is open — animate,
+-- furniture, concrete, size — and a fixed enum would force a schema migration for every new one. What
+-- value_kind buys instead is telling the reader HOW to parse feature_value ('true'/'false' for Binary,
+-- a position on a scale for Scalar, a label for Categorical) without constraining WHICH features exist.
+CREATE TABLE semantic_feature (
+    feature_id     INTEGER      NOT NULL,
+    lu_id          INTEGER      NOT NULL,
+    feature_name   VARCHAR(64)  NOT NULL,
+    feature_value  VARCHAR(64)  NOT NULL,
+    value_kind     VARCHAR(16)  NOT NULL,
+    source         VARCHAR(64)  NOT NULL,
+    note           VARCHAR(500),
+    is_verified    SMALLINT     NOT NULL DEFAULT 0,
+    CONSTRAINT pk_semantic_feature PRIMARY KEY (feature_id),
+    CONSTRAINT uq_semantic_feature_name UNIQUE (lu_id, feature_name),
+    CONSTRAINT fk_semantic_feature_lu FOREIGN KEY (lu_id) REFERENCES lexical_unit (lu_id),
+    CONSTRAINT ck_semantic_feature_kind CHECK (value_kind IN ('Binary', 'Scalar', 'Categorical')),
+    CONSTRAINT ck_semantic_feature_verified CHECK (is_verified IN (0, 1))
+);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Semantic relation — synonymy and antonymy between two senses
+-- ─────────────────────────────────────────────────────────────────────────────
+-- A supplement to semantic_feature, not the primary record of closeness: where two senses share enough
+-- features, that already implies synonymy without a row here. This table exists for what features do
+-- not capture cheaply — antonym_subtype in particular, which distinguishes complementary (živý/mrtvý),
+-- scalar (horký/studený) and converse (manžel/manželka) opposites, a distinction WordNet's flat
+-- antonym link cannot make and componential features alone do not settle automatically either.
+--
+-- The relation is symmetric and stored once, not once per direction — the same convention slot_id pairs
+-- and every other symmetric relation in this schema follow. A caller must query both lu_id_a and lu_id_b.
+CREATE TABLE semantic_relation (
+    relation_id      INTEGER      NOT NULL,
+    lu_id_a          INTEGER      NOT NULL,
+    lu_id_b          INTEGER      NOT NULL,
+    relation_type    VARCHAR(16)  NOT NULL,
+    antonym_subtype  VARCHAR(16),
+    strength         REAL,
+    source           VARCHAR(64)  NOT NULL,
+    note             VARCHAR(500),
+    is_verified      SMALLINT     NOT NULL DEFAULT 0,
+    CONSTRAINT pk_semantic_relation PRIMARY KEY (relation_id),
+    CONSTRAINT uq_semantic_relation_pair UNIQUE (lu_id_a, lu_id_b, relation_type),
+    CONSTRAINT fk_semantic_relation_lu_a FOREIGN KEY (lu_id_a) REFERENCES lexical_unit (lu_id),
+    CONSTRAINT fk_semantic_relation_lu_b FOREIGN KEY (lu_id_b) REFERENCES lexical_unit (lu_id),
+    CONSTRAINT ck_semantic_relation_type CHECK (relation_type IN ('Synonym', 'Antonym')),
+    CONSTRAINT ck_semantic_relation_subtype CHECK (
+        antonym_subtype IS NULL OR antonym_subtype IN ('Complementary', 'Scalar', 'Converse')),
+    CONSTRAINT ck_semantic_relation_subtype_scope CHECK (
+        relation_type = 'Antonym' OR antonym_subtype IS NULL),
+    CONSTRAINT ck_semantic_relation_distinct CHECK (lu_id_a <> lu_id_b),
+    CONSTRAINT ck_semantic_relation_verified CHECK (is_verified IN (0, 1))
+);
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- Indexes
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE INDEX ix_lemma_entry_lemma_key ON lemma_entry (lemma_key);
@@ -381,3 +442,7 @@ CREATE INDEX ix_lexical_unit_lexeme ON lexical_unit (lexeme_id);
 CREATE INDEX ix_valency_frame_lu ON valency_frame (lu_id);
 CREATE INDEX ix_valency_slot_frame ON valency_slot (frame_id);
 CREATE INDEX ix_slot_realization_slot ON slot_realization (slot_id);
+CREATE INDEX ix_semantic_feature_lu ON semantic_feature (lu_id);
+CREATE INDEX ix_semantic_feature_name_value ON semantic_feature (feature_name, feature_value);
+CREATE INDEX ix_semantic_relation_lu_a ON semantic_relation (lu_id_a);
+CREATE INDEX ix_semantic_relation_lu_b ON semantic_relation (lu_id_b);

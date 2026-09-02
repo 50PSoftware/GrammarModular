@@ -287,6 +287,55 @@ CREATE TABLE construction (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- Semantic feature — componential feature of one sense
+-- ─────────────────────────────────────────────────────────────────────────────
+-- See schema.sql for why this hangs off lu_id rather than lemma_entry_id, and why feature_value stays
+-- free text instead of an enum.
+CREATE TABLE semantic_feature (
+    feature_id     INT          NOT NULL AUTO_INCREMENT,
+    lu_id          INT          NOT NULL,
+    feature_name   VARCHAR(64)  COLLATE utf8mb4_bin NOT NULL,
+    feature_value  VARCHAR(64)  NOT NULL,
+    value_kind     VARCHAR(16)  COLLATE utf8mb4_bin NOT NULL,
+    source         VARCHAR(64)  NOT NULL,
+    note           VARCHAR(500),
+    is_verified    SMALLINT     NOT NULL DEFAULT 0,
+    CONSTRAINT pk_semantic_feature PRIMARY KEY (feature_id),
+    CONSTRAINT uq_semantic_feature_name UNIQUE (lu_id, feature_name),
+    CONSTRAINT fk_semantic_feature_lu FOREIGN KEY (lu_id) REFERENCES lexical_unit (lu_id),
+    CONSTRAINT ck_semantic_feature_kind CHECK (value_kind IN ('Binary', 'Scalar', 'Categorical')),
+    CONSTRAINT ck_semantic_feature_verified CHECK (is_verified IN (0, 1))
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Semantic relation — synonymy and antonymy between two senses
+-- ─────────────────────────────────────────────────────────────────────────────
+-- See schema.sql for why this is a supplement to semantic_feature rather than the primary record, and
+-- for the antonym_subtype distinction (complementary/scalar/converse).
+CREATE TABLE semantic_relation (
+    relation_id      INT          NOT NULL AUTO_INCREMENT,
+    lu_id_a          INT          NOT NULL,
+    lu_id_b          INT          NOT NULL,
+    relation_type    VARCHAR(16)  COLLATE utf8mb4_bin NOT NULL,
+    antonym_subtype  VARCHAR(16)  COLLATE utf8mb4_bin,
+    strength         DOUBLE,
+    source           VARCHAR(64)  NOT NULL,
+    note             VARCHAR(500),
+    is_verified      SMALLINT     NOT NULL DEFAULT 0,
+    CONSTRAINT pk_semantic_relation PRIMARY KEY (relation_id),
+    CONSTRAINT uq_semantic_relation_pair UNIQUE (lu_id_a, lu_id_b, relation_type),
+    CONSTRAINT fk_semantic_relation_lu_a FOREIGN KEY (lu_id_a) REFERENCES lexical_unit (lu_id),
+    CONSTRAINT fk_semantic_relation_lu_b FOREIGN KEY (lu_id_b) REFERENCES lexical_unit (lu_id),
+    CONSTRAINT ck_semantic_relation_type CHECK (relation_type IN ('Synonym', 'Antonym')),
+    CONSTRAINT ck_semantic_relation_subtype CHECK (
+        antonym_subtype IS NULL OR antonym_subtype IN ('Complementary', 'Scalar', 'Converse')),
+    CONSTRAINT ck_semantic_relation_subtype_scope CHECK (
+        relation_type = 'Antonym' OR antonym_subtype IS NULL),
+    CONSTRAINT ck_semantic_relation_distinct CHECK (lu_id_a <> lu_id_b),
+    CONSTRAINT ck_semantic_relation_verified CHECK (is_verified IN (0, 1))
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- Indexes
 -- ─────────────────────────────────────────────────────────────────────────────
 -- MySQL indexes the leading columns of a UNIQUE constraint on its own, so lemma_key needs no separate
@@ -296,4 +345,6 @@ CREATE INDEX ix_lemma_entry_base_verb ON lemma_entry (base_verb_lemma);
 CREATE INDEX ix_lexical_unit_lexeme ON lexical_unit (lexeme_id);
 CREATE INDEX ix_valency_frame_lu ON valency_frame (lu_id);
 CREATE INDEX ix_valency_slot_frame ON valency_slot (frame_id);
+CREATE INDEX ix_semantic_feature_name_value ON semantic_feature (feature_name, feature_value);
+CREATE INDEX ix_semantic_relation_lu_b ON semantic_relation (lu_id_b);
 CREATE INDEX ix_slot_realization_slot ON slot_realization (slot_id);

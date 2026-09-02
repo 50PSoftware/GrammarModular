@@ -45,6 +45,14 @@ const LEXICON_TABLES = [
     'construction' => [
         'construction_id', 'pattern_name', 'light_verb_lemma', 'pred_noun_lemma', 'template_json',
     ],
+    'semantic_feature' => [
+        'feature_id', 'lu_id', 'feature_name', 'feature_value', 'value_kind', 'source', 'note',
+        'is_verified',
+    ],
+    'semantic_relation' => [
+        'relation_id', 'lu_id_a', 'lu_id_b', 'relation_type', 'antonym_subtype', 'strength', 'source',
+        'note', 'is_verified',
+    ],
 ];
 
 /**
