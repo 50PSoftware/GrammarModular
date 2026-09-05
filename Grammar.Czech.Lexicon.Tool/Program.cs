@@ -315,6 +315,5 @@ static void PrintUsage()
           2. {ToolSettings.FileName,-16}    url, token, database, navrhy, pageSize — hledá se i v nadřazených adresářích
           3. prostředí        LEXICON_API_URL, LEXICON_API_TOKEN, {ToolSettings.ProposalsPathVariable}
 
-        Token nech v prostředí; {ToolSettings.FileName} patří do gitu, token ne.
         """);
 }
